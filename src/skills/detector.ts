@@ -31,6 +31,19 @@ export interface SkillMatch {
   reasons: string[];
 }
 
+/** Longest text content signals look at (a chunk renders far less; this bounds crafted inputs). */
+const MAX_SIGNAL_TEXT = 512 * 1024;
+
+/**
+ * The text skill `content` regexes run on: whitespace-only lines removed and length capped. Patterns
+ * like `^\s*require\b` (multiline) restart at every line start, so a long run of blank lines — easy to
+ * put in a change — makes them quadratic; without such lines each start only scans one indentation.
+ */
+export function signalText(text: string): string {
+  const collapsed = text.replace(/\n[ \t\r\f\v]*(?=\n)/g, '');
+  return collapsed.length > MAX_SIGNAL_TEXT ? collapsed.slice(0, MAX_SIGNAL_TEXT) : collapsed;
+}
+
 /** `auto` (detector), `none`, or an explicit list of skill ids. */
 export type SkillSelection = 'auto' | 'none' | string[];
 

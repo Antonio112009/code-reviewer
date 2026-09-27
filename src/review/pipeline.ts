@@ -31,7 +31,7 @@ import { writeReports } from '../report';
 import { SEVERITY_ORDER, sortFindings } from '../report/common';
 import { RunStore } from '../runs/store';
 import { createSkillCatalog } from '../skills/catalog';
-import { type SkillMatch, selectSkills, skillsForDepth } from '../skills/detector';
+import { type SkillMatch, selectSkills, signalText, skillsForDepth } from '../skills/detector';
 import { loadSkills, type Skill } from '../skills/loader';
 import { changedPaths, collectDiffUnits, type SkippedFile } from '../sources/diff-source';
 import { collectFileUnits } from '../sources/files-source';
@@ -470,9 +470,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         languages: [...new Set(owned.map((u) => u.language))],
         techs,
         techVersions,
-        code: rawCodeOf(owned),
-        fileCode: fileCodeOf(owned),
-        ...(mode === 'diff' ? { addedCode: addedCodeOf(owned) } : {}),
+        code: signalText(rawCodeOf(owned)),
+        fileCode: signalText(fileCodeOf(owned)),
+        ...(mode === 'diff' ? { addedCode: signalText(addedCodeOf(owned)) } : {}),
       },
       config.review.skills,
       config.review.skillTokenBudget,

@@ -6,7 +6,7 @@ coverage/
 # review runs produced when dogfooding the tool on itself
 .code-reviewer/runs/
 
-# local environment
-.env
-.env.*
+# local environment (root only: test fixtures ship .env.example files)
+/.env
+/.env.*
 *.tgz

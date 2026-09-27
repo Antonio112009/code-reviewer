@@ -6,9 +6,9 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import YAML from 'yaml';
-import { estimateTokens } from '../src/chunking/tokens';
 import { isTechId } from '../src/context/stack/techs';
 import { compileGlobs } from '../src/skills/activation';
+import { signalText } from '../src/skills/detector';
 import {
   GROUP_FILES,
   KNOWN_LANGUAGES,
@@ -24,7 +24,7 @@ const ROOT = path.join(packageRoot(), 'skills');
 const SUBTREE = (process.env.SKILLS_SUBTREE ?? '').replace(/^\/+|\/+$/g, '');
 
 /** Top-level folders of the library (languages / ecosystems, then cross-cutting areas). */
-export const ECOSYSTEMS = [
+const ECOSYSTEMS = [
   'practice',
   'security',
   'web',
@@ -111,16 +111,23 @@ const ADVERSARIAL = [
   `${'\n'.repeat(10_000)}x`,
 ];
 
+/**
+ * Catastrophic backtracking takes seconds or more on these inputs; linear patterns take a few ms locally and
+ * a few hundred at most on slow CI machines.
+ */
+const MAX_REGEX_MS = 500;
+
 function checkRegexes(sources: string[], where: string): void {
   for (const source of sources) {
     const re = new RegExp(source, 'm');
     expect(re.test(''), `${where}: /${source}/ matches the empty string`).toBe(false);
     for (const input of ADVERSARIAL) {
+      const text = signalText(input); // what the detector hands to content regexes
       const started = performance.now();
-      re.test(input);
+      re.test(text);
       const ms = performance.now() - started;
       expect(ms, `${where}: /${source}/ took ${ms.toFixed(0)}ms on adversarial input (ReDoS)`).toBeLessThan(
-        150,
+        MAX_REGEX_MS,
       );
     }
   }

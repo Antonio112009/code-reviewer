@@ -11,6 +11,7 @@ import { detectReplyError } from '../src/models/classify';
 import { decidePermission } from '../src/providers/acp/permissions';
 import { isUnconfined } from '../src/providers/acp/presets';
 import { profileRegion } from '../src/providers/aws';
+import { signalText } from '../src/skills/detector';
 import { unsafeRegexes } from '../src/skills/regex-guard';
 import { buildDiffUnits } from '../src/sources/diff-source';
 import {
@@ -207,6 +208,15 @@ describe('skills and versions', () => {
     const unsafe = await unsafeRegexes(['\\buseEffect\\(', '(a|aa)+$', 'a*a*a*a*b']);
     expect([...unsafe.keys()].sort()).toEqual(['(a|aa)+$', 'a*a*a*a*b']);
   }, 20_000);
+
+  it('long runs of blank lines do not make multiline content regexes quadratic', () => {
+    const text = signalText(`${'\n'.repeat(400_000)}require x\n`);
+    const started = performance.now();
+    expect(/^\s*require\b/m.test(text)).toBe(true);
+    expect(performance.now() - started).toBeLessThan(100);
+    expect(signalText('a\n  \n\t\nb')).toBe('a\nb');
+    expect(signalText('x'.repeat(600_000)).length).toBe(512 * 1024);
+  });
 
   it('partial versions stand for all their releases', () => {
     expect(satisfies('1.21.5', '>1.21')).toBe(false);
