@@ -1,0 +1,13 @@
+name: React Native
+description: React Native mobile apps (react-native 0.76–0.87; New Architecture only since 0.82), including Expo projects. Detected when the project depends on react-native or expo and the file imports react-native, expo, @react-navigation or a react-native-* library, or is a platform file (*.ios.tsx, *.android.ts, *.native.js).
+category: framework
+priority: 62
+detect:
+  stack: [framework.react-native]
+  files:
+    - '**/*.{ios,android,native}.{js,jsx,ts,tsx}'
+    - '**/app.config.{js,ts,mjs,cjs}'
+    - '**/app/**/*+api.{js,ts}'
+  content:
+    - '(?:\bfrom|\bimport)\s*[''"](?:react-native|expo|@expo/|@react-native|@react-navigation/|@shopify/flash-list)'
+    - '\brequire\(\s*[''"](?:react-native|expo|@expo/)'

@@ -1,0 +1,9 @@
+name: actix-web
+description: actix-web 4.x apps (HttpServer, App, web::Data, extractors, middleware, actix-session, actix-cors). Detected when Cargo depends on actix-web and the chunk uses actix APIs or lives in route/handler modules.
+category: framework
+priority: 62
+detect:
+  stack: [framework.actix]
+  languages: [rust]
+  files: ['**/routes/**/*.rs', '**/handlers/**/*.rs', '**/routes.rs', '**/handlers.rs', '**/router.rs']
+  content: ['\bactix_(?:web|files|session|identity|cors|multipart|ws)::', '\bweb::(?:Data|Json|Path|Query|Form|Payload|block|scope|resource)\b', '\bHttpServer::new\b', '#\[(?:actix_web::)?(?:get|post|put|patch|delete|route)\(\s*"']

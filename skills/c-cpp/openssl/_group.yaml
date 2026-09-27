@@ -1,0 +1,9 @@
+name: OpenSSL
+description: C/C++ code using the OpenSSL API for TLS and EVP crypto (3.5 LTS, 3.6, 4.0; 1.1.1 and 3.0 are end-of-life; LibreSSL/BoringSSL share most APIs). Detected by an openssl/ include or core SSL_CTX/EVP/X509_STORE_CTX constructor calls in the file.
+category: security
+priority: 75
+detect:
+  languages: [c, cpp]
+  content:
+    - '#\s*include\s*[<"]openssl/'
+    - '\b(?:SSL_CTX_new|SSL_new|EVP_(?:CIPHER|MD|PKEY)_CTX_new|X509_STORE_CTX_new)\s*\('

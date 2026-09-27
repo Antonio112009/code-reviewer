@@ -1,0 +1,12 @@
+name: Kotlin JSON serialization
+description: JSON mapping of Kotlin classes with kotlinx.serialization (1.6–1.12), Gson, Moshi or Jackson 2/3 with jackson-module-kotlin. Detected when a Kotlin file imports one of these libraries or uses their annotations.
+category: framework
+priority: 58
+detect:
+  languages: [kotlin]
+  content:
+    - '^import\s+kotlinx\.serialization\.'
+    - '^import\s+com\.google\.gson\.'
+    - '^import\s+com\.squareup\.moshi\.'
+    - '^import\s+(?:com\.fasterxml\.jackson|tools\.jackson)\.'
+    - '@(?:Serializable|SerializedName|JsonClass)\b'

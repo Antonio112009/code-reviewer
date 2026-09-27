@@ -1,0 +1,7 @@
+name: PHP
+description: PHP 8.x code and Composer projects (plain PHP, Laravel, Symfony, Doctrine, WordPress, Twig). Detected when the stack has lang.php and the file is PHP source or a PHP project file (composer.json, Twig template, config/*.yaml|xml, .env).
+category: language
+priority: 50
+detect:
+  stack: [lang.php]
+  files: ["**/*.php", "**/*.phtml", "**/*.twig", "**/composer.json", "**/config/**/*.{yaml,yml,xml}", "**/.env", "**/.env.*"]

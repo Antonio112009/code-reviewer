@@ -1,0 +1,9 @@
+{
+  "name": "legacy",
+  "private": true,
+  "dependencies": {
+    "next": "13.5.6",
+    "react": "catalog:legacy",
+    "react-dom": "18.3.1"
+  }
+}

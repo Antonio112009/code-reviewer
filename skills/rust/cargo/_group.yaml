@@ -1,0 +1,7 @@
+name: Cargo manifests and build scripts
+description: Cargo.toml, .cargo/config.toml and build.rs (profiles, features, workspace inheritance, resolver, dependency sources, build-script rules). Detected for those files.
+category: language
+priority: 50
+detect:
+  languages: [toml, rust]
+  files: ['Cargo.toml', 'build.rs', '**/.cargo/config.toml']

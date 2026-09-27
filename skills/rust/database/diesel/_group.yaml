@@ -1,0 +1,8 @@
+name: Diesel
+description: Diesel 2.x query builder/ORM (table! schema, derives, r2d2/deadpool/diesel-async connections, embedded migrations). Detected when Cargo depends on diesel and the chunk uses Diesel APIs.
+category: database
+priority: 62
+detect:
+  stack: [orm.diesel]
+  languages: [rust]
+  content: ['\bdiesel(?:_async|_migrations)?::', '\btable!\s*\{', '#\[diesel\(', '\b(?:RunQueryDsl|QueryDsl|ExpressionMethods)\b', 'derive\([^)\n]{0,160}\b(?:Queryable|Insertable|Selectable|AsChangeset|Identifiable)\b']

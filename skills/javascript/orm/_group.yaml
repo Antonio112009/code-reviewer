@@ -1,0 +1,4 @@
+name: JavaScript ORMs and query builders
+description: Data-access libraries for Node.js/TypeScript — Prisma, TypeORM, Drizzle, Sequelize, Mongoose and Knex. Grouping only; each subfolder detects its own library from the stack and its imports.
+category: database
+priority: 58

@@ -1,0 +1,9 @@
+name: Go SQL database access
+description: SQL access from Go through database/sql and its drivers, pgx, sqlx and GORM. Detected when a .go file imports one of these libraries or uses their handle types.
+category: database
+priority: 62
+detect:
+  languages: [go]
+  content:
+    - '"(?:database/sql|github\.com/jackc/pgx/v[45](?:/pgxpool)?|github\.com/jmoiron/sqlx|gorm\.io/gorm|github\.com/jinzhu/gorm)"'
+    - '\*(?:sql\.(?:DB|Tx|Conn|Rows)|pgxpool\.Pool|pgx\.Conn|sqlx\.(?:DB|Tx)|gorm\.DB)\b'

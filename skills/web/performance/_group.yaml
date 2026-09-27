@@ -1,0 +1,6 @@
+name: Web performance
+description: Core Web Vitals (LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1 at p75) and page-load cost in browser code — images, fonts, layout shifts, main-thread work, JavaScript payload and hydration, third-party scripts and back/forward cache. Applies to markup, styles and client-side scripts.
+category: web
+priority: 50
+detect:
+  languages: [html, css, scss, javascript, typescript, vue, svelte, php, text]

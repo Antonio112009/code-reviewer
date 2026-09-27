@@ -1,0 +1,4 @@
+name: Security
+description: "Cross-cutting security: injection sinks, authentication and authorization, SSRF, secrets, cryptography, supply chain and LLM-integrated applications."
+category: security
+priority: 70

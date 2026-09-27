@@ -1,0 +1,557 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { Readable, Writable } from 'node:stream';
+import * as acp from '@agentclientprotocol/sdk';
+import { MCP_SERVER_NAME } from '../../tools/mcp-server';
+import type { Submission } from '../../tools/submission';
+import type { Usage } from '../../types';
+import { trustedPath } from '../../util/executables';
+import type { Logger } from '../../util/logger';
+import { cliEntryPath, resolveInside } from '../../util/paths';
+import { type ManagedProcess, spawnManaged, terminate } from '../../util/processes';
+import type { AgentResult, AgentTask } from '../types';
+import { decidePermission } from './permissions';
+import { type AcpPreset, type LaunchSpec, THOUGHT_LEVEL_CANDIDATES } from './presets';
+
+interface SessionState {
+  root: string;
+  denied: string[];
+  toolCalls: number;
+}
+
+export type AgentEndpoint = { kind: 'process'; spec: LaunchSpec } | { kind: 'app'; app: acp.AgentApp };
+
+export interface AcpTimeouts {
+  /** initialize, session/new, set_config_option, set_mode */
+  setupMs: number;
+  /** how long the agent may take to stop after session/cancel (task timeout) */
+  cancelGraceMs: number;
+  /** how long the agent may take to stop after the run was aborted (Ctrl+C) */
+  abortGraceMs: number;
+  /** session/close */
+  closeMs: number;
+}
+
+export const DEFAULT_TIMEOUTS: AcpTimeouts = {
+  setupMs: 60_000,
+  cancelGraceMs: 15_000,
+  abortGraceMs: 5_000,
+  closeMs: 5_000,
+};
+
+export class AbortedError extends Error {
+  constructor() {
+    super('aborted');
+  }
+}
+
+/** One live ACP agent (usually a subprocess). Runs one task at a time, each in a fresh session. */
+export class AcpConnection {
+  private readonly sessions = new Map<string, SessionState>();
+  private proc?: ManagedProcess;
+  private closing?: Promise<void>;
+  private stderrTail: string[] = [];
+  private conn!: acp.ClientConnection;
+  private init!: acp.InitializeResponse;
+  private tmpDir!: string;
+  /** Set when the agent stopped responding; a broken connection must not be reused. */
+  broken = false;
+
+  private constructor(
+    private readonly preset: AcpPreset,
+    private readonly logger: Logger,
+    private readonly timeouts: AcpTimeouts,
+  ) {}
+
+  static async open(
+    endpoint: AgentEndpoint,
+    preset: AcpPreset,
+    logger: Logger,
+    timeouts: AcpTimeouts = DEFAULT_TIMEOUTS,
+  ): Promise<AcpConnection> {
+    const c = new AcpConnection(preset, logger, timeouts);
+    await c.start(endpoint);
+    return c;
+  }
+
+  get agentName(): string {
+    return this.init.agentInfo?.name ?? this.preset.label;
+  }
+
+  private buildClient(): acp.ClientApp {
+    return acp
+      .client({ name: 'code-reviewer' })
+      .onRequest(acp.methods.client.session.requestPermission, async ({ params }) => {
+        const state = this.sessions.get(params.sessionId);
+        // Without a known session root nothing is read-safe: decide as if the root were unknown → reject reads.
+        const decision = decidePermission(params, state?.root ?? '\0no-session');
+        if (!decision.allowed) {
+          state?.denied.push(decision.label);
+          this.logger.debug(`[acp] denied: ${decision.label}`);
+        }
+        return decision.response;
+      })
+      .onRequest(acp.methods.client.fs.readTextFile, async ({ params }) => {
+        const state = this.sessions.get(params.sessionId);
+        if (!state) throw acp.RequestError.invalidParams(undefined, 'unknown session');
+        const root = state.root;
+        const rel = path.isAbsolute(params.path) ? path.relative(root, params.path) : params.path;
+        const abs = resolveInside(root, rel);
+        let content = readFileSync(abs, 'utf8');
+        if (params.line != null || params.limit != null) {
+          const lines = content.split('\n');
+          const start = Math.max(0, (params.line ?? 1) - 1);
+          content = lines.slice(start, params.limit != null ? start + params.limit : undefined).join('\n');
+        }
+        return { content };
+      });
+  }
+
+  private async start(endpoint: AgentEndpoint): Promise<void> {
+    this.tmpDir = await mkdtemp(path.join(tmpdir(), 'code-reviewer-acp-'));
+    const client = this.buildClient();
+    if (endpoint.kind === 'app') {
+      this.conn = client.connect(endpoint.app);
+    } else {
+      const { spec } = endpoint;
+      this.logger.debug(`[acp] spawn ${spec.command} ${spec.args.join(' ')} (via ${spec.via})`);
+      // Neutral working directory: never the reviewed checkout, whose .npmrc/.env/etc. would otherwise
+      // influence how the agent (or `npx`) starts. The review root is passed as the session cwd.
+      // Own process group (registered for shutdown): Ctrl+C in the terminal does not kill agents mid-write,
+      // and closing the connection terminates the whole tree (adapter → CLI → MCP servers).
+      let proc: ManagedProcess;
+      try {
+        proc = spawnManaged(spec.command, spec.args, {
+          label: `acp:${this.preset.id}`,
+          cwd: this.tmpDir,
+          // PATH without the reviewed checkout, node_modules/.bin or relative entries: the adapter's own
+          // lookups (`#!/usr/bin/env node`, the CLI it drives) must not reach repository binaries.
+          env: { ...process.env, ...spec.env, PATH: trustedPath({ ...process.env, ...spec.env }) },
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+        this.proc = proc;
+        const child = proc.child;
+        child.stderr?.setEncoding('utf8').on('data', (d: string) => {
+          this.stderrTail.push(...d.split('\n').filter(Boolean));
+          this.stderrTail = this.stderrTail.slice(-40);
+        });
+        await new Promise<void>((resolve, reject) => {
+          child.once('spawn', () => resolve());
+          child.once('error', (err) => reject(new Error(`Failed to start ${spec.command}: ${err.message}`)));
+        });
+      } catch (err) {
+        await this.close().catch(() => undefined); // removes the temp dir
+        throw err;
+      }
+      const child = proc.child;
+      const stream = acp.ndJsonStream(
+        Writable.toWeb(child.stdin!) as WritableStream<Uint8Array>,
+        Readable.toWeb(child.stdout!) as ReadableStream<Uint8Array>,
+      );
+      this.conn = client.connect(stream);
+      child.once('exit', (code, signal) => {
+        this.logger.debug(`[acp] agent exited code=${code} signal=${signal}`);
+        this.broken = true;
+        this.conn.close(new Error(`agent process exited (${code ?? signal})${this.stderrHint()}`));
+      });
+    }
+
+    try {
+      this.init = await this.request(
+        this.conn.agent.request(acp.methods.agent.initialize, {
+          protocolVersion: acp.PROTOCOL_VERSION,
+          clientCapabilities: { fs: { readTextFile: true, writeTextFile: false }, terminal: false },
+          clientInfo: { name: 'code-reviewer', version: '0' },
+        }),
+        this.timeouts.setupMs,
+        'initialize',
+      );
+    } catch (err) {
+      await this.close();
+      throw new Error(`ACP initialize failed: ${describeError(err)}${this.stderrHint()}`);
+    }
+  }
+
+  private stderrHint(): string {
+    return this.stderrTail.length ? `\n  agent stderr:\n    ${this.stderrTail.slice(-8).join('\n    ')}` : '';
+  }
+
+  /** Bounds a request by `ms`; a timeout or closed connection marks this connection broken. */
+  private async request<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+    const r = await withTimeout(p, ms, this.conn.closed);
+    if (r === 'timeout') {
+      this.broken = true;
+      p.catch(() => undefined);
+      throw new Error(`${what} timed out after ${Math.round(ms / 1000)}s${this.stderrHint()}`);
+    }
+    if (r === 'closed') {
+      this.broken = true;
+      p.catch(() => undefined);
+      throw new Error(`agent connection closed during ${what}${this.stderrHint()}`);
+    }
+    return r as T;
+  }
+
+  /** MCP server that exposes our tools (and the submit tool) inside the agent session. */
+  private mcpServerFor(task: AgentTask, submitFile: string): acp.McpServer | undefined {
+    const entry = cliEntryPath();
+    if (!existsSync(entry)) return undefined;
+    const args = [entry, 'mcp-serve', '--root', task.root, '--kind', task.kind, '--submit-file', submitFile];
+    if (!task.git) args.push('--no-git');
+    if (!task.readTools) args.push('--no-read-tools');
+    if (task.projectRoot) args.push('--project-root', task.projectRoot);
+    if (task.skillsExclude?.length) args.push('--skills-exclude', task.skillsExclude.join(','));
+    if (task.skillDepth) args.push('--depth', task.skillDepth);
+    return { name: MCP_SERVER_NAME, command: process.execPath, args, env: [] };
+  }
+
+  async run(task: AgentTask): Promise<AgentResult> {
+    if (task.signal?.aborted) throw new AbortedError();
+    const warnings: string[] = [];
+    const submitFile = path.join(this.tmpDir, `${task.label}-${Date.now()}.json`);
+    const mcp = this.mcpServerFor(task, submitFile);
+    if (!mcp)
+      warnings.push('MCP tools unavailable (dist/cli.js not built) — falling back to JSON in the reply');
+
+    let session: acp.ActiveSession;
+    try {
+      session = await this.request(
+        this.conn.agent
+          .buildSession({
+            cwd: task.root,
+            mcpServers: mcp ? [mcp] : [],
+            ...(this.preset.sessionMeta ? { _meta: this.preset.sessionMeta() } : {}),
+          })
+          .start(),
+        this.timeouts.setupMs,
+        'session/new',
+      );
+    } catch (err) {
+      throw new Error(`session/new failed: ${describeError(err)}${this.stderrHint()}`);
+    }
+    const state: SessionState = { root: task.root, denied: [], toolCalls: 0 };
+    this.sessions.set(session.sessionId, state);
+
+    let text = '';
+    let stopReason: string | undefined;
+    let usage: Usage | undefined;
+    let pending: Promise<acp.ActiveSessionMessage> | undefined;
+    let interrupted = false;
+    let aborted = false;
+    const toolUsage: Record<string, number> = {};
+    try {
+      warnings.push(...(await this.configureSession(session, task)));
+      void session.prompt(`${task.instructions}\n\n---\n\n${task.prompt}`).catch(() => {
+        // failures surface through nextUpdate()/the connection; avoid unhandled rejections
+      });
+
+      let deadline = Date.now() + task.timeoutMs;
+      let lastActivity = Date.now();
+      const stallMs = task.stallTimeoutMs;
+      const cancel = async () => {
+        interrupted = true;
+        await this.conn.agent.notify(acp.methods.agent.session.cancel, { sessionId: session.sessionId });
+      };
+      // Keep the pending read across timeouts: a dropped nextUpdate() would swallow the stop message.
+      let next = session.nextUpdate();
+      pending = next;
+      for (;;) {
+        // Before any interruption, also watch for a stalled agent (no updates at all for `stallMs`).
+        const stallAt = !interrupted && stallMs ? lastActivity + stallMs : Number.POSITIVE_INFINITY;
+        const waitUntil = Math.min(deadline, stallAt);
+        const msg = await withTimeout(
+          next,
+          Math.max(waitUntil - Date.now(), 0),
+          this.conn.closed,
+          aborted ? undefined : task.signal,
+        );
+        if (msg === 'timeout' && !interrupted && stallAt < deadline) {
+          warnings.push(`no activity for ${Math.round(stallMs! / 1000)}s — cancelled as stalled`);
+          deadline = Date.now() + this.timeouts.cancelGraceMs;
+          await cancel();
+          continue;
+        }
+        if (msg === 'aborted') {
+          aborted = true;
+          deadline = Date.now() + this.timeouts.abortGraceMs;
+          if (!interrupted) await cancel();
+          continue;
+        }
+        if (msg === 'timeout') {
+          if (interrupted) {
+            this.broken = true;
+            if (aborted) throw new AbortedError();
+            throw new Error(`agent did not stop after cancellation${this.stderrHint()}`);
+          }
+          warnings.push(`timed out after ${Math.round(task.timeoutMs / 1000)}s — cancelled`);
+          deadline = Date.now() + this.timeouts.cancelGraceMs;
+          await cancel();
+          continue;
+        }
+        if (msg === 'closed') {
+          this.broken = true;
+          throw new Error(`agent connection closed${this.stderrHint()}`);
+        }
+        pending = undefined;
+        if (msg.kind === 'stop') {
+          stopReason = msg.stopReason;
+          const u = msg.response.usage;
+          if (u) {
+            usage = {
+              inputTokens: u.inputTokens,
+              outputTokens: u.outputTokens,
+              reasoningTokens: u.thoughtTokens ?? undefined,
+              cachedInputTokens: u.cachedReadTokens ?? undefined,
+            };
+          }
+          break;
+        }
+        next = session.nextUpdate();
+        pending = next;
+        lastActivity = Date.now();
+        const update = msg.update;
+        if (update.sessionUpdate === 'agent_message_chunk' && update.content.type === 'text') {
+          text += update.content.text;
+        } else if (update.sessionUpdate === 'tool_call') {
+          state.toolCalls++;
+          const name = normalizeToolName(update.title, update.kind);
+          toolUsage[name] = (toolUsage[name] ?? 0) + 1;
+          task.onActivity?.({ kind: 'tool', name });
+          this.logger.debug(`[acp] ${task.label} tool: ${update.title}`);
+        }
+      }
+    } finally {
+      // an unfinished read rejects on dispose; nobody is waiting for it any more
+      pending?.catch(() => undefined);
+      session.dispose();
+      this.sessions.delete(session.sessionId);
+      // After a cancel the agent may be unresponsive: do not block on session/close then.
+      if (!interrupted && !this.broken && this.init.agentCapabilities?.sessionCapabilities?.close) {
+        await this.request(
+          this.conn.agent.request(acp.methods.agent.session.close, { sessionId: session.sessionId }),
+          this.timeouts.closeMs,
+          'session/close',
+        ).catch(() => undefined);
+      }
+    }
+    if (aborted) throw new AbortedError();
+
+    if (state.denied.length) {
+      warnings.push(`denied ${state.denied.length} write/exec request(s): ${state.denied.join('; ')}`);
+    }
+    return {
+      submission: readSubmission(submitFile),
+      text,
+      usage,
+      model: task.model,
+      stopReason,
+      toolCalls: state.toolCalls,
+      toolUsage,
+      warnings,
+    };
+  }
+
+  /**
+   * Opens a throw-away session (no prompt, no tokens) to read what the agent offers: models, reasoning
+   * levels, modes. Used for model discovery and availability pre-checks.
+   */
+  async probeConfigOptions(cwd: string): Promise<{
+    configOptions: acp.SessionConfigOption[];
+    modes: acp.SessionModeState | null | undefined;
+  }> {
+    const session = await this.request(
+      this.conn.agent
+        .buildSession({
+          cwd,
+          mcpServers: [],
+          ...(this.preset.sessionMeta ? { _meta: this.preset.sessionMeta() } : {}),
+        })
+        .start(),
+      this.timeouts.setupMs,
+      'session/new',
+    );
+    try {
+      return { configOptions: session.newSessionResponse.configOptions ?? [], modes: session.modes };
+    } finally {
+      session.dispose();
+      if (this.init.agentCapabilities?.sessionCapabilities?.close) {
+        await this.request(
+          this.conn.agent.request(acp.methods.agent.session.close, { sessionId: session.sessionId }),
+          this.timeouts.closeMs,
+          'session/close',
+        ).catch(() => undefined);
+      }
+    }
+  }
+
+  /**
+   * Applies model, reasoning effort and read-only mode through session config options.
+   * Options depend on each other (e.g. a model without effort control drops the effort option), so the
+   * list returned by every set_config_option call replaces the current one. Rejected changes only produce
+   * warnings (the agent's defaults are still a usable review setup); a timeout breaks the connection.
+   */
+  private async configureSession(session: acp.ActiveSession, task: AgentTask): Promise<string[]> {
+    const warnings: string[] = [];
+    let options = session.newSessionResponse.configOptions ?? [];
+    for (const o of options) {
+      const values = o.type === 'select' ? selectValuesOf(o).map((v) => v.value) : [String(o.currentValue)];
+      this.logger.debug(
+        `[acp] config option ${o.id} (${o.category ?? 'other'}) = ${o.currentValue}; values: ${values.join(', ')}`,
+      );
+    }
+    const set = async (opt: acp.SessionConfigOption, value: string, strict = false): Promise<void> => {
+      this.logger.debug(`[acp] set ${opt.id}=${value}`);
+      try {
+        const res = await this.request(
+          this.conn.agent.request(acp.methods.agent.session.setConfigOption, {
+            sessionId: session.sessionId,
+            configId: opt.id,
+            value,
+          }),
+          this.timeouts.setupMs,
+          `set_config_option ${opt.id}`,
+        );
+        if (res?.configOptions) options = res.configOptions;
+      } catch (err) {
+        if (this.broken || strict) throw err;
+        warnings.push(`could not set ${opt.id}=${value}: ${describeError(err)}`);
+      }
+    };
+    const byCategory = (category: string) => options.find((o) => o.category === category);
+
+    if (!this.preset.perProcessModel && task.model) {
+      const opt = byCategory('model');
+      const values = opt ? selectValuesOf(opt) : [];
+      const wanted = task.model.toLowerCase();
+      const match =
+        values.find((v) => v.value.toLowerCase() === wanted || v.name.toLowerCase() === wanted) ??
+        values.find((v) => v.value.toLowerCase().includes(wanted) || v.name.toLowerCase().includes(wanted));
+      if (opt && match) await set(opt, match.value);
+      else
+        warnings.push(
+          `model "${task.model}" not offered by ${this.agentName}${values.length ? ` (available: ${values.map((v) => v.value).join(', ')})` : ''}; using the agent default`,
+        );
+    }
+
+    if (!this.preset.perProcessModel) {
+      const opt = byCategory('thought_level');
+      if (opt) {
+        const values = selectValuesOf(opt).map((v) => v.value);
+        const match = THOUGHT_LEVEL_CANDIDATES[task.reasoning].find((c) => values.includes(c));
+        if (match) await set(opt, match);
+      } else if (task.reasoning !== 'none') {
+        this.logger.debug(`[acp] no reasoning-effort option offered; using the agent default`);
+      }
+    }
+
+    if (this.preset.readOnlyMode) {
+      const opt = byCategory('mode');
+      const values = opt ? selectValuesOf(opt).map((v) => v.value) : [];
+      if (opt && values.includes(this.preset.readOnlyMode)) await set(opt, this.preset.readOnlyMode, true);
+      else if (session.modes?.availableModes.some((m) => m.id === this.preset.readOnlyMode)) {
+        try {
+          await this.request(
+            this.conn.agent.request(acp.methods.agent.session.setMode, {
+              sessionId: session.sessionId,
+              modeId: this.preset.readOnlyMode,
+            }),
+            this.timeouts.setupMs,
+            'session/set_mode',
+          );
+        } catch (err) {
+          // An agent that keeps a more permissive mode must not review untrusted code.
+          throw new Error(
+            `could not switch the agent to its "${this.preset.readOnlyMode}" mode: ${describeError(err)}`,
+          );
+        }
+      }
+    }
+    return warnings;
+  }
+
+  /** Idempotent: closes the connection, terminates the agent process and removes temp files. */
+  close(): Promise<void> {
+    this.closing ??= this.doClose();
+    return this.closing;
+  }
+
+  private async doClose(): Promise<void> {
+    this.broken = true;
+    this.conn?.close();
+    // SIGTERM the whole process group, SIGKILL after a grace period; handles signal-killed leaders too.
+    if (this.proc) await terminate(this.proc, 3_000);
+    if (this.tmpDir) await rm(this.tmpDir, { recursive: true, force: true });
+  }
+}
+
+/** Error text including JSON-RPC error data, which agents use for the actual reason. */
+export function describeError(err: unknown): string {
+  if (err instanceof acp.RequestError) {
+    const data =
+      err.data === undefined
+        ? ''
+        : ` — ${typeof err.data === 'string' ? err.data : JSON.stringify(err.data)}`;
+    return `${err.message} (code ${err.code})${data}`;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * Tool name for statistics: our MCP tools lose their `mcp__code-reviewer__` prefix, agent built-ins keep
+ * their first word ("Read src/a.ts" → "Read"); falls back to the ACP tool kind.
+ */
+export function normalizeToolName(title: string | null | undefined, kind?: string | null): string {
+  const raw = (title ?? '').trim();
+  const mcp = /^mcp__[\w-]+__([\w-]+)/.exec(raw);
+  if (mcp) return mcp[1]!;
+  const first = raw.split(/[\s:(`'"]/)[0];
+  if (first && /^[\w.-]{2,40}$/.test(first)) return first;
+  return kind ?? 'other';
+}
+
+export function selectValuesOf(opt: acp.SessionConfigOption): Array<{ value: string; name: string }> {
+  return opt.type === 'select'
+    ? opt.options
+        .flatMap((o) => ('group' in o ? o.options : [o]))
+        .map((o) => ({ value: o.value, name: o.name }))
+    : [];
+}
+
+function readSubmission(file: string): Submission {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8')) as Submission;
+  } catch {
+    return { calls: 0 };
+  }
+}
+
+/** Races `p` against a timeout, the connection closing and (optionally) an abort signal. */
+async function withTimeout<T>(
+  p: Promise<T>,
+  ms: number,
+  closed: Promise<void>,
+  signal?: AbortSignal,
+): Promise<T | 'timeout' | 'closed' | 'aborted'> {
+  if (signal?.aborted) return 'aborted';
+  let timer: NodeJS.Timeout | undefined;
+  let onAbort: (() => void) | undefined;
+  try {
+    return await Promise.race([
+      p,
+      new Promise<'timeout'>((r) => {
+        timer = setTimeout(() => r('timeout'), ms);
+      }),
+      closed.then(() => 'closed' as const),
+      new Promise<'aborted'>((r) => {
+        if (!signal) return;
+        onAbort = () => r('aborted');
+        signal.addEventListener('abort', onAbort, { once: true });
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+    if (onAbort) signal?.removeEventListener('abort', onAbort);
+  }
+}

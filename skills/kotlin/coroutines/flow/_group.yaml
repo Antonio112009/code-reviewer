@@ -1,0 +1,8 @@
+name: Kotlin Flow
+description: Cold and hot flows from kotlinx.coroutines.flow — flow builders and operators, StateFlow, SharedFlow and stateIn/shareIn. Detected when the file imports kotlinx.coroutines.flow or declares Flow types.
+category: language
+priority: 63
+detect:
+  content:
+    - '^import\s+kotlinx\.coroutines\.flow\.'
+    - '\b(?:Flow|StateFlow|SharedFlow|MutableStateFlow|MutableSharedFlow)<'

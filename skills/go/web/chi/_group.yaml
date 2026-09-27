@@ -1,0 +1,8 @@
+name: chi
+description: go-chi/chi v5 router and its middleware package (RealIP deprecated in v5.3.0). Detected when the project depends on chi and the file imports it or uses chi.Router, chi.NewRouter or chi.URLParam.
+category: framework
+detect:
+  stack: [framework.chi]
+  content:
+    - 'github\.com/go-chi/chi'
+    - '\bchi\.(?:Router|Mux|NewRouter|NewMux|URLParam|RouteContext)\b'

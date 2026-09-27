@@ -1,0 +1,14 @@
+name: Nuxt
+description: Nuxt 3 and 4 full-stack Vue apps (pages, composables, plugins, route middleware, Nitro/h3 server routes; Nuxt 5 not released yet). Detected when the project depends on nuxt and the chunk touches Nuxt app/server files or uses Nuxt, Nitro or h3 APIs.
+category: framework
+priority: 62
+detect:
+  stack: [framework.nuxt]
+  files:
+    - "**/*.vue"
+    - "**/server/**/*.{ts,js,mjs}"
+    - "**/{composables,middleware,plugins,utils,layouts,pages}/**/*.{ts,js,mjs}"
+    - "**/{nuxt,app}.config.{ts,js,mjs}"
+  content:
+    - "from ['\"](?:#app|#imports|#build|nuxt/app|nuxt/server|h3|nitropack(?:/runtime)?)['\"]"
+    - "\\b(?:defineNuxt(?:Config|Plugin|RouteMiddleware|Component)|definePageMeta|use(?:Lazy)?(?:Fetch|AsyncData)|useRuntimeConfig|useNuxtApp|useState|navigateTo|define(?:Cached)?EventHandler)\\b"

@@ -1,0 +1,8 @@
+name: Fiber
+description: gofiber/fiber v2 and v3 (fasthttp-based; v3 handlers take the fiber.Ctx interface). Detected when the project depends on Fiber and the file imports it or uses fiber.Ctx, fiber.App or fiber.Config.
+category: framework
+detect:
+  stack: [framework.fiber]
+  content:
+    - 'github\.com/gofiber/fiber/v[23]'
+    - '\bfiber\.(?:Ctx|App|Config|Map|Handler|New)\b'

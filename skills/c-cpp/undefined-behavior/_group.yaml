@@ -1,0 +1,7 @@
+name: C/C++ undefined behavior
+description: Integer overflow, shifts, implicit conversions, type punning and alignment — undefined or implementation-defined behavior that optimizers exploit (C11–C23, C++11–C++26). Detected by a C/C++ source or header path; every skill adds its own syntax signal.
+category: language
+priority: 60
+detect:
+  files:
+    - '*.{c,h,cc,cpp,cxx,c++,hh,hpp,hxx,ipp,inl,tpp,cppm,ixx,cu,cuh,ino}'

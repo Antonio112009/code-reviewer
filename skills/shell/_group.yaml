@@ -1,0 +1,3 @@
+name: Shell
+description: Shell scripts (sh, bash, zsh) and embedded shell in CI/Docker.
+category: language

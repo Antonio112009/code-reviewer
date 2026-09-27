@@ -1,0 +1,7 @@
+name: serde
+description: serde derive attributes and data formats (serde_json, bincode, postcard, rmp-serde, ciborium, rkyv). Detected when a Rust file derives Serialize/Deserialize or calls a serde format crate.
+category: language
+priority: 55
+detect:
+  languages: [rust]
+  content: ['derive\([^)\n]{0,200}\b(?:Serialize|Deserialize)\b', '#\[serde\(', '\bserde(?:_json|_with|_repr)?::', '\b(?:bincode|postcard|rmp_serde|ciborium|rkyv)::']

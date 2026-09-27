@@ -1,0 +1,10 @@
+name: Mongoose
+description: Mongoose 6–9 ODM for MongoDB (including @nestjs/mongoose and Typegoose) — schemas, queries, updates, middleware, population, transactions and connections. Detected when the stack has orm.mongoose and the file imports mongoose, defines schemas or calls Mongoose-specific model APIs.
+category: database
+priority: 60
+detect:
+  stack: [orm.mongoose]
+  content:
+    - "(?:from|require\\()\\s*['\"](?:mongoose|@nestjs/mongoose|@typegoose/typegoose)['\"]"
+    - "\\bnew\\s+(?:mongoose\\.)?Schema\\s*[(<]|@InjectModel\\s*\\("
+    - "\\.(?:findById\\w*|findOneAnd(?:Update|Delete|Replace)|populate|lean)\\s*\\("

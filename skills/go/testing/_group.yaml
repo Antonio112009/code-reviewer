@@ -1,0 +1,9 @@
+name: Go tests
+description: Go test code built on package testing (subtests, t.Parallel, cleanup, benchmarks, httptest, testing/synctest). Detected for _test.go files or .go files importing testing packages.
+category: language
+tier: full
+priority: 45
+detect:
+  languages: [go]
+  files: ['*_test.go']
+  content: ['"testing(?:/synctest|/fstest|/iotest|/cryptotest)?"']

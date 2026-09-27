@@ -1,0 +1,8 @@
+name: Python data stack
+description: DataFrame and array code on pandas, NumPy and Polars. Detected in .py files that import pandas, numpy or polars; each library folder below narrows to its own import.
+category: framework
+priority: 55
+detect:
+  languages: [python]
+  content:
+    - "^[ \\t]*(?:import|from)\\s+(?:pandas|numpy|polars)\\b"

@@ -1,0 +1,12 @@
+name: SvelteKit
+description: SvelteKit 2 (3.0 in release candidate) routing, load functions, form actions, hooks, remote functions and $env/$app modules. Detected on SvelteKit route (+page/+layout/+server), hook, remote-function and config files or code importing @sveltejs/kit, $app/* or $env/*.
+category: framework
+priority: 64
+detect:
+  files:
+    - "**/src/routes/**/+*.{js,ts,svelte}"
+    - "**/hooks.{server,client,universal}.{js,ts}"
+    - "**/*.remote.{js,ts}"
+    - "**/svelte.config.{js,mjs,ts}"
+  content:
+    - "from ['\"](?:@sveltejs/kit(?:/[a-z-]+)?|\\$app/[a-z-]+|\\$env/[a-z/-]+|\\./\\$types)['\"]"

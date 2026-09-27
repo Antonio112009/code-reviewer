@@ -1,0 +1,12 @@
+name: Prisma ORM
+description: Prisma Client 5–7 queries, transactions, raw SQL, extensions and client setup (driver adapters in v7); Prisma 8's new API is excluded by the version gate. Detected when the stack has orm.prisma and the file imports @prisma/client, a generated client or an adapter, or calls prisma.<model>/$ APIs.
+category: database
+priority: 60
+detect:
+  stack: [orm.prisma]
+  versions: { orm.prisma: "<8" }
+  content:
+    - "(?:from|require\\()\\s*['\"](?:@prisma/client(?:/[\\w/-]+)?|@prisma/adapter-[\\w-]+|[^'\"\\n]{0,80}generated/prisma[^'\"\\n]{0,40})['\"]"
+    - "\\bnew\\s+PrismaClient\\b|\\bPrisma\\.(?:sql|raw|join|skip|TransactionIsolationLevel|PrismaClientKnownRequestError|DbNull|JsonNull)\\b"
+    - "\\b(?:prisma|tx|db)\\.\\$(?:transaction|queryRaw\\w*|executeRaw\\w*|extends|connect|disconnect)\\b"
+    - "\\b(?:prisma|tx|db)\\.\\w+\\.(?:findMany|findFirst\\w*|findUnique\\w*|create\\w*|update\\w*|upsert|delete\\w*|count|aggregate|groupBy)\\s*\\("

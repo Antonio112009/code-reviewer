@@ -1,0 +1,9 @@
+name: URL loading and transport security
+description: Foundation URL Loading System (URLSession on Apple platforms and Linux FoundationNetworking), App Transport Security, server-trust evaluation and pinning, Network.framework and Alamofire. Detected when the file uses these APIs or the Info.plist configures ATS.
+category: framework
+priority: 62
+detect:
+  content:
+    - '\b(?:URLSession\w*|URLRequest|URLComponents|URLAuthenticationChallenge|URLCredential|HTTPURLResponse|SecTrust\w*|NWConnection|NWListener|ServerTrustManager|ServerTrustEvaluating)\b'
+    - '^[ \t]*import[ \t]+(?:Alamofire|Network|FoundationNetworking)\b'
+    - '<key>NS(?:AppTransportSecurity|AllowsArbitraryLoads\w*|ExceptionDomains|PinnedDomains|AllowsLocalNetworking)</key>'

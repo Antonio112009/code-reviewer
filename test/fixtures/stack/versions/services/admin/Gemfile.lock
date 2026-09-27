@@ -1,0 +1,21 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    actionpack (7.1.4.2)
+      rack (>= 2.2.4)
+    pg (1.5.8)
+    rails (7.1.4.2)
+      actionpack (= 7.1.4.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  pg (~> 1.5)
+  rails (~> 7.1)
+
+RUBY VERSION
+   ruby 3.3.5p100
+
+BUNDLED WITH
+   2.5.16

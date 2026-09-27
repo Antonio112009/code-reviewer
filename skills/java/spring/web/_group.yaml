@@ -1,0 +1,9 @@
+name: Spring Web MVC and HTTP clients
+description: Spring MVC controllers, exception handlers and HTTP clients (RestTemplate, RestClient, WebClient, @HttpExchange) in Spring Framework 5.3–7. Detected when the file imports org.springframework.web or org.springframework.http, or is a Spring config file.
+category: framework
+priority: 64
+detect:
+  files:
+    - "**/application*.{properties,yml,yaml}"
+  content:
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.springframework\.(?:web|http)\.'

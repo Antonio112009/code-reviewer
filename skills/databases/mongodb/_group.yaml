@@ -1,0 +1,7 @@
+name: MongoDB
+description: MongoDB specifics (queries, operators, transactions). Detected from MongoDB drivers or Mongoose.
+category: database
+detect:
+  stack:
+    - db.mongodb
+    - orm.mongoose

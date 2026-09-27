@@ -1,0 +1,18 @@
+name: Java
+description: Java code (JDK 8–27) plus the JVM config and build files of Java/Kotlin projects (application*.properties|yml, pom.xml, build.gradle, persistence.xml, spring.factories). Detected by lang.java/lang.kotlin of the file's package and a Java/Kotlin source or JVM config/build path.
+category: language
+priority: 50
+detect:
+  # .java/.kt files always carry their lang tech; config/build files only inside a detected Java/Kotlin package.
+  stack: [lang.java, lang.kotlin]
+  files:
+    - "**/*.java"
+    - "**/*.kt"
+    - "**/application*.{properties,yml,yaml}"
+    - "**/bootstrap*.{properties,yml,yaml}"
+    - "**/META-INF/persistence.xml"
+    - "**/META-INF/spring.factories"
+    - "**/META-INF/spring/*.imports"
+    - "**/pom.xml"
+    - "**/build.gradle"
+    - "**/build.gradle.kts"

@@ -1,0 +1,16 @@
+name: Svelte
+description: Svelte 5 components with runes, legacy (Svelte 4 syntax) components and .svelte.js/.svelte.ts rune modules; SvelteKit specifics live in kit/. Detected when the project depends on svelte or @sveltejs/kit and the chunk has .svelte files, rune modules, SvelteKit route/hook files or svelte imports.
+category: framework
+priority: 60
+detect:
+  stack: [framework.svelte]
+  files:
+    - "**/*.svelte"
+    - "**/*.svelte.{js,ts}"
+    - "**/src/routes/**/+*.{js,ts}"
+    - "**/hooks.{server,client,universal}.{js,ts}"
+    - "**/*.remote.{js,ts}"
+    - "**/svelte.config.{js,mjs,ts}"
+  content:
+    - "from ['\"](?:svelte(?:/[a-z-]+)?|@sveltejs/kit(?:/[a-z-]+)?|\\$app/[a-z-]+|\\$env/[a-z/-]+|\\./\\$types)['\"]"
+    - "\\$(?:state|derived|effect|props|bindable)(?:\\.[a-z]+)?\\s*\\("

@@ -1,0 +1,6 @@
+name: Swift language core
+description: Swift language, standard library and Foundation basics (optionals, collections, strings, value semantics, ARC, Codable, numbers, dates, SwiftPM manifests, tests) for Swift 5.x–6.x. Detected for every Swift source file.
+category: language
+priority: 55
+detect:
+  languages: [swift]

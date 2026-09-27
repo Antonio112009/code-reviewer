@@ -1,0 +1,8 @@
+name: NumPy
+description: NumPy 1.26–2.x array code (2.0 changed type promotion, the default integer on Windows and removed many aliases). Detected in .py files that import numpy.
+category: framework
+priority: 56
+detect:
+  languages: [python]
+  content:
+    - "^[ \\t]*(?:import|from)\\s+numpy\\b"

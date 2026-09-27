@@ -1,0 +1,7 @@
+name: .NET build and NuGet
+description: MSBuild and NuGet configuration — .csproj, Directory.Build.props/.targets, Directory.Packages.props and nuget.config — that decide target frameworks, trimming/AOT, globalization mode and how packages are restored and audited.
+category: language
+priority: 56
+detect:
+  languages: [text]
+  files: ["*.csproj", "*.props", "*.targets", "[Nn]u[Gg]et.[Cc]onfig"]

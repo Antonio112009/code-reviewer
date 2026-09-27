@@ -1,0 +1,963 @@
+import path from 'node:path';
+import pLimit from 'p-limit';
+import { type AnalyzeResult, runAnalyzers, skillsForHits } from '../analyzers';
+import { buildChunks, scheduleOrder } from '../chunking/chunker';
+import { buildFileGraph, type FileGraph } from '../chunking/graph';
+import { estimateTokens } from '../chunking/tokens';
+import type { Config } from '../config/schema';
+import {
+  commitReader,
+  loadProjectRules,
+  type ProjectRules,
+  workingTreeReader,
+} from '../context/project-rules';
+import { type DetectedStack, detectStack } from '../context/stack';
+import { resolveRefs } from '../git/refs';
+import { parseRemote } from '../git/remote';
+import { GitRepo } from '../git/repo';
+import {
+  createFilesSnapshot,
+  createSnapshot,
+  pruneStaleSnapshots,
+  type ReviewRoot,
+  type RootFile,
+} from '../git/snapshot';
+import { formatUnavailable, type ModelListing, preflightModels } from '../models';
+import { isUnconfined } from '../providers/acp/presets';
+import { detectProviders } from '../providers/detect';
+import { ProviderRegistry } from '../providers/registry';
+import type { AgentTask } from '../providers/types';
+import { writeReports } from '../report';
+import { SEVERITY_ORDER, sortFindings } from '../report/common';
+import { RunStore } from '../runs/store';
+import { createSkillCatalog } from '../skills/catalog';
+import { type SkillMatch, selectSkills, skillsForDepth } from '../skills/detector';
+import { loadSkills, type Skill } from '../skills/loader';
+import { changedPaths, collectDiffUnits, type SkippedFile } from '../sources/diff-source';
+import { collectFileUnits } from '../sources/files-source';
+import type {
+  Finding,
+  ReasoningLevel,
+  RefsInfo,
+  ReviewUnit,
+  Role,
+  RoleRouting,
+  RunRecord,
+  RunTarget,
+  StaticHit,
+  Usage,
+} from '../types';
+import { newRunId, shortHash } from '../util/ids';
+import type { Logger } from '../util/logger';
+import { attributeFindings } from './attribution';
+import { critiqueFindings } from './critique';
+import { dedupeFindings } from './dedupe';
+import type { InteractionHost, PhaseId, ReviewEvent, ReviewPlan } from './events';
+import { ModelRouter, RoutedProvider, runRouted } from './execute';
+import { resolveFindings, toFinding } from './findings';
+import {
+  addedCodeOf,
+  analyzeFilesFrom,
+  chunkStackLine,
+  claimsHint,
+  fileCodeOf,
+  hintsForChunk,
+  linkedReviewConfig,
+  listRevisionFiles,
+  rawCodeOf,
+  revisionReader,
+  techsForChunk,
+  techVersionsForChunk,
+  touchedReviewConfig,
+} from './planning';
+import { repairPrompt, reviewInstructions, reviewPrompt } from './prompts';
+import { taskTimeoutMs } from './timeouts';
+import { validateFindings } from './validate';
+
+const PROJECT_RULES_BUDGET = 3_000;
+const DEFAULT_CONTEXT_WINDOW = 200_000;
+const DEFAULT_OUTPUT_RESERVE = 16_000;
+const PROMPT_OVERHEAD = 2_000;
+/** Rough prompt tokens per static hint line. */
+const TOKENS_PER_HINT = 60;
+/** Unclaimed hints at or above this prior confidence become candidate findings when their chunk failed. */
+const STATIC_CANDIDATE_CONFIDENCE = 0.6;
+
+export type { PhaseId, PlannedChunk, ReviewEvent, ReviewPlan } from './events';
+
+export interface ReviewRequest {
+  command: 'review' | 'files';
+  cwd: string;
+  base?: string;
+  head?: string;
+  paths?: string[];
+  config: Config;
+  logger: Logger;
+  dryRun?: boolean;
+  /** Never touch the network (no fetch, no PR lookup). */
+  offline?: boolean;
+  /** Project-tier analyzers enabled on the command line (`--analyzers eslint,tsc`). */
+  projectAnalyzers?: string[];
+  onEvent?: (e: ReviewEvent) => void;
+  signal?: AbortSignal;
+  /** Terminal UI used to ask questions (model fallback) while the run is live. */
+  host?: InteractionHost;
+  /** Registers synchronous cleanup for a forced exit (see Lifecycle.onForcedExit). */
+  onForcedExit?: (cleanup: () => void) => () => void;
+  /** Injected registry (tests); otherwise one is created and disposed by the pipeline. */
+  providers?: ProviderRegistry;
+  /** Skip the model availability check (tests, offline demos). */
+  skipPreflight?: boolean;
+}
+
+export interface ReviewOutcome {
+  plan: ReviewPlan;
+  run?: RunRecord;
+  runDir?: string;
+  reports: string[];
+}
+
+export class ReviewError extends Error {}
+
+export function resolveRouting(config: Config): { review: RoleRouting; critique?: RoleRouting } {
+  const review = config.roles.review;
+  if (!review) throw new ReviewError('No review role configured (roles.review).');
+  const route = (
+    r: { provider: string; model?: string; reasoning?: ReasoningLevel },
+    fallback: ReasoningLevel,
+  ) => {
+    const provider = config.providers[r.provider];
+    const defaultModel = provider && 'defaultModel' in provider ? provider.defaultModel : undefined;
+    return { provider: r.provider, model: r.model ?? defaultModel, reasoning: r.reasoning ?? fallback };
+  };
+  const reviewRoute = route(review, 'medium');
+  const critique = config.review.selfCritique
+    ? config.roles.critique
+      ? route(config.roles.critique, 'high')
+      : { ...reviewRoute, reasoning: 'high' as const }
+    : undefined;
+  return { review: reviewRoute, critique };
+}
+
+function addUsage(total: Usage, u: Usage | undefined): void {
+  if (!u) return;
+  total.inputTokens += u.inputTokens;
+  total.outputTokens += u.outputTokens;
+  if (u.reasoningTokens) total.reasoningTokens = (total.reasoningTokens ?? 0) + u.reasoningTokens;
+  if (u.cachedInputTokens) total.cachedInputTokens = (total.cachedInputTokens ?? 0) + u.cachedInputTokens;
+}
+
+function addCounts(total: Record<string, number>, add: Record<string, number> | undefined): void {
+  for (const [k, v] of Object.entries(add ?? {})) total[k] = (total[k] ?? 0) + v;
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function isAbort(err: unknown, signal?: AbortSignal): boolean {
+  return signal?.aborted === true || (err instanceof Error && err.name === 'AbortError');
+}
+
+/** A static hit carried into the review as a candidate finding (verified by the critic). */
+function staticFinding(hit: StaticHit, chunkId: string): Finding {
+  return {
+    id: `s-${shortHash(`${hit.file}:${hit.startLine}:${hit.analyzer}:${hit.ruleId}`)}`,
+    file: hit.file,
+    startLine: hit.startLine,
+    endLine: Math.max(hit.startLine, hit.endLine),
+    severity: hit.severity,
+    category: hit.category,
+    title: hit.message.split('\n')[0]!.slice(0, 200) || hit.ruleId,
+    description: `${hit.message}${hit.help ? `\n\n${hit.help}` : ''}`.slice(0, 2_000).padEnd(10, '.'),
+    confidence: hit.confidence,
+    skills: [],
+    origin: 'static',
+    tool: { analyzer: hit.analyzer, ruleId: hit.ruleId },
+    ...(hit.nonRejectable ? { nonRejectable: true } : {}),
+    source: { chunkIds: [chunkId], provider: `static:${hit.analyzer}` },
+  };
+}
+
+/**
+ * `git status` pathspec excluding the runs directory when it lies inside the repository (posix). On
+ * Windows `path.relative` to another drive is absolute, which git rejects as outside the repository.
+ */
+export function runsDirExclude(repoRoot: string, runsDir: string, p: typeof path.posix = path): string[] {
+  const rel = p.relative(repoRoot, runsDir);
+  if (!rel || rel === '..' || rel.startsWith(`..${p.sep}`) || p.isAbsolute(rel)) return [];
+  return [rel.split(p.sep).join('/')];
+}
+
+export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
+  const { config, logger } = req;
+  const emit = req.onEvent ?? (() => {});
+  const warnings: string[] = [];
+  const warn = (message: string) => {
+    warnings.push(message);
+    emit({ type: 'warning', message });
+  };
+  const phase = async <T>(id: PhaseId, message: string, fn: () => Promise<T>): Promise<T> => {
+    emit({ type: 'phase', phase: id, message });
+    const started = Date.now();
+    try {
+      return await fn();
+    } finally {
+      emit({ type: 'phase-done', phase: id, durationMs: Date.now() - started });
+    }
+  };
+  const throwIfAborted = () => {
+    if (req.signal?.aborted) throw new ReviewError('Interrupted');
+  };
+
+  const repo = await GitRepo.find(req.cwd);
+  const repoRoot = repo?.root ?? path.resolve(req.cwd);
+  const routing = resolveRouting(config);
+  for (const [role, route] of Object.entries(routing)) {
+    const cfg = route ? config.providers[route.provider] : undefined;
+    if (cfg && isUnconfined(cfg)) {
+      warn(
+        `${route!.provider} (${role}) cannot be confined to read-only: it may run commands, i.e. the reviewed code, in the review snapshot. Use it only on code you trust.`,
+      );
+    }
+  }
+  const mode: RunTarget['kind'] = req.command === 'review' ? 'diff' : 'files';
+
+  // 1. What to review: refs (fresh remote base) and changed units ------------------------------------
+  let target: RunTarget;
+  let refsInfo: RefsInfo | undefined;
+  if (mode === 'diff') {
+    if (!repo) {
+      throw new ReviewError('`review` must run inside a git repository (use `files` for plain folders).');
+    }
+    const refs = await phase('refs', 'Resolving branches', () =>
+      resolveRefs({
+        repo,
+        base: req.base,
+        head: req.head,
+        settings: config.git,
+        offline: req.offline,
+        signal: req.signal,
+        warn,
+      }).catch((err: unknown) => {
+        if (isAbort(err, req.signal)) throw err;
+        throw new ReviewError(errorMessage(err));
+      }),
+    );
+    const commits = await repo.countCommits(`${refs.mergeBase}..${refs.headSha}`).catch(() => undefined);
+    refsInfo = { ...refs.info, ...(typeof commits === 'number' ? { commits } : {}) };
+    target = {
+      kind: 'diff',
+      base: refs.base,
+      head: refs.head,
+      baseSha: refs.baseSha,
+      headSha: refs.headSha,
+      mergeBase: refs.mergeBase,
+    };
+    emit({ type: 'refs', target, refs: refsInfo });
+    if (refs.mergeBase === refs.headSha)
+      warn(`${refs.head} has no commits on top of ${refs.base} — nothing to review.`);
+  } else {
+    target = {
+      kind: 'files',
+      paths: req.paths ?? [],
+      headSha: repo ? await repo.headSha().catch(() => undefined) : undefined,
+    };
+  }
+  throwIfAborted();
+
+  const exclude = [...config.review.exclude, ...(config.project.ignore ?? [])];
+  const { units, skipped } = await phase('collect', 'Collecting changes', async () => {
+    if (target.kind === 'diff') {
+      return collectDiffUnits(repo!, { from: target.mergeBase, to: target.headSha, exclude });
+    }
+    return collectFileUnits({ root: repoRoot, cwd: req.cwd, paths: req.paths ?? [], exclude, repo });
+  });
+  const unitByPath = new Map(units.map((u) => [u.path, u]));
+
+  // A change to the review configuration itself must not steer its own review: every changed path
+  // counts (excluded, binary and renamed files too), not only the reviewed units.
+  const configTouched =
+    target.kind === 'diff'
+      ? touchedReviewConfig(await changedPaths(repo!, target.mergeBase, target.headSha))
+      : [];
+  if (configTouched.length) {
+    warn(
+      `This change modifies review configuration (${configTouched.join(', ')}); its project skills are ignored and rules are read from ${target.kind === 'diff' ? target.base : 'the base'}.`,
+    );
+  }
+  // Through a symlink, a change to its target would steer the review without touching `.code-reviewer/`.
+  const linkedConfig =
+    target.kind === 'diff' && !configTouched.length ? await linkedReviewConfig(repoRoot) : undefined;
+  if (linkedConfig) {
+    warn(`${linkedConfig} is a symbolic link: project skills are ignored when reviewing a change.`);
+  }
+  const projectSkillsRoot = configTouched.length || linkedConfig ? undefined : repoRoot;
+
+  // 2. In parallel: stack, static analysis, file graph, rules, skills, model availability -------------
+  const availableProviders = detectProviders(config)
+    .filter((s) => s.available)
+    .map((s) => s.id);
+  const listings = new Map<string, ModelListing>();
+
+  const stackP: Promise<DetectedStack | undefined> = phase('stack', 'Detecting technologies', () =>
+    detectStack(
+      target.kind === 'diff'
+        ? { root: repoRoot, repo, sha: target.headSha, signal: req.signal }
+        : { root: repoRoot, repo, signal: req.signal },
+    ),
+  ).catch((err: unknown) => {
+    if (isAbort(err, req.signal)) throw err;
+    warn(`Stack detection failed: ${errorMessage(err)} — skills are selected without it.`);
+    return undefined;
+  });
+
+  const analyzersP: Promise<AnalyzeResult> = phase('analyzers', 'Running static analyzers', () =>
+    runAnalyzers({
+      files: analyzeFilesFrom(units, mode),
+      settings: config.analyzers,
+      mode,
+      projectOptIn: req.projectAnalyzers,
+      repoRoot,
+      signal: req.signal,
+    }),
+  ).catch((err: unknown) => {
+    if (isAbort(err, req.signal)) throw err;
+    warn(`Static analysis failed: ${errorMessage(err)}`);
+    return { hits: [], runs: [] };
+  });
+
+  const graphP: Promise<FileGraph | undefined> =
+    config.review.chunking === 'smart' && units.length > 1
+      ? (async () => {
+          const allFiles =
+            target.kind === 'diff'
+              ? await listRevisionFiles(repo!, target.headSha)
+              : repo
+                ? await repo.listFiles(['.'])
+                : units.map((u) => u.path);
+          const readFile =
+            target.kind === 'diff'
+              ? revisionReader(repo!, target.headSha)
+              : (rel: string) => workingTreeReader(repoRoot).read(rel);
+          return buildFileGraph({
+            units,
+            allFiles,
+            readFile,
+            repo,
+            headSha: target.headSha,
+            ...(target.kind === 'diff' ? { baseSha: target.mergeBase } : {}),
+            signal: req.signal,
+          });
+        })().catch((err: unknown) => {
+          if (isAbort(err, req.signal)) throw err;
+          warn(`Could not build the file graph: ${errorMessage(err)} — packing by directory.`);
+          return undefined;
+        })
+      : Promise.resolve(undefined);
+
+  const rulesP: Promise<ProjectRules & { origin?: string }> = config.review.projectRules
+    ? (target.kind === 'diff'
+        ? loadProjectRules(commitReader(repo!, target.baseSha, target.base), PROJECT_RULES_BUDGET).then(
+            (r) => ({ ...r, origin: target.kind === 'diff' ? target.base : undefined }),
+          )
+        : loadProjectRules(repoRoot, PROJECT_RULES_BUDGET)
+      ).catch((err: unknown) => {
+        warn(`Could not read project rules: ${errorMessage(err)}`);
+        return { text: '', sources: [], tokens: 0 };
+      })
+    : Promise.resolve({ text: '', sources: [], tokens: 0 });
+
+  const skillsP: Promise<Skill[]> =
+    config.review.skills === 'none' ? Promise.resolve([]) : loadSkills(projectSkillsRoot, warn);
+
+  const preflightP =
+    req.dryRun || req.skipPreflight
+      ? Promise.resolve(undefined)
+      : preflightModels({
+          config,
+          routes: {
+            review: { provider: routing.review.provider, model: routing.review.model },
+            ...(routing.critique
+              ? { critique: { provider: routing.critique.provider, model: routing.critique.model } }
+              : {}),
+          },
+          availableProviders,
+          logger,
+          cwd: repoRoot,
+          signal: req.signal,
+          host: req.host,
+          listings,
+        });
+
+  const [stack, analysis, graph, rules, skills] = await Promise.all([
+    stackP,
+    analyzersP,
+    graphP,
+    rulesP,
+    skillsP,
+  ]);
+  if (stack) emit({ type: 'stack', stack });
+  emit({ type: 'analyzers', runs: analysis.runs, hits: analysis.hits.length });
+  for (const note of stack?.notes ?? []) logger.debug(`stack: ${note}`);
+  throwIfAborted();
+
+  // 3. Chunking ------------------------------------------------------------------------------------------
+  const reviewRole = config.roles.review;
+  const contextWindow = reviewRole?.contextWindow ?? DEFAULT_CONTEXT_WINDOW;
+  const outputReserve = reviewRole?.maxOutputTokens ?? DEFAULT_OUTPUT_RESERVE;
+  const depth = config.review.depth;
+  /** Skills of this depth (essential: essential tier, `[full]` bullets removed). */
+  const depthSkills = skillsForDepth(skills, depth);
+  const instructionsBase = reviewInstructions({
+    mode,
+    depth,
+    rules: rules.text,
+    skills: [],
+    project: config.project,
+  });
+  const overhead =
+    estimateTokens(instructionsBase) +
+    config.review.skillTokenBudget +
+    config.analyzers.maxHintsPerChunk * TOKENS_PER_HINT +
+    PROMPT_OVERHEAD;
+  const promptRoom = contextWindow - outputReserve - overhead;
+  const budget = Math.max(2_000, Math.min(config.review.maxChunkTokens, promptRoom));
+
+  const { chunks, mentions } = await phase('chunking', 'Grouping related files into chunks', async () =>
+    buildChunks(units, {
+      budget,
+      fullFileTokens: config.review.fullFileTokens,
+      contextLines: config.review.contextLines,
+      graph,
+      strategy: graph ? 'smart' : 'directory',
+      contextShare: config.review.contextShare,
+      maxTotalTokens: Math.max(budget, promptRoom),
+    }),
+  );
+  if (chunks.length > config.review.maxChunks) {
+    warn(
+      `${chunks.length} chunks exceed review.maxChunks=${config.review.maxChunks}; consider narrowing the review.`,
+    );
+  }
+
+  // Per chunk: skills (stack-aware, hint-aware), static hints, timeout.
+  const chunkSkills = new Map<string, SkillMatch[]>();
+  const chunkHints = new Map<string, StaticHit[]>();
+  const chunkStack = new Map<string, string>();
+  /**
+   * Secrets / vulnerable dependencies (shown to the model or beyond the hint cap) with the model findings
+   * that claimed them: each one is reported unless a claiming finding survives validation.
+   */
+  const mustReport = new Map<string, { hit: StaticHit; chunkId: string; claimedBy: Set<string> }>();
+  for (const chunk of chunks) {
+    const owned = chunk.files.map((f) => unitByPath.get(f)).filter((u): u is ReviewUnit => u !== undefined);
+    const { shown: hints, overflow } = hintsForChunk(analysis.hits, chunk, config.analyzers.maxHintsPerChunk);
+    chunkHints.set(chunk.id, hints);
+    for (const h of [...hints, ...overflow]) {
+      if (h.nonRejectable && !mustReport.has(h.id))
+        mustReport.set(h.id, { hit: h, chunkId: chunk.id, claimedBy: new Set() });
+    }
+    const techs = techsForChunk(stack, chunk.files);
+    const techVersions = techVersionsForChunk(stack, chunk.files, techs);
+    const stackLine = chunkStackLine(techs, techVersions);
+    if (stackLine) chunkStack.set(chunk.id, stackLine);
+    const matches = selectSkills(
+      // An explicit skill list is honoured as given; auto selection only sees the depth's skills.
+      Array.isArray(config.review.skills) ? skills : depthSkills,
+      {
+        files: chunk.files,
+        languages: [...new Set(owned.map((u) => u.language))],
+        techs,
+        techVersions,
+        code: rawCodeOf(owned),
+        fileCode: fileCodeOf(owned),
+        ...(mode === 'diff' ? { addedCode: addedCodeOf(owned) } : {}),
+      },
+      config.review.skills,
+      config.review.skillTokenBudget,
+      config.review.skillsExclude,
+    );
+    // Skills tied to the analyzer rules that fired here, when the budget still allows.
+    if (config.review.skills === 'auto' && hints.length) {
+      let used = matches.reduce((n, m) => n + m.skill.tokens, 0);
+      const have = new Set(matches.map((m) => m.skill.id));
+      for (const id of skillsForHits(hints)) {
+        const skill = depthSkills.find((s) => s.id === id);
+        if (!skill || have.has(id) || config.review.skillsExclude.includes(id)) continue;
+        if (used + skill.tokens > config.review.skillTokenBudget) continue;
+        matches.push({ skill, score: 0, reasons: ['static-hint'] });
+        have.add(id);
+        used += skill.tokens;
+      }
+    }
+    chunkSkills.set(chunk.id, matches);
+  }
+
+  const plan: ReviewPlan = {
+    target,
+    root: repoRoot,
+    depth,
+    minSeverity: config.review.minSeverity,
+    ...(refsInfo ? { refs: refsInfo } : {}),
+    units: units.length,
+    skipped: skipped as SkippedFile[],
+    deleted: mentions,
+    budget,
+    chunks: chunks.map((c) => ({
+      id: c.id,
+      files: c.files,
+      contextFiles: c.contextFiles ?? [],
+      tokens: c.tokens,
+      skills: (chunkSkills.get(c.id) ?? []).map((m) => ({ id: m.skill.id, reasons: m.reasons })),
+      groupReasons: c.groupReasons ?? [],
+      hints: chunkHints.get(c.id)?.length ?? 0,
+      timeoutMs: taskTimeoutMs(config.review, c.tokens),
+    })),
+    totalTokens: chunks.reduce((s, c) => s + c.tokens, 0),
+    projectRules: rules.sources,
+    routing,
+    ...(stack ? { stack } : {}),
+    analyzers: analysis.runs,
+    skills: [...new Set([...chunkSkills.values()].flat().map((m) => m.skill.id))].sort(),
+  };
+  emit({ type: 'plan', plan });
+  if (req.dryRun) {
+    await preflightP;
+    return { plan, reports: [] };
+  }
+
+  // 4. Models: availability check (started in parallel above) -------------------------------------------
+  const preflight = await preflightP;
+  const routes: Partial<Record<Role, RoleRouting>> = {
+    review: routing.review,
+    ...(routing.critique ? { critique: routing.critique } : {}),
+  };
+  if (preflight) {
+    const unresolved = preflight.unresolved[0];
+    if (unresolved) throw new ReviewError(formatUnavailable(unresolved));
+    for (const [role, ref] of Object.entries(preflight.routes) as Array<
+      [Role, { provider: string; model?: string }]
+    >) {
+      const current = routes[role];
+      if (current && (current.provider !== ref.provider || current.model !== ref.model)) {
+        routes[role] = { provider: ref.provider, model: ref.model, reasoning: current.reasoning };
+      }
+    }
+    for (const f of preflight.fallbacks) emit({ type: 'fallback', ...f });
+  }
+  throwIfAborted();
+
+  // 5. Run ----------------------------------------------------------------------------------------------
+  const store = new RunStore(path.resolve(repoRoot, config.output.dir));
+  const startedAt = Date.now();
+  const run: RunRecord = {
+    schemaVersion: 1,
+    id: newRunId(),
+    command: req.command,
+    status: 'running',
+    createdAt: new Date(startedAt).toISOString(),
+    repo: { root: repoRoot },
+    target,
+    options: {
+      depth,
+      selfCritique: config.review.selfCritique,
+      minConfidence: config.review.minConfidence,
+      minSeverity: config.review.minSeverity,
+      skills: Array.isArray(config.review.skills) ? config.review.skills.join(',') : config.review.skills,
+      tools: config.review.tools,
+      authors: config.review.authors,
+      maxChunkTokens: budget,
+      concurrency: config.review.concurrency,
+    },
+    routing: { ...routes },
+    fallbacks: [...(preflight?.fallbacks ?? [])],
+    ...(refsInfo ? { refs: refsInfo } : {}),
+    ...(stack
+      ? {
+          stack: stack.techs
+            .filter((t) => t.score >= 0.6)
+            .map(({ id, name, category, score }) => ({ id, name, category, score })),
+        }
+      : {}),
+    analyzers: analysis.runs,
+    skillsUsed: plan.skills,
+    toolUsage: {},
+    chunks: chunks.map((c) => ({
+      id: c.id,
+      files: c.files,
+      contextFiles: c.contextFiles ?? [],
+      tokens: c.tokens,
+      skills: (chunkSkills.get(c.id) ?? []).map((m) => m.skill.id),
+      status: 'pending',
+      findings: 0,
+      hints: chunkHints.get(c.id)?.length ?? 0,
+      timeoutMs: taskTimeoutMs(config.review, c.tokens),
+    })),
+    findings: [],
+    rejected: [],
+    usage: { inputTokens: 0, outputTokens: 0 },
+    warnings,
+  };
+  if (repo) {
+    const remoteUrl = await repo.remoteUrl();
+    const remote = parseRemote(remoteUrl);
+    run.repo = { root: repoRoot, remote: remote?.webUrl ?? remoteUrl, platform: remote?.platform };
+  }
+
+  let saveChain: Promise<unknown> = store.save(run);
+  const persist = () => {
+    saveChain = saveChain.then(() => store.save(run)).catch(() => undefined);
+    return saveChain;
+  };
+
+  const registry = req.providers ?? new ProviderRegistry(config, logger);
+  const statusExclude = runsDirExclude(repoRoot, store.dir);
+  // Only feeds a warning at the end: never let it abort the run (the run record is already saved).
+  const statusBefore = repo ? await repo.statusPorcelain(statusExclude).catch(() => undefined) : undefined;
+  let snapshot: ReviewRoot | undefined;
+  let reports: string[] = [];
+  /** Findings reported by the models plus static candidates. */
+  const collected: Finding[] = [];
+  /** Static hints the reviewing model saw and did not confirm (kept for auditing). */
+  const hintRejected: Finding[] = [];
+  const router = new ModelRouter(routes, {
+    config,
+    availableProviders,
+    listings: preflight?.listings ?? listings,
+    host: req.host,
+    logger,
+    signal: req.signal,
+    emit,
+  });
+
+  try {
+    // Agents read code from a detached, sanitized worktree: they never see (or touch) the user's
+    // uncommitted work and never load the reviewed revision's agent instructions (CLAUDE.md, .claude/…).
+    const usesAgents = Object.values(routes).some((r) => r && config.providers[r.provider]?.type === 'acp');
+    const mayFallBack = config.models.onUnavailable !== 'fail' && config.models.allowCrossProvider;
+    const isolate = config.review.isolation === 'always' || usesAgents || mayFallBack;
+    let root = repoRoot;
+    // Files mode reviews the working tree: the reviewed files are written over the snapshot of HEAD
+    // (agent instruction / config files excepted) — or make up the whole review root when there is no
+    // commit to check out (plain folder, repository without commits).
+    const overlay: RootFile[] | undefined =
+      target.kind === 'files'
+        ? units.flatMap((u) => (u.content === undefined ? [] : [{ path: u.path, content: u.content }]))
+        : undefined;
+    const sha = target.headSha;
+    if (chunks.length > 0 && repo && sha) {
+      snapshot = await phase('snapshot', 'Preparing an isolated snapshot', async () => {
+        await pruneStaleSnapshots(repo).catch(() => []);
+        return createSnapshot(repo, sha, {
+          forceIsolated: isolate || target.kind === 'files',
+          overlay,
+          onForcedExit: req.onForcedExit,
+        });
+      });
+    } else if (chunks.length > 0 && overlay && isolate) {
+      // API providers without a fallback read in place: their tools are read-only and confined to it.
+      snapshot = await phase('snapshot', 'Preparing an isolated review root', () =>
+        createFilesSnapshot(overlay, { onForcedExit: req.onForcedExit }),
+      );
+    }
+    if (snapshot) {
+      root = snapshot.root;
+      if (snapshot.sanitized.length) {
+        logger.debug(`snapshot: removed agent instruction files ${snapshot.sanitized.join(', ')}`);
+      }
+    }
+    const git = repo !== undefined;
+    const catalog = createSkillCatalog(depthSkills, config.review.skillsExclude);
+    const skillTools = config.review.tools && depthSkills.length > 0;
+
+    // 6. Review chunks (largest first) ----------------------------------------------------------------
+    await phase('review', `Reviewing ${chunks.length} chunk(s)`, async () => {
+      const limit = pLimit(config.review.concurrency);
+      const allFiles = units.filter((u) => u.status !== 'deleted').map((u) => u.path);
+      const byId = new Map(chunks.map((c) => [c.id, c]));
+      await Promise.all(
+        scheduleOrder(chunks).map((id) =>
+          limit(async () => {
+            const chunk = byId.get(id)!;
+            const rec = run.chunks.find((c) => c.id === chunk.id)!;
+            if (req.signal?.aborted || router.fatal) {
+              Object.assign(rec, {
+                status: 'failed',
+                error: router.fatal ? errorMessage(router.fatal) : 'aborted',
+              });
+              return;
+            }
+            const matches = chunkSkills.get(chunk.id) ?? [];
+            const hints = chunkHints.get(chunk.id) ?? [];
+            rec.status = 'running';
+            emit({ type: 'chunk-start', chunk, record: rec });
+            const started = Date.now();
+            const task: AgentTask = {
+              kind: 'findings',
+              label: chunk.id,
+              instructions: reviewInstructions({
+                mode,
+                depth,
+                rules: rules.text,
+                rulesOrigin: rules.origin,
+                skills: matches,
+                project: config.project,
+                skillTools,
+                readTools: config.review.tools,
+              }),
+              prompt: reviewPrompt({
+                target,
+                chunk,
+                totalChunks: chunks.length,
+                otherFiles: allFiles,
+                hints,
+                stack: chunkStack.get(chunk.id),
+              }),
+              reasoning: 'medium',
+              readTools: config.review.tools,
+              root,
+              git,
+              maxSteps: config.review.maxSteps,
+              timeoutMs: rec.timeoutMs ?? taskTimeoutMs(config.review, chunk.tokens),
+              stallTimeoutMs: config.review.stallTimeoutMs,
+              maxOutputTokens: reviewRole?.maxOutputTokens,
+              signal: req.signal,
+              onActivity: (a) => {
+                if (a.kind === 'tool') emit({ type: 'chunk-activity', chunkId: chunk.id, tool: a.name });
+              },
+              ...(skillTools
+                ? { skills: catalog, skillsExclude: config.review.skillsExclude, skillDepth: depth }
+                : {}),
+              ...(skillTools && projectSkillsRoot ? { projectRoot: projectSkillsRoot } : {}),
+            };
+            try {
+              const result = await runRouted('review', task, router, registry);
+              const usage: Usage = { inputTokens: 0, outputTokens: 0 };
+              addUsage(usage, result.usage);
+              let resolved = resolveFindings(result);
+              let replyText = result.text;
+              if (resolved.via === 'none' && result.text.trim()) {
+                const repaired = await runRouted(
+                  'review',
+                  {
+                    ...task,
+                    label: `${chunk.id}-repair`,
+                    prompt: repairPrompt(result.text),
+                    readTools: false,
+                    maxSteps: 3,
+                  },
+                  router,
+                  registry,
+                );
+                addUsage(usage, repaired.usage);
+                resolved = resolveFindings(repaired);
+                replyText = `${result.text}\n\n--- repair ---\n${repaired.text}`;
+              }
+              // Neither the submit tool nor JSON in the reply (not even after the repair turn): the code was
+              // not reviewed — a failed chunk, never a clean one.
+              if (resolved.via === 'none') throw new Error('the model returned no findings payload');
+              if (resolved.invalid) warn(`${chunk.id}: ${resolved.invalid} malformed finding(s) ignored`);
+              for (const w of result.warnings) warn(`${chunk.id}: ${w}`);
+
+              const hintById = new Map(hints.map((h) => [h.id, h]));
+              const claimed = new Set<string>();
+              const findings = resolved.items.map((r) => {
+                const f = toFinding(r, {
+                  root,
+                  chunkId: chunk.id,
+                  provider: result.provider,
+                  model: result.model,
+                  skills: rec.skills,
+                });
+                f.origin = 'llm';
+                const hint = r.hint ? hintById.get(r.hint) : undefined;
+                // A claim counts only when the finding points at the hint's code.
+                if (hint && claimsHint(f, hint)) {
+                  claimed.add(hint.id);
+                  f.tool = { analyzer: hint.analyzer, ruleId: hint.ruleId };
+                  if (hint.nonRejectable) {
+                    f.nonRejectable = true;
+                    mustReport.get(hint.id)?.claimedBy.add(f.id);
+                  }
+                }
+                return f;
+              });
+              collected.push(...findings);
+              // Hints the model saw but did not confirm: it acted as the false-positive filter — except
+              // for secrets / vulnerable dependencies, which `mustReport` reports unless a claim survives.
+              for (const h of hints) {
+                if (claimed.has(h.id) || h.nonRejectable) continue;
+                hintRejected.push({ ...staticFinding(h, chunk.id), droppedReason: 'hint-not-confirmed' });
+              }
+              addUsage(run.usage, usage);
+              addCounts(run.toolUsage!, result.toolUsage);
+              Object.assign(rec, {
+                status: 'done',
+                findings: findings.length,
+                usage,
+                durationMs: Date.now() - started,
+                toolCalls: result.toolUsage ?? {},
+                provider: result.provider,
+                model: result.model,
+                attempts: result.attempts,
+              });
+              await store.saveArtifact(run.id, chunk.id, {
+                chunk: {
+                  id: chunk.id,
+                  files: chunk.files,
+                  contextFiles: chunk.contextFiles ?? [],
+                  tokens: chunk.tokens,
+                  skills: rec.skills,
+                },
+                provider: result.provider,
+                model: result.model,
+                stopReason: result.stopReason,
+                toolCalls: result.toolCalls,
+                toolUsage: result.toolUsage,
+                via: resolved.via,
+                hints: hints.map((h) => h.id),
+                claimedHints: [...claimed],
+                reply: replyText,
+                submission: result.submission,
+                warnings: result.warnings,
+              });
+            } catch (err) {
+              Object.assign(rec, {
+                status: 'failed',
+                error: isAbort(err, req.signal) ? 'aborted' : errorMessage(err),
+                durationMs: Date.now() - started,
+              });
+              if (!isAbort(err, req.signal)) warn(`${chunk.id} failed: ${errorMessage(err).split('\n')[0]}`);
+              // The model never answered: carry the strong hints as candidates for the critic (secrets and
+              // vulnerable dependencies are reported through `mustReport`).
+              for (const h of hints) {
+                if (!h.nonRejectable && h.confidence >= STATIC_CANDIDATE_CONFIDENCE) {
+                  collected.push(staticFinding(h, chunk.id));
+                }
+              }
+            }
+            emit({ type: 'chunk-done', chunk, record: rec });
+            await persist();
+          }),
+        ),
+      );
+    });
+
+    // 7. Validate + dedupe -------------------------------------------------------------------------
+    const validated = await phase('validate', `Validating ${collected.length} raw finding(s)`, async () => {
+      const first = validateFindings(collected, { root, units, mode });
+      // Secrets / vulnerable dependencies: reported as static findings unless a claiming finding survived.
+      const kept = new Set(first.kept.map((f) => f.id));
+      const unreported = [...mustReport.values()]
+        .filter((m) => ![...m.claimedBy].some((id) => kept.has(id)))
+        .map((m) => staticFinding(m.hit, m.chunkId));
+      if (unreported.length === 0) return first;
+      const extra = validateFindings(unreported, { root, units, mode });
+      return {
+        ...first,
+        kept: [...first.kept, ...extra.kept],
+        dropped: [...first.dropped, ...extra.dropped],
+      };
+    });
+    const { unique, merged } = dedupeFindings(validated.kept);
+    if (merged) logger.debug(`merged ${merged} duplicate finding(s)`);
+    const rejected: Finding[] = [...validated.dropped, ...hintRejected];
+    let final = unique;
+    const aborted = () => req.signal?.aborted === true;
+
+    // 8. Self-critique ---------------------------------------------------------------------------------
+    if (routes.critique && final.length > 0 && aborted()) {
+      warn('Interrupted — self-critique skipped; findings are unverified.');
+    } else if (routes.critique && final.length > 0) {
+      const critique = routes.critique;
+      await phase('critique', `Verifying ${final.length} finding(s)`, async () => {
+        emit({ type: 'critique-start', findings: final.length, batches: Math.ceil(final.length / 8) });
+        const outcome = await critiqueFindings(final, {
+          provider: new RoutedProvider('critique', router, registry),
+          model: critique.model,
+          reasoning: critique.reasoning,
+          mode,
+          depth,
+          root,
+          git,
+          readTools: config.review.tools,
+          maxSteps: config.review.maxSteps,
+          timeoutMs: taskTimeoutMs(config.review, Math.max(8_000, Math.floor(budget / 2))),
+          concurrency: config.review.concurrency,
+          batchTokenBudget: Math.max(8_000, Math.floor(budget / 2)),
+          signal: req.signal,
+          onBatchDone: ({ batch, total }) => emit({ type: 'critique-progress', batch, total }),
+        });
+        final = outcome.kept;
+        rejected.push(...outcome.rejected);
+        for (const u of outcome.usage) addUsage(run.usage, u);
+        for (const w of outcome.warnings) warn(w);
+      });
+    }
+
+    // 9. Confidence and severity thresholds (secrets / vulnerable deps are never dropped) ------------
+    const min = config.review.minConfidence;
+    const floor = SEVERITY_ORDER[config.review.minSeverity];
+    const dropReason = (f: Finding): string | undefined =>
+      f.nonRejectable
+        ? undefined
+        : f.confidence < min
+          ? 'below-threshold'
+          : SEVERITY_ORDER[f.severity] > floor
+            ? 'below-severity'
+            : undefined;
+    for (const f of final) {
+      const reason = dropReason(f);
+      if (reason) rejected.push({ ...f, droppedReason: reason });
+    }
+    final = final.filter((f) => dropReason(f) === undefined);
+
+    // 10. Authors ------------------------------------------------------------------------------------------
+    if (config.review.authors && repo && final.length && !aborted()) {
+      await phase('authors', 'Attributing authors (git blame)', async () => {
+        const remote = parseRemote(await repo.remoteUrl());
+        const attributed = await attributeFindings(final, {
+          repo,
+          sha: target.kind === 'diff' ? target.headSha : undefined,
+          linkSha: target.headSha,
+          remote,
+        });
+        final = attributed.findings;
+        for (const w of attributed.warnings) warn(w);
+      });
+    }
+
+    run.findings = sortFindings(final);
+    run.rejected = sortFindings(rejected);
+    run.fallbacks = [...(preflight?.fallbacks ?? []), ...router.fallbacks];
+    run.routing = { ...routes };
+    const failed = run.chunks.filter((c) => c.status === 'failed').length;
+    if (aborted()) warn('The run was interrupted before it finished.');
+    run.status = aborted()
+      ? 'partial'
+      : chunks.length > 0 && failed === chunks.length
+        ? 'failed'
+        : failed > 0
+          ? 'partial'
+          : 'completed';
+  } catch (err) {
+    run.status = isAbort(err, req.signal) ? 'partial' : 'failed';
+    run.error = errorMessage(err);
+    throw err;
+  } finally {
+    run.durationMs = Date.now() - startedAt;
+    if (!req.providers) await registry.disposeAll();
+    await snapshot?.dispose().catch(() => undefined);
+    if (repo && statusBefore !== undefined) {
+      const after = await repo.statusPorcelain(statusExclude).catch(() => statusBefore);
+      if (after !== statusBefore)
+        warn('The working tree changed while the review was running (check `git status`).');
+    }
+    await saveChain;
+    const dir = await store.save(run);
+    reports = await writeReports(run, config.output.formats, dir).catch(() => []);
+    emit({ type: 'done', run });
+  }
+  return { plan, run, runDir: store.runDir(run.id), reports };
+}

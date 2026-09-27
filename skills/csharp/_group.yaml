@@ -1,0 +1,7 @@
+name: C# / .NET
+description: C# and .NET 8–10 code (C# 12–14) — .cs sources, Razor (.razor/.cshtml), MSBuild/NuGet files (.csproj, *.props, nuget.config) and appsettings*.json. Detected by those file types; the folders below narrow by framework and API usage.
+category: language
+priority: 55
+detect:
+  languages: [csharp, text, json]
+  files: ["*.cs", "*.razor", "*.cshtml", "*.csproj", "*.props", "*.targets", "[Nn]u[Gg]et.[Cc]onfig", "appsettings*.json"]

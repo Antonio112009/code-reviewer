@@ -1,0 +1,6 @@
+name: JavaScript language core
+description: ECMAScript semantics shared by every JS/TS runtime - promises and async iteration, coercion and numbers, arrays, objects and collections, JSON, strings, regex, dates, classes, errors, modules, fetch and ES2023-2026 built-ins. Applies to script code in .js/.ts/.jsx/.tsx/.vue/.svelte files; each skill loads only when the changed code uses its APIs or syntax.
+category: language
+priority: 55
+detect:
+  languages: [javascript, typescript, vue, svelte]

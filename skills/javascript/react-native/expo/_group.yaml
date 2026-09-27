@@ -1,0 +1,15 @@
+name: Expo
+description: Expo SDK apps (SDK 52–58 ≈ react-native 0.76–0.87) — expo-router, EAS Update, config and expo-* modules. Detected in React Native projects when the file imports expo / expo-* / @expo/*, uses EXPO_PUBLIC_ variables, or is app.config or an expo-router _layout / +api / +html file.
+category: framework
+priority: 62
+detect:
+  stack: [framework.react-native]
+  files:
+    - '**/app.config.{js,ts,mjs,cjs}'
+    - '**/app/**/_layout.{js,jsx,ts,tsx}'
+    - '**/app/**/*+api.{js,ts}'
+    - '**/app/**/+html.{js,jsx,ts,tsx}'
+  content:
+    - '(?:\bfrom|\bimport)\s*[''"](?:expo|@expo/)'
+    - '\brequire\(\s*[''"](?:expo|@expo/)'
+    - '\bEXPO_PUBLIC_\w'

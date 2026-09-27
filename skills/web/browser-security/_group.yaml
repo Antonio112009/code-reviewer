@@ -1,0 +1,4 @@
+name: Browser security
+description: Client-side security of web apps — DOM XSS sinks, script-capable URLs and client-side redirects, postMessage, CSP and Trusted Types, framing, cookies and web storage, CORS/credentials and third-party script integrity. Applies to browser code and to server code or config that sets browser security headers.
+category: security
+priority: 72

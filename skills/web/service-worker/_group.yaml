@@ -1,0 +1,14 @@
+name: Service workers
+description: Service workers and PWA caching — Cache Storage, Workbox strategies, registration scope and the install/activate/update lifecycle. Detected by service-worker files or code that registers or implements a service worker.
+category: web
+priority: 58
+detect:
+  languages: [javascript, typescript]
+  files:
+    - '**/{sw,service-worker,serviceWorker,firebase-messaging-sw}.{js,ts,mjs}'
+    - '**/workbox-config.{js,cjs,mjs}'
+  content:
+    - '\bserviceWorker\.register\('
+    - '\bself\.addEventListener\(\s*[''"](?:install|activate|fetch)[''"]'
+    - '(?:\bfrom|\bimport)\s*[''"]workbox-|\bworkbox\.'
+    - '\bcaches\.(?:open|match|keys|delete)\(|\bskipWaiting\(|\bclients\.claim\('

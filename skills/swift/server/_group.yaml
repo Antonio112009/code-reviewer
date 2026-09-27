@@ -1,0 +1,6 @@
+name: Server-side Swift
+description: Swift on the server (SwiftNIO event loops, Vapor 4 with Vapor 5 in beta, Hummingbird, AsyncHTTPClient). Detected when the file imports these server frameworks.
+category: framework
+priority: 62
+detect:
+  content: ['^[ \t]*(?:@\w+[ \t]+)?import[ \t]+(?:\w+[ \t]+)?(?:Vapor|Fluent\w*|Leaf|JWT|JWTKit|SQLKit|NIO\w*|Hummingbird\w*|AsyncHTTPClient|ServiceLifecycle)\b']

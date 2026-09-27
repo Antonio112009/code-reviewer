@@ -1,0 +1,8 @@
+name: pgx (PostgreSQL)
+description: jackc/pgx v5 native API (pgxpool, pgx.Conn, batches, CopyFrom, query exec modes; v4 noted where it differs). Detected when the project uses PostgreSQL and the file imports github.com/jackc/pgx or uses pgx/pgxpool types.
+category: database
+detect:
+  stack: [db.postgresql]
+  content:
+    - 'github\.com/jackc/pgx/v[45]'
+    - '\b(?:pgxpool|pgconn)\.[A-Z]'

@@ -1,0 +1,6 @@
+name: Vapor
+description: Vapor 4 web framework with Fluent ORM, Leaf templates and JWT; Vapor 5 (beta since September 2026, async-only with streaming bodies) differs where noted. Detected when the file imports Vapor, Fluent, Leaf or JWT.
+category: framework
+priority: 62
+detect:
+  content: ['^[ \t]*(?:@\w+[ \t]+)?import[ \t]+(?:\w+[ \t]+)?(?:Vapor|Fluent\w*|Leaf|JWT)\b']

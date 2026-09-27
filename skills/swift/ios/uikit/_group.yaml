@@ -1,0 +1,6 @@
+name: UIKit
+description: UIKit app/scene lifecycle, view-controller presentation, table and collection views (iOS 13–27; the scene life cycle is mandatory when building with the iOS 27 SDK). Detected when the file imports UIKit.
+category: framework
+priority: 60
+detect:
+  content: ['^[ \t]*(?:@\w+[ \t]+)?import[ \t]+(?:\w+[ \t]+)?UIKit\b']

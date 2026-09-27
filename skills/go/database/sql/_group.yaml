@@ -1,0 +1,7 @@
+name: database/sql
+description: The standard database/sql connection-pool API and its drivers (lib/pq, pgx stdlib, go-sql-driver/mysql, SQLite, SQL Server), which sqlx also builds on. Detected when a .go file imports database/sql or sqlx or uses sql.DB, Tx, Rows or Null types.
+category: database
+detect:
+  content:
+    - '"(?:database/sql|github\.com/jmoiron/sqlx)"'
+    - '\bsql\.(?:DB|Tx|Conn|Rows|Row|Stmt|Null\w{0,12}|ErrNoRows|Open|RawBytes)\b'

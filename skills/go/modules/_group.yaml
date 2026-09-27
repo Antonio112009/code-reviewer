@@ -1,0 +1,6 @@
+name: Go modules (go.mod, go.work)
+description: Changes to go.mod or go.work — the go and toolchain lines, godebug, require, replace, exclude and retract. Detected when a go.mod or go.work file is in the chunk.
+category: language
+priority: 55
+detect:
+  files: ['go.mod', 'go.work']

@@ -1,0 +1,9 @@
+name: Gin
+description: gin-gonic/gin v1.9–1.12 handlers, binding and middleware. Detected when the project depends on Gin and the file imports it or uses *gin.Context, *gin.Engine or gin.H.
+category: framework
+detect:
+  stack: [framework.gin]
+  content:
+    - 'github\.com/gin-gonic/gin'
+    - '\*gin\.(?:Context|Engine|RouterGroup)\b'
+    - '\bgin\.(?:Default|New|H|HandlerFunc)\b'

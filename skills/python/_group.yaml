@@ -1,0 +1,16 @@
+name: Python
+description: Python 3 projects (CPython 3.9–3.15) — .py modules, scripts and tests, plus the templates and config files of Python projects that framework folders below review. Detected by the lang.python tech of the file's package and a Python file or project-file path.
+category: language
+priority: 50
+detect:
+  # .py files always carry lang.python; other files only inside a package where Python is detected.
+  stack: [lang.python]
+  files:
+    - "**/*.py"
+    - "**/*.pyi"
+    - "**/pyproject.toml"
+    - "**/setup.cfg"
+    - "**/{pytest,tox}.ini"
+    - "**/requirements*.{txt,in}"
+    - "**/templates/**"
+    - "**/*.{jinja,jinja2,j2}"

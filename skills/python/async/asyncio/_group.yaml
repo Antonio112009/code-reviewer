@@ -1,0 +1,9 @@
+name: asyncio
+description: Standard-library asyncio (tasks, TaskGroup, timeouts, event loops, Python 3.9–3.15). Detected in .py files that import asyncio or call asyncio APIs.
+category: language
+priority: 62
+detect:
+  languages: [python]
+  content:
+    - "^[ \\t]*(?:import|from)\\s+asyncio\\b"
+    - "\\basyncio\\.\\w"

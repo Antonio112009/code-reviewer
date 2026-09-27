@@ -1,0 +1,49 @@
+name: Release
+
+# Push a tag that matches package.json (`git tag v0.1.0 && git push origin v0.1.0`): the tarball is tested,
+# attested (build provenance) and attached to a GitHub release. The stable URL
+# https://github.com/antonio112009/code-reviewer/releases/latest/download/code-reviewer.tgz
+# always installs the newest version.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Tag must match package.json
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $version" >&2
+            exit 1
+          fi
+      - run: npm test
+      - name: Pack
+        run: |
+          npm pack
+          cp "code-reviewer-${GITHUB_REF_NAME#v}.tgz" code-reviewer.tgz
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: code-reviewer*.tgz
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" code-reviewer.tgz "code-reviewer-${GITHUB_REF_NAME#v}.tgz" \
+            --title "Code Reviewer $GITHUB_REF_NAME" --notes-file CHANGELOG.md

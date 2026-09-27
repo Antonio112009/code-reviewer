@@ -1,0 +1,16 @@
+name: JavaScript testing
+description: Test code for Jest, Vitest, node:test, Testing Library, Playwright and Cypress - mocking, fake timers, runner configuration and version changes, async DOM queries and E2E waiting/isolation. Detected on test and spec files, __tests__/e2e/cypress folders, test-runner configs and imports of test frameworks.
+category: framework
+tier: full
+priority: 50
+detect:
+  languages: [javascript, typescript]
+  files:
+    - '**/*.{test,spec}.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'
+    - '**/*.cy.{js,jsx,ts,tsx}'
+    - '**/{__tests__,__mocks__,e2e,cypress,playwright,test,tests}/**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'
+    - '**/{jest,vitest,vite,playwright,cypress}.config.{js,cjs,mjs,ts,mts,cts}'
+    - '**/{jest.setup,vitest.setup,setupTests,test-setup}.{js,mjs,ts,mts,jsx,tsx}'
+  content:
+    - '\bfrom\s*[''"](?:vitest(?:/config)?|@jest/globals|@playwright/test|cypress|@testing-library/[\w-]+|node:test)[''"]'
+    - '\b(?:jest|vi)\.(?:fn|mock|spyOn|useFakeTimers)\s*\(|\bcy\.[a-z]\w*\s*\('

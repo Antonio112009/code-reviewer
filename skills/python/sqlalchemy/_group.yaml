@@ -1,0 +1,14 @@
+name: SQLAlchemy
+description: SQLAlchemy 1.4, 2.0 and 2.1 ORM and Core (sessions, engines and pools, relationship loading, the asyncio extension, bulk DML) plus Alembic migrations, also used through Flask-SQLAlchemy and SQLModel. Detected when the package depends on SQLAlchemy or Alembic and the file imports sqlalchemy, sqlmodel, flask_sqlalchemy or alembic, or is an Alembic migration.
+category: database
+priority: 60
+detect:
+  stack: [orm.sqlalchemy]
+  files:
+    - "**/alembic/versions/*.py"
+    - "**/migrations/versions/*.py"
+    - "**/{alembic,migrations}/env.py"
+    - "**/requirements*.{txt,in}"
+    - "**/pyproject.toml"
+  content:
+    - '^[ \t]*(?:from|import)[ \t]+(?:sqlalchemy|sqlmodel|flask_sqlalchemy|alembic)\b'

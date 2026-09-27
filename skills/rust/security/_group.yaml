@@ -1,0 +1,6 @@
+name: Rust security
+description: Security pitfalls specific to Rust std APIs and crates (paths and archives, secrets in Debug/tracing, crypto crates, TLS configuration, JWT validation). Complements the cross-cutting security skills; each skill matches its APIs.
+category: security
+priority: 70
+detect:
+  languages: [rust]

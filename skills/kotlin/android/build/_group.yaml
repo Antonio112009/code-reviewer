@@ -1,0 +1,7 @@
+name: Android build and release
+description: Android Gradle Plugin 8–9 build configuration, R8/ProGuard keep rules and release settings. Detected for Gradle build files, gradle.properties and R8/ProGuard rule files of Android modules.
+category: infra
+priority: 60
+detect:
+  languages: [kotlin, text]
+  files: ["**/build.gradle", "**/build.gradle.kts", "**/*.pro", "**/gradle.properties"]

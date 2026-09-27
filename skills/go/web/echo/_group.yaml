@@ -1,0 +1,8 @@
+name: Echo
+description: labstack/echo v4 (security fixes until 2026-12-31) and v5 (January 2026, handlers take *echo.Context). Detected when the project depends on Echo and the file imports it or uses echo.Context, echo.Echo or echo.Group.
+category: framework
+detect:
+  stack: [framework.echo]
+  content:
+    - 'github\.com/labstack/echo/v[45]'
+    - '\becho\.(?:Context|Echo|Group|HandlerFunc|HTTPError|MiddlewareFunc)\b'

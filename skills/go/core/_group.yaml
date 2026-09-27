@@ -1,0 +1,7 @@
+name: Go core language and standard library
+description: Language semantics and standard-library traps any Go file can hit (loop variables, nil, slices and maps, defer/panic, strings, time, encoding/json, io and files). Detected for every .go file; each skill triggers on the constructs it covers.
+category: language
+priority: 55
+detect:
+  languages: [go]
+  files: ['*.go']

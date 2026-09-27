@@ -1,0 +1,7 @@
+name: Go security
+description: Go-specific vulnerability sinks and unsafe standard-library or library defaults (templates, os/exec, file paths and archives, resource limits, TLS, randomness, input decoding, debug endpoints, JWT). Detected for every .go file; each skill triggers on the APIs it covers.
+category: security
+priority: 75
+detect:
+  languages: [go]
+  files: ['*.go']

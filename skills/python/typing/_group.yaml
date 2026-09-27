@@ -1,0 +1,10 @@
+name: Python type hints at runtime
+description: Runtime behaviour of annotations and typing constructs (typing, typing_extensions, annotationlib, PEP 563/649) — the gaps a static type checker does not report. Detected in .py files that import typing helpers, use postponed annotations or read __annotations__.
+category: language
+priority: 50
+detect:
+  languages: [python]
+  content:
+    - "\\b(?:typing|typing_extensions|annotationlib)\\b"
+    - "\\bfrom\\s+__future__\\s+import\\s+annotations\\b"
+    - "\\b__annotations__\\b"

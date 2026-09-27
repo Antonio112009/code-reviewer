@@ -1,0 +1,8 @@
+name: Symfony
+description: Symfony 6.4–8.x applications (security config, voters, forms, request mapping and Serializer, Messenger, HttpClient, Lock/Cache, API Platform). Detected when the stack has framework.symfony and the file is Symfony code or config (src/, config/, .env) or uses Symfony/API Platform classes and attributes.
+category: framework
+priority: 62
+detect:
+  stack: [framework.symfony]
+  files: ["**/src/**/*.php", "**/config/**/*.{yaml,yml,php,xml}", "**/.env", "**/.env.*"]
+  content: ["\\buse (?:Symfony|ApiPlatform)\\\\", "#\\[(?:Route|AsController|AsMessageHandler|IsGranted|MapEntity|MapRequestPayload|MapQueryString|ApiResource)\\b"]

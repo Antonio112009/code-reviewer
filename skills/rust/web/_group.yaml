@@ -1,0 +1,6 @@
+name: Rust web and HTTP
+description: HTTP servers and clients written in Rust (axum, actix-web, hyper, reqwest). Grouping folder; the framework folders below detect themselves, HTTP-client skills match client APIs.
+category: framework
+priority: 60
+detect:
+  languages: [rust]

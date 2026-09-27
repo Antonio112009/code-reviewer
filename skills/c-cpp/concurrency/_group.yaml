@@ -1,0 +1,7 @@
+name: C/C++ concurrency
+description: Threads, atomics, locks, condition variables, signal handlers and fork in C and C++ (std::thread/jthread/async, C11 threads, POSIX threads). Detected by a C/C++ source or header path; every skill adds a signal on the threading APIs the change uses.
+category: language
+priority: 65
+detect:
+  files:
+    - '*.{c,h,cc,cpp,cxx,c++,hh,hpp,hxx,ipp,inl,tpp,cppm,ixx,cu,cuh,ino}'

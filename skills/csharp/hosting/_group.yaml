@@ -1,0 +1,12 @@
+name: .NET Generic Host (DI, options, hosted services, logging)
+description: Microsoft.Extensions.* APIs shared by ASP.NET Core, worker services and console hosts — dependency-injection lifetimes, options/configuration binding, BackgroundService and ILogger. Detected by those APIs in .cs files or by appsettings*.json.
+category: framework
+priority: 62
+detect:
+  languages: [csharp, json]
+  files: ["appsettings*.json"]
+  content:
+    - 'Microsoft\.Extensions\.(?:DependencyInjection|Hosting|Options|Configuration|Logging)\b'
+    - '\bI(?:ServiceCollection|ServiceProvider|ServiceScopeFactory|HostedService|Configuration|Options|OptionsMonitor|OptionsSnapshot|Logger|LoggerFactory|HostApplicationLifetime)\b'
+    - '\b(?:BackgroundService|WebApplication|HostApplicationBuilder|LoggerMessage)\b'
+    - '\bAdd(?:Singleton|Scoped|Transient|HostedService|Options|Keyed\w+)\b'

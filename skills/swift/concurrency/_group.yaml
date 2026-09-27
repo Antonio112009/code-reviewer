@@ -1,0 +1,11 @@
+name: Swift concurrency
+description: async/await, actors, Sendable, tasks, continuations, AsyncSequence/Combine streams and legacy GCD (Swift 5.5+, strict checking in the Swift 6 language mode, approachable concurrency in 6.2+). Detected when the file uses concurrency APIs or changes concurrency build settings.
+category: language
+priority: 62
+detect:
+  content:
+    - '\b(?:async|await|actor|Task|Sendable|MainActor|nonisolated|AsyncStream|AsyncThrowingStream|AsyncSequence|DispatchQueue|DispatchGroup|DispatchSemaphore|OperationQueue|NSLock|OSAllocatedUnfairLock|Mutex|os_unfair_lock)\b'
+    - '\bwith(?:Checked|Unsafe)(?:Throwing)?Continuation\b|\bwith(?:Throwing)?(?:Discarding)?TaskGroup\b'
+    - '^[ \t]*import[ \t]+Combine\b|\b(?:AnyCancellable|PassthroughSubject|CurrentValueSubject)\b|@Published\b'
+    - '\bcompletion(?:Handler)?\s*[:(]'
+    - '\bSWIFT_(?:STRICT_CONCURRENCY|DEFAULT_ACTOR_ISOLATION|APPROACHABLE_CONCURRENCY|UPCOMING_FEATURE_\w+|VERSION)\b|\.(?:defaultIsolation|enableUpcomingFeature|swiftLanguageMode)\b'

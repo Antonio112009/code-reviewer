@@ -1,0 +1,17 @@
+name: Spring Framework and Spring Boot
+description: Spring Framework 5.3–7.0 and Spring Boot 2.7–4.1 applications (Java/Kotlin code, application*/bootstrap* config, build files). Detected when the package depends on Spring (framework.spring) and the file imports org.springframework or Bean Validation, or is a Spring config/build file.
+category: framework
+priority: 62
+detect:
+  stack: [framework.spring]
+  files:
+    - "**/application*.{properties,yml,yaml}"
+    - "**/bootstrap*.{properties,yml,yaml}"
+    - "**/META-INF/spring.factories"
+    - "**/META-INF/spring/*.imports"
+    - "**/pom.xml"
+    - "**/build.gradle"
+    - "**/build.gradle.kts"
+  content:
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.springframework\.'
+    - '^[ \t]*import[ \t]+(?:jakarta|javax)\.validation\.'

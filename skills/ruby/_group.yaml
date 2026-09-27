@@ -1,0 +1,11 @@
+name: Ruby
+description: Ruby code (.rb, .rake, Gemfile, ERB).
+category: language
+detect:
+  languages:
+    - ruby
+    - text
+  files:
+    - "**/*.{rb,rake,ru,gemspec,erb}"
+    - "**/Gemfile"
+    - "**/Rakefile"

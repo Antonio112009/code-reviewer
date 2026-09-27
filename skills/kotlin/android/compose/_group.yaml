@@ -1,0 +1,9 @@
+name: Jetpack Compose
+description: Jetpack Compose UI on Android (Compose compiler bundled with Kotlin 2.x, strong skipping on by default since Kotlin 2.0.20) — state, side effects, stability and recomposition cost, lazy lists and accessibility semantics. Detected when a Kotlin file imports androidx.compose or declares @Composable functions.
+category: framework
+priority: 62
+detect:
+  languages: [kotlin]
+  content:
+    - '^import\s+androidx\.compose\.'
+    - '@Composable\b'

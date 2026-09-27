@@ -1,0 +1,13 @@
+name: Blazor
+description: Blazor components (.razor and .razor.cs) in Blazor Web App (.NET 8+ render modes), Blazor Server and WebAssembly apps, plus their Program.cs registration. Detected in ASP.NET Core projects by .razor files or Razor component APIs.
+category: framework
+priority: 64
+detect:
+  stack: [framework.aspnet]
+  languages: [csharp, text]
+  files: ["*.razor", "*.razor.cs"]
+  content:
+    - 'Microsoft\.AspNetCore\.Components\b'
+    - '\b(?:ComponentBase|OwningComponentBase|IJSRuntime|IJSObjectReference|RenderFragment|NavigationManager|AuthenticationStateProvider|EditForm|EditContext)\b'
+    - '\[(?:Parameter|CascadingParameter|Inject|JSInvokable|SupplyParameterFromForm|PersistentState)\b'
+    - '\b(?:AddRazorComponents|AddInteractiveServerComponents|AddInteractiveWebAssemblyComponents|MapRazorComponents|AddServerSideBlazor)\b'

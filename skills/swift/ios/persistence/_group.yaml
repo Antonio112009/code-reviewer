@@ -1,0 +1,7 @@
+name: Core Data and SwiftData persistence
+description: Apple persistence frameworks — Core Data (NSPersistentContainer, NSPersistentCloudKitContainer) and SwiftData (iOS 17+, @Model/ModelContext). Detected when the file imports CoreData or SwiftData, or is a Core Data model file.
+category: framework
+priority: 62
+detect:
+  files: ['**/*.xcdatamodel/contents']
+  content: ['^[ \t]*(?:@\w+[ \t]+)?import[ \t]+(?:\w+[ \t]+)?(?:CoreData|SwiftData)\b']

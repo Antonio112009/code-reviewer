@@ -1,0 +1,15 @@
+name: Python tests (pytest, unittest)
+description: Test code for pytest 8–9 (with pytest-asyncio 1.x) and unittest / unittest.mock. Detected on Python test paths (test_*.py, *_test.py, tests/, conftest.py) or .py files that import pytest or unittest.
+category: framework
+tier: full
+priority: 50
+detect:
+  languages: [python]
+  files:
+    - "**/test_*.py"
+    - "**/*_test.py"
+    - "**/tests/**/*.py"
+    - "**/test/**/*.py"
+    - "**/conftest.py"
+  content:
+    - "^[ \\t]*(?:import|from)\\s+(?:pytest|pytest_asyncio|unittest)\\b"

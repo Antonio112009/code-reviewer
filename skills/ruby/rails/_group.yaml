@@ -1,0 +1,7 @@
+name: Ruby on Rails
+description: Rails applications. Detected when the project depends on rails / activerecord.
+category: framework
+detect:
+  stack:
+    - framework.rails
+    - orm.activerecord

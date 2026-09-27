@@ -1,0 +1,12 @@
+name: Quarkus
+description: Quarkus 3.x applications (Quarkus REST, ArC CDI, Hibernate ORM/Reactive with Panache, security, native images) in Java/Kotlin and application.properties|yaml. Detected when the package depends on Quarkus and the file imports Quarkus/SmallRye/Vert.x/Jakarta REST/CDI/MicroProfile APIs or is a config file.
+category: framework
+priority: 62
+detect:
+  stack: [framework.quarkus]
+  files:
+    - "**/application*.{properties,yml,yaml}"
+  content:
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?io\.(?:quarkus|smallrye|vertx)\.'
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?(?:jakarta|javax)\.(?:ws\.rs|enterprise|inject|transaction|annotation\.security)\.'
+    - '^[ \t]*import[ \t]+org\.eclipse\.microprofile\.'

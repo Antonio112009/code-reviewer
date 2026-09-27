@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    environment:
+      MONGO_URL: mongodb://mongo:27017/app
+  mongo:
+    image: mongo:8
+  search:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.0
+  analytics:
+    image: clickhouse/clickhouse-server:25.8
+  queue:
+    image: rabbitmq:4-management

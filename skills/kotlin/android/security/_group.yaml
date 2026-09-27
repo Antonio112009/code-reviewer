@@ -1,0 +1,4 @@
+name: Android security
+description: Android-specific attack surface — exported components and broadcasts, incoming intents and deep links, PendingIntent, WebView, content and file providers, data at rest and backups, network security configuration. Inherits Android detection; each skill adds its own API or manifest signals.
+category: security
+priority: 70

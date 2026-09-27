@@ -1,0 +1,16 @@
+name: C and C++
+description: C (C99–C23) and C++ (C++11–C++26) sources and headers plus their CMake, Meson and Make build files. Detected by the file type — .c/.h, .cc/.cpp/.cxx/.hpp/.hh/.ipp/.tpp/.inl, modules (.cppm/.ixx), CUDA (.cu), Arduino (.ino) — or a CMakeLists.txt, *.cmake, meson.build or Makefile path.
+category: language
+priority: 55
+detect:
+  # .ino, CMake and Meson files have the `text` language, Makefiles `makefile`; the path signals below keep
+  # unrelated text files out.
+  languages: [c, cpp, text, makefile]
+  files:
+    - '*.{c,h,cc,cpp,cxx,c++,hh,hpp,hxx,ipp,inl,tpp,cppm,ixx,cu,cuh,ino}'
+    - 'CMakeLists.txt'
+    - '*.cmake'
+    - 'meson.build'
+    - 'Makefile'
+    - 'GNUmakefile'
+    - '*.mk'

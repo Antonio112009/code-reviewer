@@ -1,0 +1,7 @@
+name: C/C++ security
+description: Attacker-facing C and C++ code — format strings, command execution and privilege drops, filesystem races, parsing of untrusted binary input, secrets in memory and randomness. Detected by a C/C++ source or header path; every skill adds a signal on the sensitive APIs the change uses.
+category: security
+priority: 75
+detect:
+  files:
+    - '*.{c,h,cc,cpp,cxx,c++,hh,hpp,hxx,ipp,inl,tpp,cppm,ixx,cu,cuh,ino}'

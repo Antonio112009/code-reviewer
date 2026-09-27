@@ -1,0 +1,11 @@
+name: Spring Security
+description: Spring Security 5.8–7.1 configuration and usage — SecurityFilterChain rules, method security, authentication, OAuth2 resource servers, CSRF and CORS. Detected when the file imports org.springframework.security or Spring CORS types, uses @CrossOrigin, or is a Spring config file.
+category: security
+priority: 74
+detect:
+  files:
+    - "**/application*.{properties,yml,yaml}"
+  content:
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.springframework\.security\.'
+    - '^[ \t]*import[ \t]+org\.springframework\.web\.cors\.'
+    - '@CrossOrigin\b'

@@ -1,0 +1,9 @@
+name: Go net/http
+description: Standard-library HTTP servers, handlers, middleware, ServeMux routing, clients and httputil.ReverseProxy (also underneath Gin, Echo and chi). Detected when a .go file imports net/http or uses its handler, request, client or server types.
+category: framework
+priority: 60
+detect:
+  languages: [go]
+  content:
+    - '"net/http(?:/httputil|/httptest)?"'
+    - '\bhttp\.(?:Handler|HandlerFunc|ResponseWriter|Request|Client|Server|Transport|ServeMux)\b'

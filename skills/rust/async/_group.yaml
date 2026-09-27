@@ -1,0 +1,7 @@
+name: Async Rust (tokio)
+description: async/await code on tokio 1.x (tasks, select!, timers, channels, async locks) and the futures crate. Detected when a Rust file uses async fn/.await or tokio/futures APIs.
+category: language
+priority: 60
+detect:
+  languages: [rust]
+  content: ['\basync\s+(?:fn|move|\{)', '\.await\b', '\btokio::', '#\[tokio::', '\bfutures(?:_util)?::']

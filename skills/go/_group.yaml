@@ -1,0 +1,7 @@
+name: Go
+description: Go source files and Go module files (go.mod, go.work); checks target Go 1.21–1.27 and name the go.mod `go` version wherever behaviour differs. Detected when the chunk contains a .go, go.mod or go.work file.
+category: language
+priority: 55
+detect:
+  languages: [go, text]
+  files: ['*.go', 'go.mod', 'go.work']

@@ -1,0 +1,94 @@
+{
+  "name": "code-reviewer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Next-level LLM code review: version-aware skills, static hints and self-critique for fewer false positives. Works with Claude Code, Codex, Copilot, Gemini and AWS Bedrock.",
+  "keywords": [
+    "code-review",
+    "code-reviewer",
+    "llm",
+    "ai",
+    "cli",
+    "static-analysis",
+    "security",
+    "claude-code",
+    "codex",
+    "copilot",
+    "gemini",
+    "bedrock",
+    "agent-client-protocol"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "author": "antonio112009",
+  "homepage": "https://github.com/antonio112009/code-reviewer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/antonio112009/code-reviewer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/antonio112009/code-reviewer/issues"
+  },
+  "bin": {
+    "code-reviewer": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "skills",
+    "README.md",
+    "CHANGELOG.md",
+    "docs/assets/logo.svg",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "^1.5.0",
+    "@ai-sdk/amazon-bedrock": "^5.0.97",
+    "@aws-sdk/credential-providers": "^3.1141.0",
+    "@clack/prompts": "^1.8.1",
+    "@modelcontextprotocol/server": "^2.1.0",
+    "@secretlint/core": "^13.0.6",
+    "@secretlint/secretlint-rule-preset-recommend": "^13.0.6",
+    "ai": "^7.0.118",
+    "aws4fetch": "^1.0.20",
+    "commander": "^15.0.0",
+    "es-module-lexer": "^3.0.2",
+    "execa": "^10.0.1",
+    "gpt-tokenizer": "^4.0.0",
+    "log-update": "^8.0.0",
+    "p-limit": "^7.3.3",
+    "picocolors": "^1.1.1",
+    "picomatch": "^4.0.7",
+    "smol-toml": "^1.9.0",
+    "terminal-link": "^5.0.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.14",
+    "@modelcontextprotocol/client": "^2.1.0",
+    "@types/node": "^26.6.3",
+    "@types/picomatch": "^4.0.3",
+    "tsdown": "^0.23.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
+  }
+}

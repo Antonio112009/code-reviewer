@@ -1,0 +1,8 @@
+name: WordPress
+description: WordPress 6.x–7.0 plugins and themes (hooks, nonces and capabilities, REST routes, $wpdb, escaping, options). No stack id exists, so it is detected by WordPress paths (wp-content, wp-config.php) or WordPress APIs in the file (add_action/add_filter, $wpdb, register_rest_route, wp_* calls, plugin header).
+category: framework
+priority: 62
+detect:
+  languages: [php]
+  files: ["**/wp-content/**/*.php", "**/wp-config.php", "**/wp-includes/**/*.php", "**/wp-admin/**/*.php"]
+  content: ["\\badd_(?:action|filter)\\s*\\(\\s*['\"]", "\\$wpdb\\b", "\\bregister_rest_route\\s*\\(", "\\bwp_(?:enqueue_script|verify_nonce|remote_get|remote_post|insert_post|safe_redirect|send_json)\\s*\\(", "^[ \\t/*]{0,6}(?:Plugin|Theme) Name:"]

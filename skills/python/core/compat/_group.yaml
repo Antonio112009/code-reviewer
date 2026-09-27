@@ -1,0 +1,7 @@
+name: Newer Python features on older minimums
+description: Syntax and stdlib APIs newer than the project's declared minimum Python (requires-python, .python-version). One skill per release, each gated on a minimum below that release, so projects already on it never load it.
+category: language
+priority: 62
+detect:
+  languages: [python]
+  versions: { lang.python: "<3.15" }

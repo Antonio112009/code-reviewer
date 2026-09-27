@@ -1,0 +1,8 @@
+name: Doctrine ORM / DBAL
+description: "Doctrine ORM 2.20/3.x and DBAL 3/4 (entities, UnitOfWork, DQL/QueryBuilder, lifecycle events, mapping, migrations). Detected when the stack has orm.doctrine and the file is an entity, repository, mapping or migration, or uses Doctrine APIs (Doctrine namespace imports, ORM mapping attributes, EntityManager calls)."
+category: database
+priority: 60
+detect:
+  stack: [orm.doctrine]
+  files: ["**/*.orm.xml", "**/Entity/**/*.php", "**/Repository/**/*.php", "**/migrations/**/*.php", "**/Migrations/**/*.php"]
+  content: ["\\buse Doctrine\\\\", "#\\[ORM\\\\", "\\bDoctrine\\\\(?:ORM|DBAL|Migrations|Persistence)\\\\", "\\bEntityManager(?:Interface)?\\b|\\bManagerRegistry\\b", "->(?:getRepository|createQueryBuilder|persist|flush)\\s*\\("]

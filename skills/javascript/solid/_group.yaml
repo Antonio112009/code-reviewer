@@ -1,0 +1,9 @@
+name: SolidJS
+description: SolidJS 1.x components (signals, stores, control flow) plus Solid Router data APIs and SolidStart server functions; Solid 2.0 is only a release candidate. Detected when the project depends on solid-js or @solidjs/start and the chunk imports solid-js/@solidjs packages or declares "use server".
+category: framework
+priority: 60
+detect:
+  stack: [framework.solid]
+  content:
+    - "from ['\"](?:solid-js(?:/[a-z]+)?|@solidjs/[a-z-]+(?:/[a-z-]+)?)['\"]"
+    - "['\"]use server['\"]"

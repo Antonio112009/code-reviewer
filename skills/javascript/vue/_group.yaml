@@ -1,0 +1,12 @@
+name: Vue
+description: Vue 3 single-file components, Composition and Options API, Pinia and Vue Router (vue 3.3–3.5 stable, 3.6 RC; Vue 2.7 legacy). Detected when the project depends on vue (or nuxt) and the chunk has a .vue file or code importing vue, pinia or vue-router or calling Vue reactivity APIs.
+category: framework
+priority: 60
+detect:
+  stack: [framework.vue]
+  files: ["**/*.vue"]
+  content:
+    - "from ['\"](?:vue|pinia|vue-router|@vue/[a-z-]+|@vueuse/[a-z-]+)['\"]"
+    - "require\\(['\"](?:vue|pinia|vue-router)['\"]\\)"
+    - "\\b(?:defineComponent|defineStore|createApp|createSSRApp)\\s*\\("
+    - "(?<![.\\w$])(?:ref|reactive|computed|watch|watchEffect|shallowRef|toRef|toRefs)\\s*(?:<[^>\\n]{0,80}>)?\\("

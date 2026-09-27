@@ -1,0 +1,9 @@
+name: Ktor
+description: Ktor 2.x–3.6 servers and HTTP clients from JetBrains (routing, plugins, authentication, sessions, content negotiation, HttpClient). Detected when a Kotlin file imports io.ktor, or for Ktor application.conf/application.yaml configuration.
+category: framework
+priority: 62
+detect:
+  languages: [kotlin, text, yaml]
+  content:
+    - '^import\s+io\.ktor\.'
+    - '^\s*ktor\s*[:{]'

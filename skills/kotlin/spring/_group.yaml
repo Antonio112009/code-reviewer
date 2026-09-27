@@ -1,0 +1,10 @@
+name: Spring with Kotlin
+description: Kotlin-specific pitfalls in Spring Boot 3–4 / Spring Framework 6–7 applications — final classes versus proxies, coroutines and transactions, Spring Data nullability, JPA entities, validation annotations and Jackson setup. Detected when the module uses Spring and the Kotlin file imports org.springframework or jakarta/javax persistence or validation.
+category: framework
+priority: 62
+detect:
+  stack: [framework.spring]
+  languages: [kotlin]
+  content:
+    - '^import\s+org\.springframework\.'
+    - '^import\s+(?:jakarta|javax)\.(?:persistence|validation)\.'

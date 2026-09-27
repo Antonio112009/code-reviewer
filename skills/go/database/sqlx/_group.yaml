@@ -1,0 +1,8 @@
+name: sqlx
+description: jmoiron/sqlx extensions over database/sql (Get/Select, StructScan, named queries, In/Rebind). Detected when the project depends on sqlx and the file imports github.com/jmoiron/sqlx or uses sqlx types.
+category: database
+detect:
+  stack: [orm.sqlx]
+  content:
+    - 'github\.com/jmoiron/sqlx'
+    - '\bsqlx\.(?:DB|Tx|In|Named|Connect|Open|MustConnect)\b'

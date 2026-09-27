@@ -1,0 +1,10 @@
+name: Android local data
+description: On-device persistence — Room 2.x (androidx.room) and Room 3 (androidx.room3), SharedPreferences and Jetpack DataStore. Detected when the file imports these libraries, uses SharedPreferences or declares Room DAO/database/entity classes.
+category: database
+priority: 62
+detect:
+  content:
+    - '^import\s+androidx\.(?:room3?|datastore|sqlite)\.'
+    - '\bSharedPreferences\b'
+    - '\bgetSharedPreferences\s*\('
+    - '@(?:Dao|Database)\b'

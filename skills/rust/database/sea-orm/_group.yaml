@@ -1,0 +1,7 @@
+name: SeaORM
+description: SeaORM 1.x–2.x entities, ActiveModel CRUD, relations, transactions and raw SQL. Detected when a Rust file uses sea_orm APIs (there is no stack id for SeaORM, so detection is content-based).
+category: database
+priority: 62
+detect:
+  languages: [rust]
+  content: ['\bsea_orm::', '\bDeriveEntityModel\b', '\bActiveModel(?:Trait|Behavior)?\b', '\bDatabaseConnection\b', '\bEntity::(?:find|insert|update|delete)']

@@ -1,0 +1,10 @@
+name: Android background work
+description: WorkManager 2.9–2.12, foreground services, alarms and broadcast receivers under the background-execution limits of Android 12–17. Detected when the file uses these APIs or the manifest declares services or receivers.
+category: framework
+priority: 64
+detect:
+  content:
+    - '^import\s+androidx\.work\.'
+    - '\b(?:Service|BroadcastReceiver|AlarmManager|JobScheduler|JobService|WorkManager)\b'
+    - '<(?:service|receiver)\b'
+    - '\b(?:startForegroundService|registerReceiver|setExact\w*|setAlarmClock)\s*\('

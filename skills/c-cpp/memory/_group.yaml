@@ -1,0 +1,7 @@
+name: C/C++ memory safety
+description: Buffers, C strings, heap allocation, object lifetimes and ownership (malloc/free, new/delete, smart pointers) in C and C++ sources. Detected by a C/C++ source or header path; every skill adds a signal on the APIs or syntax the change touches.
+category: language
+priority: 65
+detect:
+  files:
+    - '*.{c,h,cc,cpp,cxx,c++,hh,hpp,hxx,ipp,inl,tpp,cppm,ixx,cu,cuh,ino}'

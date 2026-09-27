@@ -1,0 +1,15 @@
+name: Remix / React Router framework
+description: Remix v2 and React Router 7–8 framework mode (loaders, actions, route modules, sessions, middleware). Detected when the project uses @remix-run/* or @react-router/dev and the file is a route, root, entry, config or .server module, imports react-router / @remix-run/* / @react-router/*, or exports a loader or action.
+category: framework
+priority: 64
+detect:
+  stack: [framework.remix]
+  files:
+    - "**/app/routes/**"
+    - "**/app/{root,routes,entry.server,entry.client}.{js,jsx,ts,tsx}"
+    - "**/{react-router,remix}.config.{js,mjs,cjs,ts}"
+    - "**/*.server.{js,jsx,ts,tsx}"
+    - "**/.server/**"
+  content:
+    - "from\\s*['\"](?:@remix-run/[\\w/-]+|react-router(?:-dom)?(?:/[\\w/-]+)?|@react-router/[\\w/-]+)['\"]"
+    - "\\bexport\\s+(?:async\\s+)?function\\s+(?:loader|action|clientLoader|clientAction)\\b"

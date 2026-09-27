@@ -1,0 +1,7 @@
+name: C# language and base library
+description: C# language features and BCL APIs (strings/culture, dates, numbers, collections, LINQ, disposal, exceptions, System.Text.Json, Regex, HttpClient) in .cs files and Razor code blocks. Each skill below needs its own API signal.
+category: language
+priority: 55
+detect:
+  languages: [csharp, text]
+  files: ["*.cs", "*.razor", "*.cshtml"]

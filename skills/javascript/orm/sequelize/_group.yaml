@@ -1,0 +1,10 @@
+name: Sequelize
+description: Sequelize v6 (and sequelize-typescript / @nestjs/sequelize) models, queries, hooks, transactions and migrations. Detected when the stack has orm.sequelize and the file imports sequelize, uses the sequelize instance or queryInterface, or calls Sequelize-specific model methods.
+category: database
+priority: 60
+detect:
+  stack: [orm.sequelize]
+  content:
+    - "(?:from|require\\()\\s*['\"](?:sequelize|sequelize-typescript|@sequelize/core|@nestjs/sequelize)['\"]"
+    - "\\b(?:sequelize|Sequelize)\\.(?:query|transaction|define|sync|literal|fn|col|where|cast)\\s*\\("
+    - "\\bqueryInterface\\.\\w+\\s*\\(|\\.(?:findByPk|findAndCountAll|findOrCreate|bulkCreate)\\s*\\("

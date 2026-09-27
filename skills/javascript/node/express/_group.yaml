@@ -1,0 +1,10 @@
+name: Express
+description: Express 4.x/5.x HTTP servers — routers, middleware, body parsers, express-session, static files and views. Detected when the stack has framework.express and the file imports express or an Express middleware package, or defines (req, res, next) handlers.
+category: framework
+priority: 60
+detect:
+  stack: [framework.express]
+  content:
+    - "(?:from|require\\()\\s*['\"](?:express|express-session|cookie-session|cookie-parser|body-parser|express-rate-limit|multer|serve-static|@as-integrations/express[45])['\"]"
+    - "\\bexpress(?:\\.Router)?\\(\\s*[{)]"
+    - "\\(\\s*req\\b[^()\\n]{0,60},\\s*res\\b"

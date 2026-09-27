@@ -1,0 +1,6 @@
+name: Python performance
+description: CPython hot-path costs with a measurable price — quadratic loops, per-item overhead and memory blow-ups in pure Python and DataFrame code. Detected by the Python file language; skills load only when the change contains the matching pattern.
+category: language
+priority: 45
+detect:
+  languages: [python]

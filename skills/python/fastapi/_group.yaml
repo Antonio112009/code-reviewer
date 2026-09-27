@@ -1,0 +1,12 @@
+name: FastAPI
+description: FastAPI HTTP APIs on Starlette (FastAPI 0.100–0.141 with Pydantic v2, Starlette 0.4x–1.x) — path operations, dependencies, responses, middleware, lifespan, background tasks and WebSockets. Detected when the package depends on fastapi and the file imports fastapi/starlette or is a routers, endpoints or dependencies module.
+category: framework
+priority: 62
+detect:
+  stack: [framework.fastapi]
+  files:
+    - "**/routers/**/*.py"
+    - "**/endpoints/**/*.py"
+    - "**/{dependencies,deps}.py"
+  content:
+    - '^[ \t]*(?:from|import)[ \t]+(?:fastapi|starlette)\b'

@@ -1,0 +1,7 @@
+name: C# async, tasks and threading
+description: async/await, Task/ValueTask, cancellation, locks, timers, channels and shared-state concurrency in C# (any .NET app type). Each skill below needs its own API signal.
+category: language
+priority: 60
+detect:
+  languages: [csharp, text]
+  files: ["*.cs", "*.razor", "*.cshtml"]

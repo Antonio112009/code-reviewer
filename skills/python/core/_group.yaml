@@ -1,0 +1,6 @@
+name: Python core language and standard library
+description: Language semantics and standard-library APIs of CPython 3.9–3.15 (plus the ubiquitous HTTP clients) in .py files. Detected by the Python file language; every skill below adds its own API or syntax signal, so only the topics a change touches are loaded.
+category: language
+priority: 55
+detect:
+  languages: [python]

@@ -1,0 +1,6 @@
+name: JavaScript performance
+description: Runtime cost traps in JS/TS for V8-based runtimes and browsers - accidentally quadratic array/object code, repeated expensive constructions, unbounded or serialized async concurrency and memory leaks. Applies to JS/TS script code; each skill loads only when the changed code uses the costly construct.
+category: language
+priority: 45
+detect:
+  languages: [javascript, typescript, vue, svelte]

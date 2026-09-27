@@ -1,0 +1,7 @@
+name: Android HTTP clients
+description: OkHttp and Retrofit as used in Android modules (Kotlin or Java). Detected when the file imports okhttp3 or retrofit2.
+category: framework
+priority: 62
+detect:
+  content:
+    - '^import\s+(?:okhttp3|retrofit2)\.'

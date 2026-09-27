@@ -1,0 +1,9 @@
+name: Android lifecycle
+description: Activity and Fragment lifecycle, ViewModel and lifecycle-aware Flow/LiveData collection (androidx.lifecycle 2.6–2.11, androidx.fragment, androidx.activity). Detected when the file uses androidx lifecycle, fragment, activity or appcompat APIs or declares Activity/Fragment/ViewModel classes.
+category: framework
+priority: 62
+detect:
+  content:
+    - '^import\s+androidx\.(?:lifecycle|fragment|activity|appcompat)\.'
+    - '^import\s+android\.app\.(?:Activity|Fragment)\b'
+    - '\b(?:AppCompatActivity|ComponentActivity|FragmentActivity|Fragment|DialogFragment|ViewModel|AndroidViewModel)\s*\('

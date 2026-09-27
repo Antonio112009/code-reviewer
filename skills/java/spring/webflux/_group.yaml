@@ -1,0 +1,8 @@
+name: Spring WebFlux and Project Reactor
+description: Reactive Spring code (WebFlux handlers, reactive repositories, WebClient pipelines) built on Project Reactor Mono/Flux. Detected when the file imports reactor.core/reactor.util or org.springframework.web.reactive.
+category: framework
+priority: 64
+detect:
+  content:
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?reactor\.(?:core|util)\.'
+    - '^[ \t]*import[ \t]+org\.springframework\.web\.reactive\.'

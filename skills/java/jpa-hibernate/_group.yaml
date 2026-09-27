@@ -1,0 +1,12 @@
+name: JPA and Hibernate ORM
+description: Jakarta/Java Persistence with Hibernate ORM 5.6–7.x — entities, EntityManager/Session, JPQL/HQL, Spring Data JPA and Quarkus Panache. Detected when the package uses Hibernate/JPA (orm.hibernate) and the file imports jakarta/javax.persistence, org.hibernate, Spring Data JPA or Quarkus Hibernate.
+category: database
+priority: 62
+detect:
+  stack: [orm.hibernate]
+  languages: [java, kotlin]
+  content:
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?(?:jakarta|javax)\.persistence\.'
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.hibernate\.'
+    - '^[ \t]*import[ \t]+org\.springframework\.data\.jpa\.'
+    - '^[ \t]*import[ \t]+io\.quarkus\.hibernate\.'

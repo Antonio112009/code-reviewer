@@ -1,0 +1,6 @@
+name: Flutter
+description: Flutter apps. Detected when the project depends on flutter.
+category: framework
+detect:
+  stack:
+    - framework.flutter

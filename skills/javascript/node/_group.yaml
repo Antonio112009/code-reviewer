@@ -1,0 +1,21 @@
+name: Node.js runtime
+description: Server, CLI and tooling code on Node.js 20-26 (also Bun/Deno node-compat) - built-in modules, process lifecycle, streams, HTTP, child processes, workers, module loading. Detected when the file imports node:*/built-in modules, uses Node globals (process.*, Buffer, __dirname, require), server libraries or handler signatures, sits in server/CLI folders, or is package.json.
+category: language
+priority: 55
+detect:
+  languages: [javascript, typescript, json]
+  files:
+    - '**/package.json'
+    - '**/{server,backend,functions,lambda,lambdas,scripts,bin,cli,jobs,cron,controllers,middleware,middlewares,handlers}/**/*.{js,mjs,cjs,ts,mts,cts}'
+    - '**/{pages,app}/api/**/*.{js,ts}'
+    - '**/*.{controller,gateway,processor,consumer,repository,entity,dto,strategy,middleware,subscriber}.{ts,js}'
+    - '**/server.{js,mjs,cjs,ts,mts,cts}'
+  content:
+    - '(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)[''"](?:node:)?(?:fs|path|http|https|http2|net|tls|dgram|dns|os|child_process|cluster|worker_threads|stream|zlib|crypto|events|util|url|readline|timers|buffer|vm|v8|perf_hooks|async_hooks|module|assert|process|string_decoder|diagnostics_channel|inspector|sqlite|test)(?:/[a-z]+)?[''"]'
+    - '[''"]node:[a-z]'
+    - '\bprocess\.(?!env\b)[a-zA-Z]'
+    - '\bBuffer\.(?:from|alloc|allocUnsafe|concat|byteLength|isBuffer|compare)\b'
+    - '\b__(?:dirname|filename)\b|\bimport\.meta\.(?:dirname|filename)\b|\bmodule\.exports\b|\brequire\s*\(\s*[''"]'
+    - '(?:\bfrom\s*|\brequire\s*\(\s*)[''"](?:express|fastify|koa|hono|@nestjs/[\w-]+|@hapi/hapi|@koa/[\w-]+|@fastify/[\w-]+|socket\.io|ws|undici|axios|got|pino|winston|execa|dotenv(?:/config)?|commander|yargs|bullmq|ioredis|pg|mysql2|mongodb|mongoose|@prisma/client|typeorm|sequelize|knex|drizzle-orm(?:/[\w-]+)?)[''"]'
+    - '\(\s*req\b[^()\n]{0,60},\s*res\b|\bctx\.(?:request|response|throw|state)\b|\b(?:request|reply)\.(?:send|code|header)\s*\('
+    - '@(?:Controller|Module|Resolver|WebSocketGateway|Processor)\s*\(|\bc\.(?:req\.(?:param|query|json|header|valid)|json|text)\s*\('

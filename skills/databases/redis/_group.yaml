@@ -1,0 +1,6 @@
+name: Redis
+description: Redis usage (keys, expiry, locks, pipelines). Detected from Redis clients.
+category: database
+detect:
+  stack:
+    - db.redis

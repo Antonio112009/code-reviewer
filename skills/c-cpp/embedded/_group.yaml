@@ -1,0 +1,15 @@
+name: Embedded C/C++
+description: Microcontroller firmware (ARM Cortex-M, AVR, ESP32, RP2040, nRF; bare metal, CMSIS/HAL, FreeRTOS, Zephyr, Arduino). Detected by MCU/RTOS headers, interrupt handlers, critical sections or raw register addresses in the file, Arduino .ino sketches, or C/C++ files under firmware/ or STM32Cube Core/ folders.
+category: language
+priority: 60
+detect:
+  languages: [c, cpp, text]
+  files:
+    - '*.ino'
+    - '**/firmware/**/*.{c,h,cc,cpp,hpp}'
+    - '**/Core/{Src,Inc}/*.{c,h,cpp,hpp}'
+  content:
+    - '#\s*include\s*[<"](?:stm32\w*|avr/\w+|util/atomic|Arduino|FreeRTOS|freertos/\w+|zephyr/|cmsis_\w+|core_cm\w+|esp_\w+|hardware/\w+|pico/\w+|nrf\w*|fsl_\w+|xil_\w+|msp430\w*)'
+    - '\bISR\s*\(|__attribute__\s*\(\(\s*(?:interrupt|isr|signal)\b|\b\w+_IRQHandler\s*\(|\bIRAM_ATTR\b|#\s*pragma\s+(?:vector|interrupt)\b'
+    - '\b(?:NVIC_\w+|__disable_irq|__enable_irq|__DSB|__DMB|taskENTER_CRITICAL\w*|portENTER_CRITICAL\w*|xTaskCreate\w*)\s*\('
+    - '\(\s*\*\s*\(\s*volatile\s+(?:uint(?:8|16|32)_t|unsigned\s+\w+)\s*\*\s*\)\s*0x[0-9A-Fa-f]+'

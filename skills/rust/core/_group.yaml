@@ -1,0 +1,4 @@
+name: Rust core language and std
+description: Language and standard-library pitfalls (panics, arithmetic, temporaries, iterators, text, std::sync, I/O, processes, edition changes). Inherits Rust detection; every skill below matches the std APIs it covers.
+category: language
+priority: 55

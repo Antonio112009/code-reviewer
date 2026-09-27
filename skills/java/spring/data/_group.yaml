@@ -1,0 +1,7 @@
+name: Spring Data repositories
+description: Spring Data (JPA, JDBC, MongoDB, R2DBC) repositories, derived and @Query methods, paging and sorting. Detected when the file imports org.springframework.data.
+category: database
+priority: 62
+detect:
+  content:
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.springframework\.data\.'

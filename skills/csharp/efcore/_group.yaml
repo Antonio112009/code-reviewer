@@ -1,0 +1,12 @@
+name: Entity Framework Core
+description: EF Core 8–10 — DbContext configuration, LINQ queries, change tracking, SaveChanges/ExecuteUpdate, raw SQL, relationships and migrations. Detected when the project references Microsoft.EntityFrameworkCore* (orm.efcore) and the file uses EF Core APIs or mapping attributes.
+category: database
+priority: 66
+detect:
+  stack: [orm.efcore]
+  languages: [csharp]
+  content:
+    - 'Microsoft\.EntityFrameworkCore\b'
+    - '\b(?:DbContext|DbSet|ModelBuilder|MigrationBuilder|EntityTypeBuilder|IEntityTypeConfiguration|DbContextOptions|IDbContextFactory)\b'
+    - '\.(?:Include|ThenInclude|AsNoTracking|AsSplitQuery|ToListAsync|ToArrayAsync|FirstOrDefaultAsync|SingleOrDefaultAsync|AnyAsync|CountAsync|SaveChanges|SaveChangesAsync|ExecuteUpdate|ExecuteUpdateAsync|ExecuteDelete|ExecuteDeleteAsync|FromSql|FromSqlRaw|FromSqlInterpolated|SqlQuery|SqlQueryRaw|ExecuteSql|ExecuteSqlRaw|ExecuteSqlAsync|ExecuteSqlRawAsync)\b'
+    - '\[(?:Key|Precision|Index|Owned|Keyless|ForeignKey|InverseProperty|Timestamp|ConcurrencyCheck|DatabaseGenerated|NotMapped|Table|Column)\b'

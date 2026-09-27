@@ -1,0 +1,80 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "demo",
+          "version": "1.0.0",
+          "rules": [
+            {
+              "id": "sql-injection",
+              "helpUri": "https://example.com/rules/sql-injection",
+              "properties": { "security-severity": "9.1", "tags": ["security", "external/cwe/cwe-89"] }
+            },
+            {
+              "id": "long-line",
+              "properties": { "tags": ["style"] }
+            },
+            {
+              "id": "null-deref",
+              "defaultConfiguration": { "level": "error" },
+              "properties": { "tags": ["correctness"], "precision": "high" }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "sql-injection",
+          "level": "error",
+          "message": { "text": "User input reaches a SQL query." },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "src/db.ts" },
+                "region": { "startLine": 4, "endLine": 5 }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "long-line",
+          "level": "note",
+          "message": { "text": "Line too long." },
+          "locations": [
+            {
+              "physicalLocation": { "artifactLocation": { "uri": "src/db.ts" }, "region": { "startLine": 1 } }
+            }
+          ]
+        },
+        {
+          "ruleIndex": 2,
+          "message": { "text": "Possible null dereference." },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "file:///tmp/sarif-base/src/util.ts" },
+                "region": { "startLine": 2 }
+              }
+            }
+          ]
+        },
+        { "ruleId": "broken", "locations": "not-an-array" },
+        {
+          "ruleId": "outside",
+          "level": "warning",
+          "message": { "text": "Outside the scanned files." },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": { "uri": "../../etc/passwd" },
+                "region": { "startLine": 1 }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

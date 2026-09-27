@@ -1,0 +1,4 @@
+name: Apple platform app security
+description: On-device security of Apple platform apps (Keychain, local data storage and logging, biometrics, WKWebView bridges, URL schemes and universal links). Inherits the Apple platform app detection; each check activates on the security APIs it covers.
+category: security
+priority: 68

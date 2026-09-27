@@ -1,0 +1,15 @@
+name: Java tests
+description: JUnit 4/5/6, Mockito, AssertJ and Spring Boot test code in Java/Kotlin. Detected by test source paths (src/test, *Test, *Tests, *IT) or test-library imports.
+category: practice
+tier: full
+priority: 45
+detect:
+  languages: [java, kotlin]
+  files:
+    - "**/src/test/**"
+    - "**/src/*Test/**"
+    - "**/*{Test,Tests,IT,TestCase}.{java,kt}"
+  content:
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.(?:junit|mockito|assertj|hamcrest)\.'
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.springframework\.(?:boot\.)?test\.'
+    - '^[ \t]*import[ \t]+(?:static[ \t]+)?io\.quarkus\.test\.'

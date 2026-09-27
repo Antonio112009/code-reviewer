@@ -1,0 +1,12 @@
+name: Go concurrency
+description: Goroutines, channels, sync and sync/atomic, context, golang.org/x/sync (errgroup, semaphore) and time timers. Detected when a .go file starts goroutines or uses channels, sync, context (including r.Context()), errgroup or timers.
+category: language
+priority: 62
+detect:
+  languages: [go]
+  content:
+    - '\bgo\s+(?:func\b|[A-Za-z_][\w.]{0,60}\()'
+    - '\bchan\b'
+    - '"(?:sync|sync/atomic|context|golang\.org/x/sync/errgroup|golang\.org/x/sync/semaphore)"'
+    - '\btime\.(?:After|AfterFunc|Tick|NewTimer|NewTicker)\b'
+    - '\.Context\(\)'

@@ -1,0 +1,11 @@
+name: Java concurrency
+description: JDK concurrency in .java files — threads, locks, java.util.concurrent executors and collections, CompletableFuture and virtual threads (JDK 21+). Detected when the file uses threads, synchronization or java.util.concurrent types.
+category: language
+priority: 62
+detect:
+  languages: [java]
+  content:
+    - '\bjava\.util\.concurrent\b'
+    - '\b(?:synchronized|volatile)\b'
+    - '\b(?:Thread|ThreadLocal|ScopedValue|Runnable|Callable|Executors?|ExecutorService|CompletableFuture|ForkJoinPool)\b'
+    - '\.parallel(?:Stream)?\(\)'

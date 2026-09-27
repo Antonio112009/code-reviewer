@@ -1,0 +1,6 @@
+name: SQL Server
+description: Microsoft SQL Server specifics. Detected from SQL Server drivers or EF Core providers.
+category: database
+detect:
+  stack:
+    - db.sqlserver

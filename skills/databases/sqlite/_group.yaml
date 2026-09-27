@@ -1,0 +1,6 @@
+name: SQLite
+description: SQLite specifics (locking, types, migrations). Detected from SQLite drivers or database files.
+category: database
+detect:
+  stack:
+    - db.sqlite

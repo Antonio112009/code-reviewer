@@ -1,0 +1,16 @@
+name: Celery
+description: Celery 5.4–5.6 task queues (task definitions, calling, retries, results and canvas, beat, worker settings) on Redis, RabbitMQ or SQS brokers. Detected when the package depends on celery and the file imports celery, defines or calls tasks (@shared_task, .delay(), .apply_async()), is a tasks/celery config module or sets Celery options.
+category: framework
+priority: 62
+detect:
+  stack: [framework.celery]
+  files:
+    - "**/tasks.py"
+    - "**/tasks/**/*.py"
+    - "**/{celery,celery_app,celeryconfig,worker}.py"
+  content:
+    - '^[ \t]*(?:from|import)[ \t]+celery\b'
+    - '@(?:shared_task|\w+\.task)\b'
+    - '\.(?:delay|apply_async|delay_on_commit|apply_async_on_commit)\('
+    - '\bCELERY_\w+\s*='
+    - '\b(?:broker_url|result_backend|beat_schedule|task_acks_late|worker_prefetch_multiplier)\b'

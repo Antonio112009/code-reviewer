@@ -1,0 +1,4 @@
+name: Rust error handling
+description: Result/Option handling and error types (std::error::Error, anyhow, thiserror). Inherits Rust detection; skills match error-handling constructs in the change.
+category: language
+priority: 55

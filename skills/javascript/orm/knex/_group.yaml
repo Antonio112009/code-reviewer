@@ -1,0 +1,11 @@
+name: Knex
+description: Knex.js 2.x/3.x query builder (also under Objection.js) — raw SQL, query building, transactions, connection pool and migrations. Detected when the stack has orm.knex and the file imports knex, is a knexfile or uses the knex/trx query API.
+category: database
+priority: 58
+detect:
+  stack: [orm.knex]
+  files: ["**/knexfile.{js,ts,mjs,cjs}"]
+  content:
+    - "(?:from|require\\()\\s*['\"](?:knex|objection)['\"]"
+    - "\\b(?:knex|trx)\\.(?:raw|transaction|schema|fn|ref|destroy)\\b|\\bknex\\s*\\(\\s*['\"][\\w.]+['\"]\\s*\\)"
+    - "\\.(?:whereRaw|orWhereRaw|orderByRaw|havingRaw|joinRaw|onConflict|transacting|forUpdate)\\s*\\("

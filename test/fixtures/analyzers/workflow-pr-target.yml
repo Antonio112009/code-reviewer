@@ -1,0 +1,20 @@
+name: preview
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+permissions: write-all
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: someone/deploy-action@v2
+        with:
+          title: ${{ github.event.pull_request.title }}
+      - name: Greet
+        run: |
+          echo "Building ${{ github.event.pull_request.title }}"
+          curl -fsSL https://example.com/install.sh | bash
+      - run: echo "${{ github.event.issue.body }}"

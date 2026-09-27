@@ -1,0 +1,9 @@
+name: Drizzle ORM
+description: Drizzle ORM 0.3x and 1.x with drizzle-kit — SQL-like query builder, relational queries, schema declarations, transactions and driver setup (node-postgres, postgres.js, Neon, MySQL, SQLite/libSQL, D1). Detected when the stack has orm.drizzle and the file imports drizzle-orm/drizzle-kit or is a drizzle config.
+category: database
+priority: 60
+detect:
+  stack: [orm.drizzle]
+  files: ["**/drizzle.config.{ts,js,mjs,cjs,mts}"]
+  content:
+    - "(?:from|require\\()\\s*['\"](?:drizzle-orm|drizzle-kit)(?:/[\\w/-]+)?['\"]"

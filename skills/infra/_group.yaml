@@ -1,0 +1,3 @@
+name: Infrastructure
+description: Containers, orchestration, infrastructure as code and CI pipelines, detected from their files.
+category: infra

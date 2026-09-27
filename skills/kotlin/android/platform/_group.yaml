@@ -1,0 +1,4 @@
+name: Android platform
+description: Runtime permissions and notifications, intents and package visibility, and the behavior changes that apply when targetSdk is raised to 35, 36 or 37. Inherits Android detection; each skill adds its own API and manifest signals.
+category: framework
+priority: 63

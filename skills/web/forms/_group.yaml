@@ -1,0 +1,9 @@
+name: Web forms
+description: Native HTML form behaviour in any framework — submission, constraint validation, input types and browser autofill. Detected on markup or code containing forms, inputs, FormData or the constraint-validation API.
+category: web
+priority: 55
+detect:
+  languages: [html, javascript, typescript, vue, svelte, php, text]
+  content:
+    - '<(?:form|input|select|textarea|button)\b'
+    - '\b(?:FormData|requestSubmit|setCustomValidity|reportValidity|checkValidity)\b'

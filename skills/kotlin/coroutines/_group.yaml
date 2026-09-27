@@ -1,0 +1,10 @@
+name: Kotlin coroutines
+description: kotlinx.coroutines 1.7–1.11 on JVM, Android and Multiplatform — builders, scopes, dispatchers, cancellation, exception propagation, channels, callback bridges and kotlinx-coroutines-test. Detected when a Kotlin file imports kotlinx.coroutines or declares suspend functions.
+category: language
+priority: 62
+detect:
+  languages: [kotlin]
+  content:
+    - '^import\s+kotlinx\.coroutines\b'
+    - '\bsuspend\s+fun\b'
+    - '\bsuspend\s*\('

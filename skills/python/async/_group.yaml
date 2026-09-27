@@ -1,0 +1,10 @@
+name: Python async code
+description: Coroutine code on asyncio, AnyIO or Trio — the event-loop rules shared by all three. Detected in .py files that define or await coroutines or import an async framework.
+category: language
+priority: 60
+detect:
+  languages: [python]
+  content:
+    - "\\basync\\s+(?:def|with|for)\\b"
+    - "\\bawait\\s"
+    - "^[ \\t]*(?:import|from)\\s+(?:asyncio|anyio|trio)\\b"

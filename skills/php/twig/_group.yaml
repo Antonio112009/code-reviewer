@@ -1,0 +1,7 @@
+name: Twig
+description: Twig 3.x templates and the Twig environment (Symfony, Drupal, Craft, Slim). Detected for *.twig files or PHP code that builds or renders Twig templates (Twig\Environment, createTemplate, template_from_string).
+category: framework
+priority: 60
+detect:
+  files: ["**/*.twig"]
+  content: ["\\bTwig\\\\(?:Environment|Loader\\\\)", "->createTemplate\\s*\\(", "\\btemplate_from_string\\b"]

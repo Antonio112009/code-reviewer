@@ -1,0 +1,19 @@
+name: Kotlin
+description: Kotlin 1.9–2.4 code on JVM, Android and Multiplatform, plus the manifest, resource XML, R8/ProGuard and Gradle files and Java sources of Android modules and Ktor config files. Detected for chunks of a Kotlin or Android module with one of these file types; subfolders narrow it to a library or framework.
+category: language
+priority: 50
+detect:
+  stack: [lang.kotlin, framework.android]
+  languages: [kotlin, java, text, yaml]
+  files:
+    - "**/*.kt"
+    - "**/*.kts"
+    - "**/*.java"
+    - "**/AndroidManifest.xml"
+    - "**/res/xml/*.xml"
+    - "**/*.pro"
+    - "**/*.gradle"
+    - "**/gradle.properties"
+    - "**/application*.conf"
+    - "**/application*.yaml"
+    - "**/application*.yml"

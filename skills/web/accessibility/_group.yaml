@@ -1,0 +1,15 @@
+name: Web accessibility
+description: WCAG 2.2 level A/AA failures that block keyboard, screen-reader, low-vision and motor-impaired users — in HTML, JSX/TSX, Vue, Svelte, Angular and server templates, plus CSS focus and motion styles. Detected by markup/style files or code that renders markup or ARIA.
+category: web
+tier: full
+priority: 55
+detect:
+  languages: [html, css, scss, javascript, typescript, vue, svelte, php, text]
+  files:
+    - '**/*.{html,htm,vue,svelte,astro,jsx,tsx,css,scss,sass,less}'
+    - '**/*.{hbs,handlebars,ejs,njk,liquid,twig,erb,cshtml,razor,jsp,gohtml}'
+    - '**/*.blade.php'
+  content:
+    - '<(?:a|article|aside|audio|button|canvas|details|dialog|div|fieldset|figure|footer|form|h[1-6]|header|iframe|img|input|label|li|main|nav|ol|option|p|picture|section|select|span|summary|svg|table|td|textarea|th|tr|ul|video)[\s>/]'
+    - '\b(?:role|aria-[a-z]+|tabindex|tabIndex)\s*[=:]'
+    - '\bcreateElement\(\s*[''"][a-z]'

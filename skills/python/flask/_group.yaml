@@ -1,0 +1,12 @@
+name: Flask
+description: Flask 2.3–3.1 apps on Werkzeug 3 (routes, blueprints, request handling, Jinja templates, sessions, config) and common extensions (Flask-SQLAlchemy, Flask-Login, Flask-WTF, Flask-CORS, Flask-Limiter). Detected when the package depends on Flask and the file imports flask or a flask_* extension, is a typical app/views module or a Jinja template of the app.
+category: framework
+priority: 60
+detect:
+  stack: [framework.flask]
+  files:
+    - "**/{app,wsgi,routes,views,auth,extensions}.py"
+    - "**/{blueprints,views,routes}/**/*.py"
+    - "**/templates/**/*.{html,htm,xml,svg,j2,jinja,jinja2,txt}"
+  content:
+    - '^[ \t]*(?:from|import)[ \t]+flask(?:_\w+)?\b'

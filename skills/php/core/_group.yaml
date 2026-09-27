@@ -1,0 +1,6 @@
+name: PHP language core
+description: PHP 8.0–8.5 language and standard-library semantics (comparisons, arrays, strings/PCRE, JSON, errors, dates, numbers, OOP, PDO, worker runtimes). Applies to .php files; version-specific checks name the PHP version they need (lang.php comes from composer.json require.php).
+category: language
+priority: 56
+detect:
+  languages: [php]

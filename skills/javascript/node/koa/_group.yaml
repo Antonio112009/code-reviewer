@@ -1,0 +1,10 @@
+name: Koa
+description: Koa 2.x/3.x servers and koa-* / @koa/* middleware (router, bodyparser, koa-body, cors, session, static). Detected when the stack has framework.koa and the file imports koa packages or uses the async (ctx, next) middleware API.
+category: framework
+priority: 60
+detect:
+  stack: [framework.koa]
+  content:
+    - "(?:from|require\\()\\s*['\"](?:koa|koa-[\\w-]+|@koa/[\\w-]+)['\"]"
+    - "\\basync\\s*\\(\\s*ctx\\s*(?:,\\s*next\\s*)?\\)"
+    - "\\bctx\\.(?:body|throw|assert|redirect|cookies|state)\\b"

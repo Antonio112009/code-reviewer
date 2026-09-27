@@ -1,0 +1,11 @@
+name: Modern C++
+description: C++11–C++26 language and standard library — move semantics, RAII, containers and iterators, views, lambdas, coroutines, exceptions and vocabulary types. Detected by a C++ source path (.cc/.cpp/.cxx/.hpp/.hh/.ipp/.tpp/.cppm/.ixx/.cu) or C++ syntax in a .h header (std::, templates, namespaces, classes, standard headers).
+category: language
+priority: 60
+detect:
+  files:
+    - '*.{cc,cpp,cxx,c++,hh,hpp,hxx,ipp,inl,tpp,cppm,ixx,cu,cuh}'
+  content:
+    - '\bstd::\w'
+    - '^[ \t]*(?:template\s*<|namespace\s+\w|class\s+\w+\s*(?:final\s*)?[:{])'
+    - '#\s*include\s*<(?:algorithm|atomic|chrono|coroutine|expected|functional|iostream|map|memory|mutex|optional|ranges|set|span|string|string_view|thread|unordered_map|utility|variant|vector)>'

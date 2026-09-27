@@ -1,0 +1,7 @@
+name: PostgreSQL
+description: PostgreSQL (and CockroachDB) specifics. Detected when the project uses a PostgreSQL driver, ORM dialect or image.
+category: database
+detect:
+  stack:
+    - db.postgresql
+    - db.cockroachdb

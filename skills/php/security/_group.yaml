@@ -1,0 +1,6 @@
+name: PHP security
+description: PHP-specific security sinks and APIs (secrets comparison and randomness, unserialize, include and stream wrappers, exec family, uploads, cURL and streams, sessions, output escaping, PDO/mysqli). Applies to .php files; framework security lives in the framework folders.
+category: security
+priority: 72
+detect:
+  languages: [php]

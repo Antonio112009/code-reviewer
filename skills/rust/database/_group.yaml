@@ -1,0 +1,6 @@
+name: Rust database access
+description: Database access from Rust with sqlx, Diesel and SeaORM (queries, pools, transactions, migrations). Grouping folder; each library below has its own detection.
+category: database
+priority: 60
+detect:
+  languages: [rust]

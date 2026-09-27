@@ -1,0 +1,6 @@
+name: Python security sinks
+description: Python-specific dangerous APIs — unpickling, eval-like calls, template and format-string injection, shell and DB-API string building, archive and path handling, XML parsers and TLS settings. Detected by the Python file language; every skill below matches its own sink APIs.
+category: security
+priority: 75
+detect:
+  languages: [python]

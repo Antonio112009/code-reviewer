@@ -1,0 +1,8 @@
+name: sqlx
+description: sqlx 0.7–0.9 (query/query_as/QueryBuilder, compile-time checked macros, pools, transactions, migrations) on PostgreSQL, MySQL and SQLite. Detected when Cargo depends on sqlx and the chunk uses sqlx APIs.
+category: database
+priority: 62
+detect:
+  stack: [orm.sqlx]
+  languages: [rust]
+  content: ['\bsqlx::', '\bquery(?:_as|_scalar|_file(?:_as)?)?!\s*\(', '\b(?:PgPool|MySqlPool|SqlitePool|AnyPool)\b', 'derive\([^)\n]{0,120}\bFromRow\b']

@@ -1,0 +1,13 @@
+name: JavaScript & TypeScript
+description: JavaScript and TypeScript for any runtime (browser, Node.js, Deno, Bun) plus JS-ecosystem files - .jsx/.tsx, .vue, .svelte, .astro, .mdx, HTML templates, package.json and tsconfig. Detected by file language and extension; each subfolder narrows detection to a runtime, framework or topic.
+category: language
+priority: 50
+detect:
+  languages: [javascript, typescript, vue, svelte, html, json, text]
+  files:
+    - '**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'
+    - '**/*.{vue,svelte,astro,mdx}'
+    - '**/*.html'
+    - '**/{package,tsconfig,jsconfig,angular,project,nx,app,vercel,deno}.json'
+    - '**/{tsconfig,jsconfig}.*.json'
+    - '**/deno.jsonc'

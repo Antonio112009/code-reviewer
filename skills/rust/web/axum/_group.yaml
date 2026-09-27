@@ -1,0 +1,9 @@
+name: axum
+description: axum 0.7–0.8 routers, extractors, axum::serve and tower/tower-http middleware. Detected when Cargo depends on axum and the chunk uses axum/tower-http APIs or lives in route/handler modules.
+category: framework
+priority: 62
+detect:
+  stack: [framework.axum]
+  languages: [rust]
+  files: ['**/routes/**/*.rs', '**/handlers/**/*.rs', '**/routes.rs', '**/handlers.rs', '**/router.rs']
+  content: ['\baxum(?:_extra|_core)?::', '\btower_http::', '\bRouter::new\(\)', '#\[debug_handler\]']

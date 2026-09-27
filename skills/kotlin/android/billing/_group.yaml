@@ -1,0 +1,9 @@
+name: Google Play Billing
+description: In-app purchases and subscriptions with the Google Play Billing Library (PBL 7–9). Detected when the file imports com.android.billingclient, uses BillingClient or declares the billing Gradle dependency.
+category: framework
+priority: 66
+detect:
+  content:
+    - '^import\s+com\.android\.billingclient\.'
+    - '\bBillingClient\b'
+    - 'com\.android\.billingclient:billing'

@@ -1,0 +1,12 @@
+name: TypeScript
+description: TypeScript's type system, compiler options and TS-only syntax (enums, decorators, namespaces, parameter properties) for TypeScript 5.x-7.x, including Node's built-in type stripping and zod schemas. Detected on .ts/.tsx/.mts/.cts files, tsconfig*.json, and .vue/.svelte components with lang="ts".
+category: language
+priority: 55
+detect:
+  languages: [typescript, vue, svelte, json]
+  files:
+    - '**/*.{ts,tsx,mts,cts}'
+    - '**/tsconfig.json'
+    - '**/tsconfig.*.json'
+  content:
+    - '<script\b[^>\n]{0,120}\blang=["''](?:ts|tsx|typescript)["'']'

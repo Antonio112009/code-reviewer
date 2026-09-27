@@ -1,0 +1,7 @@
+name: Swift
+description: Swift 5.x–6.x code for Apple platforms and Linux servers, plus the Xcode/SwiftPM files that change how it builds and runs (Package.swift, Info.plist, entitlements, PrivacyInfo.xcprivacy, project.pbxproj, Core Data models). Detected by .swift files or those file names.
+category: language
+priority: 50
+detect:
+  languages: [swift, text]
+  files: ['*.swift', '*Info.plist', '*.entitlements', 'PrivacyInfo.xcprivacy', 'project.pbxproj', '**/*.xcdatamodel/contents']

@@ -1,0 +1,107 @@
+import { C_FAMILY, type PatternRule } from './types';
+
+/** C / C++ / Objective-C rules. */
+export const NATIVE_RULES: PatternRule[] = [
+  {
+    id: 'c-gets',
+    languages: C_FAMILY,
+    regex: /(?<![\w.>])gets\s*\(/,
+    severity: 'critical',
+    category: 'security',
+    confidence: 0.8,
+    cwe: 'CWE-242',
+    skill: 'c-cpp/security/untrusted-lengths',
+    message: '`gets()` cannot limit the input length: guaranteed buffer overflow on long input.',
+    help: 'Use fgets(buf, sizeof buf, stdin).',
+  },
+  {
+    id: 'c-unbounded-copy',
+    languages: C_FAMILY,
+    regex:
+      /(?<![\w.>])(?:strcpy|strcat|sprintf|vsprintf|wcscpy|wcscat|stpcpy|lstrcpy[AW]?|lstrcat[AW]?)\s*\(/,
+    severity: 'major',
+    category: 'security',
+    confidence: 0.5,
+    cwe: 'CWE-120',
+    skill: 'c-cpp/security/untrusted-lengths',
+    message:
+      'Unbounded string copy/format: overflows the destination when the source is longer than expected.',
+    help: 'Use snprintf / strlcpy (or std::string) and handle truncation.',
+  },
+  {
+    id: 'c-format-string',
+    languages: C_FAMILY,
+    regex:
+      /(?<![\w.>])(?:printf|vprintf)\s*\(\s*[A-Za-z_][\w\->.[\]]{0,80}\s*\)|(?<![\w.>])(?:fprintf|dprintf|vfprintf|syslog)\s*\(\s*[\w\->.]{1,60}\s*,\s*[A-Za-z_][\w\->.[\]]{0,80}\s*\)|(?<![\w.>])snprintf\s*\(\s*[^,]{1,80},\s*[^,]{1,80},\s*[A-Za-z_][\w\->.[\]]{0,80}\s*\)/,
+    severity: 'major',
+    category: 'security',
+    confidence: 0.55,
+    cwe: 'CWE-134',
+    skill: 'c-cpp/security/format-strings',
+    message: 'Non-literal format string: `%n` / `%s` in attacker-controlled text reads or writes memory.',
+    help: 'Use a literal format: printf("%s", str).',
+  },
+  {
+    id: 'c-scanf-unbounded',
+    languages: C_FAMILY,
+    regex: /(?<![\w.>])(?:scanf|sscanf|fscanf|vscanf)\s*\([^;]{0,160}"[^"]{0,120}%s/,
+    severity: 'major',
+    category: 'security',
+    confidence: 0.5,
+    cwe: 'CWE-120',
+    skill: 'c-cpp/security/untrusted-lengths',
+    message: '`%s` without a field width in a scanf-family call overflows the buffer on long input.',
+    help: 'Give a width (%63s for a 64-byte buffer) or read with fgets.',
+  },
+  {
+    id: 'c-system',
+    languages: C_FAMILY,
+    regex: /(?<![\w.>:])(?:system|popen)\s*\(\s*(?!")/,
+    severity: 'major',
+    category: 'security',
+    confidence: 0.4,
+    cwe: 'CWE-78',
+    skill: 'c-cpp/security/command-execution',
+    message:
+      'system()/popen() with a non-literal command: command injection if any part is externally influenced.',
+    help: 'Use execve/posix_spawn with an argument vector.',
+  },
+  {
+    id: 'c-alloc-overflow',
+    languages: C_FAMILY,
+    regex:
+      /(?<![\w.>])(?:malloc|realloc|alloca)\s*\(\s*[\w.>-]{1,60}\s*\*\s*sizeof\b|(?<![\w.>])(?:malloc|realloc|alloca)\s*\(\s*sizeof\s*\([^)]{1,60}\)\s*\*\s*[\w.>-]{1,60}/,
+    severity: 'minor',
+    category: 'security',
+    confidence: 0.3,
+    cwe: 'CWE-190',
+    skill: 'c-cpp/memory/allocation',
+    message:
+      'Allocation size computed as count × size without an overflow check: a large count wraps to a small buffer.',
+    help: 'Use calloc(count, size) / reallocarray, or check count <= SIZE_MAX / size.',
+  },
+  {
+    id: 'c-copy-strlen',
+    languages: C_FAMILY,
+    regex: /(?<![\w.>])(?:memcpy|memmove|strncpy)\s*\([^;]{0,160}\bstrlen\s*\(/,
+    severity: 'minor',
+    category: 'bug',
+    confidence: 0.35,
+    cwe: 'CWE-170',
+    skill: 'c-cpp/memory/c-strings',
+    message:
+      'Copy length from strlen() ignores the NUL terminator and the destination size: unterminated string or overflow.',
+    help: 'Bound by the destination size and terminate explicitly.',
+  },
+  {
+    id: 'c-realloc-leak',
+    languages: C_FAMILY,
+    regex: /\b(\w+)\s*=\s*realloc\s*\(\s*\1\s*,/,
+    severity: 'minor',
+    category: 'resource-leak',
+    confidence: 0.5,
+    skill: 'c-cpp/memory/cleanup-paths',
+    message: '`p = realloc(p, n)` leaks the original block (and loses the pointer) when realloc fails.',
+    help: 'Assign to a temporary and check it before overwriting p.',
+  },
+];

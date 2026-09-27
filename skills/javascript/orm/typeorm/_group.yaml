@@ -1,0 +1,10 @@
+name: TypeORM
+description: TypeORM 0.3.x and 1.x — DataSource, repositories, find options, QueryBuilder, entity listeners and migrations, including @nestjs/typeorm. Detected when the stack has orm.typeorm and the file imports typeorm or is an entity, subscriber or data-source module.
+category: database
+priority: 60
+detect:
+  stack: [orm.typeorm]
+  files: ["**/*.entity.{ts,js}", "**/*.subscriber.{ts,js}", "**/data-source.{ts,js}", "**/ormconfig.{ts,js}"]
+  content:
+    - "(?:from|require\\()\\s*['\"](?:typeorm|@nestjs/typeorm)(?:/[\\w/-]+)?['\"]"
+    - "@InjectRepository\\s*\\(|\\bgetRepository\\s*\\(|\\bcreateQueryBuilder\\s*\\("

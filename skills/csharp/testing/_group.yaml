@@ -1,0 +1,11 @@
+name: .NET tests (xUnit, NUnit, MSTest)
+description: Unit and integration tests — xUnit v2/v3, NUnit, MSTest, mocking (Moq, NSubstitute), assertion libraries and ASP.NET Core WebApplicationFactory. Detected by test attributes/usings in .cs files or by test-project paths.
+category: practice
+tier: full
+priority: 48
+detect:
+  languages: [csharp]
+  files: ["**/*.Tests/**", "**/*.Test/**", "**/*.IntegrationTests/**", "**/*Tests.cs", "**/*Test.cs", "**/tests/**", "**/test/**"]
+  content:
+    - '\busing\s+(?:Xunit|NUnit\.Framework|Microsoft\.VisualStudio\.TestTools\.UnitTesting|Moq|NSubstitute|FluentAssertions|AwesomeAssertions|Shouldly)\b'
+    - '\[(?:Fact|Theory|Test|TestCase|TestMethod|TestClass|TestFixture|DataRow|InlineData)\b'

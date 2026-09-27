@@ -1,0 +1,8 @@
+name: Laravel
+description: Laravel 10–13 applications (Eloquent, validation, policies, queues, Blade, migrations, Octane, Livewire). Detected when the stack has framework.laravel (laravel/framework, artisan, *.blade.php) and the file is app, route, config, database or view code, or imports Illuminate/Livewire.
+category: framework
+priority: 62
+detect:
+  stack: [framework.laravel]
+  files: ["**/app/**/*.php", "**/routes/**/*.php", "**/config/**/*.php", "**/database/**/*.php", "**/bootstrap/app.php", "**/*.blade.php", "**/.env", "**/.env.*", "**/composer.json"]
+  content: ["\\buse Illuminate\\\\", "\\buse Livewire\\\\", "\\bIlluminate\\\\Support\\\\Facades\\\\"]

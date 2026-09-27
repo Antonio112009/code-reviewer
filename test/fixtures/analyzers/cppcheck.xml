@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<results version="2">
+    <cppcheck version="2.14.0"/>
+    <errors>
+        <error id="nullPointer" severity="error" msg="Null pointer dereference: p" verbose="Null pointer dereference: p" cwe="476" file0="src/a.c">
+            <location file="src/a.c" line="7" column="12" info="Null pointer dereference"/>
+        </error>
+        <error id="uninitvar" severity="error" msg="Uninitialized variable: &quot;n&quot; &amp; more" verbose="Uninitialized variable: n" cwe="457">
+            <location file="./src/a.c" line="12" column="5"/>
+        </error>
+        <error id="missingIncludeSystem" severity="information" msg="Include file not found"/>
+        <error id="variableScope" severity="style" msg="The scope of the variable &apos;i&apos; can be reduced.">
+            <location file="src/a.c" line="3" column="9"/>
+        </error>
+        <error id="passedByValue" severity="performance" msg="Function parameter &apos;s&apos; should be passed by const reference.">
+            <location file="/etc/elsewhere.c" line="3" column="9"/>
+        </error>
+    </errors>
+</results>

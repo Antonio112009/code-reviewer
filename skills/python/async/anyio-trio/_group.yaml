@@ -1,0 +1,8 @@
+name: AnyIO and Trio
+description: Structured concurrency with AnyIO 4.x or Trio ≥ 0.25 (task groups, nurseries, cancel scopes, worker threads). Detected in .py files that import anyio or trio.
+category: framework
+priority: 62
+detect:
+  languages: [python]
+  content:
+    - "^[ \\t]*(?:import|from)\\s+(?:anyio|trio)\\b"

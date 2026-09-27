@@ -1,0 +1,8 @@
+name: WebSockets (gorilla/websocket, coder/websocket)
+description: WebSocket servers and clients built with gorilla/websocket or coder/websocket (formerly nhooyr.io/websocket). Detected when a .go file imports one of these libraries.
+category: framework
+detect:
+  content:
+    - 'github\.com/gorilla/websocket'
+    - 'github\.com/coder/websocket'
+    - 'nhooyr\.io/websocket'

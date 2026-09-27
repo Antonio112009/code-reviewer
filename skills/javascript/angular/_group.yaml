@@ -1,0 +1,15 @@
+name: Angular
+description: Angular applications (v17–v22) with standalone components, signals, RxJS, DI, forms, router and SSR/hydration. Detected when the project depends on @angular/core and the chunk touches Angular component/service/config files or code importing @angular packages or using Angular decorators.
+category: framework
+priority: 60
+detect:
+  stack: [framework.angular]
+  files:
+    - "**/*.component.{ts,html}"
+    - "**/*.{service,directive,pipe,guard,interceptor,resolver,module,store,effects}.ts"
+    - "**/app.{config,routes}{,.server}.ts"
+    - "**/main{,.server}.ts"
+    - "**/server.ts"
+  content:
+    - "from ['\"]@angular/[a-z-]+(?:/[a-z-]+)?['\"]"
+    - "@(?:Component|Directive|Injectable|Pipe|NgModule|Service)\\s*\\("

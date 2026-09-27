@@ -1,0 +1,9 @@
+name: NestJS
+description: NestJS 10–12 applications — modules, providers, controllers, guards, pipes, interceptors, microservices and gateways on Express or Fastify. Detected when the stack has framework.nestjs and the file imports @nestjs/* or is a DTO using class-validator/class-transformer.
+category: framework
+priority: 62
+detect:
+  stack: [framework.nestjs]
+  content:
+    - "(?:from|require\\()\\s*['\"]@nestjs/[\\w-]+(?:/[\\w/-]+)?['\"]"
+    - "(?:from|require\\()\\s*['\"]class-(?:validator|transformer)['\"]"

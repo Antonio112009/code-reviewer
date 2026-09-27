@@ -1,0 +1,20 @@
+name: Django
+description: Django web apps — ORM, views, templates, settings, migrations and admin (5.2 LTS, 6.0, 6.1). Detected when the package depends on Django (framework.django) and the file imports django / rest_framework or is a Django settings, models, views, admin, urls, forms, migration or template file.
+category: framework
+priority: 60
+detect:
+  stack: [framework.django]
+  files:
+    - "manage.py"
+    - "**/settings.py"
+    - "**/settings/*.py"
+    - "**/settings_*.py"
+    - "**/migrations/*.py"
+    - "**/{models,views,admin,forms,urls,apps,signals,middleware,managers,serializers,tasks}.py"
+    - "**/{models,views,serializers}/*.py"
+    - "**/templatetags/*.py"
+    - "**/templates/**/*.{html,txt}"
+    - "**/requirements*.{txt,in}"
+    - "**/pyproject.toml"
+  content:
+    - '^[ \t]*(?:from|import)[ \t]+(?:django|rest_framework)\b'

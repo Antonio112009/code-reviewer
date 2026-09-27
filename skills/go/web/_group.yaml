@@ -1,0 +1,7 @@
+name: Go web frameworks
+description: Router and handler frameworks on top of net/http or fasthttp (Gin, Echo, Fiber, chi); each subfolder detects its own framework.
+category: framework
+priority: 60
+detect:
+  languages: [go]
+  files: ['*.go']

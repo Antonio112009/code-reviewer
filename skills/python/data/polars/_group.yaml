@@ -1,0 +1,8 @@
+name: Polars
+description: Polars 1.x DataFrame and LazyFrame code (expressions, joins, null/NaN semantics). Detected in .py files that import polars.
+category: framework
+priority: 56
+detect:
+  languages: [python]
+  content:
+    - "^[ \\t]*(?:import|from)\\s+polars\\b"

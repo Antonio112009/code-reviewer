@@ -1,0 +1,13 @@
+name: C/C++ builds (CMake, Meson, Make)
+description: Build definitions of C/C++ projects — CMakeLists.txt and *.cmake (CMake 3.x–4.4), meson.build and Makefiles — where configuration turns into ODR/ABI defects, unhardened or non-portable binaries and irreproducible dependencies. Detected by those build-file paths in a repository with C or C++ code.
+category: infra
+priority: 55
+detect:
+  stack: [lang.c, lang.cpp]
+  files:
+    - 'CMakeLists.txt'
+    - '*.cmake'
+    - 'meson.build'
+    - 'Makefile'
+    - 'GNUmakefile'
+    - '*.mk'

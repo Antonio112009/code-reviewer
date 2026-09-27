@@ -1,0 +1,7 @@
+name: .NET security sinks
+description: .NET-specific security sinks — insecure deserializers, XML/XSLT parsers, Process.Start, file paths and archives, crypto/TLS APIs and dynamic code — in C#/Razor code and appsettings*.json. Each skill below needs its own API signal.
+category: security
+priority: 72
+detect:
+  languages: [csharp, text, json]
+  files: ["*.cs", "*.razor", "*.cshtml", "appsettings*.json"]

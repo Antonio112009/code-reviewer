@@ -1,0 +1,6 @@
+name: Java language and JDK APIs
+description: Java language semantics and core JDK libraries (java.lang, java.util, java.io/nio, java.time, java.net.http) in .java files, JDK 8–27. Detected by the java language; each skill activates on the APIs it covers.
+category: language
+priority: 55
+detect:
+  languages: [java]

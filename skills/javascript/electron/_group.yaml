@@ -1,0 +1,15 @@
+name: Electron
+description: Electron desktop apps (electron 30–45) — main-process, preload and renderer code, packaging and auto-update. Detected when the project depends on electron and the file imports electron, @electron/* or electron-updater, calls the exposed preload API, or is a main/preload/forge/builder config file.
+category: framework
+priority: 68
+detect:
+  stack: [framework.electron]
+  files:
+    - '**/{main,preload}.{js,cjs,mjs,ts,mts,cts}'
+    - '**/{main,preload,electron}/**/*.{js,cjs,mjs,ts,mts,cts}'
+    - '**/forge.config.{js,cjs,mjs,ts}'
+    - '**/electron-builder.config.{js,cjs,mjs,ts}'
+  content:
+    - '(?:\bfrom|\bimport)\s*[''"](?:electron|@electron/|electron-updater|update-electron-app)'
+    - '\brequire\(\s*[''"](?:electron|@electron/|electron-updater)'
+    - '\bwindow\.electron\w*\.'

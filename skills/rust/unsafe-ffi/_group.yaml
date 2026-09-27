@@ -1,0 +1,7 @@
+name: Unsafe Rust and FFI
+description: unsafe blocks, raw pointers, uninitialized memory, transmute, Send/Sync impls, globals and C interop (extern "C", std::ffi, libc, bindgen). Detected when a Rust file contains unsafe code or FFI declarations.
+category: language
+priority: 65
+detect:
+  languages: [rust]
+  content: ['\bunsafe\b', '\bextern\s+"C', '#\[repr\(C', '\*(?:const|mut)\s+[\w(\[]', '\b(?:libc|std::ffi|core::ffi|std::os::raw)::', 'no_mangle']

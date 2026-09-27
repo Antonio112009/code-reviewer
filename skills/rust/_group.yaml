@@ -1,0 +1,7 @@
+name: Rust
+description: Rust code (editions 2021/2024, rustc 1.70–1.98) together with its Cargo manifests and build scripts. Detected for .rs files, Cargo.toml and .cargo/config.toml.
+category: language
+priority: 55
+detect:
+  languages: [rust, toml]
+  files: ['*.rs', 'Cargo.toml', '**/.cargo/config.toml']

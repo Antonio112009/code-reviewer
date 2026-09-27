@@ -1,0 +1,8 @@
+name: Hono
+description: Hono 4.x apps on Node.js, Bun, Deno, Cloudflare Workers and other runtimes — routing, middleware, validators and built-in security helpers. Detected when the stack has framework.hono and the file imports hono, hono/* or @hono/*.
+category: framework
+priority: 60
+detect:
+  stack: [framework.hono]
+  content:
+    - "(?:from|require\\()\\s*['\"](?:hono|@hono/[\\w-]+)(?:/[\\w/-]+)?['\"]"

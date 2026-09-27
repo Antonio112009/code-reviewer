@@ -1,0 +1,8 @@
+name: pandas
+description: pandas 2.x–3.x DataFrame and Series code (3.0 made Copy-on-Write and the str dtype the default). Detected in .py files that import pandas.
+category: framework
+priority: 58
+detect:
+  languages: [python]
+  content:
+    - "^[ \\t]*(?:import|from)\\s+pandas\\b"

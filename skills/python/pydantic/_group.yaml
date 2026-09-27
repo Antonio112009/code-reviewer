@@ -1,0 +1,8 @@
+name: Pydantic
+description: Pydantic v2 (2.0–2.14) models, validators, serialization and pydantic-settings, plus code still on v1 APIs or the pydantic.v1 shim. Detected in Python files that import pydantic, pydantic_core or pydantic_settings (no dependency gate — there is no stack id for Pydantic yet).
+category: framework
+priority: 58
+detect:
+  languages: [python]
+  content:
+    - '^[ \t]*(?:from|import)[ \t]+pydantic(?:_settings|_core)?\b'

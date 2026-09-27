@@ -1,0 +1,6 @@
+name: JavaScript and Node.js security
+description: Vulnerability patterns specific to JS/TS and Node.js - prototype pollution, eval/vm and unsafe deserializers, child_process command and argument injection, path traversal with the path module, ReDoS, and server-side template engines. Applies to JS/TS code in any runtime; each skill loads only when the changed code touches its sink APIs.
+category: security
+priority: 70
+detect:
+  languages: [javascript, typescript, vue, svelte]

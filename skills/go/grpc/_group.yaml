@@ -1,0 +1,10 @@
+name: gRPC-Go and protobuf
+description: google.golang.org/grpc clients, servers, interceptors and streams (grpc-go 1.6x–1.8x) plus google.golang.org/protobuf messages. Detected when a .go file imports grpc or protobuf packages or uses grpc client/server types.
+category: framework
+priority: 60
+detect:
+  languages: [go]
+  content:
+    - 'google\.golang\.org/(?:grpc|protobuf)'
+    - 'github\.com/golang/protobuf'
+    - '\bgrpc\.(?:NewServer|NewClient|Dial\w{0,10}|ClientConn|ServerStream)\b'

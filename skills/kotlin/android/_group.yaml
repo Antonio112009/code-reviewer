@@ -1,0 +1,12 @@
+name: Android
+description: Android apps and libraries in Kotlin or Java — manifest, components, Jetpack libraries, platform APIs and targetSdk behavior changes up to Android 17 (API 37). Detected in Android modules for files that import android/androidx/Google Play/OkHttp/Retrofit APIs or are manifests, resource XML, R8/ProGuard rules or Gradle build files.
+category: framework
+priority: 60
+detect:
+  stack: [framework.android]
+  languages: [kotlin, java, text]
+  files: ["**/AndroidManifest.xml", "**/res/xml/*.xml", "**/*.pro", "**/build.gradle", "**/build.gradle.kts", "**/gradle.properties"]
+  content:
+    - '^import\s+(?:android|androidx|com\.google\.android)\.'
+    - '^import\s+(?:okhttp3|retrofit2|com\.android\.billingclient)\.'
+    - 'xmlns:android='

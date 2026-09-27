@@ -1,0 +1,10 @@
+name: tRPC
+description: tRPC 10–11 routers, procedures, middleware, server adapters and client links, including the Next.js and TanStack Query integrations. Detected when the stack has framework.trpc and the file imports @trpc/* or builds routers and procedures.
+category: framework
+priority: 60
+detect:
+  stack: [framework.trpc]
+  content:
+    - "(?:from|require\\()\\s*['\"]@trpc/[\\w-]+(?:/[\\w/-]+)?['\"]"
+    - "\\binitTRPC\\b"
+    - "\\b(?:publicProcedure|protectedProcedure|adminProcedure|createTRPCRouter|createCallerFactory)\\b"

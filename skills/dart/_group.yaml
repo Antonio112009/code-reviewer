@@ -1,0 +1,6 @@
+name: Dart
+description: Dart code.
+category: language
+detect:
+  languages:
+    - dart

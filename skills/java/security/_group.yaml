@@ -1,0 +1,6 @@
+name: JVM security APIs
+description: Security-sensitive JDK and library APIs in Java and Kotlin code — deserialization, XML parsers, expression languages, file paths, JCA crypto, TLS trust and JWT libraries. Each skill activates on the specific API calls it reviews.
+category: security
+priority: 72
+detect:
+  languages: [java, kotlin]

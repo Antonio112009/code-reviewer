@@ -1,0 +1,11 @@
+name: GraphQL servers (JS/TS)
+description: GraphQL servers in JavaScript/TypeScript — graphql-js 16–17, Apollo Server 4–5, GraphQL Yoga 5/Envelop, graphql-ws, DataLoader and TypeGraphQL/Pothos/NestJS resolvers. Detected when the stack has framework.graphql and the file imports a server-side GraphQL package or defines resolvers.
+category: framework
+priority: 62
+detect:
+  stack: [framework.graphql]
+  files: ["**/*.resolver.{ts,js}", "**/*.resolvers.{ts,js}", "**/resolvers/**/*.{ts,js,mts,mjs}"]
+  content:
+    - "(?:from|require\\()\\s*['\"](?:graphql|@apollo/server|@apollo/subgraph|@as-integrations/[\\w-]+|graphql-yoga|@graphql-yoga/[\\w-]+|@envelop/[\\w-]+|graphql-ws|graphql-subscriptions|dataloader|type-graphql|@pothos/[\\w-]+|@nestjs/graphql|mercurius|@graphql-tools/[\\w-]+|graphql-upload|graphql-shield|@escape\\.tech/graphql-armor)(?:/[\\w/.-]+)?['\"]"
+    - "@(?:Resolver|ResolveField|FieldResolver)\\s*\\(|@(?:Query|Mutation|Subscription)\\s*\\(\\s*(?:\\(\\s*\\)\\s*=>|returns\\b)"
+    - "\\b(?:typeDefs|resolvers)\\s*[:=]"

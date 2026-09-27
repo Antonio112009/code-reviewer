@@ -1,0 +1,11 @@
+name: Fastify
+description: Fastify 4.x/5.x servers and @fastify/* plugins — encapsulated plugins, hooks, decorators and JSON-schema validation/serialization. Detected when the stack has framework.fastify and the file imports fastify, fastify-plugin or @fastify/*, or uses the Fastify instance, request or reply API.
+category: framework
+priority: 60
+detect:
+  stack: [framework.fastify]
+  content:
+    - "(?:from|require\\()\\s*['\"](?:fastify|fastify-plugin|@fastify/[\\w-]+)['\"]"
+    - "\\bFastify(?:Instance|Request|Reply|PluginAsync|PluginCallback|ServerOptions)\\b"
+    - "\\b(?:fastify|app|server|instance)\\.(?:register|decorate(?:Request|Reply)?|addHook|setErrorHandler|addContentTypeParser|addSchema)\\s*\\("
+    - "\\bfunction\\s*\\w*\\s*\\(\\s*(?:fastify|instance)\\s*[,:)]"

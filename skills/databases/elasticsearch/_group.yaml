@@ -1,0 +1,6 @@
+name: Elasticsearch
+description: Elasticsearch / OpenSearch usage. Detected from their clients.
+category: database
+detect:
+  stack:
+    - db.elasticsearch

@@ -1,0 +1,6 @@
+name: SwiftUI
+description: SwiftUI views, state/property wrappers, lists, navigation and view lifecycle (iOS 15–27; value-based navigation iOS 16+, Observation-based state iOS 17+). Detected when the file imports SwiftUI.
+category: framework
+priority: 60
+detect:
+  content: ['^[ \t]*(?:@\w+[ \t]+)?import[ \t]+(?:\w+[ \t]+)?SwiftUI\b']

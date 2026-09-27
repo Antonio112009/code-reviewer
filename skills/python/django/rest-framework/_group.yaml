@@ -1,0 +1,12 @@
+name: Django REST framework
+description: Django REST framework 3.15–3.18 APIs — serializers, generic views and viewsets, permissions, pagination, filtering, authentication and throttling. Detected inside Django projects when the file imports rest_framework (or simplejwt), is a serializers/viewsets module, or configures REST_FRAMEWORK / SIMPLE_JWT.
+category: framework
+priority: 64
+detect:
+  files:
+    - "**/serializers.py"
+    - "**/serializers/*.py"
+    - "**/viewsets.py"
+  content:
+    - '^[ \t]*(?:from|import)[ \t]+rest_framework(?:_simplejwt)?\b'
+    - '\b(?:REST_FRAMEWORK|SIMPLE_JWT)\s*='

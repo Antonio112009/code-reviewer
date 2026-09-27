@@ -1,0 +1,7 @@
+name: C and POSIX library APIs
+description: C standard library and POSIX calls used from C and C++ — number parsing (atoi/strtol/stoi/from_chars), file and socket I/O with errno, clocks and time (glibc, musl, MSVC CRT). Detected by a C/C++ source or header path; every skill adds a signal on the functions the change calls.
+category: language
+priority: 55
+detect:
+  files:
+    - '*.{c,h,cc,cpp,cxx,c++,hh,hpp,hxx,ipp,inl,tpp,cppm,ixx,cu,cuh,ino}'

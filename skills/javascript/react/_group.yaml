@@ -1,0 +1,12 @@
+name: React
+description: React components, hooks, React DOM and Server Components (react 18.x–19.3; also for Next.js, React Router/Remix and React Native). Detected when the project depends on react and the changed file is .jsx/.tsx, imports react / react-dom or a React state/data library (TanStack Query, Redux, Zustand, Jotai, SWR, Apollo, react-hook-form), or starts with 'use client' / 'use server'.
+category: framework
+priority: 60
+detect:
+  stack: [framework.react]
+  files: ["**/*.jsx", "**/*.tsx"]
+  content:
+    - "from\\s*['\"]react(?:-dom)?(?:/[\\w/-]+)?['\"]"
+    - "require\\(\\s*['\"]react(?:-dom)?(?:/[\\w/-]+)?['\"]\\s*\\)"
+    - "from\\s*['\"](?:@tanstack/react-[\\w-]+|react-redux|@reduxjs/toolkit(?:/[\\w/-]+)?|zustand(?:/[\\w/-]+)?|jotai(?:/[\\w/-]+)?|swr(?:/[\\w/-]+)?|@apollo/client(?:/[\\w/-]+)?|react-hook-form)['\"]"
+    - "^\\s*['\"]use (?:client|server)['\"]"

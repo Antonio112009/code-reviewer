@@ -1,0 +1,14 @@
+name: ASP.NET Core
+description: ASP.NET Core 8–10 web apps and APIs — middleware, minimal APIs, MVC controllers, Razor Pages/views, authentication, authorization, SignalR. Detected in ASP.NET Core projects (Web SDK or Microsoft.AspNetCore.* packages) when the file uses ASP.NET Core APIs or is a .cshtml view or appsettings file.
+category: framework
+priority: 65
+detect:
+  stack: [framework.aspnet]
+  languages: [csharp, text, json]
+  files: ["*.cshtml", "appsettings*.json"]
+  content:
+    - 'Microsoft\.AspNetCore\.'
+    - '\bWebApplication(?:Builder)?\b'
+    - '\b(?:ControllerBase|Controller|PageModel|Hub|IHubContext)\b'
+    - '\[(?:ApiController|Http(?:Get|Post|Put|Patch|Delete)|Route|Authorize|AllowAnonymous|From(?:Body|Query|Route|Form|Header|Services))\b'
+    - '\b(?:HttpContext|IEndpointRouteBuilder|RouteGroupBuilder|IApplicationBuilder|RequestDelegate|IMiddleware|IResult|IActionResult|TypedResults)\b'

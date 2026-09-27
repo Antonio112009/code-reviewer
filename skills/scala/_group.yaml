@@ -1,0 +1,6 @@
+name: Scala
+description: Scala code.
+category: language
+detect:
+  languages:
+    - scala

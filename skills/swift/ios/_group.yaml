@@ -1,0 +1,9 @@
+name: Apple platform apps
+description: iOS/iPadOS/macOS/watchOS/visionOS app code (SwiftUI, UIKit, Observation, Core Data/SwiftData, StoreKit, WebKit, Security, BackgroundTasks, UserNotifications) and app configuration plists. Detected when the file imports Apple app frameworks, uses app-only APIs, or is an Info.plist, entitlements file, privacy manifest or Core Data model.
+category: framework
+priority: 60
+detect:
+  files: ['*Info.plist', '*.entitlements', 'PrivacyInfo.xcprivacy', '**/*.xcdatamodel/contents']
+  content:
+    - '^[ \t]*(?:@\w+[ \t]+)?import[ \t]+(?:\w+[ \t]+)?(?:SwiftUI|UIKit|AppKit|WatchKit|WidgetKit|ActivityKit|Observation|CoreData|SwiftData|CloudKit|StoreKit|WebKit|SafariServices|Security|LocalAuthentication|AuthenticationServices|BackgroundTasks|UserNotifications|AVFoundation|Photos|PhotosUI|CoreLocation|Contacts|EventKit|HealthKit|CoreBluetooth|CoreMotion|AppTrackingTransparency|AdSupport|OSLog|os)\b'
+    - '\b(?:UserDefaults|UIApplication|UIPasteboard|SecItem(?:Add|CopyMatching|Update|Delete)|kSecAttr\w+)\b|@AppStorage\b'

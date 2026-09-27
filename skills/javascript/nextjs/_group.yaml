@@ -1,0 +1,17 @@
+name: Next.js
+description: Next.js applications (App Router and Pages Router, Next.js 13–16.3) — Server Actions, Route Handlers, proxy/middleware, caching, rendering modes and next.config. Detected when the project depends on next and the file is an App Router/Pages Router route, proxy/middleware or next.config file, imports next/*, or uses Next.js directives and data APIs.
+category: framework
+priority: 66
+detect:
+  stack: [framework.nextjs]
+  files:
+    - "**/app/**/{page,layout,template,loading,error,global-error,not-found,default,route,forbidden,unauthorized}.{js,jsx,ts,tsx,mdx}"
+    - "**/pages/**/*.{js,jsx,ts,tsx}"
+    - "**/{middleware,proxy,instrumentation,instrumentation-client}.{js,ts}"
+    - "**/next.config.{js,mjs,cjs,ts,mts}"
+  content:
+    - "from\\s*['\"](?:next|next-auth|@auth/nextjs)(?:/[\\w/-]+)?['\"]"
+    - "['\"]server-only['\"]"
+    - "^\\s*['\"]use (?:client|server|cache)(?::\\s*\\w+)?['\"]"
+    - "\\b(?:getServerSideProps|getStaticProps|getStaticPaths|generateStaticParams|generateMetadata)\\b"
+    - "\\bNEXT_PUBLIC_\\w+"

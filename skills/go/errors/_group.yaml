@@ -1,0 +1,7 @@
+name: Go errors
+description: Error values, wrapping and propagation in Go (errors.Is/As/Join, %w, sentinel and typed errors, shadowed err). Detected for every .go file.
+category: language
+priority: 58
+detect:
+  languages: [go]
+  files: ['*.go']

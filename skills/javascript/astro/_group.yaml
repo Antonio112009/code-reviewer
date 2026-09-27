@@ -1,0 +1,17 @@
+name: Astro
+description: Astro 5–7 sites (.astro components, islands, on-demand rendering, middleware, endpoints, actions, sessions, astro:env). Detected when the project depends on astro and the chunk has .astro files, Astro route/middleware/action/config files or code importing astro modules or using the Astro global.
+category: framework
+priority: 60
+detect:
+  stack: [framework.astro]
+  files:
+    - "**/*.astro"
+    - "**/astro.config.{mjs,js,ts,mts}"
+    - "**/src/pages/**/*.{ts,js}"
+    - "**/src/middleware{,/index}.{ts,js}"
+    - "**/src/actions/**/*.{ts,js}"
+    - "**/src/fetch.{ts,js}"
+    - "**/src/content.config.{ts,js,mjs}"
+  content:
+    - "from ['\"](?:astro(?::[a-z:/]+|/[a-z/-]+)?|@astrojs/[a-z-]+(?:/[a-z-]+)?)['\"]"
+    - "\\bAstro\\.(?:request|cookies|locals|session|redirect|rewrite|url|params|props|cache|callAction|getActionResult)\\b"

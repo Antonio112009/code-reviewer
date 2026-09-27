@@ -1,0 +1,6 @@
+name: Kotlin language core
+description: Kotlin language and standard-library semantics shared by JVM, Android and Multiplatform code (null safety, data classes, collections, numbers and text, exceptions, initialization, Java interop, sealed types and enums). Detected for Kotlin source files; each skill adds signals for the constructs it covers.
+category: language
+priority: 55
+detect:
+  languages: [kotlin]

@@ -1,0 +1,6 @@
+name: MySQL
+description: MySQL / MariaDB specifics. Detected from MySQL drivers, ORM dialects or images.
+category: database
+detect:
+  stack:
+    - db.mysql

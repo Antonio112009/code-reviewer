@@ -1,0 +1,11 @@
+name: ADO.NET, Dapper and System.Transactions
+description: Data access without EF Core — DbConnection/DbCommand/DbDataReader (Microsoft.Data.SqlClient, Npgsql, MySqlConnector, Microsoft.Data.Sqlite), Dapper and TransactionScope. Detected by these types or `using Dapper` in .cs files.
+category: database
+priority: 64
+detect:
+  languages: [csharp]
+  content:
+    - '\b(?:Sql|Npgsql|MySql|Sqlite|Oracle|Odbc|OleDb)(?:Connection|Command|DataReader|Parameter|Transaction|DataAdapter|BulkCopy)\b'
+    - '\bI?Db(?:Connection|Command|DataReader|Parameter|Transaction)\b'
+    - '\busing\s+Dapper\b|\bDapper\.'
+    - '\bTransactionScope\b'
