@@ -11,6 +11,12 @@ activation:
     - "\\{\\.\\.\\.[a-zA-Z_$][\\w$.]{0,80}\\}"
     - "<svelte:element\\b"
     - "\\bbind:(?:innerHTML|innerText|textContent)\\b"
+  examples:
+    - '{@html comment.body}'
+    - '<a href={user.website}>Visit</a>'
+    - '<a {...attrs}>Link</a>'
+    - '<svelte:element this={tag}>{text}</svelte:element>'
+    - '<div bind:innerHTML={html} contenteditable></div>'
 sources:
   - https://svelte.dev/docs/svelte/@html
   - https://github.com/sveltejs/svelte/issues/6423

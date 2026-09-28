@@ -7,6 +7,10 @@ activation:
     - "(?<![.\\w$])(?:signal|computed|effect|linkedSignal|untracked|afterRenderEffect)\\s*(?:<[^>\\n]{0,80}>)?\\("
     - "(?<![.\\w$])(?:input|model)(?:\\.required)?\\s*(?:<[^>\\n]{0,80}>)?\\("
     - "\\b(?:viewChild|viewChildren|contentChild|contentChildren)(?:\\.required)?\\s*[(<]"
+  examples:
+    - 'readonly count = signal(0);'
+    - 'readonly userId = input.required<string>();'
+    - 'readonly list = viewChild.required<ElementRef>(''list'');'
   versions: { framework.angular: ">=16" }
 sources:
   - https://angular.dev/guide/signals

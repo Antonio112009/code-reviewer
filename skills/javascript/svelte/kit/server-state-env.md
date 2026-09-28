@@ -9,6 +9,11 @@ activation:
     - "from ['\"]\\$app/(?:stores|state|environment|navigation)['\"]"
     - "\\bPUBLIC_[A-Z0-9_]+"
     - "\\bexport\\s+const\\s+(?:prerender|ssr|csr)\\b"
+  examples:
+    - 'import { API_SECRET } from ''$env/static/private'';'
+    - 'import { page } from ''$app/state'';'
+    - 'import { PUBLIC_API_URL } from ''$env/static/public'';'
+    - 'export const prerender = true;'
 sources:
   - https://svelte.dev/docs/kit/state-management
   - https://svelte.dev/docs/kit/$env-static-private

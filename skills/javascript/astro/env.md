@@ -11,6 +11,11 @@ activation:
     - "from ['\"]astro:env/(?:client|server)['\"]"
     - "\\b(?:envField|getSecret)\\b"
     - "\\bPUBLIC_[A-Z0-9_]+"
+  examples:
+    - 'const key = import.meta.env.API_KEY;'
+    - 'import { API_SECRET } from ''astro:env/server'';'
+    - 'API_SECRET: envField.string({ context: ''server'', access: ''secret'' }),'
+    - 'const url = import.meta.env.PUBLIC_API_URL;'
 sources:
   - https://docs.astro.build/en/guides/environment-variables/
   - https://docs.astro.build/en/guides/upgrade-to/v6/

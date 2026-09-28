@@ -9,6 +9,10 @@ activation:
     - "\\b(?:PageLoad|PageServerLoad|LayoutLoad|LayoutServerLoad)\\b"
     - "\\b(?:setHeaders|depends|untrack)\\s*\\("
     - "\\bawait\\s+parent\\s*\\(\\s*\\)"
+  examples:
+    - 'export const load: PageServerLoad = async ({ fetch }) => ({ user: await fetch(''/api/user'') });'
+    - 'depends(''app:user'');'
+    - 'const { session } = await parent();'
 sources:
   - https://svelte.dev/docs/kit/load
   - https://svelte.dev/docs/kit/migrating-to-sveltekit-2

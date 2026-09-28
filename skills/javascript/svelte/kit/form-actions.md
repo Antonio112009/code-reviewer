@@ -11,6 +11,11 @@ activation:
     - "\\buse:enhance\\b"
     - "\\b(?:checkOrigin|trustedOrigins)\\b"
     - "\\brequest\\.formData\\s*\\(\\s*\\)"
+  examples:
+    - 'export const actions = { default: async ({ request }) => { const data = await request.formData(); } };'
+    - 'return fail(400, { error: ''Invalid email'' });'
+    - '<form method="POST" use:enhance>'
+    - 'csrf: { trustedOrigins: [''https://example.com''] },'
 sources:
   - https://svelte.dev/docs/kit/form-actions
   - https://svelte.dev/docs/kit/configuration

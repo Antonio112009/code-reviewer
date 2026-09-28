@@ -11,6 +11,11 @@ activation:
     - "from ['\"]astro:actions['\"]"
     - "\\bActionError\\b"
     - "\\b(?:getActionContext|getActionResult|callAction)\\b"
+  examples:
+    - 'export const createPost = defineAction({ handler: async (input) => savePost(input) });'
+    - 'import { defineAction } from ''astro:actions'';'
+    - 'throw new ActionError({ code: ''FORBIDDEN'' });'
+    - 'const result = Astro.getActionResult(actions.createPost);'
   versions: { framework.astro: ">=4.15" }
 sources:
   - https://docs.astro.build/en/guides/actions/

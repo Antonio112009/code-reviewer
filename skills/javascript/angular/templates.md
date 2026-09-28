@@ -9,6 +9,11 @@ activation:
     - "\\*ngFor\\b"
     - "\\btrackBy\\s*:"
     - "\\bwithIncrementalHydration\\s*\\("
+  examples:
+    - '@for (item of items(); track item.id) { }'
+    - '@defer (on viewport) { <heavy-widget /> }'
+    - '<li *ngFor="let item of items; trackBy: trackById">{{ item.name }}</li>'
+    - 'provideClientHydration(withIncrementalHydration());'
   versions: { framework.angular: ">=17" }
 sources:
   - https://angular.dev/guide/templates/control-flow

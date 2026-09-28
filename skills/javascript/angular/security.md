@@ -14,6 +14,15 @@ activation:
     - "\\b(?:withNoXsrfProtection|withXsrfConfiguration|HttpClientXsrfModule)\\b"
     - "\\b(?:CSP_NONCE|ngCspNonce|autoCsp)\\b"
     - "\\bcompileModuleAsync\\b"
+  examples:
+    - 'this.safeHtml = this.sanitizer.bypassSecurityTrustHtml(content);'
+    - 'constructor(private sanitizer: DomSanitizer) {}'
+    - 'this.el.nativeElement.innerHTML = comment.body;'
+    - 'this.renderer.setProperty(el, ''innerHTML'', content);'
+    - '<div [innerHTML]="comment.body"></div>'
+    - 'provideHttpClient(withNoXsrfProtection());'
+    - '{ provide: CSP_NONCE, useValue: nonce },'
+    - 'const factory = await compiler.compileModuleAsync(AppModule);'
 sources:
   - https://angular.dev/best-practices/security
   - https://angular.dev/api/platform-browser/DomSanitizer

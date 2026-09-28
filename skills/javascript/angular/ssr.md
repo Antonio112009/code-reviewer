@@ -10,6 +10,12 @@ activation:
     - "\\b(?:REQUEST|RESPONSE_INIT|REQUEST_CONTEXT|RenderMode|getPrerenderParams)\\b"
     - "\\b(?:AngularNodeAppEngine|AngularAppEngine|CommonEngine|trustProxyHeaders|allowedHosts)\\b"
     - "\\bngSkipHydration\\b"
+  examples:
+    - 'if (isPlatformBrowser(this.platformId)) { window.scrollTo(0, 0); }'
+    - 'provideClientHydration(withIncrementalHydration());'
+    - 'const request = inject(REQUEST);'
+    - 'const angularApp = new AngularNodeAppEngine();'
+    - '<app-widget ngSkipHydration></app-widget>'
 sources:
   - https://angular.dev/guide/ssr
   - https://angular.dev/guide/hydration

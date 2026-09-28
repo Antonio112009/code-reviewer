@@ -11,6 +11,11 @@ activation:
     - "\\bgetRequestEvent\\s*\\("
     - "\\bremoteFunctions\\b"
     - "\\bquery\\.(?:batch|live)\\s*\\("
+  examples:
+    - 'import { getRequestEvent } from ''$app/server'';'
+    - 'const { locals } = getRequestEvent();'
+    - 'kit: { experimental: { remoteFunctions: true } },'
+    - 'export const getUsers = query.batch(async (ids) => loadUsers(ids));'
 sources:
   - https://svelte.dev/docs/kit/remote-functions
   - https://github.com/sveltejs/kit/security/advisories

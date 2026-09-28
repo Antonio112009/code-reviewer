@@ -8,6 +8,11 @@ activation:
     - "\\{#each\\b"
     - "\\bbind:[a-zA-Z]+"
     - "\\bon[a-z]+=\\{"
+  examples:
+    - 'let { value = $bindable() } = $props();'
+    - '{#each items as item (item.id)}'
+    - '<input bind:value={name} />'
+    - '<button onclick={() => save()}>Save</button>'
 sources:
   - https://svelte.dev/docs/svelte/$props
   - https://svelte.dev/docs/svelte/each

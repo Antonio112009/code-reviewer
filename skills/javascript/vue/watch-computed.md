@@ -7,6 +7,10 @@ activation:
     - "(?<![.\\w$])(?:watch|watchEffect|watchPostEffect|watchSyncEffect|computed)\\s*(?:<[^>\\n]{0,80}>)?\\("
     - "\\$watch\\s*\\("
     - "^\\s*(?:watch|computed)\\s*:\\s*\\{"
+  examples:
+    - 'const total = computed(() => price.value * qty.value);'
+    - 'this.$watch(''value'', (val) => this.sync(val));'
+    - '  watch: {'
   versions: { framework.vue: ">=3" }
 sources:
   - https://vuejs.org/guide/essentials/watchers.html

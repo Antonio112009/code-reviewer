@@ -4,6 +4,7 @@ description: v-for defects — missing or index keys on stateful rows, v-if/v-fo
 priority: 58
 activation:
   content: ["\\bv-for\\s*="]
+  examples: ['<li v-for="item in items" :key="item.id">{{ item.name }}</li>']
 sources:
   - https://vuejs.org/guide/essentials/list.html
   - https://vuejs.org/guide/essentials/template-refs.html

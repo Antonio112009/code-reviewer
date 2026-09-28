@@ -12,6 +12,12 @@ activation:
     - "\\bcookies\\.(?:set|delete|serialize)\\s*\\("
     - "\\blocals\\.(?:user|session)\\b"
     - "\\b(?:redirect|error)\\s*\\(\\s*[0-9]{3}"
+  examples:
+    - 'export const handle: Handle = async ({ event, resolve }) => resolve(event);'
+    - 'export const handle = sequence(authHandle, loggingHandle);'
+    - 'cookies.set(''session'', token, { httpOnly: true, secure: true, path: ''/'' });'
+    - 'event.locals.user = await getUser(token);'
+    - 'throw redirect(303, ''/login'');'
 sources:
   - https://svelte.dev/docs/kit/hooks
   - https://svelte.dev/docs/kit/load

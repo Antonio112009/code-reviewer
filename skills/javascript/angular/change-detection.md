@@ -13,6 +13,16 @@ activation:
     - "@Component\\s*\\("
     - "\\bset(?:Timeout|Interval)\\s*\\("
     - "\\.(?:push|splice|unshift|sort|reverse)\\s*\\("
+  examples:
+    - 'changeDetection: ChangeDetectionStrategy.OnPush,'
+    - 'this.cdr.markForCheck();'
+    - 'constructor(private zone: NgZone) {}'
+    - 'providers: [provideZonelessChangeDetection()],'
+    - 'this.zone.runOutsideAngular(() => this.poll());'
+    - 'ngAfterViewInit() { this.checkLayout(); }'
+    - '@Component({ selector: ''app-list'' })'
+    - 'setTimeout(() => (this.total = compute()), 0);'
+    - 'this.items().push(newItem);'
 sources:
   - https://angular.dev/guide/zoneless
   - https://angular.dev/best-practices/skipping-subtrees

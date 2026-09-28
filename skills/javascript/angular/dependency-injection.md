@@ -10,6 +10,12 @@ activation:
     - "\\b(?:InjectionToken|runInInjectionContext|EnvironmentInjector)\\b"
     - "@(?:Injectable|Service)\\s*\\("
     - "\\bmulti\\s*:\\s*true\\b"
+  examples:
+    - 'const http = inject(HttpClient);'
+    - 'providers: [AuthService],'
+    - '@Injectable({ providedIn: ''root'' })'
+    - 'export const API_URL = new InjectionToken<string>(''API_URL'');'
+    - '{ provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },'
 sources:
   - https://angular.dev/guide/di/dependency-injection-context
   - https://angular.dev/guide/di/hierarchical-dependency-injection

@@ -7,6 +7,9 @@ activation:
   content:
     - "\\$state(?:\\.raw|\\.snapshot)?\\s*(?:<[^>\\n]{0,80}>)?\\("
     - "\\bSvelte(?:Map|Set|Date|URL|URLSearchParams)\\b"
+  examples:
+    - 'let count = $state(0);'
+    - 'const seen = new SvelteSet();'
   versions: { framework.svelte: ">=5" }
 sources:
   - https://svelte.dev/docs/svelte/$state

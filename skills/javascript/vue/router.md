@@ -9,6 +9,12 @@ activation:
     - "\\.(?:beforeEach|beforeResolve|afterEach)\\s*\\("
     - "\\bbeforeEnter\\s*:"
     - "\\$route(?:r)?\\b"
+  examples:
+    - 'import { useRoute } from ''vue-router'';'
+    - 'const route = useRoute();'
+    - 'router.beforeEach((to, from) => { if (!to.meta.public) return ''/login''; });'
+    - '{ path: ''/admin'', beforeEnter: requireAuth },'
+    - 'console.log(this.$route.params.id);'
 sources:
   - https://router.vuejs.org/guide/advanced/navigation-guards.html
   - https://router.vuejs.org/guide/essentials/dynamic-matching.html

@@ -12,6 +12,12 @@ activation:
     - "\\b(?:swr|isr)\\s*:"
     - "\\bpayloadExtraction\\b"
     - "\\bshouldBypassCache\\b"
+  examples:
+    - 'export default defineCachedEventHandler(async (event) => getPosts(), { maxAge: 60 });'
+    - 'const getUser = cachedFunction(fetchUser, { maxAge: 60 });'
+    - 'routeRules: { ''/blog/**'': { swr: 3600 } },'
+    - 'experimental: { payloadExtraction: false },'
+    - 'shouldBypassCache: (event) => !!event.node.req.headers.authorization,'
 sources:
   - https://v2.nitro.build/guide/cache
   - https://nuxt.com/docs/4.x/guide/concepts/rendering

@@ -12,6 +12,15 @@ activation:
     - "\\bwindow\\.__NUXT__\\b"
     - "\\bdefinePayload(?:Reducer|Reviver|Plugin)\\b"
     - "(?<![.\\w$])(?:window|document|localStorage|sessionStorage|navigator)\\."
+  examples:
+    - 'const cart = useState(''cart'', () => []);'
+    - 'await callOnce(''init'', () => seedData());'
+    - 'if (import.meta.client) { initWidget(); }'
+    - 'if (process.server) { return; }'
+    - '<ClientOnly><Widget /></ClientOnly>'
+    - 'const state = window.__NUXT__;'
+    - 'definePayloadReducer(''Point'', (data) => data instanceof Point && [data.x, data.y]);'
+    - 'document.title = pageTitle;'
 sources:
   - https://nuxt.com/docs/4.x/api/composables/use-state
   - https://nuxt.com/docs/4.x/getting-started/state-management

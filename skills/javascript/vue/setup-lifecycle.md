@@ -9,6 +9,12 @@ activation:
     - "(?<![.\\w$])(?:provide|inject|getCurrentInstance|effectScope|toValue)\\s*(?:<[^>\\n]{0,80}>)?\\("
     - "\\basync\\s+setup\\s*\\("
     - "<(?:KeepAlive|keep-alive)\\b"
+  examples:
+    - 'onMounted(() => { window.addEventListener(''resize'', onResize); });'
+    - 'onActivated(() => resumePolling());'
+    - 'const user = inject(userKey);'
+    - 'export default { async setup() { const data = await load(); return { data }; } };'
+    - '<KeepAlive><component :is="view" /></KeepAlive>'
   files: ["**/composables/**/*.{ts,js}", "**/use[A-Z]*.{ts,js}"]
   versions: { framework.vue: ">=3" }
 sources:

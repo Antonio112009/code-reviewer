@@ -10,3 +10,5 @@ detect:
     - "**/svelte.config.{js,mjs,ts}"
   content:
     - "from ['\"](?:@sveltejs/kit(?:/[a-z-]+)?|\\$app/[a-z-]+|\\$env/[a-z/-]+|\\./\\$types)['\"]"
+  examples:
+    - 'import { redirect } from ''@sveltejs/kit'';'

@@ -12,6 +12,11 @@ activation:
     - "\\b(?:Astro|context)\\.session\\b"
     - "\\bsession\\.(?:regenerate|destroy)\\s*\\("
     - "from ['\"]astro/hono['\"]"
+  examples:
+    - 'export const onRequest = defineMiddleware(async (context, next) => next());'
+    - 'security: { checkOrigin: false },'
+    - 'await context.session.regenerate();'
+    - 'import { pages } from ''astro/hono'';'
 sources:
   - https://docs.astro.build/en/guides/middleware/
   - https://docs.astro.build/en/guides/sessions/

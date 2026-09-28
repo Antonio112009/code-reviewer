@@ -10,6 +10,13 @@ activation:
     - "\\bdata-allow-mismatch\\b"
     - "\\b(?:useId|hydrateOn(?:Idle|Visible|MediaQuery|Interaction))\\s*\\("
     - "__(?:INITIAL_STATE|PINIA|APOLLO_STATE)__"
+  examples:
+    - 'const app = createSSRApp(App);'
+    - 'onServerPrefetch(async () => { await store.fetchUser(); });'
+    - 'if (import.meta.env.SSR) { return; }'
+    - '<span data-allow-mismatch="text">{{ formattedDate }}</span>'
+    - 'const id = useId();'
+    - 'window.__PINIA__ = JSON.stringify(pinia.state.value);'
   files: ["**/entry-server.{ts,js}", "**/entry-client.{ts,js}"]
   versions: { framework.vue: ">=3" }
 sources:

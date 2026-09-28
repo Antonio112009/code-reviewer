@@ -11,6 +11,13 @@ activation:
     - "\\.\\$(?:on|set|destroy)\\s*\\("
     - "\\b(?:mount|hydrate|unmount|flushSync)\\s*\\("
     - "from ['\"]svelte/store['\"]"
+  examples:
+    - '$: total = price * qty;'
+    - 'export let value = 0;'
+    - 'new App({ target: document.body });'
+    - 'component.$destroy();'
+    - 'mount(App, { target: document.body });'
+    - 'import { writable } from ''svelte/store'';'
 sources:
   - https://svelte.dev/docs/svelte/legacy-reactive-assignments
   - https://svelte.dev/docs/svelte/legacy-let
