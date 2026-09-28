@@ -19,6 +19,8 @@
                   models/preflight.ts  is every configured model available? → fallback decisions
    4. chunking    chunking/*           clusters of related files (imports, tests, siblings) → chunks ≤ budget;
                                        shared files added read-only as context to other chunks
+                  chunking/expand.ts   review.expand: unchanged usages of changed declarations, called definitions
+                  review/pipeline.ts   review.passes: one copy of each chunk per focused pass (local, contracts)
    5. skills      skills/detector.ts   per chunk: group detection + gates + signals + versions → budget fill
    6. snapshot    git/snapshot.ts      isolated, sanitized worktree of head (agents / cross-provider fallback)
    7. review      review/execute.ts    one AgentTask per chunk (p-limit), ModelRouter: retry / fallback / fail
@@ -31,7 +33,8 @@
    8. validate    review/validate.ts   unknown files, out-of-range lines, far from changed hunks; hint claims
       dedupe      review/dedupe.ts     same file + overlapping lines + similar title / same span
    9. critique    review/critique.ts   batches per file → submit_verdicts → confirmed/uncertain/rejected
-  10. threshold   minConfidence (non-rejectable static findings bypass it)
+  10. threshold   minConfidence (non-rejectable static findings bypass it); below advisoryConfidence or
+                  info → run.advisory ("worth a look": reports only, not published, SARIF or --fail-on)
   11. authors     review/attribution   git blame → author, commit/line URLs (GitHub/GitLab)
       fingerprint review/fingerprint   stable id per kept finding (file, category, rule, normalised code)
   12. persist     runs/store.ts        run.json, run.log (every message and event), chunk artifacts (prompt,
@@ -90,13 +93,17 @@ the config files and flags, so explicit settings always win.
 | `skillTokenBudget` | 3500 | 6000 |
 | `maxSteps` | 15 | 25 |
 | `contextShare` | 0.1 | 0.2 |
+| `minConfidence` | 0.7 (the default) | 0.5 |
 
 The depth also affects:
 - **Prompts.** The review instructions (`prompts.ts#depthRules`) narrow the scope to serious production
   defects and require a concrete fix. At full depth they ask for recall instead: go through every changed
   hunk and report each plausible defect, partly confirmed ones with a lower confidence, since the critic
-  and the confidence threshold remove the false positives. At essential depth the critic also rejects real but low-impact
-  findings.
+  and the confidence threshold remove the false positives.
+- **Critique.** At essential depth the critic also rejects real but low-impact findings. At full depth it
+  rejects only claims it can refute from the code (misread, already handled, impossible), confirms correct
+  low-impact ones at a lower severity, and the threshold is 0.5. On AACR-Bench ctx30 the stricter critic
+  and threshold had dropped 16 of the 26 findings that matched expert-verified references.
 - **Skills.** `skillsForDepth(skills, depth)` keeps only `tier: essential` skills and swaps in their
   `essentialBody`, i.e. without bullets marked `[full]`. The same view feeds per-chunk selection,
   hint-linked skills, the in-process skill catalog and `mcp-serve --depth` for ACP agents. An explicit
@@ -118,6 +125,30 @@ The depth also affects:
      of the budget.
 4. **`render.ts`** — PR-style blocks: new code with new-file line numbers and `+` markers, plus a
    budgeted "removed code" block per hunk.
+5. **`expand.ts`** (`review.expand`, `--expand`; off by default) — related *unchanged* code, shown as
+   read-only `related` parts under "Related unchanged code":
+   - **Changed declarations** come from the hunks: declared on a removed line and gone (`removed`) or still
+     declared (`signature`), or enclosing changed lines (`body`). Bounded regexes per language family;
+     C/C++ `static` functions are file-local and skipped.
+   - **Usages** of those names in unchanged source files come from one `git grep -w -F` at the head commit
+     (fixed-string identifiers, source extensions only, a few matches per file). A name found in more than
+     20 files is dropped as too common, and a match counts only if its file shares the changed file's
+     directory or names its module (import, `#include`, Go package qualifier).
+   - **Definitions** of functions the added lines call are shown when the changed files refer to the file
+     that defines them. At `deep`, the callers of the usages are added too (one more hop).
+   - Excerpts are windows around each site (from the enclosing declaration when it is close), at most three
+     sites per file, within 15% (`refs`) or 25% (`deep`) of the chunk budget. The reviewer is told to report
+     a defect the change causes there on the changed line that causes it. A split drops them, like context.
+
+### Review passes (`review.passes`, `--passes`)
+
+`[general]` (the default) reviews each chunk once. A list of focused passes reviews every chunk once per
+pass instead: `withPasses` copies the chunk (`c001-local`, `c001-contracts`), and `reviewInstructions` adds
+the pass's focus. The copies go through scheduling, recovery, the cache and dedupe like any chunk.
+- `local` — the changed lines hunk by hunk; told not to spend steps on callers elsewhere.
+- `contracts` — the declarations the change touches and their consumers. It always gets `expand`
+  (`refs` unless `review.expand` says `deep`) and a "Changed declarations" checklist, is asked to construct
+  counterexamples to the guarantees the change modifies, and reports on the changed line.
 
 ## Skills (`src/skills/`, `skills/`)
 

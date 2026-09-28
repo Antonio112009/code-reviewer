@@ -15,6 +15,8 @@ package, and `code-reviewer eval` ignores it (it only reads `*.yaml` cases).
 | `run.sh` | runs a reviewer on all PRs or the pilot subset and scores it |
 | `code_reviewer.py` | the reviewer adapter (installed as `evaluation/reviewers/code_reviewer.py`) |
 | `harness.patch` | changes to the harness (below) |
+| `subsets/*.txt` | named subsets (one PR URL per line) for `run.sh --subset` |
+| `report.py` | recall by context level (Diff / File / Repo) and category, averaged over repeated runs |
 
 ## Running
 
@@ -28,6 +30,8 @@ evals/aacr/run.sh full-1 --concurrency 3             # every PR
 evals/aacr/run.sh full-1 --stage eval                # re-score a finished run (e.g. with another judge)
 evals/aacr/run.sh opus-1 --pilot -- --full --model opus   # code-reviewer arguments after --
 evals/aacr/run.sh cc-1 --pilot --reviewer claude     # baseline: Claude Code's /code-review, same judge
+evals/aacr/run.sh base-1 --subset ctx30 --concurrency 4   # a named subset (evals/aacr/subsets/ctx30.txt)
+evals/aacr/report.py ctx30 base-1 base-2             # recall by context level and category, averaged
 ```
 
 - `$AACR_DIR` (default `~/.cache/code-reviewer-aacr`) holds the harness, its results and the cloned
@@ -38,6 +42,15 @@ evals/aacr/run.sh cc-1 --pilot --reviewer claude     # baseline: Claude Code's /
 - Results: `$AACR_DIR/aacr-bench/evaluation/results/<dataset>/<reviewer>/<run-id>/`. Each PR has a result
   file with the full `report.json`, and `runs/<instance>/` keeps the run directory (prompts, replies,
   `run.log`). Metrics are in the mirrored `metrics/` directory, and the console prints a summary.
+
+## Subsets
+
+- `pilot` (`--pilot`): 10 random PRs (seed 42). Cheap, but a change moving a few matches cannot be told
+  from run-to-run noise on it.
+- `ctx30` (`--subset ctx30`): 30 PRs from 22 repositories and 9 languages, picked at random (seed 20260928,
+  at most two per repository) among the available PRs with ≤ 800 changed lines and at least three File- or
+  Repo-level references. 286 references: 134 Diff, 107 File and 45 Repo level. Meant for changes to context
+  and cross-file checking; run each variant at least twice.
 
 ## How it is scored
 
@@ -75,6 +88,29 @@ concern or suggestion". Our comment text is the finding's title, failure scenari
 |---|---|---|---|---|---|---|---|---|
 | 2026-09-28 | `df35dd3` | `--full`, Sonnet review and critique, Sonnet judge | pilot, 9 of 10 | 30.0% (3/10) | 5.5% (3/55) | 9.3% | 1.1 | $1.03, 3.8 min |
 | 2026-09-28 | full-depth recall | `--full --reasoning high --critique-model sonnet`, Sonnet judge | pilot, 9 of 10 | 45.5% (5/11) | 9.1% (5/55) | 15.2% | 1.2 | $1.23, 5.7 min |
+| 2026-09-28 | full-depth recall | same, `--max-chunk-tokens 15000` | pilot, 9 of 10 | 57.1% (4/7) | 7.3% (4/55) | 12.9% | 0.8 | $1.35 |
+| 2026-09-28 | full-depth recall + expand | same, `--expand refs` | pilot, 9 of 10 | 20.0% (2/10) | 3.6% (2/55) | 6.1% | 1.1 | $1.21, 4.4 min |
+
+### ctx30 (30 PRs, 286 references), two runs per variant
+
+Run with `--full` and main's defaults (Sonnet at medium reasoning, Opus critique); Sonnet judge; mean of two
+runs (each run in brackets). "Worth a look" findings count, since they are in the report.
+
+| Variant | Commit | Findings | Precision | Recall | Diff / File / Repo recall | F1 | Cost / run |
+|---|---|---|---|---|---|---|---|
+| Baseline (critique drops unlikely defects, threshold 0.7) | `888a513` | 18.5 | 59.4% | 3.8% (10, 12) | 2.6 / 5.1 / 4.4% | 7.3% (6.6, 7.9) | $20 |
+| Focused passes, same critique | `888a513` | 22 | 52.5% | 4.0% (11, 12) | 3.0 / 5.1 / 4.4% | 7.5% (7.1, 7.8) | $35 |
+| Critique keeps what it cannot refute, threshold 0.5 | `16c8343` | 40 | 45.5% | 6.3% (17, 19) | 4.1 / 8.4 / 7.8% | 11.1% (10.3, 11.8) | $20 |
+| Same, plus focused passes | `16c8343` | 59 | 36.9% | 7.5% (21, 22) | 5.6 / 9.3 / 8.9% | 12.5% (12.4, 12.5) | $34 |
+
+- Before the critique change, the reviewer had found 60 candidates in the first baseline run (90 with focused
+  passes). The critique and threshold dropped 16 of the 26 that matched references (21 of 32 with passes),
+  as "theoretical", "unreachable with current callers" or "same gap elsewhere".
+- The new critique lets more robustness remarks through. On the eval corpus it flagged 4 of 8 clean changes.
+  With the "worth a look" list (below confidence 0.6 or `info`, kept out of PR comments and gates), that is
+  back to 1 of 8, at 96% precision.
+- Focused passes add about 1.4 points of F1 for about 70% more cost, and the gain is within the spread of
+  two runs, so they stay opt-in.
 
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
@@ -90,5 +126,10 @@ Full-depth recall mode (the reviewer reports every plausible defect, submits fin
 and leaves precision to the critic) raised the reviewer's candidates from 12 to 20; the critique removed 9,
 and 5 of the 11 kept findings matched references. With 3–5 matches either way, the pilot is too small to
 call the gain final.
+
+The pilot is too small to measure changes of this size. Smaller chunks changed the split of only three
+PRs, and `--expand refs` added related code to four. Yet the other PRs, reviewed with the same prompt as
+before, moved by up to three matches between runs. Measure such changes by running each variant several
+times, or on a larger subset of the PRs they actually affect.
 
 A full run would cost about $190 and take about 4 hours at concurrency 3.

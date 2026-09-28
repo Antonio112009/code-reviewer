@@ -218,6 +218,17 @@ export interface Hunk {
   lines: DiffLine[];
 }
 
+/**
+ * Review passes per chunk: `general` (one pass over everything, the default), or focused passes over the same
+ * code — `local` (the changed lines themselves) and `contracts` (changed declarations and their consumers).
+ */
+export const REVIEW_PASSES = ['general', 'local', 'contracts'] as const;
+export type ReviewPass = (typeof REVIEW_PASSES)[number];
+
+/** How much related unchanged code a chunk gets (`chunking/expand.ts`). */
+export const EXPAND_LEVELS = ['off', 'refs', 'deep'] as const;
+export type ExpandLevel = (typeof EXPAND_LEVELS)[number];
+
 export type FileStatus = 'added' | 'modified' | 'deleted' | 'renamed' | 'file';
 
 export interface FileDiff {
@@ -253,9 +264,10 @@ export interface ChunkPart {
   part?: { index: number; total: number };
   /**
    * `review` (default) — code this chunk owns and must review;
-   * `context` — read-only excerpt of a related file owned by another chunk (no findings expected).
+   * `context` — read-only excerpt of a related file owned by another chunk (no findings expected);
+   * `related` — read-only excerpt of unchanged code that uses or is used by the change (`chunking/expand.ts`).
    */
-  role?: 'review' | 'context';
+  role?: 'review' | 'context' | 'related';
 }
 
 export interface Chunk {
@@ -267,6 +279,12 @@ export interface Chunk {
   files: string[];
   /** Related files included read-only for context (owned by other chunks). */
   contextFiles?: string[];
+  /** Unchanged files shown in part because they use or are used by the change, and why. */
+  related?: Array<{ path: string; why: string }>;
+  /** A focused pass over the chunk's code (a chunk without one gets the general review). */
+  pass?: Exclude<ReviewPass, 'general'>;
+  /** Declarations the change touches (`chunking/expand.ts`): the checklist of the `contracts` pass. */
+  declarations?: Array<{ name: string; file: string; kind: 'removed' | 'signature' | 'body' }>;
   languages: string[];
   /** Files mentioned only by name (deleted files etc.). */
   mentions: string[];
@@ -381,6 +399,8 @@ export interface ChunkRecord {
   id: string;
   files: string[];
   contextFiles?: string[];
+  /** Unchanged code shown in part (`review.expand`), and why. */
+  related?: Array<{ path: string; why: string }>;
   tokens: number;
   skills: string[];
   status: 'pending' | 'running' | 'done' | 'failed';
@@ -456,6 +476,11 @@ export interface RunRecord {
   toolUsage?: Record<string, number>;
   chunks: ChunkRecord[];
   findings: Finding[];
+  /**
+   * Kept findings of lower confidence (below `review.advisoryConfidence`) or `info` severity: shown in the
+   * reports as "worth a look", left out of pull request comments, SARIF / Code Quality and `--fail-on`.
+   */
+  advisory?: Finding[];
   /** Findings removed by validation, critique or the confidence threshold — kept for auditing. */
   rejected: Finding[];
   usage: Usage;

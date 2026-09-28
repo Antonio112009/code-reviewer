@@ -275,6 +275,23 @@ export function renderMarkdown(run: RunRecord): string {
     out.push(renderFinding(f, i + 1), '', '---', '');
   });
 
+  if (run.advisory?.length) {
+    out.push(
+      `## Worth a look (${run.advisory.length})`,
+      '',
+      '_Lower confidence or `info` severity: not posted to the pull request and not counted by `--fail-on`._',
+      '',
+      '| Location | Severity | Title | Confidence |',
+      '|---|---|---|---|',
+    );
+    for (const f of sortFindings(run.advisory)) {
+      out.push(
+        `| ${codeCell(`${f.file}:${f.startLine}`)} | ${f.severity} | ${cell(f.title)} | ${f.confidence.toFixed(2)} |`,
+      );
+    }
+    out.push('');
+  }
+
   if (run.rejected.length) {
     out.push(`## Rejected findings (${run.rejected.length})`, '');
     out.push(

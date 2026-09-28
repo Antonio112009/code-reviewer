@@ -111,7 +111,8 @@ flowchart LR
    develop → main`) and fetches it fresh.
 2. **Stack and hints.** Detects technologies and versions from manifests. Runs secret scanning, about
    130 bug-pattern rules and safe external linters, whose hits become hints.
-3. **Chunks.** Groups related files into chunks that fit the model's context window.
+3. **Chunks.** Groups related files into chunks that fit the model's context window. With `--expand`, each
+   chunk also gets excerpts of the unchanged code that uses what changed and of the functions it calls.
 4. **Review.** For every chunk:
    - selects the matching skills;
    - runs the model with read-only tools: `read_file`, `grep`, `find_symbol`, `git_blame`, `get_skill`;
@@ -145,6 +146,8 @@ code-reviewer providers test claude --model sonnet
 | Severities | critical, major | all |
 | Skills | essential ones, 3.5k tokens per chunk | all, 6k tokens per chunk |
 | Fix required | yes, for every finding | when possible |
+| Self-critique | also drops real but low-impact findings; keeps confidence ≥ 0.7 | drops only claims it can refute (low impact lowers the severity); keeps confidence ≥ 0.5 |
+| "Worth a look" | — | findings below confidence 0.6 and `info` findings: in the reports, not in PR comments, SARIF / Code Quality or `--fail-on` |
 
 ## Configuration
 
@@ -176,6 +179,10 @@ Useful flags:
 - `--critique-*` and `--no-self-critique`: the verification pass;
 - `--skills a,b`: pick skills by hand;
 - `--analyzers eslint,tsc`: opt-in project linters;
+- `--passes local,contracts`: review each chunk twice — once for defects in the changed lines, once for the
+  changed declarations and their consumers (about twice the cost);
+- `--expand refs|deep`: related unchanged code per chunk — usages of the changed declarations and the
+  definitions the new code calls (`deep`: also who calls those usages);
 - `--authors`: author attribution;
 - `--json`, `--plain`: output format;
 - `--format md,json,html,sarif,codequality`, `--out <dir>`: report files;
@@ -278,7 +285,8 @@ Report formats (`--format` or `output.formats`):
 | `sarif` | `report.sarif` | SARIF 2.1.0: GitHub code scanning and other SARIF viewers |
 | `codequality` | `report.codequality.json` | GitLab Code Quality (merge request widget) |
 
-Only reported findings are exported to SARIF and Code Quality, never rejected ones. Every finding has a stable
+Only reported findings are exported to SARIF and Code Quality, never rejected ones or those listed as "worth
+a look" (lower confidence or `info`; they are in the Markdown, HTML and JSON reports). Every finding has a stable
 fingerprint (its file, category and code, not line numbers), so code scanning and GitLab track it across runs.
 
 For debugging, every run also keeps `run.log` (every message, debug included, and the main events: plan,

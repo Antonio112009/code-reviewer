@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+- **"Worth a look" findings.** At `--full`, kept findings below confidence 0.6 (`review.advisoryConfidence`)
+  and `info` findings are listed apart: in the terminal summary and the Markdown, HTML and JSON reports
+  (`advisory`), but not posted to pull requests, exported to SARIF / Code Quality or counted by `--fail-on`;
+  the PR summary says how many there are. On the eval corpus, three of the four remarks the new critic let
+  through on clean changes land there.
+
+- **Full-depth self-critique keeps what it cannot refute.** At `--full`, the critic rejects a finding only
+  when the code refutes its claim; a correct finding with small, unlikely or edge-case impact is confirmed at
+  a lower severity instead, and findings are kept from confidence 0.5 (was 0.7). On AACR-Bench ctx30 the old
+  critic and threshold had dropped 16 of the 26 findings that matched expert-verified references (21 of 32
+  with focused passes). Essential depth is unchanged.
+
+- **Focused review passes (`--passes local,contracts`, `review.passes`).** Each chunk can be reviewed twice:
+  once for defects in the changed lines, once for the declarations the change touches and their consumers
+  (with the related unchanged code and a checklist of the changed declarations). Other reviewers found that
+  splitting the work by concern, not by file, is what lifts cross-file recall. Off by default until measured.
+
+- **Related unchanged code (`--expand refs|deep`, `review.expand`).** Each chunk can get excerpts of the
+  unchanged code that uses the changed declarations and of the definitions the new code calls (`deep`: also
+  the callers of those usages), so the reviewer sees how the change is used without searching for it. Found
+  with one `git grep` per chunk at the head commit; names used all over the code base, files that do not
+  refer to the changed module and C `static` functions are left out. Off by default.
+
 - **Full depth reviews for recall.** At `--full` the reviewer goes through every changed hunk and reports
   each plausible defect (partly confirmed ones with a lower confidence), leaving precision to the critic
   and the confidence threshold. On a 10-PR subset of AACR-Bench (`evals/aacr`) precision went 30% → 45% and

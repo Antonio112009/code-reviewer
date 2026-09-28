@@ -179,6 +179,13 @@ export function renderSummary(input: SummaryInput): string {
     `${SEVERITIES.map((s) => `**${counts[s]}** ${s}`).join(' · ')} — ${reviewed}${run.options?.depth ? `, depth ${forgeLine(run.options.depth, 20)}` : ''}`,
     '',
   );
+  const advisory = run.advisory?.length ?? 0;
+  if (advisory) {
+    out.push(
+      `${plural(advisory, 'more finding')} of lower confidence or \`info\` severity ${advisory === 1 ? 'is' : 'are'} listed as "worth a look" in the review report, not here.`,
+      '',
+    );
+  }
 
   const failed = run.chunks.filter((c) => c.status === 'failed');
   if (failed.length) {

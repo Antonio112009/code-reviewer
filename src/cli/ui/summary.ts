@@ -130,12 +130,12 @@ function findingMeta(f: Finding, theme: Theme): string {
   );
 }
 
-function findingLines(run: RunRecord, ctx: SummaryContext): string[] {
+function findingLines(findings: Finding[], ctx: SummaryContext): string[] {
   const { theme, linker, width } = ctx;
   const { c } = theme;
   const out: string[] = [];
   const indent = ' '.repeat(2 + 8 + 2);
-  groupFindings(run.findings).forEach((group, gi) => {
+  groupFindings(findings).forEach((group, gi) => {
     if (gi > 0) out.push('');
     const locs = group.findings.map((f) => linker.location(f.file, f.startLine, f.endLine));
     const locWidth = Math.min(48, Math.max(...locs.map(visibleWidth)));
@@ -187,7 +187,16 @@ export function renderSummary(run: RunRecord, ctx: SummaryContext): string {
   out.push(headline(run, theme));
   const status = statusLine(run, theme);
   if (status) out.push(status);
-  if (run.findings.length) out.push('', ...findingLines(run, ctx));
+  if (run.findings.length) out.push('', ...findingLines(run.findings, ctx));
+  if (run.advisory?.length) {
+    out.push(
+      '',
+      c.dim(
+        `Worth a look (${run.advisory.length}): lower confidence or info — in the reports, not in pull request comments or --fail-on`,
+      ),
+      ...findingLines(run.advisory, ctx),
+    );
+  }
   out.push('');
 
   const items = (name: string, list: string[]) => {

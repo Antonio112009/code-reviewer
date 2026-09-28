@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { z } from 'zod';
-import { REASONING_LEVELS, SEVERITIES } from '../types';
+import { EXPAND_LEVELS, REASONING_LEVELS, REVIEW_PASSES, SEVERITIES } from '../types';
 
 export const ACP_PRESETS = ['claude', 'codex', 'copilot', 'gemini', 'custom'] as const;
 export type AcpPresetId = (typeof ACP_PRESETS)[number];
@@ -86,6 +86,11 @@ export const ReviewSettingsSchema = z.object({
   depth: z.enum(REVIEW_DEPTHS),
   selfCritique: z.boolean(),
   minConfidence: z.number().min(0).max(1),
+  /**
+   * Kept findings below this confidence, and every `info` finding, are listed apart as "worth a look": in the
+   * reports, but not in pull request comments, SARIF / Code Quality or the `--fail-on` gate.
+   */
+  advisoryConfidence: z.number().min(0).max(1),
   /** Findings below this severity are dropped (static findings that cannot be rejected are kept). */
   minSeverity: z.enum(SEVERITIES),
   maxChunkTokens: z.number().int().positive(),
@@ -118,6 +123,16 @@ export const ReviewSettingsSchema = z.object({
   chunking: z.enum(['smart', 'directory']),
   /** Share of a chunk's budget that may hold read-only excerpts of related files owned by other chunks. */
   contextShare: z.number().min(0).max(0.5),
+  /**
+   * Related unchanged code added to each chunk (`chunking/expand.ts`): `refs` = usages of the changed
+   * declarations and definitions the new code calls; `deep` = also the callers of those usages.
+   */
+  expand: z.enum(EXPAND_LEVELS),
+  /**
+   * Passes per chunk: `general` reviews everything in one pass; `local` + `contracts` review the same code
+   * twice, once for defects in the changed lines and once for the changed declarations and their consumers.
+   */
+  passes: z.array(z.enum(REVIEW_PASSES)).min(1),
   /**
    * Where agents read code: `auto` = isolated snapshot for ACP agents, in place for API providers when the
    * checkout is clean and at head; `always` = always an isolated snapshot.
@@ -354,6 +369,7 @@ export const DEFAULT_CONFIG: Config = {
     depth: 'essential',
     selfCritique: true,
     minConfidence: 0.7,
+    advisoryConfidence: 0,
     minSeverity: 'major',
     maxChunkTokens: 40_000,
     maxChunks: 60,
@@ -374,6 +390,8 @@ export const DEFAULT_CONFIG: Config = {
     summary: false,
     chunking: 'smart',
     contextShare: 0.1,
+    expand: 'off',
+    passes: ['general'],
     isolation: 'auto',
   },
   git: {
@@ -436,7 +454,16 @@ export const DEFAULT_CONFIG: Config = {
  */
 export const DEPTH_PRESETS: Record<ReviewDepth, { review: Partial<ReviewSettings> }> = {
   essential: { review: { minSeverity: 'major', skillTokenBudget: 3_500, maxSteps: 15, contextShare: 0.1 } },
-  full: { review: { minSeverity: 'info', skillTokenBudget: 6_000, maxSteps: 25, contextShare: 0.2 } },
+  full: {
+    review: {
+      minSeverity: 'info',
+      skillTokenBudget: 6_000,
+      maxSteps: 25,
+      contextShare: 0.2,
+      minConfidence: 0.5,
+      advisoryConfidence: 0.6,
+    },
+  },
 };
 
 /** Partial config as written by users (every level optional). */

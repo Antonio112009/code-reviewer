@@ -169,6 +169,17 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
         maxChunkTokens: { doc: 'Most tokens of code in one review task.', example: D.review.maxChunkTokens },
         maxChunks: { doc: 'Warn when a review needs more chunks than this (nothing is dropped).' },
         contextShare: { doc: 'Share of a chunk that may hold read-only excerpts of related files (0–0.5).' },
+        advisoryConfidence: {
+          doc: 'Findings kept below this confidence, and info findings, go to a separate "worth a look" list: in the reports, not in PR comments, SARIF/Code Quality or --fail-on (full depth: 0.6).',
+        },
+        passes: {
+          doc: 'Passes per chunk: [general] (one review), or [local, contracts]: the changed lines, then the changed declarations and their consumers (about twice the cost).',
+          example: D.review.passes,
+        },
+        expand: {
+          doc: 'Related unchanged code per chunk: off; refs = usages of the changed declarations and definitions the new code calls; deep = also the callers of those usages.',
+          example: D.review.expand,
+        },
         fullFileTokens: { doc: 'Files smaller than this (tokens) are attached in full next to their diff.' },
         contextLines: { doc: 'Context lines around hunks when the full file is not attached.' },
         skills: {

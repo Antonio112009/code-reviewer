@@ -33,4 +33,20 @@ uv pip install -q -r requirements.txt --python .venv/bin/python
 .venv/bin/python -m converters.aacr_bench --input ../dataset/positive_samples.json \
   --output data/aacr_pilot.jsonl --limit 10 --seed 42 --validate
 
+# Named subsets (subsets/<name>.txt: one PR URL per line) → data/aacr_<name>.jsonl, for `run.sh --subset <name>`.
+for list in "$HERE"/subsets/*.txt; do
+  [ -e "$list" ] || continue
+  name=$(basename "$list" .txt)
+  .venv/bin/python - "$list" "data/subset_$name.json" <<'PY'
+import json, sys
+wanted = {line.strip() for line in open(sys.argv[1]) if line.strip()}
+records = [r for r in json.load(open('../dataset/positive_samples.json')) if r['githubPrUrl'] in wanted]
+missing = wanted - {r['githubPrUrl'] for r in records}
+if missing:
+    sys.exit(f'unknown PRs in {sys.argv[1]}: {sorted(missing)}')
+json.dump(records, open(sys.argv[2], 'w'))
+PY
+  .venv/bin/python -m converters.aacr_bench --input "data/subset_$name.json" --output "data/aacr_$name.jsonl" --validate
+done
+
 echo "AACR-Bench harness ready in $EVAL"
