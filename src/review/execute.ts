@@ -50,6 +50,10 @@ export class ModelRouter {
     return this.deps.budget;
   }
 
+  get logger(): Logger | undefined {
+    return this.deps.logger;
+  }
+
   route(role: Role): RoleRouting {
     const r = this.routes[role];
     if (!r) throw new Error(`no ${role} route configured`);
@@ -294,6 +298,11 @@ export async function runRouted(
       const result = await provider.run({ ...task, model: route.model, reasoning: route.reasoning });
       const model = result.model ?? route.model;
       const usage = usageOrEstimate(result.usage, task, result.text);
+      for (const call of result.submission.toolLog ?? []) {
+        router.logger?.debug(
+          `${task.label}: tool ${call.name} ${call.args} → ${call.error ? 'error, ' : ''}${call.lines} lines, ${call.chars} chars, ${call.ms} ms`,
+        );
+      }
       const entry: Spend = { provider: route.provider, ...(model ? { model } : {}), usage };
       spend.push(entry);
       budget?.add(entry);

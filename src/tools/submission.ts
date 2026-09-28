@@ -1,6 +1,19 @@
 import { renameSync, writeFileSync } from 'node:fs';
 import type { ReportedFinding, ReportedVerdict, SubmitFindings, SubmitVerdicts } from '../types';
 
+/** One call of our read tools, for the run log and the chunk artifacts. */
+export interface ToolCallEntry {
+  name: string;
+  /** The arguments as JSON, clipped. */
+  args: string;
+  /** Size of the result shown to the model. */
+  chars: number;
+  lines: number;
+  /** The tool failed (the model got an error message). */
+  error?: boolean;
+  ms: number;
+}
+
 export interface Submission {
   findings?: ReportedFinding[];
   verdicts?: ReportedVerdict[];
@@ -8,10 +21,14 @@ export interface Submission {
   calls: number;
   /** Files the model read through our tools (root-relative): a cached result is valid while they are unchanged. */
   reads?: string[];
+  /** Our read-tool calls, in order (submit calls not included). */
+  toolLog?: ToolCallEntry[];
 }
 
 /** Most distinct files recorded as read by one task. */
 const MAX_READS = 500;
+/** Most tool calls logged per task. */
+const MAX_TOOL_LOG = 300;
 
 /**
  * Accumulates `submit_*` tool calls. Models sometimes submit in several calls,
@@ -45,6 +62,14 @@ export class SubmissionCollector {
     const reads = this.state.reads ?? [];
     if (reads.includes(rel) || reads.length >= MAX_READS) return;
     this.state.reads = [...reads, rel];
+    this.persist();
+  }
+
+  /** Records one read-tool call. */
+  noteCall(entry: ToolCallEntry): void {
+    const log = this.state.toolLog ?? [];
+    if (log.length >= MAX_TOOL_LOG) return;
+    this.state.toolLog = [...log, entry];
     this.persist();
   }
 

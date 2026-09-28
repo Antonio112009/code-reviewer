@@ -136,6 +136,8 @@ interface GitRunOptions {
   stripFinalNewline?: boolean;
   maxBuffer?: number;
   env?: Record<string, string>;
+  /** Kill git after this long (ms). */
+  timeout?: number;
 }
 
 function git(args: string[], opts: GitRunOptions) {
@@ -206,6 +208,28 @@ export class GitRepo {
       );
     }
     return String(res.stdout);
+  }
+
+  /**
+   * Runs git and reports how it ended instead of throwing: the exit code tells "no match" (`git grep` exit 1)
+   * from an error (128, e.g. an invalid pattern, with the reason in `stderr`).
+   */
+  async runStatus(
+    args: string[],
+    opts: { timeoutMs?: number; maxBuffer?: number } = {},
+  ): Promise<{ code: number; stdout: string; stderr: string; timedOut: boolean }> {
+    const res = await git([...STABLE_FLAGS, ...args], {
+      cwd: this.root,
+      reject: false,
+      ...(opts.timeoutMs ? { timeout: opts.timeoutMs } : {}),
+      maxBuffer: opts.maxBuffer ?? 64 * 1024 * 1024,
+    });
+    return {
+      code: typeof res.exitCode === 'number' ? res.exitCode : -1,
+      stdout: String(res.stdout ?? ''),
+      stderr: String(res.stderr ?? ''),
+      timedOut: res.timedOut === true,
+    };
   }
 
   async tryRun(args: string[], cwd?: string): Promise<{ ok: boolean; stdout: string }> {

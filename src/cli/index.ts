@@ -46,12 +46,6 @@ export function buildProgram(): Command {
     .requiredOption('--submit-file <file>')
     .option('--no-git')
     .option('--no-read-tools')
-    .option('--project-root <dir>', 'repository root used to load project skills')
-    .option('--no-skills', 'do not expose list_skills / get_skill')
-    .option('--skills-exclude <ids>', 'comma-separated skill ids hidden from the skill tools')
-    .addOption(
-      new Option('--depth <depth>', 'review depth the skill tools serve').choices(['essential', 'full']),
-    )
     .action(
       async (opts: {
         root: string;
@@ -59,10 +53,6 @@ export function buildProgram(): Command {
         submitFile: string;
         git: boolean;
         readTools: boolean;
-        projectRoot?: string;
-        skills: boolean;
-        skillsExclude?: string;
-        depth?: 'essential' | 'full';
       }) => {
         await runMcpServe({
           root: opts.root,
@@ -70,10 +60,6 @@ export function buildProgram(): Command {
           submitFile: opts.submitFile,
           git: opts.git,
           readTools: opts.readTools,
-          projectRoot: opts.projectRoot,
-          skills: opts.skills,
-          skillsExclude: opts.skillsExclude?.split(',').filter(Boolean),
-          depth: opts.depth,
         });
       },
     );

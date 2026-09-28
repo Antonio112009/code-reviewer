@@ -241,7 +241,7 @@ export function activationSummary(skill: Skill): string {
       inherited
         ? 'every chunk of this technology'
         : skill.source === 'project'
-          ? 'explicit selection / get_skill only'
+          ? 'explicit selection only'
           : 'every chunk',
     );
   }

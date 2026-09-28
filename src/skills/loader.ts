@@ -615,7 +615,7 @@ export function parseSkill(
       alwaysOn = false;
     }
     if (!hasActivation(activation) && !groups.some((g) => g.detect && hasActivation(g.detect))) {
-      note('declares no activation; it is used only when selected explicitly or fetched with get_skill.');
+      note('declares no activation; it is used only when selected explicitly (--skills).');
     }
   }
 
