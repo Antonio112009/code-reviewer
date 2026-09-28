@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.1 — 2026-09-28
+
+- **npm.** Published as `@antonio112009/code-reviewer`; install with
+  `npm install -g @antonio112009/code-reviewer`.
+- **Releases.** A version tag runs GitHub Actions, which:
+  - publishes the GitHub release with an attested `code-reviewer.tgz`;
+  - stages the npm version through Trusted Publishing. It goes live after the maintainer's 2FA
+    approval.
+- **Agent skill `release`.** Claude Code, Codex and GitHub Copilot can follow the release procedure
+  from `.claude/skills/` and `.agents/skills/`.
+
 ## 0.1.0 — first preview
 
 Released under the [MIT License](LICENSE). Requires Node.js 24 or newer.

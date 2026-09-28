@@ -224,6 +224,8 @@ npm install && npm run build && npm run typecheck && npm run lint && npm test
     approve it with 2FA: `npm stage list`, then `npm stage approve <id>`, or on npmjs.com.
 
   Verify a download with `gh attestation verify code-reviewer.tgz --repo antonio112009/code-reviewer`.
+  Coding agents (Claude Code, Codex, GitHub Copilot) can run the whole procedure with the `release`
+  skill in `.agents/skills/` and `.claude/skills/`.
 
 Architecture, contracts and the safety model: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Changes:
 [CHANGELOG.md](CHANGELOG.md).
