@@ -171,8 +171,9 @@ export const ReviewSettingsSchema = z.object({
   /** Share of a chunk's budget that may hold read-only excerpts of related files owned by other chunks. */
   contextShare: z.number().min(0).max(0.5),
   /**
-   * Related unchanged code added to each chunk (`chunking/expand.ts`): `refs` = usages of the changed
-   * declarations and definitions the new code calls; `deep` = also the callers of those usages.
+   * Related unchanged code added to each chunk (`chunking/expand.ts`): `map` = an impact map (where unchanged
+   * code uses the changed declarations, where the called functions are defined; file:line, no code);
+   * `refs` = the map plus excerpts of those places; `deep` = also the callers of those usages.
    */
   expand: z.enum(EXPAND_LEVELS),
   /**
@@ -449,7 +450,7 @@ export const DEFAULT_CONFIG: Config = {
     summary: false,
     chunking: 'smart',
     contextShare: 0.1,
-    expand: 'off',
+    expand: 'map',
     passes: ['general'],
     isolation: 'auto',
   },

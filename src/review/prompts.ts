@@ -1,4 +1,5 @@
 import { chunkTextFor } from '../chunking/chunker';
+import { renderImpact } from '../chunking/expand';
 import type { ProjectSettings, ReviewDepth } from '../config/schema';
 import type { SkillMatch } from '../skills/detector';
 import type { DependencyRoot } from '../tools/dependencies';
@@ -179,6 +180,14 @@ In "__new code__" blocks, lines marked "+" were added or modified by the change;
   lines.push('', '## Files to review', chunkTextFor(chunk, 'review'));
   const context = chunkTextFor(chunk, 'context');
   if (context.trim()) lines.push('', '## Related files (read-only context)', context);
+  if (chunk.impact?.length) {
+    lines.push(
+      '',
+      '## Impact map (unchanged code the change reaches)',
+      'Where unchanged code uses what this change modifies, and where the functions it calls are defined. Check the places that may rely on the old behaviour; report a defect the change causes there on the changed line that causes it.',
+      renderImpact(chunk.impact),
+    );
+  }
   const related = chunkTextFor(chunk, 'related');
   if (related.trim()) {
     lines.push(
@@ -216,6 +225,7 @@ export function reviewPromptIdentity(opts: Parameters<typeof reviewPrompt>[0]): 
     related: chunkTextFor(chunk, 'related'),
     pass: chunk.pass ?? null,
     declarations: chunk.declarations ?? [],
+    impact: chunk.impact ?? [],
     hints: (opts.hints ?? []).map((h) => [
       h.analyzer,
       h.ruleId,

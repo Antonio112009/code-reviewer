@@ -12,8 +12,10 @@ import {
   expandChunks,
   type Match,
   refersTo,
+  renderImpact,
 } from '../src/chunking/expand';
 import { callEdges } from '../src/chunking/graph';
+import { estimateTokens } from '../src/chunking/tokens';
 import { runReview } from '../src/review/pipeline';
 import type { Chunk, DiffLine, ReviewUnit } from '../src/types';
 import { silentLogger } from '../src/util/logger';
@@ -178,6 +180,16 @@ describe('calledNames', () => {
   });
 });
 
+describe('declaredName with export macros', () => {
+  it('takes the name after a C++ export macro, not the macro', () => {
+    expect(declaredName('class MaterialsExport Library : public Base {')).toBe('Library');
+    expect(declaredName('class MYLIB_API Widget final {')).toBe('Widget');
+    expect(declaredName('struct Point;')).toBe('Point');
+    expect(declaredName('export class Foo extends Bar {')).toBe('Foo');
+    expect(declaredName('class Foo(val a: Int) : Base()')).toBe('Foo');
+  });
+});
+
 describe('enclosingDeclaration', () => {
   it('finds the closest declaration above that is not nested deeper', () => {
     const lines = ['class A {', '  run() {', '    if (x) {', '      go();', '    }', '  }', '}'];
@@ -242,8 +254,64 @@ describe('expandChunks', () => {
     expect(part.text).toContain('## Related: src/report.ts — uses `total`');
     expect(part.text).toContain('3   export function summary(rows: number[]) {'); // the enclosing function
     expect(part.text).toContain('4     const sum = total(rows);');
-    expect(chunk.tokens).toBe(1_000 + part.tokens);
-    expect(stats).toMatchObject({ symbols: 1, files: 1 });
+    expect(chunk.tokens).toBe(1_000 + part.tokens + estimateTokens(renderImpact(chunk.impact!)));
+    expect(stats).toMatchObject({ symbols: 1, files: 1, impact: 1 });
+  });
+
+  it('lists where the change reaches as an impact map, without code at map', async () => {
+    const callsHelper = unit('src/lib.ts', lib.content!, [
+      ['del', 'export function total(xs: number[]) {'],
+      ['add', 'export function total(xs: number[], rate: number) {'],
+      ['add', '  return helper(xs);'],
+    ]);
+    const chunk = chunkOf(['src/lib.ts']);
+    const extra: Match[] = [
+      { path: 'src/helper.ts', line: 1, text: 'export function helper(xs: number[]) {' },
+    ];
+    files['src/helper.ts'] = 'export function helper(xs: number[]) {\n  return 1;\n}';
+    const stats = await expandChunks([chunk], [callsHelper], source(extra), {
+      level: 'map',
+      changed: new Set(['src/lib.ts']),
+      maxTokens: () => 5_000,
+    });
+    delete files['src/helper.ts'];
+    expect(chunk.impact).toEqual([
+      {
+        name: 'total',
+        kind: 'signature',
+        file: 'src/lib.ts',
+        sites: [{ path: 'src/report.ts', line: 4, in: 'summary' }],
+        more: 0,
+      },
+      { name: 'helper', kind: 'callee', sites: [{ path: 'src/helper.ts', line: 1 }], more: 0 },
+    ]);
+    expect(renderImpact(chunk.impact!)).toBe(
+      [
+        '- `total` — declaration changed in src/lib.ts; used at src/report.ts:4 (in `summary`)',
+        '- `helper` — called by the change; defined at src/helper.ts:1',
+      ].join('\n'),
+    );
+    expect(chunk.parts).toEqual([]); // no excerpts
+    expect(chunk.related).toBeUndefined();
+    expect(stats).toMatchObject({ impact: 2, files: 0 });
+  });
+
+  it('says when a removed declaration has no uses left', async () => {
+    const removed = unit('src/lib.ts', 'export const x = 1;', [
+      ['del', 'export function dropped(a: number) {'],
+      ['del', '  return a;'],
+      ['del', '}'],
+      ['add', 'export const x = 1;'],
+    ]);
+    const chunk = chunkOf(['src/lib.ts']);
+    await expandChunks([chunk], [removed], source(), {
+      level: 'map',
+      changed: new Set(['src/lib.ts']),
+      maxTokens: () => 0,
+    });
+    expect(renderImpact(chunk.impact!)).toBe(
+      '- `dropped` — removed from src/lib.ts; no uses found in unchanged code',
+    );
   });
 
   it('follows the users one step further at deep', async () => {

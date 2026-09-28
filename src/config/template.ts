@@ -188,7 +188,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           example: D.review.passes,
         },
         expand: {
-          doc: 'Related unchanged code per chunk: off; refs = usages of the changed declarations and definitions the new code calls; deep = also the callers of those usages.',
+          doc: 'Related unchanged code per chunk: off; map = impact map (file:line of the usages of the changed declarations and of the definitions the new code calls); refs = the map plus excerpts of that code; deep = also the callers of those usages.',
           example: D.review.expand,
         },
         fullFileTokens: { doc: 'Files smaller than this (tokens) are attached in full next to their diff.' },

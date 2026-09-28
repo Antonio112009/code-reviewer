@@ -431,7 +431,7 @@ export function addRunLimitOptions(cmd: Command): Command {
     )
     .option(
       '--expand <level>',
-      'related unchanged code per chunk: off | refs (usages, called definitions) | deep',
+      'related unchanged code per chunk: off | map (file:line of usages and called definitions, default) | refs (plus excerpts) | deep',
     )
     .option('--no-analyzers', 'skip the static-analysis pre-pass')
     .option('--on-unavailable <mode>', 'when a model is unavailable: ask | fallback | fail');
