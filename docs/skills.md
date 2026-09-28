@@ -77,6 +77,26 @@ sources:
   cases. It is inherited from the nearest `_group.yaml` and defaults to `essential`.
 - **`[full]` bullets.** A bullet marked `[full]` is left out at the essential depth.
 - **`alwaysOn`.** Reserved for `practice/general-bugs` and `security/core`.
+- **`checks`.** Structural checks: [ast-grep](https://ast-grep.github.io) rules that run on the changed
+  files before the review when `ast-grep` is on PATH; a match on a changed line becomes a hint the model
+  confirms or rejects. Up to 10 per skill, each with `id`, `language` (one or a list: `[TypeScript, Tsx,
+  JavaScript]`), `rule` (plus optional `constraints`/`utils`), `message`, optional `severity`, `category`
+  and `confidence` (default 0.5), and `examples` it must match (tested with the bundled dev copy of
+  ast-grep). `fix`, `transform` and custom languages are refused; the repository's `sgconfig.yml` and
+  ignore files are never read. A check pays off where a regex cannot tell: an `async` callback passed to
+  `forEach`, a `defer` inside a loop but not inside a closure.
+
+  ```yaml
+  checks:
+    - id: defer-in-loop
+      language: Go
+      message: defer inside a loop runs only when the function returns
+      severity: major
+      rule:
+        kind: defer_statement
+        inside: { kind: for_statement, stopBy: { any: [{ kind: func_literal }, { kind: function_declaration }] } }
+      examples: ["func f(ns []string) {\n\tfor _, n := range ns {\n\t\tf, _ := os.Open(n)\n\t\tdefer f.Close()\n\t}\n}"]
+  ```
 
 ## Versions
 

@@ -20,6 +20,23 @@ activation:
     - 'os.Exit(1)'
     - 'log.Fatalf("failed: %v", err)'
     - 'go func() { worker(item) }()'
+checks:
+  - id: defer-in-loop
+    language: Go
+    message: defer inside a loop runs only when the function returns — files, locks or transactions pile up until then
+    severity: major
+    confidence: 0.6
+    rule:
+      kind: defer_statement
+      inside:
+        kind: for_statement
+        stopBy:
+          any:
+            - kind: func_literal
+            - kind: function_declaration
+            - kind: method_declaration
+    examples:
+      - "func f(names []string) {\n\tfor _, n := range names {\n\t\tfile, _ := os.Open(n)\n\t\tdefer file.Close()\n\t}\n}"
 sources:
   - https://go.dev/ref/spec#Handling_panics
   - https://go.dev/ref/spec#Defer_statements

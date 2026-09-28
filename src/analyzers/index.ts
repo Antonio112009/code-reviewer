@@ -2,6 +2,7 @@ import pLimit from 'p-limit';
 import type { AnalyzerSettings } from '../config/schema';
 import type { AnalyzerRun, StaticHit } from '../types';
 import type { ProcessRegistry } from '../util/processes';
+import { astGrepAnalyzer, type StructuralCheck } from './ast-grep';
 import { probeVersion, scrubEnv } from './env';
 import { AnalyzerError } from './exec';
 import { EXTERNAL_ANALYZERS } from './external';
@@ -40,6 +41,8 @@ export interface AnalyzeOptions {
   env?: NodeJS.ProcessEnv;
   /** Process registry for spawned tools (defaults to the process-wide one used by shutdown). */
   registry?: ProcessRegistry;
+  /** Structural checks of the loaded skills, run by the `ast-grep` analyzer. */
+  checks?: readonly StructuralCheck[];
 }
 
 export interface AnalyzeResult {
@@ -53,6 +56,7 @@ const ANALYZERS: readonly AnalyzerDef[] = [
   patternsAnalyzer,
   suppressionsAnalyzer,
   ...EXTERNAL_ANALYZERS,
+  astGrepAnalyzer,
   ...PROJECT_ANALYZERS,
 ];
 const ORDER = new Map(ANALYZERS.map((a, i) => [a.id, i]));
@@ -160,6 +164,7 @@ async function execute(
     version,
     repoRoot: def.tier === 'project' ? opts.repoRoot : undefined,
     registry: opts.registry,
+    checks: opts.checks,
     sandbox: async (sandboxFiles, transform) => {
       const box = await createSandbox(def.id, sandboxFiles, { repoRoot: opts.repoRoot, transform });
       sandboxes.push(box);
@@ -246,7 +251,7 @@ export async function runAnalyzers(opts: AnalyzeOptions): Promise<AnalyzeResult>
     if (def.tier === 'builtin' && !settings.builtin) continue;
     if (def.tier === 'external' && settings.external === 'off') continue;
     if (def.tier === 'project' && !optIn.has(def.id)) continue;
-    const selected = def.select(files, mode);
+    const selected = def.select(files, mode, opts.checks);
     if (selected.length === 0) {
       if (def.tier === 'project') {
         emit({

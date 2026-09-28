@@ -3,6 +3,7 @@ import { lstat, readdir, readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 import YAML from 'yaml';
 import { z } from 'zod';
+import { MAX_CHECKS_PER_SKILL, type StructuralCheck, StructuralCheckSchema } from '../analyzers/ast-grep';
 import { estimateTokens } from '../chunking/tokens';
 import { isTechId, TECH_IDS } from '../context/stack/techs';
 import { unsafeGlobReason } from '../util/globs';
@@ -152,6 +153,8 @@ export const SkillMetaSchema = z.object({
   sources: Strings.default([]),
   activation: ActivationSchema.optional(),
   match: LegacyMatchSchema.optional(),
+  /** Structural checks (ast-grep rules) run before the review; their matches become hints. */
+  checks: z.array(StructuralCheckSchema).max(MAX_CHECKS_PER_SKILL).optional(),
 });
 
 export type SkillSource = 'builtin' | 'global' | 'project';
@@ -182,6 +185,8 @@ export interface Skill {
   extends: string[];
   tags: string[];
   activation: SkillActivation;
+  /** Structural checks (`analyzers/ast-grep.ts`), tagged with this skill's id. */
+  checks?: StructuralCheck[];
   /** Ancestor folder groups, root first (their `detect` blocks gate this skill). */
   groups: SkillGroup[];
   /** The checklist (markdown), `[full]` markers removed. */
@@ -637,6 +642,7 @@ export function parseSkill(
     extends: [...new Set(meta.extends)].filter((e) => e !== id),
     tags: meta.tags,
     activation,
+    ...(meta.checks?.length ? { checks: meta.checks.map((c) => ({ ...c, skill: id })) } : {}),
     groups,
     body,
     essentialBody,

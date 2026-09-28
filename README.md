@@ -113,7 +113,7 @@ flowchart LR
 1. **Refs.** Picks the base branch (CI pull request, open PR/MR, branch rules such as `feature/** →
    develop → main`) and fetches it fresh.
 2. **Stack and hints.** Detects technologies and versions from manifests. Runs secret scanning, about
-   130 bug-pattern rules and safe external linters, whose hits become hints.
+   130 bug-pattern rules, safe external linters and the skills' ast-grep checks, whose hits become hints.
 3. **Chunks.** Groups related files into chunks that fit the model's context window. Each chunk gets an
    impact map: where unchanged code uses what changed and where the functions it calls are defined
    (file:line). With `--expand refs|deep`, excerpts of that code too.
@@ -406,9 +406,8 @@ Architecture, contracts and the safety model: [docs/ARCHITECTURE.md](docs/ARCHIT
 
 ## Roadmap
 
-- Skill-bundled **structural checks** (ast-grep rules next to each skill). They will run before the LLM
-  and be available to it as a tool.
-- Resolving review threads whose finding was fixed; Bitbucket and Azure DevOps comments.
+- Structural checks (ast-grep) available to the model as a tool, and more checks in the skills.
+- Bitbucket and Azure DevOps comments.
 
 ## License
 
