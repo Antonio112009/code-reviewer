@@ -425,7 +425,8 @@ const NOT_A_TYPE =
  * calls (`foo(x);`) and prototypes are left out.
  */
 export function definitionPattern(name: string): string {
-  const n = name.replace(/\$/g, '\\$');
+  // The tool accepts identifiers only; escape every metacharacter anyway (the pattern goes to PCRE).
+  const n = name.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
   return [
     `\\b(?:function|class|interface|type|enum|struct|union|trait|impl|def|fn|func|fun|module|record|object|protocol|extension|namespace|typealias)\\s+${n}(?![\\w$])`,
     `\\b(?:const|let|var|val)\\s+${n}\\s*[:=]`,
