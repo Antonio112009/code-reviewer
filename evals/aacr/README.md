@@ -91,6 +91,27 @@ concern or suggestion". Our comment text is the finding's title, failure scenari
 | 2026-09-28 | full-depth recall | same, `--max-chunk-tokens 15000` | pilot, 9 of 10 | 57.1% (4/7) | 7.3% (4/55) | 12.9% | 0.8 | $1.35 |
 | 2026-09-28 | full-depth recall + expand | same, `--expand refs` | pilot, 9 of 10 | 20.0% (2/10) | 3.6% (2/55) | 6.1% | 1.1 | $1.21, 4.4 min |
 
+### ctx30 (30 PRs, 286 references), two runs per variant
+
+Run with `--full` and main's defaults (Sonnet at medium reasoning, Opus critique); Sonnet judge; mean of two
+runs (each run in brackets). "Worth a look" findings count, since they are in the report.
+
+| Variant | Commit | Findings | Precision | Recall | Diff / File / Repo recall | F1 | Cost / run |
+|---|---|---|---|---|---|---|---|
+| Baseline (critique drops unlikely defects, threshold 0.7) | `888a513` | 18.5 | 59.4% | 3.8% (10, 12) | 2.6 / 5.1 / 4.4% | 7.3% (6.6, 7.9) | $20 |
+| Focused passes, same critique | `888a513` | 22 | 52.5% | 4.0% (11, 12) | 3.0 / 5.1 / 4.4% | 7.5% (7.1, 7.8) | $35 |
+| Critique keeps what it cannot refute, threshold 0.5 | `16c8343` | 40 | 45.5% | 6.3% (17, 19) | 4.1 / 8.4 / 7.8% | 11.1% (10.3, 11.8) | $20 |
+| Same, plus focused passes | `16c8343` | 59 | 36.9% | 7.5% (21, 22) | 5.6 / 9.3 / 8.9% | 12.5% (12.4, 12.5) | $34 |
+
+- Before the critique change, the reviewer had found 60 candidates in the first baseline run (90 with focused
+  passes). The critique and threshold dropped 16 of the 26 that matched references (21 of 32 with passes),
+  as "theoretical", "unreachable with current callers" or "same gap elsewhere".
+- The new critique lets more robustness remarks through. On the eval corpus it flagged 4 of 8 clean changes.
+  With the "worth a look" list (below confidence 0.6 or `info`, kept out of PR comments and gates), that is
+  back to 1 of 8, at 96% precision.
+- Focused passes add about 1.4 points of F1 for about 70% more cost, and the gain is within the spread of
+  two runs, so they stay opt-in.
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).
