@@ -1,0 +1,151 @@
+title: Cart lines priced in parallel through a calculator that is not safe for concurrent use
+tags: [go, concurrency, cross-file, hard]
+base:
+  go.mod: |
+    module example.com/shop
+
+    go 1.23
+  internal/pricing/calculator.go: |
+    package pricing
+
+    import (
+    	"context"
+    	"fmt"
+    )
+
+    // Money is an amount in cents.
+    type Money int64
+
+    type PriceList interface {
+    	UnitPrice(ctx context.Context, sku string) (Money, error)
+    }
+
+    // Calculator prices items against a price list and remembers the unit prices it
+    // has looked up, so a cart with repeated SKUs asks the price list once per SKU.
+    // Create one per quote; a Calculator is not safe for concurrent use.
+    type Calculator struct {
+    	list   PriceList
+    	prices map[string]Money
+    }
+
+    func NewCalculator(list PriceList) *Calculator {
+    	return &Calculator{list: list, prices: make(map[string]Money)}
+    }
+
+    func (c *Calculator) Price(ctx context.Context, sku string, qty int) (Money, error) {
+    	unit, ok := c.prices[sku]
+    	if !ok {
+    		var err error
+    		if unit, err = c.list.UnitPrice(ctx, sku); err != nil {
+    			return 0, fmt.Errorf("price %s: %w", sku, err)
+    		}
+    		c.prices[sku] = unit
+    	}
+    	return unit * Money(qty), nil
+    }
+  internal/quotes/quote.go: |
+    package quotes
+
+    import "example.com/shop/internal/pricing"
+
+    type Line struct {
+    	SKU string
+    	Qty int
+    }
+
+    type PricedLine struct {
+    	Line
+    	Amount pricing.Money
+    }
+
+    type Quote struct {
+    	Lines []PricedLine
+    	Total pricing.Money
+    }
+  internal/quotes/service.go: |
+    package quotes
+
+    import (
+    	"context"
+
+    	"example.com/shop/internal/pricing"
+    )
+
+    type Service struct {
+    	prices pricing.PriceList
+    }
+
+    func NewService(prices pricing.PriceList) *Service {
+    	return &Service{prices: prices}
+    }
+
+    func (s *Service) Quote(ctx context.Context, lines []Line) (Quote, error) {
+    	calc := pricing.NewCalculator(s.prices)
+    	q := Quote{Lines: make([]PricedLine, len(lines))}
+    	for i, l := range lines {
+    		amount, err := calc.Price(ctx, l.SKU, l.Qty)
+    		if err != nil {
+    			return Quote{}, err
+    		}
+    		q.Lines[i] = PricedLine{Line: l, Amount: amount}
+    		q.Total += amount
+    	}
+    	return q, nil
+    }
+head:
+  go.mod: |
+    module example.com/shop
+
+    go 1.23
+
+    require golang.org/x/sync v0.10.0
+  internal/quotes/service.go: |
+    package quotes
+
+    import (
+    	"context"
+
+    	"golang.org/x/sync/errgroup"
+
+    	"example.com/shop/internal/pricing"
+    )
+
+    type Service struct {
+    	prices      pricing.PriceList
+    	parallelism int
+    }
+
+    // NewService prices up to parallelism lines of a quote at a time: the price list is a remote service.
+    func NewService(prices pricing.PriceList, parallelism int) *Service {
+    	return &Service{prices: prices, parallelism: max(1, parallelism)}
+    }
+
+    func (s *Service) Quote(ctx context.Context, lines []Line) (Quote, error) {
+    	calc := pricing.NewCalculator(s.prices)
+    	q := Quote{Lines: make([]PricedLine, len(lines))}
+    	g, gctx := errgroup.WithContext(ctx)
+    	g.SetLimit(s.parallelism)
+    	for i, l := range lines {
+    		g.Go(func() error {
+    			amount, err := calc.Price(gctx, l.SKU, l.Qty)
+    			if err != nil {
+    				return err
+    			}
+    			q.Lines[i] = PricedLine{Line: l, Amount: amount}
+    			return nil
+    		})
+    	}
+    	if err := g.Wait(); err != nil {
+    		return Quote{}, err
+    	}
+    	for _, pl := range q.Lines {
+    		q.Total += pl.Amount
+    	}
+    	return q, nil
+    }
+expect:
+  - file: internal/quotes/service.go
+    lines: 28
+    also: [[22, 27]]
+    severity: major
+    note: pricing.Calculator memoizes unit prices in an unguarded map and is documented as not safe for concurrent use; sharing one across the errgroup goroutines races on the map (fatal "concurrent map writes" crashes the process)

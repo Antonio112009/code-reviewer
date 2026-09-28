@@ -10,8 +10,11 @@ export interface ExpectedDefect {
   file: string;
   startLine: number;
   endLine: number;
-  /** Other line ranges of the same file where a report of this defect also counts (e.g. its cause). */
-  also?: Array<{ startLine: number; endLine: number }>;
+  /**
+   * Other places where a report of this defect also counts (e.g. its cause, or the caller that crashes):
+   * line ranges of the same file, or of `file`.
+   */
+  also?: Array<{ startLine: number; endLine: number; file?: string }>;
   /** Lowest severity a reviewer should give it; a match below it counts as `underrated`. */
   severity?: Severity;
   note?: string;

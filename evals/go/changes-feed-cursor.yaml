@@ -1,0 +1,139 @@
+title: Sync feed pages through records with a column-wise (updated_at, id) cursor comparison
+tags: [go, sql, postgresql, pagination, data-loss, logic, hard]
+base:
+  go.mod: |
+    module example.com/notes
+
+    go 1.23
+
+    require github.com/jackc/pgx/v5 v5.7.2
+head:
+  internal/changefeed/store.go: |
+    package changefeed
+
+    import (
+    	"context"
+    	"encoding/base64"
+    	"encoding/json"
+    	"errors"
+    	"strconv"
+    	"strings"
+    	"time"
+
+    	"github.com/jackc/pgx/v5"
+    	"github.com/jackc/pgx/v5/pgxpool"
+    )
+
+    // Change is the current state of a record that was created or updated.
+    type Change struct {
+    	ID        int64           `json:"id"`
+    	Kind      string          `json:"kind"`
+    	Payload   json.RawMessage `json:"payload"`
+    	UpdatedAt time.Time       `json:"updatedAt"`
+    }
+
+    // Cursor is the position of the last change a client has received, in (updated_at, id) order.
+    type Cursor struct {
+    	UpdatedAt time.Time
+    	ID        int64
+    }
+
+    var ErrInvalidCursor = errors.New("invalid cursor")
+
+    func (c Cursor) String() string {
+    	raw := c.UpdatedAt.UTC().Format(time.RFC3339Nano) + "," + strconv.FormatInt(c.ID, 10)
+    	return base64.RawURLEncoding.EncodeToString([]byte(raw))
+    }
+
+    // ParseCursor decodes a cursor returned by an earlier page; "" is the start of the feed.
+    func ParseCursor(s string) (Cursor, error) {
+    	if s == "" {
+    		return Cursor{}, nil
+    	}
+    	raw, err := base64.RawURLEncoding.DecodeString(s)
+    	if err != nil {
+    		return Cursor{}, ErrInvalidCursor
+    	}
+    	ts, id, ok := strings.Cut(string(raw), ",")
+    	if !ok {
+    		return Cursor{}, ErrInvalidCursor
+    	}
+    	var c Cursor
+    	if c.UpdatedAt, err = time.Parse(time.RFC3339Nano, ts); err != nil {
+    		return Cursor{}, ErrInvalidCursor
+    	}
+    	if c.ID, err = strconv.ParseInt(id, 10, 64); err != nil {
+    		return Cursor{}, ErrInvalidCursor
+    	}
+    	return c, nil
+    }
+
+    type Store struct {
+    	db *pgxpool.Pool
+    }
+
+    func NewStore(db *pgxpool.Pool) *Store { return &Store{db: db} }
+
+    // ChangesAfter returns up to limit of the account's records that come after the cursor in
+    // (updated_at, id) order, and the cursor of the last one returned.
+    func (s *Store) ChangesAfter(ctx context.Context, accountID int64, after Cursor, limit int) ([]Change, Cursor, error) {
+    	rows, err := s.db.Query(ctx, `
+    		SELECT id, kind, payload, updated_at
+    		  FROM records
+    		 WHERE account_id = $1
+    		   AND updated_at >= $2 AND id > $3
+    		 ORDER BY updated_at, id
+    		 LIMIT $4`, accountID, after.UpdatedAt, after.ID, limit)
+    	if err != nil {
+    		return nil, after, err
+    	}
+    	changes, err := pgx.CollectRows(rows, pgx.RowToStructByPos[Change])
+    	if err != nil {
+    		return nil, after, err
+    	}
+    	next := after
+    	if n := len(changes); n > 0 {
+    		next = Cursor{UpdatedAt: changes[n-1].UpdatedAt, ID: changes[n-1].ID}
+    	}
+    	return changes, next, nil
+    }
+  internal/changefeed/handler.go: |
+    package changefeed
+
+    import (
+    	"encoding/json"
+    	"net/http"
+
+    	"example.com/notes/internal/auth"
+    )
+
+    const pageSize = 500
+
+    type Handler struct {
+    	store *Store
+    }
+
+    func NewHandler(store *Store) *Handler { return &Handler{store: store} }
+
+    // ServeHTTP serves GET /v1/changes?cursor=<cursor>. Clients start without a cursor and pass the
+    // returned one back; a page with fewer than pageSize changes means they are up to date.
+    func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    	account := auth.AccountFrom(r.Context())
+    	after, err := ParseCursor(r.URL.Query().Get("cursor"))
+    	if err != nil {
+    		http.Error(w, err.Error(), http.StatusBadRequest)
+    		return
+    	}
+    	changes, next, err := h.store.ChangesAfter(r.Context(), account.ID, after, pageSize)
+    	if err != nil {
+    		http.Error(w, "internal error", http.StatusInternalServerError)
+    		return
+    	}
+    	w.Header().Set("Content-Type", "application/json")
+    	_ = json.NewEncoder(w).Encode(map[string]any{"changes": changes, "cursor": next.String()})
+    }
+expect:
+  - file: internal/changefeed/store.go
+    lines: 73
+    severity: major
+    note: "updated_at >= $2 AND id > $3 is not the keyset condition (updated_at, id) > ($2, $3): a record updated after the cursor whose id is below the cursor's id (any older record edited later) is never returned, so clients silently miss updates"

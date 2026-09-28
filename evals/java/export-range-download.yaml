@@ -1,0 +1,145 @@
+title: Export download split into parallel byte ranges computed with int arithmetic
+tags: [java, aws, s3, overflow, logic, hard]
+base:
+  src/main/java/com/acme/exports/ExportDownloader.java: |
+    package com.acme.exports;
+
+    import java.io.IOException;
+    import java.nio.file.Files;
+    import java.nio.file.Path;
+    import java.nio.file.StandardCopyOption;
+    import software.amazon.awssdk.core.sync.ResponseTransformer;
+    import software.amazon.awssdk.services.s3.S3Client;
+
+    /** Downloads finished exports (CSV and Parquet, up to tens of gigabytes) from S3. */
+    public final class ExportDownloader {
+        private final S3Client s3;
+
+        public ExportDownloader(S3Client s3) {
+            this.s3 = s3;
+        }
+
+        /** Downloads an export object to target, replacing it once the download is complete. */
+        public void download(String bucket, String key, Path target) throws IOException {
+            Path partial = target.resolveSibling(target.getFileName() + ".part");
+            Files.deleteIfExists(partial);
+            s3.getObject(b -> b.bucket(bucket).key(key), ResponseTransformer.toFile(partial));
+            Files.move(partial, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        }
+    }
+  src/main/java/com/acme/exports/ExportConfig.java: |
+    package com.acme.exports;
+
+    import java.util.concurrent.ExecutorService;
+    import java.util.concurrent.Executors;
+    import org.springframework.context.annotation.Bean;
+    import org.springframework.context.annotation.Configuration;
+    import software.amazon.awssdk.services.s3.S3Client;
+
+    @Configuration
+    public class ExportConfig {
+        @Bean(destroyMethod = "shutdown")
+        public ExecutorService exportDownloadPool() {
+            return Executors.newFixedThreadPool(8);
+        }
+
+        @Bean
+        public ExportDownloader exportDownloader(S3Client s3) {
+            return new ExportDownloader(s3);
+        }
+    }
+head:
+  src/main/java/com/acme/exports/ExportDownloader.java: |
+    package com.acme.exports;
+
+    import java.io.IOException;
+    import java.nio.ByteBuffer;
+    import java.nio.channels.FileChannel;
+    import java.nio.file.Files;
+    import java.nio.file.Path;
+    import java.nio.file.StandardCopyOption;
+    import java.nio.file.StandardOpenOption;
+    import java.util.ArrayList;
+    import java.util.List;
+    import java.util.concurrent.ExecutionException;
+    import java.util.concurrent.ExecutorService;
+    import java.util.concurrent.Future;
+    import software.amazon.awssdk.services.s3.S3Client;
+    import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+
+    /** Downloads finished exports (CSV and Parquet, up to tens of gigabytes) from S3 in parallel byte ranges. */
+    public final class ExportDownloader {
+        static final int PART_SIZE = 16 * 1024 * 1024;
+
+        private final S3Client s3;
+        private final ExecutorService pool;
+
+        public ExportDownloader(S3Client s3, ExecutorService pool) {
+            this.s3 = s3;
+            this.pool = pool;
+        }
+
+        /** Downloads an export object to target, replacing it once the download is complete. */
+        public void download(String bucket, String key, Path target) throws IOException, InterruptedException {
+            HeadObjectResponse head = s3.headObject(b -> b.bucket(bucket).key(key));
+            long size = head.contentLength();
+            int parts = (int) ((size + PART_SIZE - 1) / PART_SIZE);
+            Path partial = target.resolveSibling(target.getFileName() + ".part");
+            List<Future<?>> pending = new ArrayList<>(parts);
+            try (FileChannel out = FileChannel.open(partial, StandardOpenOption.CREATE, StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING)) {
+                for (int part = 0; part < parts; part++) {
+                    long start = part * PART_SIZE;
+                    long end = Math.min(start + PART_SIZE, size) - 1;
+                    pending.add(pool.submit(() -> {
+                        writeRange(out, bucket, key, head.eTag(), start, end);
+                        return null;
+                    }));
+                }
+                for (Future<?> f : pending) {
+                    f.get();
+                }
+            } catch (ExecutionException e) {
+                pending.forEach(f -> f.cancel(true));
+                throw new IOException("download of s3://" + bucket + "/" + key + " failed", e.getCause());
+            }
+            Files.move(partial, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        }
+
+        private void writeRange(FileChannel out, String bucket, String key, String eTag, long start, long end)
+                throws IOException {
+            ByteBuffer bytes = s3.getObjectAsBytes(b -> b.bucket(bucket).key(key).ifMatch(eTag)
+                    .range("bytes=" + start + "-" + end)).asByteBuffer();
+            long position = start;
+            while (bytes.hasRemaining()) {
+                position += out.write(bytes, position);
+            }
+        }
+    }
+  src/main/java/com/acme/exports/ExportConfig.java: |
+    package com.acme.exports;
+
+    import java.util.concurrent.ExecutorService;
+    import java.util.concurrent.Executors;
+    import org.springframework.context.annotation.Bean;
+    import org.springframework.context.annotation.Configuration;
+    import software.amazon.awssdk.services.s3.S3Client;
+
+    @Configuration
+    public class ExportConfig {
+        @Bean(destroyMethod = "shutdown")
+        public ExecutorService exportDownloadPool() {
+            return Executors.newFixedThreadPool(8);
+        }
+
+        @Bean
+        public ExportDownloader exportDownloader(S3Client s3, ExecutorService exportDownloadPool) {
+            return new ExportDownloader(s3, exportDownloadPool);
+        }
+    }
+expect:
+  - file: src/main/java/com/acme/exports/ExportDownloader.java
+    lines: 40
+    also: [20]
+    severity: major
+    note: part and PART_SIZE are ints, so part * PART_SIZE overflows before it is widened to long; from 2 GiB on the range start is negative (bytes=-2147483648-...) and every export larger than 2 GiB fails or is written at wrong offsets. Needs (long) part * PART_SIZE

@@ -346,7 +346,8 @@ export const DEFAULT_CONFIG: Config = {
   roles: {
     // No critique role by default: it runs on the review provider (its `critiqueModel`, high reasoning), so
     // code is never sent to a provider the user did not choose.
-    review: { provider: 'claude', reasoning: 'high' },
+    // medium: on the eval corpus as good as high (also on the hard cases), with half the output tokens.
+    review: { provider: 'claude', reasoning: 'medium' },
   },
   review: {
     // The depth-dependent values below are the `essential` preset (see DEPTH_PRESETS).

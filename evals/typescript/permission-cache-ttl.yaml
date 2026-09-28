@@ -1,0 +1,121 @@
+title: Workspace permissions cached with a TTL in the wrong unit for the cache helper
+tags: [typescript, redis, security, cross-file, hard]
+base:
+  package.json: |
+    {
+      "name": "@acme/api",
+      "private": true,
+      "type": "module",
+      "dependencies": {
+        "express": "^4.21.2",
+        "ioredis": "^5.4.2",
+        "pg": "^8.13.1"
+      }
+    }
+  src/infra/cache.ts: |
+    import type { Redis } from 'ioredis';
+
+    /** JSON values in Redis under a key prefix. Every entry expires. */
+    export class JsonCache {
+      constructor(
+        private readonly redis: Redis,
+        private readonly prefix: string,
+      ) {}
+
+      async get<T>(key: string): Promise<T | undefined> {
+        const raw = await this.redis.get(`${this.prefix}:${key}`);
+        return raw === null ? undefined : (JSON.parse(raw) as T);
+      }
+
+      async set(key: string, value: unknown, ttlSeconds: number): Promise<void> {
+        await this.redis.set(`${this.prefix}:${key}`, JSON.stringify(value), 'EX', ttlSeconds);
+      }
+
+      async delete(key: string): Promise<void> {
+        await this.redis.del(`${this.prefix}:${key}`);
+      }
+    }
+  src/auth/permissions.ts: |
+    import type { Pool } from 'pg';
+
+    export type Permission = 'project:read' | 'project:write' | 'members:manage' | 'billing:manage';
+
+    export class PermissionService {
+      constructor(private readonly db: Pool) {}
+
+      async permissionsFor(userId: string, workspaceId: string): Promise<Set<Permission>> {
+        const { rows } = await this.db.query<{ permission: Permission }>(
+          `SELECT rp.permission
+             FROM workspace_members m
+             JOIN role_permissions rp ON rp.role = m.role
+            WHERE m.user_id = $1 AND m.workspace_id = $2`,
+          [userId, workspaceId],
+        );
+        return new Set(rows.map((r) => r.permission));
+      }
+
+      async can(userId: string, workspaceId: string, permission: Permission): Promise<boolean> {
+        return (await this.permissionsFor(userId, workspaceId)).has(permission);
+      }
+    }
+  src/container.ts: |
+    import { Redis } from 'ioredis';
+    import pg from 'pg';
+    import { PermissionService } from './auth/permissions.js';
+
+    export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 20 });
+    export const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379');
+
+    export const permissions = new PermissionService(pool);
+head:
+  src/auth/permissions.ts: |
+    import type { Pool } from 'pg';
+    import type { JsonCache } from '../infra/cache.js';
+
+    export type Permission = 'project:read' | 'project:write' | 'members:manage' | 'billing:manage';
+
+    /** How long resolved permissions are reused before they are read from the database again. */
+    const PERMISSIONS_TTL = 5 * 60 * 1000;
+
+    export class PermissionService {
+      constructor(
+        private readonly db: Pool,
+        private readonly cache: JsonCache,
+      ) {}
+
+      async permissionsFor(userId: string, workspaceId: string): Promise<Set<Permission>> {
+        const key = `${workspaceId}:${userId}`;
+        const cached = await this.cache.get<Permission[]>(key);
+        if (cached) return new Set(cached);
+        const { rows } = await this.db.query<{ permission: Permission }>(
+          `SELECT rp.permission
+             FROM workspace_members m
+             JOIN role_permissions rp ON rp.role = m.role
+            WHERE m.user_id = $1 AND m.workspace_id = $2`,
+          [userId, workspaceId],
+        );
+        const permissions = rows.map((r) => r.permission);
+        await this.cache.set(key, permissions, PERMISSIONS_TTL);
+        return new Set(permissions);
+      }
+
+      async can(userId: string, workspaceId: string, permission: Permission): Promise<boolean> {
+        return (await this.permissionsFor(userId, workspaceId)).has(permission);
+      }
+    }
+  src/container.ts: |
+    import { Redis } from 'ioredis';
+    import pg from 'pg';
+    import { PermissionService } from './auth/permissions.js';
+    import { JsonCache } from './infra/cache.js';
+
+    export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 20 });
+    export const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379');
+
+    export const permissions = new PermissionService(pool, new JsonCache(redis, 'permissions'));
+expect:
+  - file: src/auth/permissions.ts
+    lines: 27
+    also: [7]
+    severity: major
+    note: JsonCache.set takes seconds (Redis EX), so 5 * 60 * 1000 keeps permissions for ~3.5 days; removed or downgraded members keep their old permissions for days instead of minutes

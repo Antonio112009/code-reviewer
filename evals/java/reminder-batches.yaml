@@ -112,5 +112,7 @@ head:
 expect:
   - file: src/main/java/com/acme/billing/Batches.java
     lines: 15
+    # the scheduled job that crashes on it
+    also: [{ file: src/main/java/com/acme/billing/ReminderJob.java, lines: [27, 33] }]
     severity: major
     note: subList(start, start + size) throws IndexOutOfBoundsException for the last batch unless the size is a multiple of 100

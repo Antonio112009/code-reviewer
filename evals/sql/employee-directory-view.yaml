@@ -1,0 +1,52 @@
+title: Directory view concatenating name columns that the schema declares NOT NULL
+tags: [sql, postgresql, migration, clean, tempting, hard]
+base:
+  db/migrations/20240110090000_create_employees.sql: |
+    CREATE TABLE departments (
+        id    bigserial PRIMARY KEY,
+        name  text NOT NULL UNIQUE
+    );
+
+    CREATE TABLE employees (
+        id             bigserial PRIMARY KEY,
+        email          citext NOT NULL UNIQUE,
+        first_name     text NOT NULL,
+        last_name      text NOT NULL,
+        preferred_name text,
+        job_title      text,
+        department_id  bigint NOT NULL REFERENCES departments (id),
+        hired_on       date NOT NULL,
+        terminated_at  timestamptz
+    );
+
+    CREATE INDEX employees_department_id_idx ON employees (department_id);
+  db/queries/employees.sql: |
+    -- name: GetEmployee :one
+    SELECT id, email, first_name, last_name, preferred_name, job_title, department_id, hired_on, terminated_at
+      FROM employees
+     WHERE id = $1;
+head:
+  db/migrations/20260921100000_create_employee_directory.sql: |
+    CREATE VIEW employee_directory AS
+    SELECT e.id,
+           e.email,
+           coalesce(nullif(e.preferred_name, ''), e.first_name) || ' ' || e.last_name AS display_name,
+           e.last_name || ', ' || e.first_name AS sort_name,
+           e.job_title,
+           d.id AS department_id,
+           d.name AS department
+      FROM employees e
+      JOIN departments d ON d.id = e.department_id
+     WHERE e.terminated_at IS NULL;
+  db/queries/directory.sql: |
+    -- name: ListDepartmentDirectory :many
+    SELECT id, email, display_name, job_title
+      FROM employee_directory
+     WHERE department_id = $1
+     ORDER BY sort_name, id;
+
+    -- name: GetDirectoryEntry :one
+    SELECT id, email, display_name, job_title, department
+      FROM employee_directory
+     WHERE id = $1;
+expect: []

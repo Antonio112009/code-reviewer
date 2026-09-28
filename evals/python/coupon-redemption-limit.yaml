@@ -1,0 +1,101 @@
+title: Coupon redemption drops the row lock and counts with an F() expression
+tags: [python, django, concurrency, logic, hard]
+base:
+  promotions/models.py: |
+    from django.db import models
+
+
+    class Coupon(models.Model):
+        code = models.CharField(max_length=32, unique=True)
+        percent_off = models.PositiveSmallIntegerField()
+        max_redemptions = models.PositiveIntegerField(null=True, blank=True)
+        times_redeemed = models.PositiveIntegerField(default=0)
+        expires_at = models.DateTimeField(null=True, blank=True)
+
+
+    class Redemption(models.Model):
+        coupon = models.ForeignKey(Coupon, on_delete=models.PROTECT, related_name="redemptions")
+        order = models.OneToOneField("orders.Order", on_delete=models.CASCADE, related_name="coupon_redemption")
+        created_at = models.DateTimeField(auto_now_add=True)
+  promotions/services.py: |
+    from django.db import transaction
+    from django.utils import timezone
+
+    from orders.models import Order
+
+    from .models import Coupon, Redemption
+
+
+    class CouponError(Exception):
+        pass
+
+
+    def redeem_coupon(order: Order, code: str) -> Redemption:
+        with transaction.atomic():
+            try:
+                coupon = Coupon.objects.select_for_update().get(code=code.strip().upper())
+            except Coupon.DoesNotExist:
+                raise CouponError("unknown coupon") from None
+            if coupon.expires_at is not None and coupon.expires_at <= timezone.now():
+                raise CouponError("coupon has expired")
+            if coupon.max_redemptions is not None and coupon.times_redeemed >= coupon.max_redemptions:
+                raise CouponError("coupon has been fully redeemed")
+            coupon.times_redeemed += 1
+            coupon.save(update_fields=["times_redeemed"])
+            redemption = Redemption.objects.create(coupon=coupon, order=order)
+            order.apply_discount(coupon.percent_off)
+        return redemption
+  promotions/tests/test_services.py: |
+    import pytest
+
+    from promotions.models import Coupon
+    from promotions.services import CouponError, redeem_coupon
+
+
+    @pytest.mark.django_db
+    def test_redemption_is_counted(order_factory):
+        coupon = Coupon.objects.create(code="SPRING10", percent_off=10, max_redemptions=2)
+        redeem_coupon(order_factory(), "spring10")
+        coupon.refresh_from_db()
+        assert coupon.times_redeemed == 1
+
+
+    @pytest.mark.django_db
+    def test_fully_redeemed_coupon_is_rejected(order_factory):
+        Coupon.objects.create(code="ONCE", percent_off=50, max_redemptions=1, times_redeemed=1)
+        with pytest.raises(CouponError):
+            redeem_coupon(order_factory(), "ONCE")
+head:
+  promotions/services.py: |
+    from django.db import transaction
+    from django.db.models import F
+    from django.utils import timezone
+
+    from orders.models import Order
+
+    from .models import Coupon, Redemption
+
+
+    class CouponError(Exception):
+        pass
+
+
+    def redeem_coupon(order: Order, code: str) -> Redemption:
+        coupon = Coupon.objects.filter(code=code.strip().upper()).first()
+        if coupon is None:
+            raise CouponError("unknown coupon")
+        if coupon.expires_at is not None and coupon.expires_at <= timezone.now():
+            raise CouponError("coupon has expired")
+        if coupon.max_redemptions is not None and coupon.times_redeemed >= coupon.max_redemptions:
+            raise CouponError("coupon has been fully redeemed")
+        with transaction.atomic():
+            # Popular coupons made checkouts queue on the coupon row; count in the database instead.
+            Coupon.objects.filter(pk=coupon.pk).update(times_redeemed=F("times_redeemed") + 1)
+            redemption = Redemption.objects.create(coupon=coupon, order=order)
+            order.apply_discount(coupon.percent_off)
+        return redemption
+expect:
+  - file: promotions/services.py
+    lines: [20, 24]
+    severity: major
+    note: the limit is checked on a row read without a lock and the F() increment does not re-check it, so concurrent checkouts that read times_redeemed = max - 1 all pass and a limited coupon is redeemed beyond max_redemptions; the update needs times_redeemed__lt=F("max_redemptions") in its filter and a check of the updated row count (or the lock back)

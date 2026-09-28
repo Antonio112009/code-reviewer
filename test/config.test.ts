@@ -43,15 +43,15 @@ describe('loadConfig', () => {
     expect(loaded.config.roles.review).toMatchObject({
       provider: 'codex',
       model: 'gpt-x',
-      reasoning: 'high', // the default
+      reasoning: 'medium', // the default
     });
     expect(loaded.config.providers.claude).toBeDefined(); // defaults kept
   });
 
-  it('reviews with Sonnet and critiques with Opus, both at high reasoning, by default', async () => {
+  it('reviews with Sonnet (medium reasoning) and critiques with Opus (high) by default', async () => {
     const { config } = await loadConfig({ cwd: dir, stopDir: dir, ignoreGlobal: true });
     expect(resolveRouting(config)).toEqual({
-      review: { provider: 'claude', model: 'sonnet', reasoning: 'high' },
+      review: { provider: 'claude', model: 'sonnet', reasoning: 'medium' },
       critique: { provider: 'claude', model: 'opus', reasoning: 'high' },
     });
     config.roles.review!.model = 'opus';

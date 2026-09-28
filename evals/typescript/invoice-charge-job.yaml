@@ -1,0 +1,145 @@
+title: Invoice charge job with an idempotency key that changes on every job attempt
+tags: [typescript, bullmq, stripe, payments, logic, hard]
+base:
+  package.json: |
+    {
+      "name": "billing-worker",
+      "private": true,
+      "type": "module",
+      "dependencies": {
+        "bullmq": "^5.34.0",
+        "ioredis": "^5.4.2",
+        "kysely": "^0.27.5",
+        "pino": "^9.6.0",
+        "stripe": "^17.5.0"
+      }
+    }
+  src/queue.ts: |
+    import { type Processor, Queue, Worker } from 'bullmq';
+    import { Redis } from 'ioredis';
+
+    export const connection = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
+      maxRetriesPerRequest: null,
+    });
+
+    export const billingQueue = new Queue('billing', {
+      connection,
+      defaultJobOptions: {
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 30_000 },
+        removeOnComplete: 1_000,
+      },
+    });
+
+    export function startWorker(processors: Record<string, Processor>): Worker {
+      return new Worker(
+        'billing',
+        async (job) => {
+          const processor = processors[job.name];
+          if (!processor) throw new Error(`no processor for job ${job.name}`);
+          return processor(job);
+        },
+        { connection, concurrency: 4 },
+      );
+    }
+  src/billing/stripe.ts: |
+    import Stripe from 'stripe';
+
+    export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
+      maxNetworkRetries: 0,
+      timeout: 20_000,
+    });
+  src/billing/invoices.ts: |
+    import { db } from '../db.js';
+
+    export interface Invoice {
+      id: string;
+      status: 'draft' | 'open' | 'paid' | 'void';
+      amountDueCents: number;
+      currency: string;
+      stripeCustomerId: string;
+      defaultPaymentMethodId: string;
+    }
+
+    export async function getInvoice(id: string): Promise<Invoice> {
+      return db.selectFrom('invoices').selectAll().where('id', '=', id).executeTakeFirstOrThrow();
+    }
+
+    export async function markPaid(id: string, paymentIntentId: string): Promise<void> {
+      await db
+        .updateTable('invoices')
+        .set({ status: 'paid', paymentIntentId, paidAt: new Date() })
+        .where('id', '=', id)
+        .execute();
+    }
+
+    export async function recordPaymentFailure(id: string, reason: string): Promise<void> {
+      await db.updateTable('invoices').set({ lastPaymentError: reason }).where('id', '=', id).execute();
+    }
+  src/worker.ts: |
+    import { sendDunningEmail } from './jobs/dunning-email.js';
+    import { startWorker } from './queue.js';
+
+    startWorker({
+      'dunning-email': sendDunningEmail,
+    });
+head:
+  src/jobs/charge-invoice.ts: |
+    import { randomUUID } from 'node:crypto';
+    import type { Job } from 'bullmq';
+    import Stripe from 'stripe';
+    import { getInvoice, markPaid, recordPaymentFailure } from '../billing/invoices.js';
+    import { stripe } from '../billing/stripe.js';
+    import { logger } from '../logger.js';
+
+    export interface ChargeInvoiceData {
+      invoiceId: string;
+    }
+
+    export async function chargeInvoice(job: Job<ChargeInvoiceData>): Promise<void> {
+      const invoice = await getInvoice(job.data.invoiceId);
+      if (invoice.status !== 'open') {
+        logger.info({ invoiceId: invoice.id, status: invoice.status }, 'invoice is not open, not charging');
+        return;
+      }
+      const idempotencyKey = randomUUID();
+      let intent: Stripe.PaymentIntent;
+      try {
+        intent = await stripe.paymentIntents.create(
+          {
+            amount: invoice.amountDueCents,
+            currency: invoice.currency,
+            customer: invoice.stripeCustomerId,
+            payment_method: invoice.defaultPaymentMethodId,
+            payment_method_types: ['card'],
+            off_session: true,
+            confirm: true,
+            metadata: { invoiceId: invoice.id },
+          },
+          { idempotencyKey },
+        );
+      } catch (err) {
+        if (err instanceof Stripe.errors.StripeCardError) {
+          await recordPaymentFailure(invoice.id, err.code ?? 'card_declined');
+          return;
+        }
+        throw err;
+      }
+      await markPaid(invoice.id, intent.id);
+      logger.info({ invoiceId: invoice.id, paymentIntentId: intent.id, attempt: job.attemptsMade + 1 }, 'invoice charged');
+    }
+  src/worker.ts: |
+    import { chargeInvoice } from './jobs/charge-invoice.js';
+    import { sendDunningEmail } from './jobs/dunning-email.js';
+    import { startWorker } from './queue.js';
+
+    startWorker({
+      'charge-invoice': chargeInvoice,
+      'dunning-email': sendDunningEmail,
+    });
+expect:
+  - file: src/jobs/charge-invoice.ts
+    lines: 18
+    also: [32, 41]
+    severity: major
+    note: the key is random per attempt and the queue retries failed jobs (attempts 5); when the create call times out after Stripe charged the card, or markPaid fails, the retry sends a new key and charges the customer again. The key must be derived from the invoice (e.g. `invoice-${invoice.id}`)
