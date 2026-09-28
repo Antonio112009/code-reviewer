@@ -1,4 +1,6 @@
-// Minimal ACP agent process used by the tests (modes: ok | die-on-prompt | hang-new).
+// Minimal ACP agent process used by the tests (modes: ok | die-on-prompt | hang-new | slow-start-hang-new).
+// slow-start-hang-new answers initialize after a second, like an agent on a busy CI runner, then hangs on
+// session/new.
 import { Readable, Writable } from 'node:stream';
 import * as acp from '@agentclientprotocol/sdk';
 
@@ -20,12 +22,15 @@ const findings = {
 
 acp
   .agent({ name: 'fixture-agent' })
-  .onRequest(acp.methods.agent.initialize, async () => ({
-    protocolVersion: acp.PROTOCOL_VERSION,
-    agentInfo: { name: 'fixture-agent', version: '1.0.0' },
-  }))
+  .onRequest(acp.methods.agent.initialize, async () => {
+    if (mode === 'slow-start-hang-new') await new Promise((resolve) => setTimeout(resolve, 1_000));
+    return {
+      protocolVersion: acp.PROTOCOL_VERSION,
+      agentInfo: { name: 'fixture-agent', version: '1.0.0' },
+    };
+  })
   .onRequest(acp.methods.agent.session.new, async () => {
-    if (mode === 'hang-new') await new Promise(() => {});
+    if (mode === 'hang-new' || mode === 'slow-start-hang-new') await new Promise(() => {});
     return { sessionId: `s-${Math.random().toString(36).slice(2)}` };
   })
   .onRequest(acp.methods.agent.session.prompt, async ({ params, client }) => {
