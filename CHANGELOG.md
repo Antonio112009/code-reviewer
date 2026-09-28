@@ -1,15 +1,43 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-09-28
+
+Pull request threads of fixed findings are resolved, a run can be capped by cost, and reviews through Claude
+Code cost about a third on small changes: sessions no longer load the user's plugins and get three built-in
+tools. The search tools the model relies on no longer return empty results on errors, and skills are chosen
+per file.
+
+### New
+
+- **Fixed findings resolve their threads.** When a push changes the code an earlier inline comment was on
+  and the new review does not report that finding again, the comment's thread on the GitHub pull request or
+  GitLab merge request gets a short reply and is resolved. A model can miss a finding it reported before, so
+  nothing is resolved unless the commented lines changed, the file was reviewed in full and no new finding
+  sits where the code went. A thread someone reopens stays open; `publish.resolveFixed: false` turns it off.
+
+- **Cost limit per run.** `--max-cost <usd>` (`review.maxCost`) stops starting model calls once a run has
+  spent that much, counting the provider's reported cost or your `pricing`. With self-critique on, reviews
+  stop at 85% so the findings can still be verified. Unreviewed parts are marked `budget` (with advice) and
+  keep a `--fail-on` gate from passing; calls without a known cost are named in a warning.
+
+### Cheaper and more accurate reviews
 
 - **Claude Code reviews cost about a third.** Review sessions no longer load the user's Claude Code
   settings (plugins, hooks, skills; the ACP adapter loaded user, project and local settings), get only the
   `Read`, `Grep` and `Glob` built-in tools next to ours, and cannot start sub-agents, whose calls and cost
   were invisible. A one-file review went from 75k to 22k cache-written tokens and from $0.32 to $0.10 with
-  the same finding; a cross-file one still read the other file and found the bug. It also keeps language
+  the same finding; a cross-file one still read the other file and found the bug. A run of the AACR-Bench
+  ctx30 subset went from $19.8 to $14.3 at the same F1. It also keeps language
   servers and hooks from plugins out of snapshots of untrusted code. The `env` and `apiKeyHelper` of
   `~/.claude/settings.json` are still handed over for sign-in; `providers.claude.userSettings: true`
   (global config only) loads the user settings as before.
+
+- **Search tools that do not mislead the model.** `grep` failed silently: an unbalanced `(`, `(?:`, `\b`,
+  `\w` or `\d` (common in model-written patterns) returned "No matches." on macOS, and a glob like
+  `*.java` searched the repository root only. It now takes Perl-compatible regexes, searches plain text
+  as plain text, retries a pattern that does not compile as plain text (and says so), returns git's
+  errors instead of an empty result, and matches directory-less globs everywhere. `find_symbol` now
+  finds C, C++, Java, C# and Kotlin definitions instead of call sites, and skips docs.
 
 - **Skills are matched per file.** A chunk's added lines used to be matched as one text, so Java lines
   picked C++ and Python skills in a mixed chunk, Go lines JavaScript skills, a Markdown table the crypto
@@ -18,28 +46,11 @@
   text) only feeds skills about it. On the 38 AACR-Bench chunks, the 8 that changed lost exactly those
   picks, and relevant skills took their budget.
 
-- **Search tools that do not mislead the model.** `grep` failed silently: an unbalanced `(`, `(?:`, `\b`,
-  `\w` or `\d` (common in model-written patterns) returned "No matches." on macOS, and a glob like
-  `*.java` searched the repository root only. It now takes Perl-compatible regexes, searches plain text
-  as plain text, retries a pattern that does not compile as plain text (and says so), returns git's
-  errors instead of an empty result, and matches directory-less globs everywhere. `find_symbol` now
-  finds C, C++, Java, C# and Kotlin definitions instead of call sites, and skips docs.
 - **Tool calls are logged.** Every read-tool call (arguments, result size, error, duration) is in
   `run.log` and the chunk artifacts, so empty searches and errors can be measured.
+
 - `list_skills` / `get_skill` are gone: models never called them in 875 recorded review tasks, and they
   cost ~380 tokens per request plus loading every skill in each agent's MCP server.
-
-- **Cost limit per run.** `--max-cost <usd>` (`review.maxCost`) stops starting model calls once a run has
-  spent that much, counting the provider's reported cost or your `pricing`. With self-critique on, reviews
-  stop at 85% so the findings can still be verified. Unreviewed parts are marked `budget` (with advice) and
-  keep a `--fail-on` gate from passing; calls without a known cost are named in a warning.
-
-- **Fixed findings resolve their threads.** When a push changes the code an earlier inline comment was on
-  and the new review does not report that finding again, the comment's thread on the GitHub pull request or
-  GitLab merge request gets a short reply and is resolved. A model can miss a finding it reported before, so
-  nothing is resolved unless the commented lines changed, the file was reviewed in full and no new finding
-  sits where the code went. A thread someone reopens stays open; `publish.resolveFixed: false` turns it off.
-
 ## 0.2.1 — 2026-09-28
 
 - **Installs get the dependencies this release was tested with.** The package ships `npm-shrinkwrap.json`,
