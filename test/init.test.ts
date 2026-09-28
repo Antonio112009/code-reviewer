@@ -584,7 +584,7 @@ describe('init wizard', () => {
       ignore: ['legacy/**', 'gen/**'],
     });
     expect(config.git.base.default).toBe('main');
-    expect(config.roles.review).toMatchObject({ model: 'opus', reasoning: 'high' });
+    expect(config.roles.review).toMatchObject({ model: 'opus', reasoning: 'medium' });
     expect(config.review).toMatchObject({ depth: 'full', selfCritique: false, minConfidence: 0.8 });
     // the full preset applies unless a value is set explicitly
     expect(config.review).toMatchObject({ minSeverity: 'info', skillTokenBudget: 6_000 });

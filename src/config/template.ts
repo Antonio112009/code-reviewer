@@ -121,7 +121,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
       },
       keys: {
         review: {
-          doc: 'Finds the issues. Omit model for the provider default (claude: sonnet); reasoning defaults to high.',
+          doc: 'Finds the issues. Omit model for the provider default (claude: sonnet); reasoning defaults to medium.',
           example: { provider: 'claude', model: 'opus', reasoning: 'high' },
         },
         critique: {

@@ -153,7 +153,7 @@ project:
   name: billing-service
   focus: [security, data-integrity, concurrency]
 roles:
-  review:   { provider: claude, model: sonnet, reasoning: high }   # the defaults
+  review:   { provider: claude, model: sonnet, reasoning: medium } # the defaults
   critique: { provider: claude, model: opus, reasoning: high }     # the defaults too
 review:
   depth: essential          # or full

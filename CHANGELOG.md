@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Hard eval cases** (`--filter hard`): 16 cases where a weak review fails — defects visible only in an
+  unchanged file, a 1,100-line rename with one wrong call, subtle logic (keyset pagination, int overflow,
+  retry double charges), tempting-but-clean code, and two real bugs from `click` and `werkzeug` replayed
+  from their repositories. Case `also` ranges may point into another file (the caller that crashes), and
+  `--filter` takes `!` exclusions (`hard,!real` runs offline).
+
 - **Opus checks the findings by default.** Providers can name a `critiqueModel` for the self-critique pass
   (`claude`: `opus`, `anthropic`: `claude-opus-5-5`), used when the critique role names no model; `--model`
   now sets the review model only. In the eval corpus, Sonnet + Opus critique kept every defect and dropped
@@ -15,8 +21,9 @@
   agents) and priced (`pricing.<model>.cacheWrite`, default 1.25× input); summaries, reports and `eval`
   show them.
 
-- **Sonnet by default.** Claude reviews and critiques with Sonnet at high reasoning unless a model is
-  configured (`--model opus` for a deeper, costlier pass). The review's context window comes from the model
+- **Sonnet by default.** Claude reviews with Sonnet at medium reasoning unless a model is configured
+  (`--model opus` for a deeper, costlier pass); medium matched high on the eval corpus, hard cases included,
+  with half the output tokens. The review's context window comes from the model
   catalog (Sonnet 5 and Opus 5.5: 1M tokens) instead of a fixed 200k.
 - **An empty review is still an answer.** Prompts insist on `submit_findings` with an empty list when nothing
   is found; an ACP agent that ends its turn without handing anything in gets one short reminder turn, and
