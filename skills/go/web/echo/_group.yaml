@@ -6,3 +6,6 @@ detect:
   content:
     - 'github\.com/labstack/echo/v[45]'
     - '\becho\.(?:Context|Echo|Group|HandlerFunc|HTTPError|MiddlewareFunc)\b'
+  examples:
+    - 'github.com/labstack/echo/v4'
+    - 'func handler(c echo.Context) error {'

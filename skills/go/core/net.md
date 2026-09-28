@@ -10,6 +10,12 @@ activation:
     - '\.Set(?:Read|Write)?Deadline\('
     - '\bRemoteAddr\b'
     - '\.Is(?:Private|Loopback|LinkLocalUnicast|Unspecified|Global\w{0,7})\(\)'
+  examples:
+    - 'conn, err := net.Dial("tcp", addr)'
+    - 'addr := netip.MustParseAddr("1.2.3.4")'
+    - 'conn.SetDeadline(time.Now().Add(d))'
+    - 'log.Println(r.RemoteAddr)'
+    - 'if ip.IsLoopback() { return true }'
 sources:
   - https://pkg.go.dev/net#Conn
   - https://pkg.go.dev/net#IP.Equal

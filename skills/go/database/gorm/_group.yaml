@@ -8,3 +8,8 @@ detect:
     - 'github\.com/jinzhu/gorm'
     - '\*gorm\.DB\b'
     - '\bgorm\.(?:G|Model|Open|Expr|DeletedAt|Session)\b'
+  examples:
+    - 'import "gorm.io/gorm"'
+    - 'import "github.com/jinzhu/gorm"'
+    - 'func NewRepo(db *gorm.DB) *Repo {'
+    - 'db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})'

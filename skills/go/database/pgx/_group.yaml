@@ -6,3 +6,6 @@ detect:
   content:
     - 'github\.com/jackc/pgx/v[45]'
     - '\b(?:pgxpool|pgconn)\.[A-Z]'
+  examples:
+    - 'import "github.com/jackc/pgx/v5"'
+    - 'pool, err := pgxpool.New(ctx, dsn)'

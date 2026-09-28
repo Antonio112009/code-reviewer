@@ -7,3 +7,4 @@ detect:
   languages: [go]
   files: ['*_test.go']
   content: ['"testing(?:/synctest|/fstest|/iotest|/cryptotest)?"']
+  examples: ['import "testing/synctest"']

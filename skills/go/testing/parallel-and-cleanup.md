@@ -8,6 +8,10 @@ activation:
     - '\bt\.(?:Parallel|Run|Cleanup|Setenv|Chdir|Context|Fatal\w{0,2}|FailNow|Skip\w{0,3}|TempDir)\('
     - '\bfunc\s+TestMain\b'
     - '\bos\.(?:Setenv|Chdir)\('
+  examples:
+    - 't.Parallel()'
+    - 'func TestMain(m *testing.M) {'
+    - 'os.Setenv("FOO", "bar")'
 sources:
   - https://pkg.go.dev/testing#T.Parallel
   - https://pkg.go.dev/testing#T.Cleanup

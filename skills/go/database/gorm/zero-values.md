@@ -8,6 +8,10 @@ activation:
     - '\.(?:Where|Not|Or|First|Find|Take|Last|FirstOrCreate|FirstOrInit|Updates|Assign|Attrs|Delete)\(\s*&?[A-Z]\w{0,40}\{'
     - '\.(?:Updates|Save|Create|Update)\('
     - 'gorm:"[^"\n]{0,80}default:'
+  examples:
+    - 'db.Where(&User{Email: email}).First(&u)'
+    - 'db.Model(&user).Updates(map[string]any{"active": false})'
+    - 'Active bool `gorm:"default:true"`'
 sources:
   - https://gorm.io/docs/query.html
   - https://gorm.io/docs/update.html

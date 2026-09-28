@@ -6,3 +6,6 @@ detect:
   content:
     - 'github\.com/go-chi/chi'
     - '\bchi\.(?:Router|Mux|NewRouter|NewMux|URLParam|RouteContext)\b'
+  examples:
+    - 'github.com/go-chi/chi/v5'
+    - 'r := chi.NewRouter()'

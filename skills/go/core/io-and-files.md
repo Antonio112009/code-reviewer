@@ -10,6 +10,12 @@ activation:
     - '\bio\.(?:ReadFull|ReadAll|Copy\w{0,6}|LimitReader|Pipe)\b'
     - '\bos\.(?:WriteFile|Create\w{0,4}|OpenFile|Rename|Mkdir\w{0,3}|Chmod)\b'
     - '\b(?:gzip|zlib|flate|zip|tar|csv)\.New(?:Writer|Reader)\b'
+  examples:
+    - 'n, err := conn.Read(buf)'
+    - 'scanner := bufio.NewScanner(f)'
+    - 'if _, err := io.Copy(dst, src); err != nil {'
+    - 'os.WriteFile(path, data, 0o644)'
+    - 'gw := gzip.NewWriter(f)'
 sources:
   - https://pkg.go.dev/io#Reader
   - https://pkg.go.dev/bufio#Scanner

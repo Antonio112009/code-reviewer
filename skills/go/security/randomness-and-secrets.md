@@ -10,6 +10,12 @@ activation:
     - '\b(?:hmac\.Equal|subtle\.ConstantTimeCompare)\b'
     - '(?:[Tt]oken|[Ss]ecret|[Ss]ignature|[Aa]pi[Kk]ey|[Hh]mac|[Dd]igest|[Pp]assword)\w{0,20}\s*[!=]=\s'
     - '\b(?:rsa|ecdsa|ed25519|ecdh|dsa)\.GenerateKey\b|\bcryptotest\.'
+  examples:
+    - 'import "math/rand"'
+    - 'token := fmt.Sprintf("%d", rand.Intn(1000000))'
+    - 'if !hmac.Equal(sig, expected) {'
+    - 'if token == expectedToken {'
+    - 'key, err := rsa.GenerateKey(rand.Reader, 2048)'
 sources:
   - https://pkg.go.dev/math/rand/v2
   - https://pkg.go.dev/crypto/rand#Text

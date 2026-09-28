@@ -8,6 +8,10 @@ activation:
     - '\btime\.(?:Parse\w{0,10}|Unix\w{0,5}|Duration|Date|LoadLocation|Local|UTC)\b'
     - '\.(?:AddDate|Truncate|Round|Format|Equal|Before|After|Sub|IsZero)\('
     - '\btime\.(?:Nanosecond|Microsecond|Millisecond|Second|Minute|Hour)\b'
+  examples:
+    - 't, err := time.Parse(time.RFC3339, s)'
+    - 'if !start.Before(end) {'
+    - 'time.Sleep(5 * time.Second)'
 sources:
   - https://pkg.go.dev/time#Time
   - https://pkg.go.dev/time#Time.AddDate

@@ -9,6 +9,11 @@ activation:
     - '\.(?:R?Lock|R?Unlock|TryR?Lock)\(\)'
     - '\bwg\.(?:Add|Go|Done|Wait)\('
     - '\.(?:LoadOrStore|LoadAndDelete|CompareAndSwap)\('
+  examples:
+    - 'var mu sync.Mutex'
+    - 'mu.Lock()'
+    - 'wg.Add(1)'
+    - 'actual, loaded := m.LoadOrStore(key, val)'
 sources:
   - https://pkg.go.dev/sync
   - https://go.dev/doc/go1.25

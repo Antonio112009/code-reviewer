@@ -9,6 +9,11 @@ activation:
     - '\btemplate\.(?:HTML|JS|JSStr|URL|HTMLAttr|CSS|Srcset|FuncMap)\b'
     - '\btemplate\.(?:New|Must)\(|\.Parse(?:Files|Glob|FS)?\('
     - '<(?:div|p|span|a|li|td|h\d|script|img|body)\b[^\n]{0,80}%[sv]'
+  examples:
+    - 'import "text/template"'
+    - 'body := template.HTML(userInput)'
+    - 'tmpl := template.Must(template.New("page").Parse(src))'
+    - 'fmt.Fprintf(w, "<p>%s</p>", name)'
 sources:
   - https://pkg.go.dev/html/template
   - https://pkg.go.dev/html/template#HTML

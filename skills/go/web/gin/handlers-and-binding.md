@@ -8,6 +8,10 @@ activation:
     - '\bc\.(?:Abort\w{0,20}|JSON|String|Status|Bind\w{0,12}|ShouldBind\w{0,12}|MustBindWith|Copy)\('
     - 'binding:"'
     - '\*gin\.Context\b'
+  examples:
+    - 'c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})'
+    - 'Name string `json:"name" binding:"required"`'
+    - 'func authMiddleware(c *gin.Context) {'
 sources:
   - https://pkg.go.dev/github.com/gin-gonic/gin#Context.Abort
   - https://gin-gonic.com/en/docs/binding/binding-and-validation/

@@ -10,6 +10,12 @@ activation:
     - '\berr\s*[!=]=\s*[A-Za-z_][\w.]{0,40}'
     - '\.Error\(\)'
     - '\berr\.\(\s*\*?[A-Za-z_]'
+  examples:
+    - 'if errors.Is(err, sql.ErrNoRows) {'
+    - 'return fmt.Errorf("query users: %w", err)'
+    - 'if err == sql.ErrNoRows {'
+    - 'log.Printf("failed: %s", err.Error())'
+    - 'if e, ok := err.(*MyError); ok {'
 sources:
   - https://go.dev/blog/go1.13-errors
   - https://pkg.go.dev/errors

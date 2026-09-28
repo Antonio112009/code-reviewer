@@ -8,6 +8,10 @@ activation:
     - '\bmiddleware\.(?:RealIP|ClientIP\w{0,25}|GetClientIP|Timeout|Recoverer|RedirectSlashes|StripSlashes|Throttle\w{0,10})\b'
     - '\.(?:With|Group|Route|Mount|Use)\('
     - '\bchi\.URLParam\w{0,10}\('
+  examples:
+    - 'r.Use(middleware.RealIP)'
+    - 'r.With(authMiddleware).Get("/admin", adminHandler)'
+    - 'id := chi.URLParam(r, "id")'
 sources:
   - https://pkg.go.dev/github.com/go-chi/chi/v5/middleware
   - https://github.com/advisories/GHSA-9g5q-2w5x-hmxf

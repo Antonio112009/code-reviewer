@@ -60,6 +60,13 @@ activation:
     - \.objects\.(?:filter|all|exclude|get|annotate|values|select_related|prefetch_related|bulk_create|bulk_update|update|iterator)\(|\bsession\.(?:query|execute|scalars)\(|\bselect\(\s*[A-Z]\w*\s*[),]|\b(?:joinedload|selectinload|subqueryload)\(|\bcursor\.(?:execute|executemany)\(
     - '@Query\(\s*(?:value\s*=\s*)?"{1,3}\s*(?:select|SELECT|update|UPDATE|delete|DELETE|from|FROM|with|WITH)\b|@(?:OneToMany|ManyToOne|ManyToMany|EntityGraph|BatchSize)\b|\b(?:JpaRepository|CrudRepository|EntityManager|JdbcTemplate|NamedParameterJdbcTemplate|prepareStatement|executeQuery|executeUpdate)\b|\bJOIN\s+FETCH\b|\.(?:Include|ThenInclude|AsNoTracking|ToListAsync|FromSql\w*|ExecuteUpdate\w*|ExecuteDelete\w*)\('
     - \bdb\.(?:Preload|Joins|Find|First|Where|Raw|Exec|Model)\(|\.(?:QueryContext|QueryRowContext|ExecContext)\(|\.(?:includes|preload|eager_load)\(:|\.(?:find_each|find_in_batches|in_batches|update_all|delete_all|insert_all)\b|::(?:where|with|whereIn)\(|->(?:whereHas|whereIn|chunkById|cursor|lazy|paginate)\(|\bDB::(?:table|select|statement)\(|\bsqlx::query
+  examples:
+    - 'CREATE INDEX idx_users_email ON users (email);'
+    - 'const q = "select * from users where id = $1";'
+    - 'const users = await prisma.user.findMany({ where: { active: true } })'
+    - 'User.objects.filter(is_active=True).select_related("profile")'
+    - '@Query("SELECT o FROM Order o JOIN FETCH o.items WHERE o.userId = :userId")'
+    - 'db.Where("active = ?", true).Find(&users)'
 ---
 - **N+1 queries**: per-row queries hidden in loops, serializers, `__str__`, templates or GraphQL resolvers, or per-row `count()`/`exists()` → one round trip per item. Fix: one `IN`/`= ANY` batch, `prefetch_related`, `include`, `Preload`, `JOIN FETCH`, DataLoader.
 - **Unindexed predicates**: new `WHERE`, `JOIN` or `ORDER BY` columns without an index whose leading columns match (equalities, then range/sort), or not matching a partial/expression index → full scans. Fix: ship the index with the query.

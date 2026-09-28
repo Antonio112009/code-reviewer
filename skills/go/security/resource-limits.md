@@ -11,6 +11,13 @@ activation:
     - '\bimage\.(?:Decode|DecodeConfig)\b|\b(?:png|jpeg|gif|webp)\.Decode\('
     - '\bmake\(\s*\[\][\w.]{1,30}\s*,\s*[a-z]\w{0,30}'
     - '\bcsv\.NewReader\b|\bUncompressedSize(?:64)?\b'
+  examples:
+    - 'gr, err := gzip.NewReader(r.Body)'
+    - 'zr, err := zip.NewReader(f, size)'
+    - 'data, err := io.ReadAll(gr)'
+    - 'img, _, err := image.Decode(upload)'
+    - 'buf := make([]byte, n)'
+    - 'n := header.UncompressedSize64'
 sources:
   - https://pkg.go.dev/compress/gzip#NewReader
   - https://pkg.go.dev/archive/zip#FileHeader

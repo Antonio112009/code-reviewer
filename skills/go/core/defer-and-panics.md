@@ -10,6 +10,12 @@ activation:
     - '\bos\.Exit\s*\('
     - '\blog\.(?:Fatal|Panic)\w{0,2}\('
     - '\bgo\s+func\b'
+  examples:
+    - 'defer f.Close()'
+    - 'if r := recover(); r != nil {'
+    - 'os.Exit(1)'
+    - 'log.Fatalf("failed: %v", err)'
+    - 'go func() { worker(item) }()'
 sources:
   - https://go.dev/ref/spec#Handling_panics
   - https://go.dev/ref/spec#Defer_statements

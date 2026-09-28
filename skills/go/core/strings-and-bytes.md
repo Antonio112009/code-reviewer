@@ -11,6 +11,13 @@ activation:
     - '\butf8\.|\[\]rune\('
     - '\bunsafe\.(?:String|StringData|Slice|SliceData)\b'
     - '\bregexp\.(?:MustCompile|Compile)\w{0,5}\('
+  examples:
+    - 'trimmed := strings.TrimLeft(host, "https://")'
+    - 'var buf bytes.Buffer'
+    - 'data := buf.Bytes()'
+    - 'n := utf8.RuneCountInString(name)'
+    - 's := unsafe.String(ptr, n)'
+    - 're := regexp.MustCompile(pattern)'
 sources:
   - https://pkg.go.dev/strings#TrimLeft
   - https://go.dev/blog/strings

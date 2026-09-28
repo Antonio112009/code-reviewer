@@ -8,6 +8,10 @@ activation:
     - '\bjson\.(?:Marshal\w{0,6}|Unmarshal|NewDecoder|NewEncoder|Number|RawMessage)\b'
     - '\bjson:"'
     - '\b(?:Marshal|Unmarshal)JSON\b'
+  examples:
+    - 'data, err := json.Marshal(user)'
+    - 'Name string `json:"name,omitempty"`'
+    - 'func (t *T) UnmarshalJSON(data []byte) error {'
 sources:
   - https://pkg.go.dev/encoding/json#Marshal
   - https://pkg.go.dev/encoding/json#Unmarshal

@@ -8,6 +8,10 @@ activation:
     - '\.(?:Begin|BeginTx|Beginx|BeginTxx|MustBegin|Commit|Rollback)\('
     - '\bsql\.(?:Tx|TxOptions|Level\w{4,20})\b'
     - '"\s*(?:BEGIN|COMMIT|ROLLBACK|SET|START TRANSACTION)\b'
+  examples:
+    - 'tx, err := db.BeginTx(ctx, nil)'
+    - 'func process(tx *sql.Tx) error {'
+    - 'if _, err := db.Exec("BEGIN"); err != nil {'
 sources:
   - https://go.dev/doc/database/execute-transactions
   - https://pkg.go.dev/database/sql#DB.BeginTx

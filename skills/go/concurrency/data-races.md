@@ -9,6 +9,11 @@ activation:
     - '\batomic\.'
     - '\.Go\(\s*func\b'
     - '\bsync\.Map\b'
+  examples:
+    - 'go func() { counter++ }()'
+    - 'atomic.AddInt64(&counter, 1)'
+    - 'g.Go(func() error {'
+    - 'var cache sync.Map'
 sources:
   - https://go.dev/ref/mem
   - https://go.dev/doc/articles/race_detector

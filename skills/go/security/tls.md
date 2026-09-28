@@ -10,6 +10,11 @@ activation:
     - '\bVerify(?:PeerCertificate|Connection)\b'
     - '\b(?:ClientAuth|ClientCAs|RootCAs|ServerName|MinVersion|CipherSuites)\s*:'
     - '\b(?:tls10server|tlsrsakex|tls3des|x509keypairleaf)\b'
+  examples:
+    - 'tlsConfig := &tls.Config{InsecureSkipVerify: true}'
+    - 'VerifyPeerCertificate: verifyCallback,'
+    - 'ClientAuth: tls.RequireAndVerifyClientCert,'
+    - '//go:debug tls10server=0'
 sources:
   - https://pkg.go.dev/crypto/tls#Config
   - https://go.dev/doc/go1.27

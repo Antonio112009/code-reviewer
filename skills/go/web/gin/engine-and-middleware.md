@@ -10,6 +10,11 @@ activation:
     - '\bgin\.(?:New|Default|Recovery\w{0,10}|SetMode|Platform\w{1,20})\b'
     - '\b(?:SetTrustedProxies|TrustedPlatform|RemoteIPHeaders|ForwardedByClientIP|MaxMultipartMemory|SaveUploadedFile|ContextWithFallback)\b'
     - '\bClientIP\(\)'
+  examples:
+    - 'r.Use(gin.Recovery())'
+    - 'admin := r.Group("/admin")'
+    - 'r.SetTrustedProxies([]string{"10.0.0.0/8"})'
+    - 'ip := c.ClientIP()'
 sources:
   - https://gin-gonic.com/en/docs/server-config/trusted-proxies/
   - https://github.com/gin-gonic/gin/blob/master/routergroup.go

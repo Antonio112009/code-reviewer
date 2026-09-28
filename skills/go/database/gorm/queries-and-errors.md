@@ -8,6 +8,10 @@ activation:
     - '\.(?:First|Take|Last|Find|Where|Order|Group|Having|Joins|Select|Raw|Exec|Table|Pluck|Preload|Distinct)\('
     - '\bErrRecordNotFound\b'
     - '\.Error\b'
+  examples:
+    - 'db.Where("email = ?", email).First(&user)'
+    - 'if errors.Is(err, gorm.ErrRecordNotFound) {'
+    - 'if err := db.Create(&user).Error; err != nil {'
 sources:
   - https://gorm.io/docs/security.html
   - https://gorm.io/docs/query.html

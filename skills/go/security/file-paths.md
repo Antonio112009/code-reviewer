@@ -10,6 +10,12 @@ activation:
     - '"archive/(?:zip|tar)"'
     - '\b(?:zip\.(?:NewReader|OpenReader)|tar\.NewReader)\b'
     - '\bhttp\.(?:ServeFile|ServeFileFS)\b'
+  examples:
+    - 'p := filepath.Join(base, r.URL.Query().Get("name"))'
+    - 'f, err := os.Open(p)'
+    - 'import "archive/zip"'
+    - 'zr, err := zip.NewReader(f, size)'
+    - 'http.ServeFile(w, r, dir+"/"+name)'
 sources:
   - https://go.dev/blog/osroot
   - https://pkg.go.dev/os#Root

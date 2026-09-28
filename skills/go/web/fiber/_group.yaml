@@ -6,3 +6,6 @@ detect:
   content:
     - 'github\.com/gofiber/fiber/v[23]'
     - '\bfiber\.(?:Ctx|App|Config|Map|Handler|New)\b'
+  examples:
+    - 'github.com/gofiber/fiber/v2'
+    - 'app := fiber.New()'

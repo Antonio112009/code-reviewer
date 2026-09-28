@@ -10,6 +10,12 @@ activation:
     - 'golang\.org/x/net/trace'
     - '\bhttp\.(?:DefaultServeMux|ListenAndServe(?:TLS)?)\b'
     - '\bhttp\.(?:FileServer|FileServerFS|Dir)\('
+  examples:
+    - 'import _ "net/http/pprof"'
+    - 'import _ "expvar"'
+    - 'import _ "golang.org/x/net/trace"'
+    - 'http.ListenAndServe(":8080", nil)'
+    - 'http.FileServer(http.Dir("."))'
 sources:
   - https://pkg.go.dev/net/http/pprof
   - https://pkg.go.dev/expvar

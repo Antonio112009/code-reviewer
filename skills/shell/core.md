@@ -20,6 +20,9 @@ activation:
     - "**/.envrc"
   content:
     - ^#!\s*\S*/(?:env\s+(?:-S\s+)?)?(?:(?:ba|z|k|da|a)?sh|pwsh)\b
+  examples:
+    - '#!/usr/bin/env bash'
+    - '#!/bin/sh'
 ---
 - **Unquoted expansions**: unquoted `$var`, `$(cmd)` or `$@` in bash/sh, `[ -n $v ]` (true when empty) → splitting, globbing, dropped arguments, wrong branch. Fix: `"$var"`, `"$@"`, arrays.
 - **Empty-path deletes**: `rm -rf "$DIR/"*` or `Remove-Item -Recurse "$Path\*"` with an empty variable, `rm` after an unchecked `cd` → wipes `/` or the wrong tree. Fix: `${DIR:?}`, `cd … || exit`.

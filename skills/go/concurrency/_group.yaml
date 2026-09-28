@@ -10,3 +10,9 @@ detect:
     - '"(?:sync|sync/atomic|context|golang\.org/x/sync/errgroup|golang\.org/x/sync/semaphore)"'
     - '\btime\.(?:After|AfterFunc|Tick|NewTimer|NewTicker)\b'
     - '\.Context\(\)'
+  examples:
+    - 'go func() { worker(ch) }()'
+    - 'ch := make(chan int, 1)'
+    - 'import "context"'
+    - 'timer := time.NewTimer(time.Second)'
+    - 'req = req.WithContext(r.Context())'

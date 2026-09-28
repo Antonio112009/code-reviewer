@@ -9,6 +9,10 @@ activation:
     - 'encoding/json/(?:v2|jsontext)'
     - '\bjsontext\.'
     - '\bjson\.(?:MarshalWrite|MarshalEncode|UnmarshalRead|UnmarshalDecode|DefaultOptionsV1|MatchCaseInsensitiveNames|FormatNilSliceAsNull|FormatNilMapAsNull)\b'
+  examples:
+    - 'import "encoding/json/v2"'
+    - 'dec := jsontext.NewEncoder(w)'
+    - 'json.MarshalWrite(w, v, json.DefaultOptionsV1())'
 sources:
   - https://go.dev/doc/go1.27
   - https://pkg.go.dev/encoding/json/v2

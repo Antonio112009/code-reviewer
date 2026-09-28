@@ -5,3 +5,6 @@ detect:
   content:
     - '"(?:database/sql|github\.com/jmoiron/sqlx)"'
     - '\bsql\.(?:DB|Tx|Conn|Rows|Row|Stmt|Null\w{0,12}|ErrNoRows|Open|RawBytes)\b'
+  examples:
+    - 'import "database/sql"'
+    - 'func New(db *sql.DB) *Repo {'

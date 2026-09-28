@@ -9,6 +9,10 @@ activation:
     - '\bssh\.(?:InsecureIgnoreHostKey|FixedHostKey|ClientConfig|ServerConfig|Dial|NewClientConn|NewServerConn|Permissions)\b'
     - '\b(?:PublicKeyCallback|PasswordCallback|NoClientAuth|HostKeyCallback)\b'
     - '\bsession\.(?:Run|Start|Output|CombinedOutput)\('
+  examples:
+    - 'import "golang.org/x/crypto/ssh"'
+    - 'config := &ssh.ClientConfig{HostKeyCallback: ssh.InsecureIgnoreHostKey()}'
+    - 'session.Run("tar -xf " + name)'
 sources:
   - https://pkg.go.dev/golang.org/x/crypto/ssh
   - https://pkg.go.dev/vuln/GO-2024-3321

@@ -10,6 +10,12 @@ activation:
     - '\b(?:slices|maps|iter)\.[A-Z]'
     - '\byield\s*\('
     - '\bfor\b[^\n]{0,80}\brange\b'
+  examples:
+    - 'items = append(items, next)'
+    - 'clear(cache)'
+    - 'keys := slices.Sorted(maps.Keys(m))'
+    - 'if !yield(v) { return }'
+    - 'for _, v := range items {'
 sources:
   - https://go.dev/blog/slices-intro
   - https://go.dev/doc/go1.22

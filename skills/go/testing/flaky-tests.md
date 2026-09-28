@@ -10,6 +10,12 @@ activation:
     - '\breflect\.DeepEqual\(|\bassert\.(?:Equal|EqualValues)\('
     - '\bb\.(?:N|Loop|ResetTimer|StopTimer)\b'
     - '\bhttptest\.New\w{2,15}\('
+  examples:
+    - 'time.Sleep(100 * time.Millisecond)'
+    - 'synctest.Test(t, func(t *testing.T) {'
+    - 'if !reflect.DeepEqual(got, want) {'
+    - 'for b.Loop() {'
+    - 'srv := httptest.NewServer(handler)'
 sources:
   - https://pkg.go.dev/testing/synctest
   - https://go.dev/blog/testing-b-loop

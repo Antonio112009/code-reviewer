@@ -9,6 +9,11 @@ activation:
     - '\binsecure\.NewCredentials\b'
     - '\.(?:CloseSend|RecvMsg|SendMsg|CloseAndRecv)\('
     - '\bkeepalive\.ClientParameters\b'
+  examples:
+    - 'conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(creds))'
+    - 'creds := insecure.NewCredentials()'
+    - 'if err := stream.CloseSend(); err != nil { return err }'
+    - 'kp := keepalive.ClientParameters{Time: 30 * time.Second}'
 sources:
   - https://github.com/grpc/grpc-go/blob/master/Documentation/anti-patterns.md
   - https://pkg.go.dev/google.golang.org/grpc#ClientConn.NewStream

@@ -9,6 +9,11 @@ activation:
     - '\bctx\.(?:Done|Err|Value)\('
     - '\.Context\(\)'
     - '\bctx\s+context\.Context\b'
+  examples:
+    - 'ctx, cancel := context.WithTimeout(parent, 5*time.Second)'
+    - 'select { case <-ctx.Done():'
+    - 'req = req.WithContext(r.Context())'
+    - 'func process(ctx context.Context, id string) error {'
 sources:
   - https://pkg.go.dev/context
   - https://go.dev/blog/context

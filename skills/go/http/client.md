@@ -9,6 +9,11 @@ activation:
     - '\.Do\(\s*req'
     - '\bresp\.(?:Body|StatusCode)\b'
     - '\b(?:CheckRedirect|MaxIdleConns\w{0,7}|DialContext)\b'
+  examples:
+    - 'resp, err := http.Get("https://api.example.com/status")'
+    - 'resp, err := client.Do(req)'
+    - 'defer resp.Body.Close()'
+    - 'tr := &http.Transport{MaxIdleConnsPerHost: 100}'
 sources:
   - https://pkg.go.dev/net/http#Client
   - https://pkg.go.dev/net/http#Response

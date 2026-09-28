@@ -28,6 +28,9 @@ activation:
   content:
     - ^FROM[ \t]+(?:--platform=\S+[ \t]+)?(?:[\w.${}-]+[/:@][\w.${}/:@-]*|\$\{?\w+\}?)(?:[ \t]+[Aa][Ss][ \t]+[\w.-]+)?[ \t]*$
     - "^[ \\t]*(?:depends_on|env_file|network_mode|cap_add|security_opt):"
+  examples:
+    - 'FROM golang:1.22-alpine AS builder'
+    - '    depends_on:'
 ---
 - **Lost stop signal**: shell-form `CMD` chains or entrypoints without `exec "$@"` leave sh as PID 1; PID 1 ignores unhandled SIGTERM (Node, Python) → SIGKILL, no drain. Fix: exec form, `--init`.
 - **Exec-form traps**: exec form never expands `$VAR`; single-quoted JSON falls back to shell form; shell form fails without `/bin/sh` (`scratch`, distroless); shell-form `ENTRYPOINT` drops `CMD` → broken starts.

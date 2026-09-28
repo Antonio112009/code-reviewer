@@ -9,6 +9,10 @@ activation:
     - '\b(?:Immutable|ProxyHeader|EnableTrustedProxyCheck|TrustedProxies|TrustProxy\w{0,6}|Prefork|EnablePrefork|ErrorHandler)\b'
     - '\b(?:recover|session|limiter)\.New\('
     - '\bfiber\.(?:New|Config|IsChild)\b'
+  examples:
+    - 'id := c.Params("id")'
+    - 'app := fiber.New(fiber.Config{Immutable: true})'
+    - 'app.Use(recover.New())'
 sources:
   - https://docs.gofiber.io/#zero-allocation
   - https://docs.gofiber.io/guide/error-handling

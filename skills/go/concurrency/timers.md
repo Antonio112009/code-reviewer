@@ -9,6 +9,11 @@ activation:
     - '\.(?:Reset|Stop)\(\s*\)'
     - '\.Reset\(\s*[\w.*]{1,40}\)'
     - '<-\s*\w{1,30}\.C\b'
+  examples:
+    - 'timer := time.NewTimer(5 * time.Second)'
+    - 'defer ticker.Stop()'
+    - 'timer.Reset(delay)'
+    - 'select { case <-ticker.C:'
 sources:
   - https://go.dev/doc/go1.23
   - https://pkg.go.dev/time#NewTimer

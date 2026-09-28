@@ -6,3 +6,7 @@ detect:
     - 'github\.com/gorilla/websocket'
     - 'github\.com/coder/websocket'
     - 'nhooyr\.io/websocket'
+  examples:
+    - 'github.com/gorilla/websocket'
+    - 'github.com/coder/websocket'
+    - 'nhooyr.io/websocket'

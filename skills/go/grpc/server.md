@@ -10,6 +10,12 @@ activation:
     - '\bmetadata\.FromIncomingContext\b'
     - '\bstatus\.(?:Error|Errorf|New)\b'
     - '\bUnimplemented\w{1,60}Server\b'
+  examples:
+    - 'srv := grpc.NewServer(grpc.ChainUnaryInterceptor(authInterceptor))'
+    - 'srv.GracefulStop()'
+    - 'md, ok := metadata.FromIncomingContext(ctx)'
+    - 'return status.Errorf(codes.NotFound, "user %s not found", id)'
+    - 'type Server struct { pb.UnimplementedUserServiceServer }'
 sources:
   - https://pkg.go.dev/github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery
   - https://pkg.go.dev/google.golang.org/grpc/status#FromError
