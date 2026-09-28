@@ -1,0 +1,140 @@
+title: Invoice list endpoint sortable by a query parameter mapped through a column whitelist
+tags: [go, sql, postgresql, clean, tempting, hard]
+base:
+  go.mod: |
+    module example.com/billing
+
+    go 1.23
+  internal/invoices/invoice.go: |
+    package invoices
+
+    import (
+    	"database/sql"
+    	"time"
+    )
+
+    type Invoice struct {
+    	ID         int64     `json:"id"`
+    	Number     string    `json:"number"`
+    	Customer   string    `json:"customer"`
+    	IssuedAt   time.Time `json:"issuedAt"`
+    	DueAt      time.Time `json:"dueAt"`
+    	TotalCents int64     `json:"totalCents"`
+    }
+
+    type Store struct {
+    	db *sql.DB
+    }
+
+    func NewStore(db *sql.DB) *Store { return &Store{db: db} }
+head:
+  internal/invoices/list.go: |
+    package invoices
+
+    import (
+    	"context"
+    	"errors"
+    	"fmt"
+    )
+
+    var ErrUnknownSort = errors.New("unknown sort field")
+
+    // sortColumns maps the sort fields of the API to the columns they order by.
+    var sortColumns = map[string]string{
+    	"number":   "i.number",
+    	"issued":   "i.issued_at",
+    	"due":      "i.due_at",
+    	"total":    "i.total_cents",
+    	"customer": "c.name",
+    }
+
+    // List returns a page of the account's invoices ordered by a field of sortColumns, then by id.
+    func (s *Store) List(ctx context.Context, accountID int64, sort string, desc bool, limit, offset int) ([]Invoice, error) {
+    	column, ok := sortColumns[sort]
+    	if !ok {
+    		return nil, fmt.Errorf("%w: %q", ErrUnknownSort, sort)
+    	}
+    	dir := "ASC"
+    	if desc {
+    		dir = "DESC"
+    	}
+    	query := fmt.Sprintf(`
+    		SELECT i.id, i.number, c.name, i.issued_at, i.due_at, i.total_cents
+    		  FROM invoices i
+    		  JOIN customers c ON c.id = i.customer_id
+    		 WHERE i.account_id = $1
+    		 ORDER BY %s %s, i.id %s
+    		 LIMIT $2 OFFSET $3`, column, dir, dir)
+    	rows, err := s.db.QueryContext(ctx, query, accountID, limit, offset)
+    	if err != nil {
+    		return nil, err
+    	}
+    	defer rows.Close()
+    	out := []Invoice{}
+    	for rows.Next() {
+    		var inv Invoice
+    		if err := rows.Scan(&inv.ID, &inv.Number, &inv.Customer, &inv.IssuedAt, &inv.DueAt, &inv.TotalCents); err != nil {
+    			return nil, err
+    		}
+    		out = append(out, inv)
+    	}
+    	return out, rows.Err()
+    }
+  internal/invoices/handler.go: |
+    package invoices
+
+    import (
+    	"encoding/json"
+    	"errors"
+    	"net/http"
+    	"net/url"
+    	"strconv"
+
+    	"example.com/billing/internal/auth"
+    )
+
+    type Handler struct {
+    	store *Store
+    }
+
+    func NewHandler(store *Store) *Handler { return &Handler{store: store} }
+
+    // List serves GET /v1/invoices?sort=&order=asc|desc&limit=&offset=; newest first by default.
+    func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
+    	account := auth.AccountFrom(r.Context())
+    	q := r.URL.Query()
+    	limit, err := intParam(q, "limit", 50)
+    	if err != nil || limit < 1 || limit > 200 {
+    		http.Error(w, "limit must be between 1 and 200", http.StatusBadRequest)
+    		return
+    	}
+    	offset, err := intParam(q, "offset", 0)
+    	if err != nil || offset < 0 {
+    		http.Error(w, "offset must be a non-negative integer", http.StatusBadRequest)
+    		return
+    	}
+    	sort := q.Get("sort")
+    	if sort == "" {
+    		sort = "issued"
+    	}
+    	desc := q.Get("order") != "asc"
+    	invoices, err := h.store.List(r.Context(), account.ID, sort, desc, limit, offset)
+    	if errors.Is(err, ErrUnknownSort) {
+    		http.Error(w, err.Error(), http.StatusBadRequest)
+    		return
+    	}
+    	if err != nil {
+    		http.Error(w, "internal error", http.StatusInternalServerError)
+    		return
+    	}
+    	w.Header().Set("Content-Type", "application/json")
+    	_ = json.NewEncoder(w).Encode(invoices)
+    }
+
+    func intParam(q url.Values, name string, fallback int) (int, error) {
+    	if s := q.Get(name); s != "" {
+    		return strconv.Atoi(s)
+    	}
+    	return fallback, nil
+    }
+expect: []

@@ -28,10 +28,13 @@ const LinesSchema = z.union([
   z.tuple([z.number().int().positive(), z.number().int().positive()]),
 ]);
 
+/** Another place where reporting the same defect counts: lines of the same file, or of another file. */
+const AlsoSchema = z.union([LinesSchema, z.strictObject({ file: z.string().min(1), lines: LinesSchema })]);
+
 const ExpectSchema = z.strictObject({
   file: z.string().min(1),
   lines: LinesSchema,
-  also: z.array(LinesSchema).optional(),
+  also: z.array(AlsoSchema).optional(),
   severity: z.enum(SEVERITIES).optional(),
   note: z.string().optional(),
 });
@@ -86,16 +89,17 @@ export function expectationProblems(
 ): string[] {
   const problems: string[] = [];
   for (const [i, d] of expect.entries()) {
-    const text = content(d.file);
-    if (text === undefined) {
-      problems.push(`expect[${i}]: ${d.file} does not exist in the head version`);
-      continue;
-    }
-    const count = lineCount(text);
+    // `lines` and every `also` range, each in its own file
     for (const r of defectRanges(d)) {
+      const text = content(r.file);
+      if (text === undefined) {
+        problems.push(`expect[${i}]: ${r.file} does not exist in the head version`);
+        continue;
+      }
+      const count = lineCount(text);
       if (r.endLine > count) {
         problems.push(
-          `expect[${i}]: lines ${r.startLine}-${r.endLine} are outside ${d.file} (${count} lines)`,
+          `expect[${i}]: lines ${r.startLine}-${r.endLine} are outside ${r.file} (${count} lines)`,
         );
       }
     }
@@ -133,7 +137,12 @@ export function parseCase(text: string, opts: { id: string; file: string }): Eva
       toRange(lines) ?? fail(`expect[${i}].${where}: ${JSON.stringify(lines)} ends before it starts`);
     const problem = casePathProblem(e.file);
     if (problem) fail(`expect[${i}].file ${JSON.stringify(e.file)} ${problem}`);
-    const also = (e.also ?? []).map((lines, j) => range(lines, `also[${j}]`));
+    const also = (e.also ?? []).map((a, j) => {
+      if (typeof a === 'number' || Array.isArray(a)) return range(a, `also[${j}]`);
+      const fileProblem = casePathProblem(a.file);
+      if (fileProblem) fail(`expect[${i}].also[${j}].file ${JSON.stringify(a.file)} ${fileProblem}`);
+      return { file: a.file, ...range(a.lines, `also[${j}].lines`) };
+    });
     return {
       file: e.file,
       ...range(e.lines, 'lines'),
@@ -254,13 +263,20 @@ export async function loadCases(paths: readonly string[], cwd: string): Promise<
  * Keeps the cases matching any of `filters` (OR): a tag, a glob on the id (`python/**`, `*sql*`) or an id
  * prefix (`python` → `python/…`).
  */
+/**
+ * Cases matching any term (tag, id glob or id prefix) and none of the `!`-prefixed ones: `hard,!real` is the
+ * hard subset without the cases that clone real repositories.
+ */
 export function filterCases(cases: readonly EvalCase[], filters: readonly string[]): EvalCase[] {
   const terms = filters.map((f) => f.trim()).filter(Boolean);
-  if (terms.length === 0) return [...cases];
-  const tests = terms.map((term) => {
+  const matcher = (term: string) => {
     const glob = picomatch(term);
     const prefix = `${term.replace(/\/+$/, '')}/`;
     return (c: EvalCase) => c.tags.includes(term) || glob(c.id) || c.id.startsWith(prefix);
-  });
-  return cases.filter((c) => tests.some((t) => t(c)));
+  };
+  const include = terms.filter((t) => !t.startsWith('!')).map(matcher);
+  const exclude = terms.filter((t) => t.startsWith('!') && t.length > 1).map((t) => matcher(t.slice(1)));
+  return cases.filter(
+    (c) => (include.length === 0 || include.some((t) => t(c))) && !exclude.some((t) => t(c)),
+  );
 }

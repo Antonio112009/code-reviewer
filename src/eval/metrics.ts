@@ -31,9 +31,12 @@ export function normalizePath(p: string): string {
   return parts.join('/');
 }
 
-/** The line ranges of an expected defect: `lines` first, then `also`. */
-export function defectRanges(d: ExpectedDefect): Array<{ startLine: number; endLine: number }> {
-  return [{ startLine: d.startLine, endLine: d.endLine }, ...(d.also ?? [])];
+/** The places of an expected defect: `lines` first, then `also` (in its own file when it names one). */
+export function defectRanges(d: ExpectedDefect): Array<{ file: string; startLine: number; endLine: number }> {
+  return [
+    { file: d.file, startLine: d.startLine, endLine: d.endLine },
+    ...(d.also ?? []).map((a) => ({ file: a.file ?? d.file, startLine: a.startLine, endLine: a.endLine })),
+  ];
 }
 
 interface Fit {
@@ -48,11 +51,12 @@ interface Fit {
  * it is not within `tolerance` lines of any of them.
  */
 function fitOf(f: Located, d: ExpectedDefect, tolerance: number): Fit | undefined {
-  if (normalizePath(f.file) !== normalizePath(d.file)) return undefined;
+  const file = normalizePath(f.file);
   const start = Math.min(f.startLine, f.endLine);
   const end = Math.max(f.startLine, f.endLine);
   let best: Fit | undefined;
   for (const r of defectRanges(d)) {
+    if (normalizePath(r.file) !== file) continue;
     if (start > r.endLine + tolerance || end < r.startLine - tolerance) continue;
     const gap = Math.max(0, Math.max(start, r.startLine) - Math.min(end, r.endLine));
     const overlap = Math.max(0, Math.min(end, r.endLine) - Math.max(start, r.startLine) + 1);

@@ -1,0 +1,155 @@
+title: CRM import expects a None from a repository lookup that raises for unknown e-mails
+tags: [python, sqlalchemy, error-handling, cross-file, hard]
+base:
+  shop/db.py: |
+    from sqlalchemy.orm import DeclarativeBase
+
+
+    class Base(DeclarativeBase):
+        pass
+  shop/customers/models.py: |
+    from datetime import datetime
+
+    from sqlalchemy import DateTime, String, func
+    from sqlalchemy.orm import Mapped, mapped_column
+
+    from shop.db import Base
+
+
+    class Customer(Base):
+        __tablename__ = "customers"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        email: Mapped[str] = mapped_column(String(254), unique=True)
+        name: Mapped[str] = mapped_column(String(200))
+        marketing_opt_in: Mapped[bool] = mapped_column(default=False)
+        created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+  shop/customers/repository.py: |
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+
+    from .models import Customer
+
+
+    class CustomerNotFound(LookupError):
+        pass
+
+
+    def normalize_email(email: str) -> str:
+        return email.strip().lower()
+
+
+    class CustomerRepository:
+        def __init__(self, session: Session) -> None:
+            self._session = session
+
+        def get(self, customer_id: int) -> Customer:
+            customer = self._session.get(Customer, customer_id)
+            if customer is None:
+                raise CustomerNotFound(customer_id)
+            return customer
+
+        def get_by_email(self, email: str) -> Customer:
+            stmt = select(Customer).where(Customer.email == normalize_email(email))
+            customer = self._session.scalars(stmt).one_or_none()
+            if customer is None:
+                raise CustomerNotFound(email)
+            return customer
+
+        def add(self, customer: Customer) -> Customer:
+            customer.email = normalize_email(customer.email)
+            self._session.add(customer)
+            self._session.flush()
+            return customer
+  shop/cli.py: |
+    import click
+
+    from shop.session import session_scope
+
+
+    @click.group()
+    def cli() -> None:
+        """Shop maintenance commands."""
+
+
+    @cli.command("purge-carts")
+    @click.option("--days", default=30, show_default=True)
+    def purge_carts(days: int) -> None:
+        from shop.carts.cleanup import purge_abandoned
+
+        with session_scope() as session:
+            removed = purge_abandoned(session, older_than_days=days)
+        click.echo(f"removed {removed} abandoned carts")
+head:
+  shop/customers/importer.py: |
+    import csv
+    from dataclasses import dataclass
+    from typing import IO
+
+    from sqlalchemy.orm import Session
+
+    from .models import Customer
+    from .repository import CustomerRepository
+
+
+    @dataclass
+    class ImportResult:
+        created: int = 0
+        updated: int = 0
+        skipped: int = 0
+
+
+    def import_customers(session: Session, source: IO[str]) -> ImportResult:
+        """Creates or updates customers from a CRM export with the columns email, name, marketing_opt_in."""
+        customers = CustomerRepository(session)
+        result = ImportResult()
+        for row in csv.DictReader(source):
+            email = (row.get("email") or "").strip()
+            if not email:
+                result.skipped += 1
+                continue
+            name = (row.get("name") or "").strip()
+            opt_in = (row.get("marketing_opt_in") or "").strip().lower() in {"1", "true", "yes"}
+            customer = customers.get_by_email(email)
+            if customer is None:
+                customers.add(Customer(email=email, name=name, marketing_opt_in=opt_in))
+                result.created += 1
+            else:
+                customer.name = name or customer.name
+                customer.marketing_opt_in = opt_in
+                result.updated += 1
+        return result
+  shop/cli.py: |
+    import click
+
+    from shop.session import session_scope
+
+
+    @click.group()
+    def cli() -> None:
+        """Shop maintenance commands."""
+
+
+    @cli.command("purge-carts")
+    @click.option("--days", default=30, show_default=True)
+    def purge_carts(days: int) -> None:
+        from shop.carts.cleanup import purge_abandoned
+
+        with session_scope() as session:
+            removed = purge_abandoned(session, older_than_days=days)
+        click.echo(f"removed {removed} abandoned carts")
+
+
+    @cli.command("import-customers")
+    @click.argument("path", type=click.Path(exists=True, dir_okay=False))
+    def import_customers_command(path: str) -> None:
+        from shop.customers.importer import import_customers
+
+        with open(path, newline="", encoding="utf-8-sig") as source, session_scope() as session:
+            result = import_customers(session, source)
+        click.echo(f"created {result.created}, updated {result.updated}, skipped {result.skipped}")
+expect:
+  - file: shop/customers/importer.py
+    lines: [29, 30]
+    severity: major
+    note: CustomerRepository.get_by_email raises CustomerNotFound instead of returning None, so the create branch never runs and the first e-mail not yet in the database aborts the whole import

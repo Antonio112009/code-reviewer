@@ -1,0 +1,122 @@
+title: Accounts without a subscription enrolled on the free plan on first use, conflicts resolved by a unique constraint
+tags: [python, django, concurrency, clean, tempting, hard]
+base:
+  billing/models.py: |
+    from django.db import models
+    from django.db.models import Q
+    from django.utils import timezone
+
+
+    class Plan(models.Model):
+        code = models.SlugField(unique=True)
+        name = models.CharField(max_length=100)
+        monthly_price_cents = models.PositiveIntegerField()
+        max_projects = models.PositiveIntegerField(null=True, blank=True)
+
+
+    class Subscription(models.Model):
+        class Status(models.TextChoices):
+            ACTIVE = "active"
+            CANCELLED = "cancelled"
+
+        account = models.ForeignKey("accounts.Account", on_delete=models.CASCADE, related_name="subscriptions")
+        plan = models.ForeignKey(Plan, on_delete=models.PROTECT)
+        status = models.CharField(max_length=16, choices=Status.choices, default=Status.ACTIVE)
+        started_at = models.DateTimeField(default=timezone.now)
+        cancelled_at = models.DateTimeField(null=True, blank=True)
+
+        class Meta:
+            constraints = [
+                models.UniqueConstraint(
+                    fields=["account"],
+                    condition=Q(status="active"),
+                    name="one_active_subscription_per_account",
+                ),
+            ]
+  billing/migrations/0003_free_plan.py: |
+    from django.db import migrations
+
+
+    def create_free_plan(apps, schema_editor):
+        Plan = apps.get_model("billing", "Plan")
+        Plan.objects.get_or_create(
+            code="free",
+            defaults={"name": "Free", "monthly_price_cents": 0, "max_projects": 3},
+        )
+
+
+    class Migration(migrations.Migration):
+        dependencies = [("billing", "0002_subscription_one_active_per_account")]
+
+        operations = [migrations.RunPython(create_free_plan, migrations.RunPython.noop)]
+  billing/services.py: |
+    from django.utils import timezone
+
+    from .models import Subscription
+
+
+    def cancel_subscription(subscription: Subscription) -> None:
+        subscription.status = Subscription.Status.CANCELLED
+        subscription.cancelled_at = timezone.now()
+        subscription.save(update_fields=["status", "cancelled_at"])
+  billing/entitlements.py: |
+    from accounts.models import Account
+
+    from .models import Plan, Subscription
+
+
+    def current_plan(account: Account) -> Plan:
+        subscription = account.subscriptions.select_related("plan").get(status=Subscription.Status.ACTIVE)
+        return subscription.plan
+
+
+    def can_create_project(account: Account) -> bool:
+        plan = current_plan(account)
+        return plan.max_projects is None or account.projects.count() < plan.max_projects
+head:
+  billing/services.py: |
+    from django.db import IntegrityError, transaction
+    from django.utils import timezone
+
+    from accounts.models import Account
+
+    from .models import Plan, Subscription
+
+    FREE_PLAN_CODE = "free"
+
+
+    def cancel_subscription(subscription: Subscription) -> None:
+        subscription.status = Subscription.Status.CANCELLED
+        subscription.cancelled_at = timezone.now()
+        subscription.save(update_fields=["status", "cancelled_at"])
+
+
+    def active_subscription(account: Account) -> Subscription:
+        """The account's active subscription; an account without one is enrolled on the free plan."""
+        active = Subscription.objects.select_related("plan").filter(account=account, status=Subscription.Status.ACTIVE)
+        subscription = active.first()
+        if subscription is not None:
+            return subscription
+        free_plan = Plan.objects.get(code=FREE_PLAN_CODE)
+        try:
+            with transaction.atomic():
+                return Subscription.objects.create(account=account, plan=free_plan)
+        except IntegrityError:
+            # A concurrent request enrolled the account first; one_active_subscription_per_account
+            # guarantees that its subscription is the only active one.
+            return active.get()
+  billing/entitlements.py: |
+    from accounts.models import Account
+
+    from .models import Plan
+    from .services import active_subscription
+
+
+    def current_plan(account: Account) -> Plan:
+        return active_subscription(account).plan
+
+
+    def can_create_project(account: Account) -> bool:
+        plan = current_plan(account)
+        return plan.max_projects is None or account.projects.count() < plan.max_projects
+expect: []

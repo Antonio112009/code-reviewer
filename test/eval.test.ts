@@ -91,6 +91,16 @@ describe('matchFindings', () => {
     expect(matchFindings(two, [finding('run.sh', 3)], 3).matched).toEqual([{ defect: 0, finding: 0 }]);
   });
 
+  it('matches an `also` range in another file (the caller that crashes)', () => {
+    const expected = [
+      { ...defect('Batches.java', 15), also: [{ file: 'ReminderJob.java', startLine: 27, endLine: 33 }] },
+    ];
+    expect(matchFindings(expected, [finding('ReminderJob.java', 29, 31)], 3).matched).toHaveLength(1);
+    // lines of the other file do not count in the defect's own file, and vice versa
+    expect(matchFindings(expected, [finding('Batches.java', 29)], 3).unmatched).toEqual([0]);
+    expect(matchFindings(expected, [finding('ReminderJob.java', 15)], 3).unmatched).toEqual([0]);
+  });
+
   it('assigns one finding to one defect even when it spans two', () => {
     const expected = [defect('a.js', 10), defect('a.js', 14)];
     const wide = matchFindings(expected, [finding('a.js', 10, 14)], 3);
@@ -357,6 +367,9 @@ describe('case files', () => {
       expect(filterCases(cases, ['js/deep']).map((c) => c.id)).toEqual(['js/deep/b']);
       expect(filterCases(cases, ['**/a', 'nothing']).map((c) => c.id)).toEqual(['js/a']);
       expect(filterCases(cases, []).length).toBe(2);
+      // `!` excludes: by tag, and on its own it starts from every case
+      expect(filterCases(cases, ['js', '!react']).map((c) => c.id)).toEqual(['js/a']);
+      expect(filterCases(cases, ['!react']).map((c) => c.id)).toEqual(['js/a']);
       await expect(loadCases([path.join(dir, 'missing')], '/')).rejects.toThrow(/no such file/);
     } finally {
       rmSync(dir, { recursive: true, force: true });

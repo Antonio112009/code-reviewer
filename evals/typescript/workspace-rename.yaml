@@ -1,0 +1,1153 @@
+title: Organizations renamed to workspaces across repositories, routes and tests, with member arguments reordered
+tags: [typescript, express, postgresql, refactor, large, hard]
+base:
+  CHANGELOG.md: |
+    # Changelog
+
+    ## 2.13.0
+
+    ### Added
+    - Organizations can set a join domain: users with a verified address at that domain join without an invite.
+
+    ### Fixed
+    - Invite tokens are stored hashed.
+  src/types.ts: |
+    export type Role = 'viewer' | 'member' | 'admin' | 'owner';
+
+    export interface Org {
+      id: string;
+      name: string;
+      joinDomain: string | null;
+      createdAt: Date;
+    }
+
+    export interface Membership {
+      orgId: string;
+      userId: string;
+      role: Role;
+      joinedAt: Date;
+    }
+
+    export interface Invite {
+      id: string;
+      orgId: string;
+      email: string;
+      role: Role;
+      invitedBy: string;
+      expiresAt: Date;
+      acceptedAt: Date | null;
+    }
+
+    export interface AuthUser {
+      id: string;
+      email: string;
+      emailVerified: boolean;
+    }
+
+    declare global {
+      namespace Express {
+        interface Request {
+          user: AuthUser;
+          org?: Org;
+          membership?: Membership;
+        }
+      }
+    }
+  src/db.ts: |
+    import pg from 'pg';
+
+    export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 20 });
+
+    export async function query<T extends pg.QueryResultRow>(text: string, params: unknown[] = []): Promise<T[]> {
+      const { rows } = await pool.query<T>(text, params);
+      return rows;
+    }
+
+    export async function queryOne<T extends pg.QueryResultRow>(
+      text: string,
+      params: unknown[] = [],
+    ): Promise<T | undefined> {
+      const rows = await query<T>(text, params);
+      return rows[0];
+    }
+  src/errors.ts: |
+    import type { NextFunction, Request, Response } from 'express';
+
+    export class HttpError extends Error {
+      constructor(
+        readonly status: number,
+        message: string,
+      ) {
+        super(message);
+      }
+    }
+
+    export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
+      if (err instanceof HttpError) {
+        res.status(err.status).json({ error: err.message });
+        return;
+      }
+      console.error(err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  src/validation.ts: |
+    import { HttpError } from './errors.js';
+    import type { Role } from './types.js';
+
+    const ROLES: readonly Role[] = ['viewer', 'member', 'admin', 'owner'];
+
+    export function parseName(value: unknown): string {
+      if (typeof value !== 'string' || value.trim().length === 0 || value.length > 100) {
+        throw new HttpError(400, 'name must be a non-empty string of at most 100 characters');
+      }
+      return value.trim();
+    }
+
+    export function parseRole(value: unknown): Role {
+      if (typeof value !== 'string' || !ROLES.includes(value as Role)) {
+        throw new HttpError(400, `role must be one of ${ROLES.join(', ')}`);
+      }
+      return value as Role;
+    }
+
+    export function parseEmail(value: unknown): string {
+      if (typeof value !== 'string' || !/^[^\s@]+@[^\s@]+$/.test(value) || value.length > 254) {
+        throw new HttpError(400, 'email must be a valid e-mail address');
+      }
+      return value.toLowerCase();
+    }
+  src/repositories/orgs.ts: |
+    import { query, queryOne } from '../db.js';
+    import type { Org } from '../types.js';
+
+    const COLUMNS = 'id, name, join_domain AS "joinDomain", created_at AS "createdAt"';
+
+    /** Creates an organization with `ownerId` as its owner, in one statement. */
+    export async function createOrg(name: string, ownerId: string): Promise<Org> {
+      const org = await queryOne<Org>(
+        `WITH o AS (
+           INSERT INTO orgs (name) VALUES ($1) RETURNING *
+         ), m AS (
+           INSERT INTO org_members (org_id, user_id, role) SELECT o.id, $2, 'owner' FROM o
+         )
+         SELECT ${COLUMNS} FROM o`,
+        [name, ownerId],
+      );
+      return org!;
+    }
+
+    export async function findOrg(orgId: string): Promise<Org | undefined> {
+      return queryOne<Org>(`SELECT ${COLUMNS} FROM orgs WHERE id = $1`, [orgId]);
+    }
+
+    export async function renameOrg(orgId: string, name: string): Promise<Org | undefined> {
+      return queryOne<Org>(`UPDATE orgs SET name = $2 WHERE id = $1 RETURNING ${COLUMNS}`, [orgId, name]);
+    }
+
+    export async function listOrgsForUser(userId: string): Promise<Org[]> {
+      return query<Org>(
+        `SELECT o.id, o.name, o.join_domain AS "joinDomain", o.created_at AS "createdAt"
+           FROM orgs o
+           JOIN org_members m ON m.org_id = o.id
+          WHERE m.user_id = $1
+          ORDER BY o.name`,
+        [userId],
+      );
+    }
+  src/repositories/members.ts: |
+    import { query, queryOne } from '../db.js';
+    import type { Membership, Role } from '../types.js';
+
+    const COLUMNS = 'org_id AS "orgId", user_id AS "userId", role, joined_at AS "joinedAt"';
+
+    /** Adds a member; an existing membership is returned unchanged. */
+    export async function addMember(userId: string, orgId: string, role: Role): Promise<Membership> {
+      const membership = await queryOne<Membership>(
+        `INSERT INTO org_members (org_id, user_id, role)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (org_id, user_id) DO UPDATE SET role = org_members.role
+         RETURNING ${COLUMNS}`,
+        [orgId, userId, role],
+      );
+      return membership!;
+    }
+
+    export async function findMembership(orgId: string, userId: string): Promise<Membership | undefined> {
+      return queryOne<Membership>(`SELECT ${COLUMNS} FROM org_members WHERE org_id = $1 AND user_id = $2`, [
+        orgId,
+        userId,
+      ]);
+    }
+
+    export async function listMembers(orgId: string): Promise<Membership[]> {
+      return query<Membership>(`SELECT ${COLUMNS} FROM org_members WHERE org_id = $1 ORDER BY joined_at`, [orgId]);
+    }
+
+    export async function updateRole(orgId: string, userId: string, role: Role): Promise<Membership | undefined> {
+      return queryOne<Membership>(
+        `UPDATE org_members SET role = $3 WHERE org_id = $1 AND user_id = $2 RETURNING ${COLUMNS}`,
+        [orgId, userId, role],
+      );
+    }
+
+    export async function removeMember(orgId: string, userId: string): Promise<boolean> {
+      const rows = await query(`DELETE FROM org_members WHERE org_id = $1 AND user_id = $2 RETURNING user_id`, [
+        orgId,
+        userId,
+      ]);
+      return rows.length > 0;
+    }
+  src/repositories/invites.ts: |
+    import { createHash, randomBytes } from 'node:crypto';
+    import { query, queryOne } from '../db.js';
+    import type { Invite, Role } from '../types.js';
+
+    const COLUMNS = `id, org_id AS "orgId", email, role, invited_by AS "invitedBy",
+      expires_at AS "expiresAt", accepted_at AS "acceptedAt"`;
+
+    function hashToken(token: string): string {
+      return createHash('sha256').update(token).digest('hex');
+    }
+
+    /** Creates an invite valid for 7 days; the token is only returned here, the database keeps its hash. */
+    export async function createInvite(
+      orgId: string,
+      email: string,
+      role: Role,
+      invitedBy: string,
+    ): Promise<{ invite: Invite; token: string }> {
+      const token = randomBytes(32).toString('base64url');
+      const invite = await queryOne<Invite>(
+        `INSERT INTO invites (org_id, email, role, token_hash, invited_by, expires_at)
+         VALUES ($1, $2, $3, $4, $5, now() + interval '7 days')
+         RETURNING ${COLUMNS}`,
+        [orgId, email, role, hashToken(token), invitedBy],
+      );
+      return { invite: invite!, token };
+    }
+
+    export async function findPendingInvite(token: string): Promise<Invite | undefined> {
+      return queryOne<Invite>(
+        `SELECT ${COLUMNS} FROM invites
+          WHERE token_hash = $1 AND accepted_at IS NULL AND expires_at > now()`,
+        [hashToken(token)],
+      );
+    }
+
+    export async function listPendingInvites(orgId: string): Promise<Invite[]> {
+      return query<Invite>(
+        `SELECT ${COLUMNS} FROM invites
+          WHERE org_id = $1 AND accepted_at IS NULL AND expires_at > now()
+          ORDER BY expires_at`,
+        [orgId],
+      );
+    }
+
+    export async function markAccepted(inviteId: string): Promise<void> {
+      await query('UPDATE invites SET accepted_at = now() WHERE id = $1 AND accepted_at IS NULL', [inviteId]);
+    }
+
+    export async function revokeInvite(orgId: string, inviteId: string): Promise<boolean> {
+      const rows = await query('DELETE FROM invites WHERE org_id = $1 AND id = $2 AND accepted_at IS NULL RETURNING id', [
+        orgId,
+        inviteId,
+      ]);
+      return rows.length > 0;
+    }
+  src/middleware/org.ts: |
+    import type { NextFunction, Request, Response } from 'express';
+    import { HttpError } from '../errors.js';
+    import { findMembership } from '../repositories/members.js';
+    import { findOrg } from '../repositories/orgs.js';
+    import type { Role } from '../types.js';
+
+    const RANK: Record<Role, number> = { viewer: 0, member: 1, admin: 2, owner: 3 };
+
+    export function atLeast(role: Role, required: Role): boolean {
+      return RANK[role] >= RANK[required];
+    }
+
+    export function outranks(role: Role, other: Role): boolean {
+      return RANK[role] > RANK[other];
+    }
+
+    /** Loads req.org from the :orgId parameter; callers who are not members get a 404. */
+    export async function loadOrg(req: Request, _res: Response, next: NextFunction): Promise<void> {
+      try {
+        const org = await findOrg(req.params.orgId!);
+        const membership = org && (await findMembership(org.id, req.user.id));
+        if (!org || !membership) throw new HttpError(404, 'Organization not found');
+        req.org = org;
+        req.membership = membership;
+        next();
+      } catch (err) {
+        next(err);
+      }
+    }
+
+    export function requireRole(role: Role) {
+      return (req: Request, _res: Response, next: NextFunction): void => {
+        if (!req.membership || !atLeast(req.membership.role, role)) {
+          next(new HttpError(403, 'Forbidden'));
+          return;
+        }
+        next();
+      };
+    }
+  src/routes/orgs.ts: |
+    import { Router } from 'express';
+    import { HttpError } from '../errors.js';
+    import { loadOrg, requireRole } from '../middleware/org.js';
+    import { addMember } from '../repositories/members.js';
+    import { createOrg, findOrg, listOrgsForUser, renameOrg } from '../repositories/orgs.js';
+    import { parseName } from '../validation.js';
+
+    const router = Router();
+
+    router.get('/', async (req, res, next) => {
+      try {
+        res.json(await listOrgsForUser(req.user.id));
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.post('/', async (req, res, next) => {
+      try {
+        const org = await createOrg(parseName(req.body.name), req.user.id);
+        res.status(201).json(org);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.get('/:orgId', loadOrg, (req, res) => {
+      res.json({ ...req.org, role: req.membership!.role });
+    });
+
+    router.patch('/:orgId', loadOrg, requireRole('admin'), async (req, res, next) => {
+      try {
+        res.json(await renameOrg(req.org!.id, parseName(req.body.name)));
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    // Users with a verified address at the organization's domain may join it without an invite.
+    router.post('/:orgId/join', async (req, res, next) => {
+      try {
+        const org = await findOrg(req.params.orgId);
+        const domain = req.user.email.split('@').pop()?.toLowerCase();
+        if (!org?.joinDomain || !req.user.emailVerified || domain !== org.joinDomain) {
+          throw new HttpError(404, 'Organization not found');
+        }
+        const membership = await addMember(req.user.id, org.id, 'member');
+        res.status(201).json(membership);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    export default router;
+  src/routes/members.ts: |
+    import { Router } from 'express';
+    import { HttpError } from '../errors.js';
+    import { atLeast, outranks, requireRole } from '../middleware/org.js';
+    import { findMembership, listMembers, removeMember, updateRole } from '../repositories/members.js';
+    import { parseRole } from '../validation.js';
+
+    const router = Router({ mergeParams: true });
+
+    router.get('/', async (req, res, next) => {
+      try {
+        res.json(await listMembers(req.org!.id));
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.patch('/:userId', requireRole('admin'), async (req, res, next) => {
+      try {
+        const role = parseRole(req.body.role);
+        const target = await findMembership(req.org!.id, req.params.userId!);
+        if (!target) throw new HttpError(404, 'Member not found');
+        const actor = req.membership!.role;
+        if (role === 'owner' || !atLeast(actor, role) || !outranks(actor, target.role)) {
+          throw new HttpError(403, 'You cannot change this member to this role');
+        }
+        res.json(await updateRole(req.org!.id, target.userId, role));
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.delete('/:userId', async (req, res, next) => {
+      try {
+        const target = await findMembership(req.org!.id, req.params.userId!);
+        if (!target) throw new HttpError(404, 'Member not found');
+        const actor = req.membership!.role;
+        const leaving = target.userId === req.user.id;
+        if (leaving && target.role === 'owner') {
+          throw new HttpError(409, 'Transfer ownership before leaving the organization');
+        }
+        if (!leaving && !(atLeast(actor, 'admin') && outranks(actor, target.role))) {
+          throw new HttpError(403, 'Forbidden');
+        }
+        await removeMember(req.org!.id, target.userId);
+        res.status(204).end();
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    export default router;
+  src/routes/invites.ts: |
+    import { Router } from 'express';
+    import { HttpError } from '../errors.js';
+    import { sendInviteEmail } from '../mail.js';
+    import { atLeast, requireRole } from '../middleware/org.js';
+    import {
+      createInvite,
+      findPendingInvite,
+      listPendingInvites,
+      markAccepted,
+      revokeInvite,
+    } from '../repositories/invites.js';
+    import { addMember } from '../repositories/members.js';
+    import { parseEmail, parseRole } from '../validation.js';
+
+    /** The invites of an organization, mounted under /orgs/:orgId/invites. */
+    export const orgInvites = Router({ mergeParams: true });
+
+    orgInvites.get('/', requireRole('admin'), async (req, res, next) => {
+      try {
+        res.json(await listPendingInvites(req.org!.id));
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    orgInvites.post('/', requireRole('admin'), async (req, res, next) => {
+      try {
+        const email = parseEmail(req.body.email);
+        const role = parseRole(req.body.role ?? 'member');
+        if (role === 'owner' || !atLeast(req.membership!.role, role)) {
+          throw new HttpError(403, 'You cannot invite members with this role');
+        }
+        const { invite, token } = await createInvite(req.org!.id, email, role, req.user.id);
+        await sendInviteEmail(email, req.org!.name, token);
+        res.status(201).json(invite);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    orgInvites.delete('/:inviteId', requireRole('admin'), async (req, res, next) => {
+      try {
+        if (!(await revokeInvite(req.org!.id, req.params.inviteId!))) throw new HttpError(404, 'Invite not found');
+        res.status(204).end();
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    /** Accepting an invite, mounted under /invites: the invitee is not a member yet. */
+    export const inviteAcceptance = Router();
+
+    inviteAcceptance.post('/accept', async (req, res, next) => {
+      try {
+        if (typeof req.body.token !== 'string') throw new HttpError(400, 'token is required');
+        const invite = await findPendingInvite(req.body.token);
+        if (!invite) throw new HttpError(404, 'Invite not found or expired');
+        if (!req.user.emailVerified || invite.email !== req.user.email.toLowerCase()) {
+          throw new HttpError(403, 'This invite was sent to a different e-mail address');
+        }
+        const membership = await addMember(req.user.id, invite.orgId, invite.role);
+        await markAccepted(invite.id);
+        res.json(membership);
+      } catch (err) {
+        next(err);
+      }
+    });
+  src/app.ts: |
+    import express from 'express';
+    import { authenticate } from './auth/session.js';
+    import { errorHandler } from './errors.js';
+    import { loadOrg } from './middleware/org.js';
+    import { inviteAcceptance, orgInvites } from './routes/invites.js';
+    import members from './routes/members.js';
+    import orgs from './routes/orgs.js';
+
+    export const app = express();
+
+    app.use(express.json({ limit: '100kb' }));
+    app.use(authenticate);
+    app.use('/orgs', orgs);
+    app.use('/orgs/:orgId/members', loadOrg, members);
+    app.use('/orgs/:orgId/invites', loadOrg, orgInvites);
+    app.use('/invites', inviteAcceptance);
+    app.use(errorHandler);
+  test/helpers.ts: |
+    import { randomUUID } from 'node:crypto';
+    import { issueSessionToken } from '../src/auth/session.js';
+    import { pool, queryOne } from '../src/db.js';
+    import type { AuthUser } from '../src/types.js';
+
+    export async function resetDatabase(): Promise<void> {
+      await pool.query('TRUNCATE invites, org_members, orgs, users CASCADE');
+    }
+
+    export async function createUser(email: string, opts: { emailVerified?: boolean } = {}): Promise<AuthUser> {
+      const user = await queryOne<AuthUser>(
+        `INSERT INTO users (id, email, email_verified) VALUES ($1, $2, $3)
+         RETURNING id, email, email_verified AS "emailVerified"`,
+        [randomUUID(), email, opts.emailVerified ?? false],
+      );
+      return user!;
+    }
+
+    export async function setJoinDomain(orgId: string, domain: string): Promise<void> {
+      await pool.query('UPDATE orgs SET join_domain = $2 WHERE id = $1', [orgId, domain]);
+    }
+
+    export function signIn(user: AuthUser): Record<string, string> {
+      return { authorization: `Bearer ${issueSessionToken(user.id)}` };
+    }
+  test/members.test.ts: |
+    import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+    import { pool } from '../src/db.js';
+    import { addMember, findMembership, listMembers, removeMember, updateRole } from '../src/repositories/members.js';
+    import { createOrg } from '../src/repositories/orgs.js';
+    import { createUser, resetDatabase } from './helpers.js';
+
+    describe('members repository', () => {
+      beforeEach(resetDatabase);
+      afterAll(() => pool.end());
+
+      it('makes the creator the owner of a new organization', async () => {
+        const owner = await createUser('owner@example.com');
+        const org = await createOrg('Acme', owner.id);
+        expect(await findMembership(org.id, owner.id)).toMatchObject({ orgId: org.id, userId: owner.id, role: 'owner' });
+      });
+
+      it('adds a member once and keeps the first role', async () => {
+        const owner = await createUser('owner@example.com');
+        const user = await createUser('dev@example.com');
+        const org = await createOrg('Acme', owner.id);
+        await addMember(user.id, org.id, 'member');
+        const again = await addMember(user.id, org.id, 'admin');
+        expect(again).toMatchObject({ orgId: org.id, userId: user.id, role: 'member' });
+        expect(await listMembers(org.id)).toHaveLength(2);
+      });
+
+      it('updates and removes members', async () => {
+        const owner = await createUser('owner@example.com');
+        const user = await createUser('dev@example.com');
+        const org = await createOrg('Acme', owner.id);
+        await addMember(user.id, org.id, 'viewer');
+        expect(await updateRole(org.id, user.id, 'admin')).toMatchObject({ role: 'admin' });
+        expect(await removeMember(org.id, user.id)).toBe(true);
+        expect(await findMembership(org.id, user.id)).toBeUndefined();
+      });
+    });
+  test/orgs.test.ts: |
+    import request from 'supertest';
+    import { beforeEach, describe, expect, it } from 'vitest';
+    import { app } from '../src/app.js';
+    import { createUser, resetDatabase, setJoinDomain, signIn } from './helpers.js';
+
+    describe('organizations API', () => {
+      beforeEach(resetDatabase);
+
+      it('creates an organization owned by the caller', async () => {
+        const owner = await createUser('owner@example.com');
+        const created = await request(app).post('/orgs').set(signIn(owner)).send({ name: 'Acme' }).expect(201);
+        const org = await request(app).get(`/orgs/${created.body.id}`).set(signIn(owner)).expect(200);
+        expect(org.body).toMatchObject({ name: 'Acme', role: 'owner' });
+      });
+
+      it('hides organizations from non-members', async () => {
+        const owner = await createUser('owner@example.com');
+        const stranger = await createUser('stranger@example.com');
+        const created = await request(app).post('/orgs').set(signIn(owner)).send({ name: 'Acme' }).expect(201);
+        await request(app).get(`/orgs/${created.body.id}`).set(signIn(stranger)).expect(404);
+        await request(app).get(`/orgs/${created.body.id}/members`).set(signIn(stranger)).expect(404);
+      });
+
+      it('lets verified users at the join domain join as members', async () => {
+        const owner = await createUser('owner@acme.test');
+        const colleague = await createUser('dev@acme.test', { emailVerified: true });
+        const outsider = await createUser('dev@other.test', { emailVerified: true });
+        const created = await request(app).post('/orgs').set(signIn(owner)).send({ name: 'Acme' }).expect(201);
+        await setJoinDomain(created.body.id, 'acme.test');
+        await request(app).post(`/orgs/${created.body.id}/join`).set(signIn(outsider)).expect(404);
+        const joined = await request(app).post(`/orgs/${created.body.id}/join`).set(signIn(colleague)).expect(201);
+        expect(joined.body).toMatchObject({ orgId: created.body.id, userId: colleague.id, role: 'member' });
+      });
+
+      it('only lets admins rename an organization', async () => {
+        const owner = await createUser('owner@acme.test');
+        const colleague = await createUser('dev@acme.test', { emailVerified: true });
+        const created = await request(app).post('/orgs').set(signIn(owner)).send({ name: 'Acme' }).expect(201);
+        await setJoinDomain(created.body.id, 'acme.test');
+        await request(app).post(`/orgs/${created.body.id}/join`).set(signIn(colleague)).expect(201);
+        await request(app).patch(`/orgs/${created.body.id}`).set(signIn(colleague)).send({ name: 'Mine' }).expect(403);
+        const renamed = await request(app).patch(`/orgs/${created.body.id}`).set(signIn(owner)).send({ name: 'Acme Inc' });
+        expect(renamed.body).toMatchObject({ id: created.body.id, name: 'Acme Inc' });
+      });
+    });
+head:
+  CHANGELOG.md: |
+    # Changelog
+
+    ## 3.0.0
+
+    ### Changed
+    - Organizations are now called workspaces: the API moved from `/orgs` to `/workspaces` and `orgId`
+      fields are now `workspaceId`. The web app ships the same change; the database tables keep their names.
+
+    ## 2.13.0
+
+    ### Added
+    - Organizations can set a join domain: users with a verified address at that domain join without an invite.
+
+    ### Fixed
+    - Invite tokens are stored hashed.
+  src/types.ts: |
+    export type Role = 'viewer' | 'member' | 'admin' | 'owner';
+
+    export interface Workspace {
+      id: string;
+      name: string;
+      joinDomain: string | null;
+      createdAt: Date;
+    }
+
+    export interface Membership {
+      workspaceId: string;
+      userId: string;
+      role: Role;
+      joinedAt: Date;
+    }
+
+    export interface Invite {
+      id: string;
+      workspaceId: string;
+      email: string;
+      role: Role;
+      invitedBy: string;
+      expiresAt: Date;
+      acceptedAt: Date | null;
+    }
+
+    export interface AuthUser {
+      id: string;
+      email: string;
+      emailVerified: boolean;
+    }
+
+    declare global {
+      namespace Express {
+        interface Request {
+          user: AuthUser;
+          workspace?: Workspace;
+          membership?: Membership;
+        }
+      }
+    }
+  src/auth/roles.ts: |
+    import type { NextFunction, Request, Response } from 'express';
+    import { HttpError } from '../errors.js';
+    import type { Role } from '../types.js';
+
+    const RANK: Record<Role, number> = { viewer: 0, member: 1, admin: 2, owner: 3 };
+
+    export function atLeast(role: Role, required: Role): boolean {
+      return RANK[role] >= RANK[required];
+    }
+
+    export function outranks(role: Role, other: Role): boolean {
+      return RANK[role] > RANK[other];
+    }
+
+    /** Requires the caller's membership of req.workspace (see loadWorkspace) to have at least `role`. */
+    export function requireRole(role: Role) {
+      return (req: Request, _res: Response, next: NextFunction): void => {
+        if (!req.membership || !atLeast(req.membership.role, role)) {
+          next(new HttpError(403, 'Forbidden'));
+          return;
+        }
+        next();
+      };
+    }
+  src/repositories/workspaces.ts: |
+    import { query, queryOne } from '../db.js';
+    import type { Workspace } from '../types.js';
+
+    const COLUMNS = 'id, name, join_domain AS "joinDomain", created_at AS "createdAt"';
+
+    /** Creates a workspace with `ownerId` as its owner, in one statement. */
+    export async function createWorkspace(name: string, ownerId: string): Promise<Workspace> {
+      const workspace = await queryOne<Workspace>(
+        `WITH o AS (
+           INSERT INTO orgs (name) VALUES ($1) RETURNING *
+         ), m AS (
+           INSERT INTO org_members (org_id, user_id, role) SELECT o.id, $2, 'owner' FROM o
+         )
+         SELECT ${COLUMNS} FROM o`,
+        [name, ownerId],
+      );
+      return workspace!;
+    }
+
+    export async function findWorkspace(workspaceId: string): Promise<Workspace | undefined> {
+      return queryOne<Workspace>(`SELECT ${COLUMNS} FROM orgs WHERE id = $1`, [workspaceId]);
+    }
+
+    export async function renameWorkspace(workspaceId: string, name: string): Promise<Workspace | undefined> {
+      return queryOne<Workspace>(`UPDATE orgs SET name = $2 WHERE id = $1 RETURNING ${COLUMNS}`, [workspaceId, name]);
+    }
+
+    export async function listWorkspacesForUser(userId: string): Promise<Workspace[]> {
+      return query<Workspace>(
+        `SELECT o.id, o.name, o.join_domain AS "joinDomain", o.created_at AS "createdAt"
+           FROM orgs o
+           JOIN org_members m ON m.org_id = o.id
+          WHERE m.user_id = $1
+          ORDER BY o.name`,
+        [userId],
+      );
+    }
+  src/repositories/members.ts: |
+    import { query, queryOne } from '../db.js';
+    import type { Membership, Role } from '../types.js';
+
+    const COLUMNS = 'org_id AS "workspaceId", user_id AS "userId", role, joined_at AS "joinedAt"';
+
+    /** Adds a member; an existing membership is returned unchanged. */
+    export async function addMember(workspaceId: string, userId: string, role: Role): Promise<Membership> {
+      const membership = await queryOne<Membership>(
+        `INSERT INTO org_members (org_id, user_id, role)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (org_id, user_id) DO UPDATE SET role = org_members.role
+         RETURNING ${COLUMNS}`,
+        [workspaceId, userId, role],
+      );
+      return membership!;
+    }
+
+    export async function findMembership(workspaceId: string, userId: string): Promise<Membership | undefined> {
+      return queryOne<Membership>(`SELECT ${COLUMNS} FROM org_members WHERE org_id = $1 AND user_id = $2`, [
+        workspaceId,
+        userId,
+      ]);
+    }
+
+    export async function listMembers(workspaceId: string): Promise<Membership[]> {
+      return query<Membership>(`SELECT ${COLUMNS} FROM org_members WHERE org_id = $1 ORDER BY joined_at`, [workspaceId]);
+    }
+
+    export async function updateRole(workspaceId: string, userId: string, role: Role): Promise<Membership | undefined> {
+      return queryOne<Membership>(
+        `UPDATE org_members SET role = $3 WHERE org_id = $1 AND user_id = $2 RETURNING ${COLUMNS}`,
+        [workspaceId, userId, role],
+      );
+    }
+
+    export async function removeMember(workspaceId: string, userId: string): Promise<boolean> {
+      const rows = await query(`DELETE FROM org_members WHERE org_id = $1 AND user_id = $2 RETURNING user_id`, [
+        workspaceId,
+        userId,
+      ]);
+      return rows.length > 0;
+    }
+  src/repositories/invites.ts: |
+    import { createHash, randomBytes } from 'node:crypto';
+    import { query, queryOne } from '../db.js';
+    import type { Invite, Role } from '../types.js';
+
+    const COLUMNS = `id, org_id AS "workspaceId", email, role, invited_by AS "invitedBy",
+      expires_at AS "expiresAt", accepted_at AS "acceptedAt"`;
+
+    function hashToken(token: string): string {
+      return createHash('sha256').update(token).digest('hex');
+    }
+
+    /** Creates an invite valid for 7 days; the token is only returned here, the database keeps its hash. */
+    export async function createInvite(
+      workspaceId: string,
+      email: string,
+      role: Role,
+      invitedBy: string,
+    ): Promise<{ invite: Invite; token: string }> {
+      const token = randomBytes(32).toString('base64url');
+      const invite = await queryOne<Invite>(
+        `INSERT INTO invites (org_id, email, role, token_hash, invited_by, expires_at)
+         VALUES ($1, $2, $3, $4, $5, now() + interval '7 days')
+         RETURNING ${COLUMNS}`,
+        [workspaceId, email, role, hashToken(token), invitedBy],
+      );
+      return { invite: invite!, token };
+    }
+
+    export async function findPendingInvite(token: string): Promise<Invite | undefined> {
+      return queryOne<Invite>(
+        `SELECT ${COLUMNS} FROM invites
+          WHERE token_hash = $1 AND accepted_at IS NULL AND expires_at > now()`,
+        [hashToken(token)],
+      );
+    }
+
+    export async function listPendingInvites(workspaceId: string): Promise<Invite[]> {
+      return query<Invite>(
+        `SELECT ${COLUMNS} FROM invites
+          WHERE org_id = $1 AND accepted_at IS NULL AND expires_at > now()
+          ORDER BY expires_at`,
+        [workspaceId],
+      );
+    }
+
+    export async function markAccepted(inviteId: string): Promise<void> {
+      await query('UPDATE invites SET accepted_at = now() WHERE id = $1 AND accepted_at IS NULL', [inviteId]);
+    }
+
+    export async function revokeInvite(workspaceId: string, inviteId: string): Promise<boolean> {
+      const rows = await query('DELETE FROM invites WHERE org_id = $1 AND id = $2 AND accepted_at IS NULL RETURNING id', [
+        workspaceId,
+        inviteId,
+      ]);
+      return rows.length > 0;
+    }
+  src/middleware/workspace.ts: |
+    import type { NextFunction, Request, Response } from 'express';
+    import { HttpError } from '../errors.js';
+    import { findMembership } from '../repositories/members.js';
+    import { findWorkspace } from '../repositories/workspaces.js';
+
+    /** Loads req.workspace from the :workspaceId parameter; callers who are not members get a 404. */
+    export async function loadWorkspace(req: Request, _res: Response, next: NextFunction): Promise<void> {
+      try {
+        const workspace = await findWorkspace(req.params.workspaceId!);
+        const membership = workspace && (await findMembership(workspace.id, req.user.id));
+        if (!workspace || !membership) throw new HttpError(404, 'Workspace not found');
+        req.workspace = workspace;
+        req.membership = membership;
+        next();
+      } catch (err) {
+        next(err);
+      }
+    }
+  src/routes/workspaces.ts: |
+    import { Router } from 'express';
+    import { requireRole } from '../auth/roles.js';
+    import { HttpError } from '../errors.js';
+    import { loadWorkspace } from '../middleware/workspace.js';
+    import { addMember } from '../repositories/members.js';
+    import { createWorkspace, findWorkspace, listWorkspacesForUser, renameWorkspace } from '../repositories/workspaces.js';
+    import { parseName } from '../validation.js';
+
+    const router = Router();
+
+    router.get('/', async (req, res, next) => {
+      try {
+        res.json(await listWorkspacesForUser(req.user.id));
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.post('/', async (req, res, next) => {
+      try {
+        const workspace = await createWorkspace(parseName(req.body.name), req.user.id);
+        res.status(201).json(workspace);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.get('/:workspaceId', loadWorkspace, (req, res) => {
+      res.json({ ...req.workspace, role: req.membership!.role });
+    });
+
+    router.patch('/:workspaceId', loadWorkspace, requireRole('admin'), async (req, res, next) => {
+      try {
+        res.json(await renameWorkspace(req.workspace!.id, parseName(req.body.name)));
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    // Users with a verified address at the workspace's domain may join it without an invite.
+    router.post('/:workspaceId/join', async (req, res, next) => {
+      try {
+        const workspace = await findWorkspace(req.params.workspaceId);
+        const domain = req.user.email.split('@').pop()?.toLowerCase();
+        if (!workspace?.joinDomain || !req.user.emailVerified || domain !== workspace.joinDomain) {
+          throw new HttpError(404, 'Workspace not found');
+        }
+        const membership = await addMember(workspace.id, req.user.id, 'member');
+        res.status(201).json(membership);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    export default router;
+  src/routes/members.ts: |
+    import { Router } from 'express';
+    import { atLeast, outranks, requireRole } from '../auth/roles.js';
+    import { HttpError } from '../errors.js';
+    import { findMembership, listMembers, removeMember, updateRole } from '../repositories/members.js';
+    import { parseRole } from '../validation.js';
+
+    const router = Router({ mergeParams: true });
+
+    router.get('/', async (req, res, next) => {
+      try {
+        res.json(await listMembers(req.workspace!.id));
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.patch('/:userId', requireRole('admin'), async (req, res, next) => {
+      try {
+        const role = parseRole(req.body.role);
+        const target = await findMembership(req.workspace!.id, req.params.userId!);
+        if (!target) throw new HttpError(404, 'Member not found');
+        const actor = req.membership!.role;
+        if (role === 'owner' || !atLeast(actor, role) || !outranks(actor, target.role)) {
+          throw new HttpError(403, 'You cannot change this member to this role');
+        }
+        res.json(await updateRole(req.workspace!.id, target.userId, role));
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.delete('/:userId', async (req, res, next) => {
+      try {
+        const target = await findMembership(req.workspace!.id, req.params.userId!);
+        if (!target) throw new HttpError(404, 'Member not found');
+        const actor = req.membership!.role;
+        const leaving = target.userId === req.user.id;
+        if (leaving && target.role === 'owner') {
+          throw new HttpError(409, 'Transfer ownership before leaving the workspace');
+        }
+        if (!leaving && !(atLeast(actor, 'admin') && outranks(actor, target.role))) {
+          throw new HttpError(403, 'Forbidden');
+        }
+        await removeMember(req.workspace!.id, target.userId);
+        res.status(204).end();
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    export default router;
+  src/routes/invites.ts: |
+    import { Router } from 'express';
+    import { atLeast, requireRole } from '../auth/roles.js';
+    import { HttpError } from '../errors.js';
+    import { sendInviteEmail } from '../mail.js';
+    import {
+      createInvite,
+      findPendingInvite,
+      listPendingInvites,
+      markAccepted,
+      revokeInvite,
+    } from '../repositories/invites.js';
+    import { addMember } from '../repositories/members.js';
+    import { parseEmail, parseRole } from '../validation.js';
+
+    /** The invites of a workspace, mounted under /workspaces/:workspaceId/invites. */
+    export const workspaceInvites = Router({ mergeParams: true });
+
+    workspaceInvites.get('/', requireRole('admin'), async (req, res, next) => {
+      try {
+        res.json(await listPendingInvites(req.workspace!.id));
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    workspaceInvites.post('/', requireRole('admin'), async (req, res, next) => {
+      try {
+        const email = parseEmail(req.body.email);
+        const role = parseRole(req.body.role ?? 'member');
+        if (role === 'owner' || !atLeast(req.membership!.role, role)) {
+          throw new HttpError(403, 'You cannot invite members with this role');
+        }
+        const { invite, token } = await createInvite(req.workspace!.id, email, role, req.user.id);
+        await sendInviteEmail(email, req.workspace!.name, token);
+        res.status(201).json(invite);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    workspaceInvites.delete('/:inviteId', requireRole('admin'), async (req, res, next) => {
+      try {
+        if (!(await revokeInvite(req.workspace!.id, req.params.inviteId!))) throw new HttpError(404, 'Invite not found');
+        res.status(204).end();
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    /** Accepting an invite, mounted under /invites: the invitee is not a member yet. */
+    export const inviteAcceptance = Router();
+
+    inviteAcceptance.post('/accept', async (req, res, next) => {
+      try {
+        if (typeof req.body.token !== 'string') throw new HttpError(400, 'token is required');
+        const invite = await findPendingInvite(req.body.token);
+        if (!invite) throw new HttpError(404, 'Invite not found or expired');
+        if (!req.user.emailVerified || invite.email !== req.user.email.toLowerCase()) {
+          throw new HttpError(403, 'This invite was sent to a different e-mail address');
+        }
+        const membership = await addMember(req.user.id, invite.workspaceId, invite.role);
+        await markAccepted(invite.id);
+        res.json(membership);
+      } catch (err) {
+        next(err);
+      }
+    });
+  src/app.ts: |
+    import express from 'express';
+    import { authenticate } from './auth/session.js';
+    import { errorHandler } from './errors.js';
+    import { loadWorkspace } from './middleware/workspace.js';
+    import { inviteAcceptance, workspaceInvites } from './routes/invites.js';
+    import members from './routes/members.js';
+    import workspaces from './routes/workspaces.js';
+
+    export const app = express();
+
+    app.use(express.json({ limit: '100kb' }));
+    app.use(authenticate);
+    app.use('/workspaces', workspaces);
+    app.use('/workspaces/:workspaceId/members', loadWorkspace, members);
+    app.use('/workspaces/:workspaceId/invites', loadWorkspace, workspaceInvites);
+    app.use('/invites', inviteAcceptance);
+    app.use(errorHandler);
+  test/helpers.ts: |
+    import { randomUUID } from 'node:crypto';
+    import { issueSessionToken } from '../src/auth/session.js';
+    import { pool, queryOne } from '../src/db.js';
+    import type { AuthUser } from '../src/types.js';
+
+    export async function resetDatabase(): Promise<void> {
+      await pool.query('TRUNCATE invites, org_members, orgs, users CASCADE');
+    }
+
+    export async function createUser(email: string, opts: { emailVerified?: boolean } = {}): Promise<AuthUser> {
+      const user = await queryOne<AuthUser>(
+        `INSERT INTO users (id, email, email_verified) VALUES ($1, $2, $3)
+         RETURNING id, email, email_verified AS "emailVerified"`,
+        [randomUUID(), email, opts.emailVerified ?? false],
+      );
+      return user!;
+    }
+
+    export async function setJoinDomain(workspaceId: string, domain: string): Promise<void> {
+      await pool.query('UPDATE orgs SET join_domain = $2 WHERE id = $1', [workspaceId, domain]);
+    }
+
+    export function signIn(user: AuthUser): Record<string, string> {
+      return { authorization: `Bearer ${issueSessionToken(user.id)}` };
+    }
+  test/members.test.ts: |
+    import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+    import { pool } from '../src/db.js';
+    import { addMember, findMembership, listMembers, removeMember, updateRole } from '../src/repositories/members.js';
+    import { createWorkspace } from '../src/repositories/workspaces.js';
+    import { createUser, resetDatabase } from './helpers.js';
+
+    describe('members repository', () => {
+      beforeEach(resetDatabase);
+      afterAll(() => pool.end());
+
+      it('makes the creator the owner of a new workspace', async () => {
+        const owner = await createUser('owner@example.com');
+        const workspace = await createWorkspace('Acme', owner.id);
+        expect(await findMembership(workspace.id, owner.id)).toMatchObject({ workspaceId: workspace.id, userId: owner.id, role: 'owner' });
+      });
+
+      it('adds a member once and keeps the first role', async () => {
+        const owner = await createUser('owner@example.com');
+        const user = await createUser('dev@example.com');
+        const workspace = await createWorkspace('Acme', owner.id);
+        await addMember(workspace.id, user.id, 'member');
+        const again = await addMember(workspace.id, user.id, 'admin');
+        expect(again).toMatchObject({ workspaceId: workspace.id, userId: user.id, role: 'member' });
+        expect(await listMembers(workspace.id)).toHaveLength(2);
+      });
+
+      it('updates and removes members', async () => {
+        const owner = await createUser('owner@example.com');
+        const user = await createUser('dev@example.com');
+        const workspace = await createWorkspace('Acme', owner.id);
+        await addMember(workspace.id, user.id, 'viewer');
+        expect(await updateRole(workspace.id, user.id, 'admin')).toMatchObject({ role: 'admin' });
+        expect(await removeMember(workspace.id, user.id)).toBe(true);
+        expect(await findMembership(workspace.id, user.id)).toBeUndefined();
+      });
+    });
+  test/workspaces.test.ts: |
+    import request from 'supertest';
+    import { beforeEach, describe, expect, it } from 'vitest';
+    import { app } from '../src/app.js';
+    import { createUser, resetDatabase, setJoinDomain, signIn } from './helpers.js';
+
+    describe('workspaces API', () => {
+      beforeEach(resetDatabase);
+
+      it('creates a workspace owned by the caller', async () => {
+        const owner = await createUser('owner@example.com');
+        const created = await request(app).post('/workspaces').set(signIn(owner)).send({ name: 'Acme' }).expect(201);
+        const workspace = await request(app).get(`/workspaces/${created.body.id}`).set(signIn(owner)).expect(200);
+        expect(workspace.body).toMatchObject({ name: 'Acme', role: 'owner' });
+      });
+
+      it('hides workspaces from non-members', async () => {
+        const owner = await createUser('owner@example.com');
+        const stranger = await createUser('stranger@example.com');
+        const created = await request(app).post('/workspaces').set(signIn(owner)).send({ name: 'Acme' }).expect(201);
+        await request(app).get(`/workspaces/${created.body.id}`).set(signIn(stranger)).expect(404);
+        await request(app).get(`/workspaces/${created.body.id}/members`).set(signIn(stranger)).expect(404);
+      });
+
+      it('lets verified users at the join domain join as members', async () => {
+        const owner = await createUser('owner@acme.test');
+        const colleague = await createUser('dev@acme.test', { emailVerified: true });
+        const outsider = await createUser('dev@other.test', { emailVerified: true });
+        const created = await request(app).post('/workspaces').set(signIn(owner)).send({ name: 'Acme' }).expect(201);
+        await setJoinDomain(created.body.id, 'acme.test');
+        await request(app).post(`/workspaces/${created.body.id}/join`).set(signIn(outsider)).expect(404);
+        const joined = await request(app).post(`/workspaces/${created.body.id}/join`).set(signIn(colleague)).expect(201);
+        expect(joined.body).toMatchObject({ workspaceId: created.body.id, userId: colleague.id, role: 'member' });
+      });
+
+      it('only lets admins rename a workspace', async () => {
+        const owner = await createUser('owner@acme.test');
+        const colleague = await createUser('dev@acme.test', { emailVerified: true });
+        const created = await request(app).post('/workspaces').set(signIn(owner)).send({ name: 'Acme' }).expect(201);
+        await setJoinDomain(created.body.id, 'acme.test');
+        await request(app).post(`/workspaces/${created.body.id}/join`).set(signIn(colleague)).expect(201);
+        await request(app).patch(`/workspaces/${created.body.id}`).set(signIn(colleague)).send({ name: 'Mine' }).expect(403);
+        const renamed = await request(app).patch(`/workspaces/${created.body.id}`).set(signIn(owner)).send({ name: 'Acme Inc' });
+        expect(renamed.body).toMatchObject({ id: created.body.id, name: 'Acme Inc' });
+      });
+    });
+  src/repositories/orgs.ts: null
+  src/routes/orgs.ts: null
+  src/middleware/org.ts: null
+  test/orgs.test.ts: null
+expect:
+  - file: src/routes/invites.ts
+    lines: 61
+    # the reordered signature, where a reviewer may report the missed call site
+    also: [{ file: src/repositories/members.ts, lines: 7 }]
+    severity: major
+    note: addMember now takes (workspaceId, userId, role) but the invite acceptance call was only renamed, not reordered; it inserts the user id as workspace_id and the workspace id as user_id, so accepting any invitation fails (foreign key violation) and invited users can never join

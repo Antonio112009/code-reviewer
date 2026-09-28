@@ -1,0 +1,1163 @@
+title: Account "disabled" flag replaced by "active" across models, auth, admin, jobs and tests
+tags: [python, flask, sqlalchemy, refactor, large, hard]
+base:
+  CHANGELOG.md: |
+    # Changelog
+
+    ## 1.8.0
+
+    - API tokens are stored as SHA-256 hashes; existing tokens keep working.
+    - Weekly digest e-mails skip accounts without activity.
+  docs/admin-api.yaml: |
+    openapi: 3.1.0
+    info:
+      title: Admin API
+      version: "1.8"
+    paths:
+      /admin/accounts:
+        get:
+          summary: List accounts, 50 per page
+          parameters:
+            - { name: status, in: query, schema: { type: string, enum: [enabled, disabled] } }
+            - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      accounts: { type: array, items: { $ref: "#/components/schemas/Account" } }
+                      page: { type: integer }
+      /admin/accounts/{id}/disable:
+        post:
+          summary: Disable an account and revoke its API tokens
+          responses:
+            "200": { content: { application/json: { schema: { $ref: "#/components/schemas/Account" } } } }
+            "404": { description: No such account }
+      /admin/accounts/{id}/enable:
+        post:
+          summary: Enable a disabled account (revoked tokens stay revoked)
+          responses:
+            "200": { content: { application/json: { schema: { $ref: "#/components/schemas/Account" } } } }
+            "404": { description: No such account }
+    components:
+      schemas:
+        Account:
+          type: object
+          required: [id, email, name, plan, disabled, created_at]
+          properties:
+            id: { type: integer }
+            email: { type: string, format: email }
+            name: { type: string }
+            plan: { type: string, enum: [free, team, business] }
+            renews_on: { type: [string, "null"], format: date }
+            disabled: { type: boolean }
+            disabled_at: { type: [string, "null"], format: date-time }
+            created_at: { type: string, format: date-time }
+  app/models.py: |
+    import enum
+    from datetime import date, datetime
+
+    from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, String, func
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+    class Base(DeclarativeBase):
+        pass
+
+
+    class Plan(enum.StrEnum):
+        FREE = "free"
+        TEAM = "team"
+        BUSINESS = "business"
+
+
+    class Account(Base):
+        __tablename__ = "accounts"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        email: Mapped[str] = mapped_column(String(254), unique=True)
+        name: Mapped[str] = mapped_column(String(200))
+        password_hash: Mapped[str] = mapped_column(String(200))
+        is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+        plan: Mapped[Plan] = mapped_column(Enum(Plan, native_enum=False), default=Plan.FREE)
+        renews_on: Mapped[date | None] = mapped_column(Date)
+        disabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+        disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+        created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+        tokens: Mapped[list["ApiToken"]] = relationship(back_populates="account", cascade="all, delete-orphan")
+
+
+    class ApiToken(Base):
+        __tablename__ = "api_tokens"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"))
+        token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+        revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+        account: Mapped[Account] = relationship(back_populates="tokens")
+  app/auth.py: |
+    from functools import wraps
+
+    from flask import Blueprint, abort, request, session
+    from sqlalchemy import select
+    from werkzeug.security import check_password_hash, generate_password_hash
+
+    from .db import db_session
+    from .models import Account
+
+    bp = Blueprint("auth", __name__)
+
+    # Compared against when the e-mail is unknown, so both failures take as long.
+    _UNKNOWN_ACCOUNT_HASH = generate_password_hash("unknown account")
+
+
+    @bp.post("/login")
+    def login():
+        payload = request.get_json(silent=True) or {}
+        email = str(payload.get("email", "")).strip().lower()
+        password = str(payload.get("password", ""))
+        account = db_session.scalars(select(Account).where(Account.email == email)).one_or_none()
+        if not check_password_hash(account.password_hash if account else _UNKNOWN_ACCOUNT_HASH, password) or not account:
+            abort(401, "invalid e-mail or password")
+        if account.disabled:
+            abort(403, "this account has been disabled")
+        session.clear()
+        session["account_id"] = account.id
+        return {"id": account.id, "name": account.name}
+
+
+    @bp.post("/logout")
+    def logout():
+        session.clear()
+        return "", 204
+
+
+    def current_account() -> Account:
+        """The signed-in account; disabled accounts lose their sessions on the next request."""
+        account_id = session.get("account_id")
+        account = db_session.get(Account, account_id) if account_id else None
+        if account is None or account.disabled:
+            session.clear()
+            abort(401)
+        return account
+
+
+    def require_admin(view):
+        @wraps(view)
+        def wrapper(*args, **kwargs):
+            if not current_account().is_admin:
+                abort(403)
+            return view(*args, **kwargs)
+
+        return wrapper
+  app/serializers.py: |
+    from .models import Account
+
+
+    def account_to_dict(account: Account) -> dict:
+        return {
+            "id": account.id,
+            "email": account.email,
+            "name": account.name,
+            "plan": account.plan.value,
+            "renews_on": account.renews_on.isoformat() if account.renews_on else None,
+            "disabled": account.disabled,
+            "disabled_at": account.disabled_at.isoformat() if account.disabled_at else None,
+            "created_at": account.created_at.isoformat(),
+        }
+  app/admin/accounts.py: |
+    from datetime import UTC, datetime
+
+    from flask import Blueprint, abort, request
+    from sqlalchemy import select
+
+    from ..auth import require_admin
+    from ..db import db_session
+    from ..models import Account
+    from ..serializers import account_to_dict
+
+    bp = Blueprint("admin_accounts", __name__, url_prefix="/admin/accounts")
+
+    PAGE_SIZE = 50
+
+
+    @bp.get("")
+    @require_admin
+    def list_accounts():
+        query = select(Account).order_by(Account.id)
+        status = request.args.get("status")
+        if status == "disabled":
+            query = query.where(Account.disabled.is_(True))
+        elif status == "enabled":
+            query = query.where(Account.disabled.is_(False))
+        elif status is not None:
+            abort(400, "status must be enabled or disabled")
+        page = max(request.args.get("page", 1, type=int), 1)
+        accounts = db_session.scalars(query.limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE)).all()
+        return {"accounts": [account_to_dict(a) for a in accounts], "page": page}
+
+
+    @bp.post("/<int:account_id>/disable")
+    @require_admin
+    def disable_account(account_id: int):
+        account = db_session.get(Account, account_id) or abort(404)
+        if not account.disabled:
+            now = datetime.now(UTC)
+            account.disabled = True
+            account.disabled_at = now
+            for token in account.tokens:
+                if token.revoked_at is None:
+                    token.revoked_at = now
+            db_session.commit()
+        return account_to_dict(account)
+
+
+    @bp.post("/<int:account_id>/enable")
+    @require_admin
+    def enable_account(account_id: int):
+        account = db_session.get(Account, account_id) or abort(404)
+        if account.disabled:
+            account.disabled = False
+            account.disabled_at = None
+            db_session.commit()
+        return account_to_dict(account)
+  app/jobs/billing.py: |
+    import logging
+    from datetime import date
+
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+
+    from ..models import Account, Plan
+    from ..tasks import charge_renewal
+
+    logger = logging.getLogger(__name__)
+
+
+    def accounts_due_for_renewal(session: Session, today: date) -> list[Account]:
+        """Accounts on a paid plan whose billing period ends today or earlier."""
+        stmt = (
+            select(Account)
+            .where(Account.disabled.is_(False))
+            .where(Account.plan != Plan.FREE)
+            .where(Account.renews_on <= today)
+            .order_by(Account.id)
+        )
+        return list(session.scalars(stmt))
+
+
+    def run_renewals(session: Session, today: date | None = None) -> int:
+        """Queues one renewal charge per due account; charge_renewal is idempotent per account and period."""
+        today = today or date.today()
+        accounts = accounts_due_for_renewal(session, today)
+        for account in accounts:
+            charge_renewal.delay(account.id, account.renews_on.isoformat())
+        logger.info("queued %d renewals for %s", len(accounts), today)
+        return len(accounts)
+  app/jobs/cleanup.py: |
+    import logging
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+
+    from ..models import Account
+
+    logger = logging.getLogger(__name__)
+
+    RETENTION = timedelta(days=90)
+
+
+    def purge_disabled_accounts(session: Session, now: datetime | None = None) -> int:
+        """Deletes accounts (and their tokens) that have been disabled for longer than the retention period."""
+        cutoff = (now or datetime.now(UTC)) - RETENTION
+        accounts = session.scalars(
+            select(Account).where(Account.disabled.is_(True), Account.disabled_at < cutoff).order_by(Account.id)
+        ).all()
+        for account in accounts:
+            session.delete(account)
+        session.commit()
+        logger.info("purged %d accounts disabled before %s", len(accounts), cutoff.date())
+        return len(accounts)
+  app/notifications/digest.py: |
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+
+    from ..mail import send_template
+    from ..models import Account
+    from .activity import weekly_activity
+
+
+    def digest_recipients(session: Session) -> list[Account]:
+        return list(session.scalars(select(Account).where(Account.disabled.is_(False)).order_by(Account.id)))
+
+
+    def send_weekly_digest(session: Session) -> int:
+        sent = 0
+        for account in digest_recipients(session):
+            activity = weekly_activity(session, account.id)
+            if activity.is_empty():
+                continue
+            send_template(account.email, "weekly-digest", {"name": account.name, "activity": activity.summary()})
+            sent += 1
+        return sent
+  tests/conftest.py: |
+    import secrets
+    from datetime import UTC, datetime
+
+    import pytest
+    from werkzeug.security import generate_password_hash
+
+    from app import create_app
+    from app.api.tokens import hash_token
+    from app.db import db_session, reset_schema
+    from app.models import Account, ApiToken, Plan
+
+
+    @pytest.fixture
+    def app():
+        app = create_app({"TESTING": True, "SECRET_KEY": "test"})
+        reset_schema()
+        yield app
+        db_session.remove()
+
+
+    @pytest.fixture
+    def client(app):
+        return app.test_client()
+
+
+    @pytest.fixture
+    def make_account():
+        def make(email="ann@example.com", password="correct horse", *, disabled=False, is_admin=False, plan=Plan.FREE):
+            account = Account(
+                email=email,
+                name=email.split("@")[0].title(),
+                password_hash=generate_password_hash(password),
+                is_admin=is_admin,
+                plan=plan,
+                disabled=disabled,
+                disabled_at=datetime.now(UTC) if disabled else None,
+            )
+            db_session.add(account)
+            db_session.commit()
+            return account
+
+        return make
+
+
+    @pytest.fixture
+    def make_token():
+        def make(account):
+            token = secrets.token_urlsafe(32)
+            db_session.add(ApiToken(account=account, token_hash=hash_token(token)))
+            db_session.commit()
+            return token
+
+        return make
+
+
+    @pytest.fixture
+    def admin_client(client, make_account):
+        make_account("root@example.com", "admin password", is_admin=True)
+        client.post("/login", json={"email": "root@example.com", "password": "admin password"})
+        return client
+  tests/test_auth.py: |
+    def test_login_starts_a_session(client, make_account):
+        make_account("ann@example.com", "correct horse")
+        resp = client.post("/login", json={"email": "Ann@Example.com", "password": "correct horse"})
+        assert resp.status_code == 200
+        assert resp.json["name"] == "Ann"
+
+
+    def test_wrong_password_is_rejected(client, make_account):
+        make_account("ann@example.com", "correct horse")
+        resp = client.post("/login", json={"email": "ann@example.com", "password": "battery staple"})
+        assert resp.status_code == 401
+
+
+    def test_disabled_account_cannot_log_in(client, make_account):
+        make_account("ann@example.com", "correct horse", disabled=True)
+        resp = client.post("/login", json={"email": "ann@example.com", "password": "correct horse"})
+        assert resp.status_code == 403
+
+
+    def test_disabled_account_loses_its_session(admin_client, make_account):
+        ann = make_account("ann@example.com", "correct horse")
+        with admin_client.application.test_client() as ann_client:
+            ann_client.post("/login", json={"email": "ann@example.com", "password": "correct horse"})
+            assert ann_client.get("/me").status_code == 200
+            admin_client.post(f"/admin/accounts/{ann.id}/disable")
+            assert ann_client.get("/me").status_code == 401
+
+
+    def test_api_token_of_disabled_account_is_rejected(client, make_account, make_token):
+        ann = make_account("ann@example.com", "correct horse", disabled=True)
+        token = make_token(ann)
+        resp = client.get("/api/v1/projects", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 401
+
+
+    def test_api_token_of_enabled_account_is_accepted(client, make_account, make_token):
+        ann = make_account("ann@example.com", "correct horse")
+        token = make_token(ann)
+        resp = client.get("/api/v1/projects", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+  tests/test_admin_accounts.py: |
+    from app.db import db_session
+    from app.models import Account
+
+
+    def test_disable_revokes_tokens(admin_client, make_account, make_token):
+        ann = make_account("ann@example.com")
+        make_token(ann)
+        resp = admin_client.post(f"/admin/accounts/{ann.id}/disable")
+        assert resp.status_code == 200
+        assert resp.json["disabled"] is True
+        assert resp.json["disabled_at"] is not None
+        db_session.refresh(ann)
+        assert all(token.revoked_at is not None for token in ann.tokens)
+
+
+    def test_enable_restores_the_account(admin_client, make_account):
+        ann = make_account("ann@example.com", disabled=True)
+        resp = admin_client.post(f"/admin/accounts/{ann.id}/enable")
+        assert resp.json["disabled"] is False
+        assert db_session.get(Account, ann.id).disabled_at is None
+
+
+    def test_list_filters_by_status(admin_client, make_account):
+        make_account("ann@example.com")
+        make_account("bob@example.com", disabled=True)
+        disabled = admin_client.get("/admin/accounts?status=disabled").json["accounts"]
+        enabled = admin_client.get("/admin/accounts?status=enabled").json["accounts"]
+        assert [a["email"] for a in disabled] == ["bob@example.com"]
+        assert [a["email"] for a in enabled] == ["root@example.com", "ann@example.com"]
+
+
+    def test_non_admins_cannot_disable_accounts(client, make_account):
+        ann = make_account("ann@example.com", "correct horse")
+        bob = make_account("bob@example.com")
+        client.post("/login", json={"email": "ann@example.com", "password": "correct horse"})
+        assert client.post(f"/admin/accounts/{bob.id}/disable").status_code == 403
+        assert db_session.get(Account, bob.id).disabled is False
+        assert ann.disabled is False
+  tests/test_cleanup.py: |
+    from datetime import UTC, datetime, timedelta
+
+    from app.db import db_session
+    from app.jobs.cleanup import purge_disabled_accounts
+    from app.models import Account
+
+
+    def test_purges_accounts_disabled_before_the_retention_period(app, make_account):
+        now = datetime(2026, 6, 1, tzinfo=UTC)
+        old = make_account("old@example.com", disabled=True)
+        recent = make_account("recent@example.com", disabled=True)
+        active = make_account("active@example.com")
+        old.disabled_at = now - timedelta(days=91)
+        recent.disabled_at = now - timedelta(days=10)
+        db_session.commit()
+
+        assert purge_disabled_accounts(db_session, now) == 1
+
+        remaining = {a.email for a in db_session.query(Account)}
+        assert remaining == {"recent@example.com", "active@example.com"}
+        assert active.disabled is False
+  web/admin/AccountsPage.tsx: |
+    import { useState } from 'react';
+    import useSWR from 'swr';
+    import { api } from '../api';
+    import { formatDate } from '../format';
+
+    type StatusFilter = 'all' | 'enabled' | 'disabled';
+
+    interface AdminAccount {
+      id: number;
+      email: string;
+      name: string;
+      plan: string;
+      disabled: boolean;
+      disabled_at: string | null;
+    }
+
+    export function AccountsPage() {
+      const [status, setStatus] = useState<StatusFilter>('all');
+      const query = status === 'all' ? '' : `?status=${status}`;
+      const { data, mutate } = useSWR<{ accounts: AdminAccount[] }>(`/admin/accounts${query}`, api.get);
+
+      async function toggle(account: AdminAccount) {
+        const action = account.disabled ? 'enable' : 'disable';
+        if (action === 'disable' && !window.confirm(`Disable ${account.email}? Their API tokens are revoked.`)) return;
+        await api.post(`/admin/accounts/${account.id}/${action}`);
+        await mutate();
+      }
+
+      return (
+        <section>
+          <h1>Accounts</h1>
+          <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}>
+            <option value="all">All</option>
+            <option value="enabled">Enabled</option>
+            <option value="disabled">Disabled</option>
+          </select>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>E-mail</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {data?.accounts.map((account) => (
+                <tr key={account.id} className={account.disabled ? 'muted' : undefined}>
+                  <td>{account.name}</td>
+                  <td>{account.email}</td>
+                  <td>{account.plan}</td>
+                  <td>{account.disabled ? `Disabled on ${formatDate(account.disabled_at)}` : 'Enabled'}</td>
+                  <td>
+                    <button type="button" onClick={() => toggle(account)}>
+                      {account.disabled ? 'Enable' : 'Disable'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      );
+    }
+head:
+  CHANGELOG.md: |
+    # Changelog
+
+    ## 2.0.0
+
+    - Accounts are "active" or "deactivated" instead of "enabled" or "disabled". The admin API follows: the
+      `disabled` and `disabled_at` fields are now `active` and `deactivated_at`, `status=enabled|disabled` is
+      `status=active|inactive`, and `/disable` and `/enable` are `/deactivate` and `/reactivate`. The admin
+      page ships with the same release.
+
+    ## 1.8.0
+
+    - API tokens are stored as SHA-256 hashes; existing tokens keep working.
+    - Weekly digest e-mails skip accounts without activity.
+  docs/admin-api.yaml: |
+    openapi: 3.1.0
+    info:
+      title: Admin API
+      version: "2.0"
+    paths:
+      /admin/accounts:
+        get:
+          summary: List accounts, 50 per page
+          parameters:
+            - { name: status, in: query, schema: { type: string, enum: [active, inactive] } }
+            - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+          responses:
+            "200":
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      accounts: { type: array, items: { $ref: "#/components/schemas/Account" } }
+                      page: { type: integer }
+      /admin/accounts/{id}/deactivate:
+        post:
+          summary: Deactivate an account and revoke its API tokens
+          responses:
+            "200": { content: { application/json: { schema: { $ref: "#/components/schemas/Account" } } } }
+            "404": { description: No such account }
+      /admin/accounts/{id}/reactivate:
+        post:
+          summary: Reactivate a deactivated account (revoked tokens stay revoked)
+          responses:
+            "200": { content: { application/json: { schema: { $ref: "#/components/schemas/Account" } } } }
+            "404": { description: No such account }
+    components:
+      schemas:
+        Account:
+          type: object
+          required: [id, email, name, plan, active, created_at]
+          properties:
+            id: { type: integer }
+            email: { type: string, format: email }
+            name: { type: string }
+            plan: { type: string, enum: [free, team, business] }
+            renews_on: { type: [string, "null"], format: date }
+            active: { type: boolean }
+            deactivated_at: { type: [string, "null"], format: date-time }
+            created_at: { type: string, format: date-time }
+  migrations/versions/0014_account_active.py: |
+    """Replace accounts.disabled with accounts.active.
+
+    Revision ID: 0014_account_active
+    Revises: 0013_api_token_hashes
+    """
+
+    import sqlalchemy as sa
+    from alembic import op
+
+    revision = "0014_account_active"
+    down_revision = "0013_api_token_hashes"
+
+
+    def upgrade() -> None:
+        op.add_column("accounts", sa.Column("active", sa.Boolean(), nullable=False, server_default=sa.true()))
+        op.execute("UPDATE accounts SET active = NOT disabled")
+        op.alter_column("accounts", "disabled_at", new_column_name="deactivated_at")
+        op.drop_column("accounts", "disabled")
+
+
+    def downgrade() -> None:
+        op.add_column("accounts", sa.Column("disabled", sa.Boolean(), nullable=False, server_default=sa.false()))
+        op.execute("UPDATE accounts SET disabled = NOT active")
+        op.alter_column("accounts", "deactivated_at", new_column_name="disabled_at")
+        op.drop_column("accounts", "active")
+  app/models.py: |
+    import enum
+    from datetime import date, datetime
+
+    from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, String, func
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+    class Base(DeclarativeBase):
+        pass
+
+
+    class Plan(enum.StrEnum):
+        FREE = "free"
+        TEAM = "team"
+        BUSINESS = "business"
+
+
+    class Account(Base):
+        __tablename__ = "accounts"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        email: Mapped[str] = mapped_column(String(254), unique=True)
+        name: Mapped[str] = mapped_column(String(200))
+        password_hash: Mapped[str] = mapped_column(String(200))
+        is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+        plan: Mapped[Plan] = mapped_column(Enum(Plan, native_enum=False), default=Plan.FREE)
+        renews_on: Mapped[date | None] = mapped_column(Date)
+        active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+        deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+        created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+        tokens: Mapped[list["ApiToken"]] = relationship(back_populates="account", cascade="all, delete-orphan")
+
+
+    class ApiToken(Base):
+        __tablename__ = "api_tokens"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"))
+        token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+        revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+        account: Mapped[Account] = relationship(back_populates="tokens")
+  app/accounts/__init__.py: |
+    """Account lifecycle: deactivation, reactivation and retention."""
+  app/accounts/lifecycle.py: |
+    """Deactivating, reactivating and finally purging accounts."""
+
+    import logging
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+
+    from ..models import Account
+
+    logger = logging.getLogger(__name__)
+
+    RETENTION = timedelta(days=90)
+
+
+    def deactivate(account: Account, now: datetime) -> bool:
+        """Deactivates the account and revokes its API tokens; its sessions end on their next request.
+
+        Returns False when the account was already inactive.
+        """
+        if not account.active:
+            return False
+        account.active = False
+        account.deactivated_at = now
+        for token in account.tokens:
+            if token.revoked_at is None:
+                token.revoked_at = now
+        return True
+
+
+    def reactivate(account: Account) -> bool:
+        """Reactivates the account; revoked API tokens stay revoked. Returns False when it was already active."""
+        if account.active:
+            return False
+        account.active = True
+        account.deactivated_at = None
+        return True
+
+
+    def purge_inactive_accounts(session: Session, now: datetime | None = None) -> int:
+        """Deletes accounts (and their tokens) that have been inactive for longer than the retention period."""
+        cutoff = (now or datetime.now(UTC)) - RETENTION
+        accounts = session.scalars(
+            select(Account).where(Account.active.is_(False), Account.deactivated_at < cutoff).order_by(Account.id)
+        ).all()
+        for account in accounts:
+            session.delete(account)
+        session.commit()
+        logger.info("purged %d accounts deactivated before %s", len(accounts), cutoff.date())
+        return len(accounts)
+  app/auth.py: |
+    from functools import wraps
+
+    from flask import Blueprint, abort, request, session
+    from sqlalchemy import select
+    from werkzeug.security import check_password_hash, generate_password_hash
+
+    from .db import db_session
+    from .models import Account
+
+    bp = Blueprint("auth", __name__)
+
+    # Compared against when the e-mail is unknown, so both failures take as long.
+    _UNKNOWN_ACCOUNT_HASH = generate_password_hash("unknown account")
+
+
+    @bp.post("/login")
+    def login():
+        payload = request.get_json(silent=True) or {}
+        email = str(payload.get("email", "")).strip().lower()
+        password = str(payload.get("password", ""))
+        account = db_session.scalars(select(Account).where(Account.email == email)).one_or_none()
+        if not check_password_hash(account.password_hash if account else _UNKNOWN_ACCOUNT_HASH, password) or not account:
+            abort(401, "invalid e-mail or password")
+        if not account.active:
+            abort(403, "this account has been deactivated")
+        session.clear()
+        session["account_id"] = account.id
+        return {"id": account.id, "name": account.name}
+
+
+    @bp.post("/logout")
+    def logout():
+        session.clear()
+        return "", 204
+
+
+    def current_account() -> Account:
+        """The signed-in account; deactivated accounts lose their sessions on the next request."""
+        account_id = session.get("account_id")
+        account = db_session.get(Account, account_id) if account_id else None
+        if account is None or not account.active:
+            session.clear()
+            abort(401)
+        return account
+
+
+    def require_admin(view):
+        @wraps(view)
+        def wrapper(*args, **kwargs):
+            if not current_account().is_admin:
+                abort(403)
+            return view(*args, **kwargs)
+
+        return wrapper
+  app/serializers.py: |
+    from .models import Account
+
+
+    def account_to_dict(account: Account) -> dict:
+        return {
+            "id": account.id,
+            "email": account.email,
+            "name": account.name,
+            "plan": account.plan.value,
+            "renews_on": account.renews_on.isoformat() if account.renews_on else None,
+            "active": account.active,
+            "deactivated_at": account.deactivated_at.isoformat() if account.deactivated_at else None,
+            "created_at": account.created_at.isoformat(),
+        }
+  app/admin/accounts.py: |
+    from datetime import UTC, datetime
+
+    from flask import Blueprint, abort, request
+    from sqlalchemy import select
+
+    from ..accounts import lifecycle
+    from ..auth import require_admin
+    from ..db import db_session
+    from ..models import Account
+    from ..serializers import account_to_dict
+
+    bp = Blueprint("admin_accounts", __name__, url_prefix="/admin/accounts")
+
+    PAGE_SIZE = 50
+
+
+    @bp.get("")
+    @require_admin
+    def list_accounts():
+        query = select(Account).order_by(Account.id)
+        status = request.args.get("status")
+        if status == "inactive":
+            query = query.where(Account.active.is_(False))
+        elif status == "active":
+            query = query.where(Account.active.is_(True))
+        elif status is not None:
+            abort(400, "status must be active or inactive")
+        page = max(request.args.get("page", 1, type=int), 1)
+        accounts = db_session.scalars(query.limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE)).all()
+        return {"accounts": [account_to_dict(a) for a in accounts], "page": page}
+
+
+    @bp.post("/<int:account_id>/deactivate")
+    @require_admin
+    def deactivate_account(account_id: int):
+        account = db_session.get(Account, account_id) or abort(404)
+        if lifecycle.deactivate(account, datetime.now(UTC)):
+            db_session.commit()
+        return account_to_dict(account)
+
+
+    @bp.post("/<int:account_id>/reactivate")
+    @require_admin
+    def reactivate_account(account_id: int):
+        account = db_session.get(Account, account_id) or abort(404)
+        if lifecycle.reactivate(account):
+            db_session.commit()
+        return account_to_dict(account)
+  app/jobs/billing.py: |
+    import logging
+    from datetime import date
+
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+
+    from ..models import Account, Plan
+    from ..tasks import charge_renewal
+
+    logger = logging.getLogger(__name__)
+
+
+    def accounts_due_for_renewal(session: Session, today: date) -> list[Account]:
+        """Accounts on a paid plan whose billing period ends today or earlier."""
+        stmt = (
+            select(Account)
+            .where(Account.active.is_(False))
+            .where(Account.plan != Plan.FREE)
+            .where(Account.renews_on <= today)
+            .order_by(Account.id)
+        )
+        return list(session.scalars(stmt))
+
+
+    def run_renewals(session: Session, today: date | None = None) -> int:
+        """Queues one renewal charge per due account; charge_renewal is idempotent per account and period."""
+        today = today or date.today()
+        accounts = accounts_due_for_renewal(session, today)
+        for account in accounts:
+            charge_renewal.delay(account.id, account.renews_on.isoformat())
+        logger.info("queued %d renewals for %s", len(accounts), today)
+        return len(accounts)
+  app/notifications/digest.py: |
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+
+    from ..mail import send_template
+    from ..models import Account
+    from .activity import weekly_activity
+
+
+    def digest_recipients(session: Session) -> list[Account]:
+        return list(session.scalars(select(Account).where(Account.active.is_(True)).order_by(Account.id)))
+
+
+    def send_weekly_digest(session: Session) -> int:
+        sent = 0
+        for account in digest_recipients(session):
+            activity = weekly_activity(session, account.id)
+            if activity.is_empty():
+                continue
+            send_template(account.email, "weekly-digest", {"name": account.name, "activity": activity.summary()})
+            sent += 1
+        return sent
+  tests/conftest.py: |
+    import secrets
+    from datetime import UTC, datetime
+
+    import pytest
+    from werkzeug.security import generate_password_hash
+
+    from app import create_app
+    from app.api.tokens import hash_token
+    from app.db import db_session, reset_schema
+    from app.models import Account, ApiToken, Plan
+
+
+    @pytest.fixture
+    def app():
+        app = create_app({"TESTING": True, "SECRET_KEY": "test"})
+        reset_schema()
+        yield app
+        db_session.remove()
+
+
+    @pytest.fixture
+    def client(app):
+        return app.test_client()
+
+
+    @pytest.fixture
+    def make_account():
+        def make(email="ann@example.com", password="correct horse", *, active=True, is_admin=False, plan=Plan.FREE):
+            account = Account(
+                email=email,
+                name=email.split("@")[0].title(),
+                password_hash=generate_password_hash(password),
+                is_admin=is_admin,
+                plan=plan,
+                active=active,
+                deactivated_at=None if active else datetime.now(UTC),
+            )
+            db_session.add(account)
+            db_session.commit()
+            return account
+
+        return make
+
+
+    @pytest.fixture
+    def make_token():
+        def make(account):
+            token = secrets.token_urlsafe(32)
+            db_session.add(ApiToken(account=account, token_hash=hash_token(token)))
+            db_session.commit()
+            return token
+
+        return make
+
+
+    @pytest.fixture
+    def admin_client(client, make_account):
+        make_account("root@example.com", "admin password", is_admin=True)
+        client.post("/login", json={"email": "root@example.com", "password": "admin password"})
+        return client
+  tests/test_auth.py: |
+    def test_login_starts_a_session(client, make_account):
+        make_account("ann@example.com", "correct horse")
+        resp = client.post("/login", json={"email": "Ann@Example.com", "password": "correct horse"})
+        assert resp.status_code == 200
+        assert resp.json["name"] == "Ann"
+
+
+    def test_wrong_password_is_rejected(client, make_account):
+        make_account("ann@example.com", "correct horse")
+        resp = client.post("/login", json={"email": "ann@example.com", "password": "battery staple"})
+        assert resp.status_code == 401
+
+
+    def test_inactive_account_cannot_log_in(client, make_account):
+        make_account("ann@example.com", "correct horse", active=False)
+        resp = client.post("/login", json={"email": "ann@example.com", "password": "correct horse"})
+        assert resp.status_code == 403
+
+
+    def test_deactivated_account_loses_its_session(admin_client, make_account):
+        ann = make_account("ann@example.com", "correct horse")
+        with admin_client.application.test_client() as ann_client:
+            ann_client.post("/login", json={"email": "ann@example.com", "password": "correct horse"})
+            assert ann_client.get("/me").status_code == 200
+            admin_client.post(f"/admin/accounts/{ann.id}/deactivate")
+            assert ann_client.get("/me").status_code == 401
+
+
+    def test_api_token_of_inactive_account_is_rejected(client, make_account, make_token):
+        ann = make_account("ann@example.com", "correct horse", active=False)
+        token = make_token(ann)
+        resp = client.get("/api/v1/projects", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 401
+
+
+    def test_api_token_of_active_account_is_accepted(client, make_account, make_token):
+        ann = make_account("ann@example.com", "correct horse")
+        token = make_token(ann)
+        resp = client.get("/api/v1/projects", headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+  tests/test_admin_accounts.py: |
+    from app.db import db_session
+    from app.models import Account
+
+
+    def test_deactivate_revokes_tokens(admin_client, make_account, make_token):
+        ann = make_account("ann@example.com")
+        make_token(ann)
+        resp = admin_client.post(f"/admin/accounts/{ann.id}/deactivate")
+        assert resp.status_code == 200
+        assert resp.json["active"] is False
+        assert resp.json["deactivated_at"] is not None
+        db_session.refresh(ann)
+        assert all(token.revoked_at is not None for token in ann.tokens)
+
+
+    def test_reactivate_restores_the_account(admin_client, make_account):
+        ann = make_account("ann@example.com", active=False)
+        resp = admin_client.post(f"/admin/accounts/{ann.id}/reactivate")
+        assert resp.json["active"] is True
+        assert db_session.get(Account, ann.id).deactivated_at is None
+
+
+    def test_list_filters_by_status(admin_client, make_account):
+        make_account("ann@example.com")
+        make_account("bob@example.com", active=False)
+        inactive = admin_client.get("/admin/accounts?status=inactive").json["accounts"]
+        active = admin_client.get("/admin/accounts?status=active").json["accounts"]
+        assert [a["email"] for a in inactive] == ["bob@example.com"]
+        assert [a["email"] for a in active] == ["root@example.com", "ann@example.com"]
+
+
+    def test_non_admins_cannot_deactivate_accounts(client, make_account):
+        ann = make_account("ann@example.com", "correct horse")
+        bob = make_account("bob@example.com")
+        client.post("/login", json={"email": "ann@example.com", "password": "correct horse"})
+        assert client.post(f"/admin/accounts/{bob.id}/deactivate").status_code == 403
+        assert db_session.get(Account, bob.id).active is True
+        assert ann.active is True
+  tests/test_lifecycle.py: |
+    from datetime import UTC, datetime, timedelta
+
+    from app.accounts.lifecycle import deactivate, purge_inactive_accounts, reactivate
+    from app.db import db_session
+    from app.models import Account
+
+    NOW = datetime(2026, 6, 1, tzinfo=UTC)
+
+
+    def test_deactivate_revokes_open_tokens_only(app, make_account, make_token):
+        ann = make_account("ann@example.com")
+        make_token(ann)
+        make_token(ann)
+        earlier = NOW - timedelta(days=3)
+        ann.tokens[0].revoked_at = earlier
+
+        assert deactivate(ann, NOW) is True
+
+        assert ann.active is False
+        assert ann.deactivated_at == NOW
+        assert [t.revoked_at for t in ann.tokens] == [earlier, NOW]
+
+
+    def test_deactivate_twice_keeps_the_first_date(app, make_account):
+        ann = make_account("ann@example.com")
+        deactivate(ann, NOW)
+        assert deactivate(ann, NOW + timedelta(days=1)) is False
+        assert ann.deactivated_at == NOW
+
+
+    def test_reactivate_clears_the_date(app, make_account):
+        ann = make_account("ann@example.com", active=False)
+        assert reactivate(ann) is True
+        assert ann.active is True
+        assert ann.deactivated_at is None
+        assert reactivate(ann) is False
+
+
+    def test_purges_accounts_inactive_for_longer_than_the_retention_period(app, make_account):
+        old = make_account("old@example.com", active=False)
+        recent = make_account("recent@example.com", active=False)
+        active = make_account("active@example.com")
+        old.deactivated_at = NOW - timedelta(days=91)
+        recent.deactivated_at = NOW - timedelta(days=10)
+        db_session.commit()
+
+        assert purge_inactive_accounts(db_session, NOW) == 1
+
+        remaining = {a.email for a in db_session.query(Account)}
+        assert remaining == {"recent@example.com", "active@example.com"}
+        assert active.active is True
+  web/admin/AccountsPage.tsx: |
+    import { useState } from 'react';
+    import useSWR from 'swr';
+    import { api } from '../api';
+    import { formatDate } from '../format';
+
+    type StatusFilter = 'all' | 'active' | 'inactive';
+
+    interface AdminAccount {
+      id: number;
+      email: string;
+      name: string;
+      plan: string;
+      active: boolean;
+      deactivated_at: string | null;
+    }
+
+    export function AccountsPage() {
+      const [status, setStatus] = useState<StatusFilter>('all');
+      const query = status === 'all' ? '' : `?status=${status}`;
+      const { data, mutate } = useSWR<{ accounts: AdminAccount[] }>(`/admin/accounts${query}`, api.get);
+
+      async function toggle(account: AdminAccount) {
+        const action = account.active ? 'deactivate' : 'reactivate';
+        if (action === 'deactivate' && !window.confirm(`Deactivate ${account.email}? Their API tokens are revoked.`)) {
+          return;
+        }
+        await api.post(`/admin/accounts/${account.id}/${action}`);
+        await mutate();
+      }
+
+      return (
+        <section>
+          <h1>Accounts</h1>
+          <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}>
+            <option value="all">All</option>
+            <option value="active">Active</option>
+            <option value="inactive">Deactivated</option>
+          </select>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>E-mail</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {data?.accounts.map((account) => (
+                <tr key={account.id} className={account.active ? undefined : 'muted'}>
+                  <td>{account.name}</td>
+                  <td>{account.email}</td>
+                  <td>{account.plan}</td>
+                  <td>{account.active ? 'Active' : `Deactivated on ${formatDate(account.deactivated_at)}`}</td>
+                  <td>
+                    <button type="button" onClick={() => toggle(account)}>
+                      {account.active ? 'Deactivate' : 'Reactivate'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      );
+    }
+  app/jobs/cleanup.py: null
+  tests/test_cleanup.py: null
+expect:
+  - file: app/jobs/billing.py
+    lines: 17
+    severity: major
+    note: disabled.is_(False) was renamed to active.is_(False) without inverting it, so the renewal job selects only deactivated paid accounts; closed accounts are charged every period and no active account is renewed

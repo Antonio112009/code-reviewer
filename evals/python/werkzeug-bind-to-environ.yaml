@@ -1,0 +1,22 @@
+# Introduced: https://github.com/pallets/werkzeug/commit/6650f6c7ac4776ff1bac50a900bc74a24135e061
+#   ("A few code deduplications in `bind_to_environ`", Werkzeug 0.11 development; baseRef is its parent)
+# Fixed:      https://github.com/pallets/werkzeug/commit/307cae5dedb75d3dc63dcc9e30d46a2eca1fcf1e
+#   ("Fix typos": the first defect, lines 1188-1192)
+# Fixed:      https://github.com/pallets/werkzeug/commit/2ff5ed9ce94a9d81573b32f7f0f11bee711be16a
+#   ("Fix bugs introduced in 6650f6c7…": the second defect, lines 1197-1199; no other change to them in between)
+# The refactor strips the default port from the server_name argument instead of from HTTP_HOST, and
+# appends SERVER_PORT to HTTP_HOST, which already carries the port.
+title: bind_to_environ refactor normalises the wrong host name and appends the port twice
+tags: [python, werkzeug, routing, real, hard]
+repo: https://github.com/pallets/werkzeug.git
+baseRef: f91eb86e230f42743799fe2a2940e6dd500cabbb
+headRef: 6650f6c7ac4776ff1bac50a900bc74a24135e061
+expect:
+  - file: werkzeug/routing.py
+    lines: [1188, 1192]
+    severity: major
+    note: the :80/:443 suffix is stripped from the server_name argument instead of wsgi_server_name; with server_name=None (the usual call) every request carrying a Host header raises AttributeError, and with a server_name the default port in HTTP_HOST is never removed
+  - file: werkzeug/routing.py
+    lines: [1197, 1199]
+    severity: major
+    note: SERVER_PORT is now appended to HTTP_HOST as well, which already contains the port, so on a non-default port the host becomes e.g. "localhost:5000:5000" and routing and URL building use it

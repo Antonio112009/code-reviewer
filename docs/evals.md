@@ -33,7 +33,8 @@ head:
 expect:                    # the defects the change introduces; [] = a clean change
   - file: src/routes/products.js
     lines: [20, 27]        # lines of the NEW file: one line (20) or a range
-    also: [9]              # optional: other lines where reporting this defect also counts
+    also: [9]              # optional: other places where reporting this defect also counts:
+                           #   lines of this file, or { file: src/app.js, lines: [3, 5] } in another
     severity: major        # optional: the lowest severity a reviewer should give it
     note: req.query.sort is interpolated into ORDER BY unvalidated
 ```
@@ -41,7 +42,7 @@ expect:                    # the defects the change introduces; [] = a clean cha
 | Field | |
 |---|---|
 | `title` | What the case is about. Never shown to the model. |
-| `tags` | For `--filter`: language, framework, category (`security`, `concurrency`, …), `clean`. |
+| `tags` | For `--filter`: language, framework, category (`security`, `concurrency`, …), `clean`, `hard` (see below). |
 | `base` / `head` | A self-contained change: the base commit's files, then the files the change writes. |
 | `repo` / `baseRef` / `headRef` | …or a real repository and two full commit shas (see below). |
 | `expect` | Required. Known defects in the head version; `[]` marks a clean change. |
@@ -55,10 +56,26 @@ outside `.git/` and `.code-reviewer/`: a case cannot configure its own review.
 with one or two defects a senior reviewer would agree are production bugs — security, data loss, races,
 leaks, error handling, off-by-one on a main path, N+1 or unbounded work. No comments that hint at the
 bug. Point `lines` at the exact defect lines of the head file, and add `also` where a reviewer could
-reasonably report the same defect elsewhere (its cause, e.g. a missing `set -o pipefail` for a broken
-pipeline). Clean cases (a refactor, a rename, test-only changes, a correct fix) measure false positives:
+reasonably report the same defect elsewhere: its cause (a missing `set -o pipefail` for a broken
+pipeline), or another file (the caller that crashes, the signature whose change a call site missed). Clean cases (a refactor, a rename, test-only changes, a correct fix) measure false positives:
 they must be really clean. `test/evals-corpus.test.ts` checks the built-in corpus: required fields,
-expected lines inside the head file and inside the changed hunks, no `BUG`/`FIXME` markers, size.
+expected lines inside the head file and inside the changed hunks, no `BUG`/`FIXME` markers, size (at most
+160 lines per case file; cases tagged `large` may have up to 1200 and must change at least 300 lines).
+
+### The hard subset
+
+Strong models find every defect of the small cases, so on those cases a model, a reasoning level, a
+critique model or a depth cannot be told apart. The cases tagged `hard` are the ones where good and weaker
+setups differ; compare configurations on them with `--filter hard`. Every hard case has exactly one
+category tag, plus its languages:
+
+| Category | What makes it hard |
+|---|---|
+| `cross-file` | The change is only wrong given a file it does not touch (in `base`, unchanged in `head`): a helper's unit or contract, a type that is not safe for concurrent use, an authorization check done by a router or middleware. The reviewer has to open that file with its read tools; `expect` points at the misuse in the changed file. |
+| `large` | One subtle behavioural bug in a realistic rename or refactor of several hundred changed lines across many files (moved code, updated imports, tests, docs). The noise must be real, not filler. |
+| `logic` | Needs reasoning rather than pattern matching: keyset pagination, idempotency across retries, integer overflow, check-then-act races that look atomic. |
+| `tempting` | Clean (`expect: []`) code that looks like a classic bug but is correct in context: SQL built from a whitelisted identifier, a read-check-write under `SELECT … FOR UPDATE`, a check-then-create backed by a unique constraint, `\|\|` on `NOT NULL` columns. Any finding is a false positive. |
+| `real` | A real bug from a public repository (see below). |
 
 ### Real repositories
 
@@ -79,6 +96,27 @@ The clone has no checked-out working tree: the review reads both commits from gi
 own `.code-reviewer/` directory (config, project skills) is never on disk to be picked up, and none of
 its code, hooks or filters run. Its `CLAUDE.md` / `AGENTS.md` project rules are still read from the base
 commit, as in any review.
+
+**Provenance of a real bug.** A case that replays a real bug records where its label comes from, so it can
+be checked again: `baseRef` is the parent of the commit that introduced the bug (the first parent when it
+came in with a merge), `headRef` that commit, and `expect` the lines of the head version that the later fix
+changed. Comments at the top of the case give the URLs of the introducing and of the fixing commit and a
+one-line explanation, which the defect's `note` repeats. Tag it `real` (and `hard`). Only use a bug whose
+introducing and fixing commits you have both found and read; a wrong label is worse than no case.
+
+```yaml
+# Introduced: https://github.com/acme/api/commit/9a0b…
+# Fixed:      https://github.com/acme/api/commit/c4d2…
+# The fix takes the lock before reading the entry; the introducing commit read it outside the lock.
+title: Cache invalidation race in the session store
+tags: [go, concurrency, real, hard]
+```
+
+The built-in corpus has a few such cases (`--filter real`); they are its only cases that need network
+access, to clone the repository on first use. Without it their runs fail with a setup error, so offline,
+leave them out with `--filter '!real'` (or `--filter 'hard,!real'`). `test/evals-corpus.test.ts` checks the provenance comments (the `# Introduced:`
+commit must be `headRef`) and, with `EVAL_REAL_REPOS=1`, clones the repositories and checks that the
+expected lines lie in the change.
 
 ## What each run uses
 
@@ -149,7 +187,7 @@ noise or found defects changed. The comparison is stored in the new result.
 
 | Flag | |
 |---|---|
-| `--filter <terms>` | Tags, id globs (`python/**`) or id prefixes (`go`), comma-separated; any match. |
+| `--filter <terms>` | Tags, id globs (`python/**`) or id prefixes (`go`), comma-separated; any match. A `!` term excludes (`hard,!real`). |
 | `--repeat <n>` | Review every case n times. |
 | `--concurrency <n>` | Cases reviewed in parallel (default 1). LLM calls within a case follow `review.concurrency`. |
 | `--tolerance <lines>` | Matching tolerance (default 3). |

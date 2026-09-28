@@ -1,0 +1,18 @@
+# Introduced: https://github.com/pallets/click/commit/262bdf02288daf9a37b9e815b44acafd62b5c6fe
+#   (merge of pallets/click#2934 "Raise an exception on end of input in CliRunner"; baseRef is its first parent)
+# Fixed:      https://github.com/pallets/click/commit/93c6966eb3a575c2b600434d1cc9f4b3aee505ac
+#   (pallets/click#2940 for issue #2939, released in 8.2.2; testing.py is unchanged between the two commits)
+# The new _NamedTextIOWrapper.__next__ turns StopIteration into EOFError, so a command under test that
+# iterates its input (a File argument set to "-") aborts at the end of input; the introducing change even
+# rewrote test_pipeline to expect "Aborted!". The fix removed the override and raises EOFError from the
+# prompt functions instead (lines 351 and 360).
+title: CliRunner input stream raises EOFError instead of StopIteration at the end of input
+tags: [python, click, testing, real, hard]
+repo: https://github.com/pallets/click.git
+baseRef: cfa6f4ad3e0078db43f866246b483544afa33ed3
+headRef: 262bdf02288daf9a37b9e815b44acafd62b5c6fe
+expect:
+  - file: src/click/testing.py
+    lines: [119, 124]
+    also: [351, 360]
+    note: _NamedTextIOWrapper.__next__ raises EOFError instead of StopIteration, which breaks the iterator protocol of the input stream; a command that reads stdin in a for loop (a File type set to "-") gets EOFError, turned into Abort, at the end of its input
