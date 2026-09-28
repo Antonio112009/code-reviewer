@@ -227,7 +227,7 @@ export const REVIEW_PASSES = ['general', 'local', 'contracts'] as const;
 export type ReviewPass = (typeof REVIEW_PASSES)[number];
 
 /** How much related unchanged code a chunk gets (`chunking/expand.ts`). */
-export const EXPAND_LEVELS = ['off', 'refs', 'deep'] as const;
+export const EXPAND_LEVELS = ['off', 'map', 'refs', 'deep'] as const;
 export type ExpandLevel = (typeof EXPAND_LEVELS)[number];
 
 export type FileStatus = 'added' | 'modified' | 'deleted' | 'renamed' | 'file';
@@ -253,6 +253,19 @@ export interface ReviewUnit {
   content?: string;
   /** 1-based inclusive line ranges (new file) the review should focus on. Empty = whole file. */
   focusRanges: Array<[number, number]>;
+}
+
+/** One line of a chunk's impact map. */
+export interface ImpactEntry {
+  name: string;
+  /** How the change touches it: a changed declaration's kind, or `callee` (a function the new code calls). */
+  kind: 'removed' | 'signature' | 'body' | 'callee';
+  /** The changed file declaring it (not for callees). */
+  file?: string;
+  /** Unchanged places that use it (or define it, for callees), with the enclosing declaration. */
+  sites: Array<{ path: string; line: number; in?: string }>;
+  /** Further files that use it, not listed. */
+  more: number;
 }
 
 export interface ChunkPart {
@@ -286,6 +299,8 @@ export interface Chunk {
   pass?: Exclude<ReviewPass, 'general'>;
   /** Declarations the change touches (`chunking/expand.ts`): the checklist of the `contracts` pass. */
   declarations?: Array<{ name: string; file: string; kind: 'removed' | 'signature' | 'body' }>;
+  /** Where unchanged code uses the changed declarations or defines what the change calls (`chunking/expand.ts`). */
+  impact?: ImpactEntry[];
   languages: string[];
   /** Files mentioned only by name (deleted files etc.). */
   mentions: string[];

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Impact map.** Every chunk now lists where unchanged code uses the declarations the change modifies
+  (file:line and the enclosing function, nearest first) and where the functions the new code calls are
+  defined; a removed or redeclared name with no remaining uses says so. It costs a few hundred tokens at
+  most and replaces the excerpts as the default: `review.expand` is now `map` (was `off`); `refs` and `deep`
+  add the code as before. C++ classes declared with an export macro (`class MYLIB_API Name`) are now read
+  by their name.
 - **Skill signals are tested.** Every `content` regex of a skill or group now comes with `examples` of code it
   must match, and every example must match one of them (`test/skills-library.test.ts`); project skills may
   declare them too. Signals that fired on most code were narrowed: Go nil values (on 78% of Go samples from

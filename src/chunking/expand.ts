@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { GitRepo } from '../git/repo';
-import type { Chunk, ChunkPart, ExpandLevel, ReviewUnit } from '../types';
+import type { Chunk, ChunkPart, ExpandLevel, ImpactEntry, ReviewUnit } from '../types';
 import { SOURCE_EXTENSIONS, sourceKind } from './imports';
 import { clipLine } from './render';
 import { estimateTokens } from './tokens';
@@ -50,6 +50,8 @@ export interface ExpandStats {
   tooCommon: string[];
   files: number;
   tokens: number;
+  /** Impact map lines added (all chunks). */
+  impact: number;
 }
 
 /** Longest line the declaration patterns look at. */
@@ -62,6 +64,7 @@ const MIN_NAME = 3;
 const MAX_FILES_PER_NAME = 20;
 const MAX_SITES_PER_FILE = 3;
 const LIMITS = {
+  map: { symbols: 8, callees: 6, sites: 0, hops: 1 },
   refs: { symbols: 8, callees: 6, sites: 12, hops: 1 },
   deep: { symbols: 12, callees: 8, sites: 20, hops: 2 },
 } as const;
@@ -70,6 +73,9 @@ const BEFORE = 4;
 const AFTER = 3;
 const DEFINITION_LINES = 16;
 const MAX_PART_TOKENS = 900;
+/** Places listed per name in the impact map; most tokens the map may take. */
+const MAP_SITES = 6;
+const MAP_MAX_TOKENS = 800;
 
 /** Words that open control flow or expressions, never a declaration's name. */
 const NOT_NAMES = new Set(
@@ -93,7 +99,9 @@ const DECLARATIONS: RegExp[] = [
   ),
   // a bare method signature opening its body (`refresh(token) {`)
   new RegExp(`^\\s*${STATEMENT}${MODIFIERS}([A-Za-z_$][\\w$]*)\\s*${PARAMS}\\{\\s*$`),
-  /\b(?:function|def|fn|func|fun|class|interface|trait|struct|enum|record|protocol|module|object|type)\s+([A-Za-z_$][\w$]*)/,
+  // `class MYLIB_API Name {`: an identifier between `class` and the name is an export macro
+  /\b(?:class|struct)\s+(?:[A-Za-z_]\w*\s+(?=[A-Za-z_]\w*\s*(?:[:{;]|final\b|$)))?([A-Za-z_$][\w$]*)/,
+  /\b(?:function|def|fn|func|fun|interface|trait|enum|record|protocol|module|object|type)\s+([A-Za-z_$][\w$]*)/,
   /\bfunc\s*\([^)]{0,200}\)\s*([A-Za-z_]\w*)\s*[([]/,
   /^(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]{0,200})?=\s*(?:async\s+)?(?:function\b|\(|[A-Za-z_$][\w$]*\s*=>)/,
 ];
@@ -272,6 +280,8 @@ interface Site {
   path: string;
   line: number;
   why: string;
+  /** The searched name (first-hop sites). */
+  name?: string;
   /** The file the site must refer to (usages), or that must refer to it (definitions). */
   target: string;
   /** Show from the declaration down (definitions) instead of around the line (usages). */
@@ -297,7 +307,7 @@ export async function expandChunks(
     }
     return f;
   };
-  const stats: ExpandStats = { symbols: 0, tooCommon: [], files: 0, tokens: 0 };
+  const stats: ExpandStats = { symbols: 0, tooCommon: [], files: 0, tokens: 0, impact: 0 };
   const tooCommon = new Set<string>();
   const usable = (p: string) => !opts.changed.has(p) && sourceKind(p) !== undefined && !VENDORED.test(p);
 
@@ -340,6 +350,7 @@ export async function expandChunks(
           path: m.path,
           line: m.line,
           why: `uses \`${s.name}\` (${what} in ${s.file})`,
+          name: s.name,
           target: s.file,
           rank: RANK[s.kind] * 10,
         });
@@ -353,12 +364,27 @@ export async function expandChunks(
           path: m.path,
           line: m.line,
           why: `defines \`${n}\` (called by the change)`,
+          name: n,
           target: m.path,
           definition: true,
           rank: 5,
         });
       }
     }
+
+    const plausible = async (s: Site): Promise<boolean> => {
+      if (s.definition) return own.some((u) => refersTo(u.path, u.content ?? '', s.path));
+      const lines = await linesOf(s.path);
+      return lines !== undefined && refersTo(s.path, lines.join('\n'), s.target);
+    };
+
+    const impact = await impactMap(symbols, callees, sites, chunk, plausible, linesOf, tooCommon);
+    if (impact.length) {
+      chunk.impact = impact;
+      chunk.tokens += estimateTokens(renderImpact(impact));
+      stats.impact += impact.length;
+    }
+    if (!limits.sites) continue;
 
     // deep: who calls the code that uses the change
     if (limits.hops > 1) {
@@ -386,11 +412,6 @@ export async function expandChunks(
     }
     if (!sites.length) continue;
 
-    const plausible = async (s: Site): Promise<boolean> => {
-      if (s.definition) return own.some((u) => refersTo(u.path, u.content ?? '', s.path));
-      const lines = await linesOf(s.path);
-      return lines !== undefined && refersTo(s.path, lines.join('\n'), s.target);
-    };
     const picked = await pickSites(sites, chunk, limits.sites, plausible);
     const parts = await renderSites(picked, linesOf, byPath);
     let room = opts.maxTokens(chunk);
@@ -410,6 +431,95 @@ export async function expandChunks(
   }
   stats.tooCommon = [...tooCommon].sort(cmp);
   return stats;
+}
+
+/**
+ * The impact map of a chunk: for each changed declaration, the unchanged places that plausibly use it
+ * (nearest first, with the enclosing declaration), and for each function the new code calls, where it is
+ * defined. Names too common to search are left out; a removed or redeclared name with no uses says so.
+ */
+async function impactMap(
+  symbols: readonly ChangedSymbol[],
+  callees: readonly string[],
+  sites: readonly Site[],
+  chunk: Chunk,
+  plausible: (s: Site) => Promise<boolean>,
+  linesOf: (p: string) => Promise<string[] | undefined>,
+  tooCommon: ReadonlySet<string>,
+): Promise<ImpactEntry[]> {
+  const dirs = new Set(chunk.files.map((f) => path.posix.dirname(f)));
+  const near = (p: string) => (dirs.has(path.posix.dirname(p)) ? 0 : 1);
+  const order = (a: Site, b: Site) => near(a.path) - near(b.path) || cmp(a.path, b.path) || a.line - b.line;
+  const entries: ImpactEntry[] = [];
+  const languages = new Set(chunk.files.map(family));
+  const place = async (s: Site) => {
+    const lines = await linesOf(s.path);
+    const decl = !s.definition && lines ? enclosingDeclaration(lines, s.line) : undefined;
+    return { path: s.path, line: s.line, ...(decl ? { in: decl.name } : {}) };
+  };
+  const named = new Set<string>();
+  for (const sym of symbols) {
+    if (sym.local || tooCommon.has(sym.name) || named.has(sym.name)) continue;
+    named.add(sym.name);
+    const mine = sites.filter((s) => !s.definition && s.name === sym.name && s.target === sym.file);
+    const files: string[] = [];
+    const listed: ImpactEntry['sites'] = [];
+    for (const s of [...mine].sort(order)) {
+      if (IMPORT_LINE.test((await linesOf(s.path))?.[s.line - 1] ?? '') || !(await plausible(s))) continue;
+      if (!files.includes(s.path)) files.push(s.path);
+      if (listed.length < MAP_SITES) listed.push(await place(s));
+    }
+    if (!listed.length && sym.kind === 'body') continue;
+    const shown = new Set(listed.map((s) => s.path));
+    entries.push({
+      name: sym.name,
+      kind: sym.kind,
+      file: sym.file,
+      sites: listed,
+      more: files.filter((f) => !shown.has(f)).length,
+    });
+  }
+  for (const name of callees) {
+    // A definition in another language is a namesake, not what the change calls.
+    const defs = sites.filter((s) => s.definition && s.name === name && languages.has(family(s.path)));
+    const listed: ImpactEntry['sites'] = [];
+    for (const s of defs) if (await plausible(s)) listed.push(await place(s));
+    if (listed.length) entries.push({ name, kind: 'callee', sites: listed, more: 0 });
+  }
+  // Within the budget: the strongest entries (removed, redeclared) come first already.
+  let tokens = 0;
+  const kept: ImpactEntry[] = [];
+  for (const e of entries) {
+    tokens += estimateTokens(impactLine(e));
+    if (tokens > MAP_MAX_TOKENS) break;
+    kept.push(e);
+  }
+  return kept;
+}
+
+/** Language family of a source file: TypeScript and TSX call each other, C and C++ too. */
+function family(file: string): string {
+  const kind = sourceKind(file);
+  return kind === 'jsx' ? 'js' : (kind ?? '');
+}
+
+/** An import line tells nothing the map's file name does not. */
+const IMPORT_LINE = /^\s*(?:import|from|#\s*include|require|use|using)\b/;
+
+function impactLine(e: ImpactEntry): string {
+  const at = e.sites.map((s) => `${s.path}:${s.line}${s.in ? ` (in \`${s.in}\`)` : ''}`).join(', ');
+  const more = e.more ? ` and ${e.more} more file${e.more === 1 ? '' : 's'}` : '';
+  if (e.kind === 'callee') return `- \`${e.name}\` — called by the change; defined at ${at}`;
+  const what = { removed: 'removed from', signature: 'declaration changed in', body: 'body changed in' }[
+    e.kind
+  ];
+  const uses = e.sites.length ? `used at ${at}${more}` : 'no uses found in unchanged code';
+  return `- \`${e.name}\` — ${what} ${e.file}; ${uses}`;
+}
+
+/** The impact map as prompt lines. */
+export function renderImpact(entries: readonly ImpactEntry[]): string {
+  return entries.map(impactLine).join('\n');
 }
 
 /** Vendored, generated and build output: never worth a place in the prompt. */

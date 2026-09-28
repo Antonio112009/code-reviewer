@@ -62,6 +62,7 @@ import { dependencyRoots } from '../tools/dependencies';
 import type {
   CacheUse,
   Chunk,
+  ExpandLevel,
   FailureKind,
   Finding,
   RefsInfo,
@@ -147,7 +148,7 @@ function withPasses(chunks: Chunk[], passes: readonly ReviewPass[]): Chunk[] {
 }
 
 /** Share of the chunk budget that related unchanged code may add to a chunk, per `review.expand` level. */
-const EXPAND_SHARE = { refs: 0.15, deep: 0.25 } as const;
+const EXPAND_SHARE = { map: 0, refs: 0.15, deep: 0.25 } as const;
 /** Rough prompt tokens per static hint line. */
 const TOKENS_PER_HINT = 60;
 /** Unclaimed hints at or above this prior confidence become candidate findings when their chunk failed. */
@@ -597,14 +598,23 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       });
       const baseChunks = result.chunks.length;
       result.chunks = withPasses(result.chunks, config.review.passes);
-      // The contracts pass always gets the changed declarations and their users; other passes per `expand`.
+      // The contracts pass always gets the changed declarations and their users' code (`refs` unless
+      // `deep`); other passes per `expand`, the local pass none.
       const configured = config.review.expand;
-      const level = configured !== 'off' ? configured : 'refs';
-      const toExpand = result.chunks.filter(
-        (c) => c.pass !== 'local' && (configured !== 'off' || c.pass === 'contracts'),
-      );
-      if (toExpand.length && target.kind === 'diff' && repo) {
-        const share = level === 'deep' ? EXPAND_SHARE.deep : EXPAND_SHARE.refs;
+      const levelOf = (c: Chunk): Exclude<ExpandLevel, 'off'> | undefined =>
+        c.pass === 'local'
+          ? undefined
+          : c.pass === 'contracts'
+            ? configured === 'deep'
+              ? 'deep'
+              : 'refs'
+            : configured === 'off'
+              ? undefined
+              : configured;
+      for (const level of ['map', 'refs', 'deep'] as const) {
+        const toExpand = result.chunks.filter((c) => levelOf(c) === level);
+        if (!toExpand.length || target.kind !== 'diff' || !repo) continue;
+        const share = EXPAND_SHARE[level];
         const stats = await expandChunks(toExpand, units, revisionSource(repo, target.headSha), {
           level,
           changed: new Set(units.flatMap((u) => (u.oldPath ? [u.path, u.oldPath] : [u.path]))),
@@ -617,7 +627,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         });
         if (stats) {
           logger.debug(
-            `expand (${level}): ${stats.symbols} changed declaration(s), ${stats.files} related excerpt(s), ${stats.tokens} tokens${stats.tooCommon.length ? `; too common: ${stats.tooCommon.join(', ')}` : ''}`,
+            `expand (${level}): ${stats.symbols} changed declaration(s), ${stats.impact} impact line(s), ${stats.files} related excerpt(s), ${stats.tokens} tokens${stats.tooCommon.length ? `; too common: ${stats.tooCommon.join(', ')}` : ''}`,
           );
         }
       }
@@ -699,6 +709,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       files: c.files,
       contextFiles: c.contextFiles ?? [],
       ...(c.related?.length ? { related: c.related } : {}),
+      ...(c.impact?.length ? { impact: c.impact } : {}),
       tokens: c.tokens,
       skills: (chunkSkills.get(c.id) ?? []).map((m) => ({ id: m.skill.id, reasons: m.reasons })),
       groupReasons: c.groupReasons ?? [],
@@ -803,6 +814,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       files: c.files,
       contextFiles: c.contextFiles ?? [],
       ...(c.related?.length ? { related: c.related } : {}),
+      ...(c.impact?.length ? { impact: c.impact } : {}),
       tokens: c.tokens,
       skills: (chunkSkills.get(c.id) ?? []).map((m) => m.skill.id),
       status: 'pending',

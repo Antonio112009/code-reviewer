@@ -114,8 +114,9 @@ flowchart LR
    develop → main`) and fetches it fresh.
 2. **Stack and hints.** Detects technologies and versions from manifests. Runs secret scanning, about
    130 bug-pattern rules and safe external linters, whose hits become hints.
-3. **Chunks.** Groups related files into chunks that fit the model's context window. With `--expand`, each
-   chunk also gets excerpts of the unchanged code that uses what changed and of the functions it calls.
+3. **Chunks.** Groups related files into chunks that fit the model's context window. Each chunk gets an
+   impact map: where unchanged code uses what changed and where the functions it calls are defined
+   (file:line). With `--expand refs|deep`, excerpts of that code too.
 4. **Review.** For every chunk:
    - selects the matching skills;
    - runs the model with read-only tools: `read_file`, `grep`, `find_symbol`, `find_references`, `list_dir`, `git_log`, `git_blame`;
@@ -235,8 +236,9 @@ Useful flags:
 - `--analyzers eslint,tsc`: opt-in project linters;
 - `--passes local,contracts`: review each chunk twice — once for defects in the changed lines, once for the
   changed declarations and their consumers (about twice the cost);
-- `--expand refs|deep`: related unchanged code per chunk — usages of the changed declarations and the
-  definitions the new code calls (`deep`: also who calls those usages);
+- `--expand off|map|refs|deep`: related unchanged code per chunk — `map` (the default) lists where unchanged
+  code uses the changed declarations and where the functions the new code calls are defined; `refs` adds
+  excerpts of that code; `deep` also who calls those usages;
 - `--authors`: author attribution;
 - `--json`, `--plain`: output format;
 - `--format md,json,html,sarif,codequality`, `--out <dir>`: report files;

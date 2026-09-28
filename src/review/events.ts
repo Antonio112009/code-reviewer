@@ -3,6 +3,7 @@ import type {
   AnalyzerRun,
   Chunk,
   ChunkRecord,
+  ImpactEntry,
   Money,
   RefsInfo,
   Role,
@@ -35,6 +36,8 @@ export interface PlannedChunk {
   contextFiles: string[];
   /** Unchanged code shown in part (`review.expand`), and why. */
   related?: Array<{ path: string; why: string }>;
+  /** Impact map (`chunking/expand.ts`). */
+  impact?: ImpactEntry[];
   tokens: number;
   skills: Array<{ id: string; reasons: string[] }>;
   /** Why the files are grouped together. */
