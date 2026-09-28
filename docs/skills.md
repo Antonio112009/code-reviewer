@@ -64,6 +64,9 @@ sources:
   in its own words, with sources. No style advice and nothing a linter always reports.
 - **Signals.** A skill without its own `content`/`files` signals applies to every chunk of its
   technology. Keep that for the few "core" skills.
+- **Per file.** Signals are checked one file at a time: a `content` regex sees the added lines of files
+  that pass the skill's (and its groups') gates, so it never fires on another language's lines in the same
+  chunk. Markdown and plain-text files feed only skills whose `languages` name them.
 - **`tier`.** `essential` covers serious production problems: security, data loss, crashes, leaks/OOM,
   overload, costly performance. `full` covers lower-impact topics: accessibility, conventions, edge
   cases. It is inherited from the nearest `_group.yaml` and defaults to `essential`.

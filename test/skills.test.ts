@@ -583,6 +583,42 @@ describe('skill tree (groups, inherited detection, versions)', () => {
     expect(matchSkill(core, tsx({ techs: new Set(['framework.vue']) }))).toBeUndefined();
   });
 
+  it('matches per file: another language or prose in the chunk cannot trigger a skill', () => {
+    const jsFile = {
+      path: 'src/hooks/useThing.ts',
+      language: 'typescript',
+      code: 'setState(1);',
+      fileCode: "import { useEffect } from 'react';\nexport function useThing() { setState(1); }",
+    };
+    const pyFile = {
+      path: 'tools/gen.py',
+      language: 'python',
+      code: 'useEffect(x)',
+      fileCode: 'useEffect(x)',
+    };
+    const doc = {
+      path: 'docs/hooks.md',
+      language: 'markdown',
+      code: 'useEffect(() => {}, [])',
+      fileCode: '',
+    };
+    const chunk = (...perFile: Array<typeof jsFile>) =>
+      tsx({ addedCode: perFile.map((f) => f.code).join('\n'), perFile });
+    // chunk-wide, the Python and Markdown lines would have triggered the React effects skill
+    expect(matchSkill(effects, tsx({ addedCode: 'setState(1);\nuseEffect(x)' }))).toBeDefined();
+    expect(matchSkill(effects, chunk(jsFile, pyFile))).toBeUndefined();
+    expect(matchSkill(effects, chunk(jsFile, doc))).toBeUndefined();
+    // …while the React file's own added lines still do, and the core skill applies to the React file
+    expect(
+      matchSkill(effects, chunk({ ...jsFile, code: 'useEffect(() => {}, []);' }, pyFile))?.reasons,
+    ).toEqual(['group:javascript', 'group:javascript/react', 'content:/\\buseEffect\\(/']);
+    expect(matchSkill(core, chunk(jsFile, pyFile))).toBeDefined();
+    // a skill about a prose language still reads prose
+    const markdownGroup: SkillGroup = { ...jsGroup, path: 'docs', detect: { languages: ['markdown'] } };
+    const docs = treeSkill('docs/links', [markdownGroup], '  content: ["useEffect"]');
+    expect(matchSkill(docs, chunk(jsFile, doc))).toBeDefined();
+  });
+
   it('a core skill without own signals applies to every chunk of its technology', () => {
     const m = matchSkill(core, tsx({ files: ['src/App.tsx'], fileCode: 'export default function App() {}' }));
     expect(m?.reasons).toEqual(['group:javascript', 'group:javascript/react']);
