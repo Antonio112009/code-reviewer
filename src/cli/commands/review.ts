@@ -14,7 +14,7 @@ import { detectProviders } from '../../providers/detect';
 import { SEVERITY_ORDER } from '../../report/common';
 import type { ReviewEvent } from '../../review/events';
 import { runReview } from '../../review/pipeline';
-import { REASONING_LEVELS, SEVERITIES, type Severity } from '../../types';
+import { EXPAND_LEVELS, REASONING_LEVELS, SEVERITIES, type Severity } from '../../types';
 import { EXIT, type GlobalOptions, loadCliConfig, makeLogger } from '../context';
 import { installLifecycle } from '../lifecycle';
 import { colorEnabled, createReviewUi, type ReviewUi, renderPlan } from '../ui';
@@ -59,6 +59,7 @@ export interface ReviewFlags {
   plain?: boolean;
   onUnavailable?: string;
   chunking?: string;
+  expand?: string;
   /** Post the finished review to its pull / merge request (`--post`, with the publish target flags). */
   post?: boolean;
 }
@@ -218,6 +219,8 @@ export function applyRunFlags(config: Config, f: ReviewFlags): void {
   if (onUnavailable) config.models.onUnavailable = onUnavailable;
   const chunking = parseEnum(f.chunking, ['smart', 'directory'] as const, '--chunking');
   if (chunking) config.review.chunking = chunking;
+  const expand = parseEnum(f.expand, EXPAND_LEVELS, '--expand');
+  if (expand) config.review.expand = expand;
   if (f.analyzers === false) {
     config.analyzers.builtin = false;
     config.analyzers.external = 'off';
@@ -383,6 +386,10 @@ export function addRunLimitOptions(cmd: Command): Command {
     .option('--max-chunk-tokens <n>', 'token budget of code per chunk')
     .option('--timeout <seconds>', 'fixed timeout per LLM task (default: auto, scales with chunk size)')
     .option('--chunking <mode>', 'smart (related files together) | directory')
+    .option(
+      '--expand <level>',
+      'related unchanged code per chunk: off | refs (usages, called definitions) | deep',
+    )
     .option('--no-analyzers', 'skip the static-analysis pre-pass')
     .option('--on-unavailable <mode>', 'when a model is unavailable: ask | fallback | fail');
 }

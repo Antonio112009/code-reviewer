@@ -19,6 +19,7 @@
                   models/preflight.ts  is every configured model available? → fallback decisions
    4. chunking    chunking/*           clusters of related files (imports, tests, siblings) → chunks ≤ budget;
                                        shared files added read-only as context to other chunks
+                  chunking/expand.ts   review.expand: unchanged usages of changed declarations, called definitions
    5. skills      skills/detector.ts   per chunk: group detection + gates + signals + versions → budget fill
    6. snapshot    git/snapshot.ts      isolated, sanitized worktree of head (agents / cross-provider fallback)
    7. review      review/execute.ts    one AgentTask per chunk (p-limit), ModelRouter: retry / fallback / fail
@@ -118,6 +119,20 @@ The depth also affects:
      of the budget.
 4. **`render.ts`** — PR-style blocks: new code with new-file line numbers and `+` markers, plus a
    budgeted "removed code" block per hunk.
+5. **`expand.ts`** (`review.expand`, `--expand`; off by default) — related *unchanged* code, shown as
+   read-only `related` parts under "Related unchanged code":
+   - **Changed declarations** come from the hunks: declared on a removed line and gone (`removed`) or still
+     declared (`signature`), or enclosing changed lines (`body`). Bounded regexes per language family;
+     C/C++ `static` functions are file-local and skipped.
+   - **Usages** of those names in unchanged source files come from one `git grep -w -F` at the head commit
+     (fixed-string identifiers, source extensions only, a few matches per file). A name found in more than
+     20 files is dropped as too common, and a match counts only if its file shares the changed file's
+     directory or names its module (import, `#include`, Go package qualifier).
+   - **Definitions** of functions the added lines call are shown when the changed files refer to the file
+     that defines them. At `deep`, the callers of the usages are added too (one more hop).
+   - Excerpts are windows around each site (from the enclosing declaration when it is close), at most three
+     sites per file, within 15% (`refs`) or 25% (`deep`) of the chunk budget. The reviewer is told to report
+     a defect the change causes there on the changed line that causes it. A split drops them, like context.
 
 ## Skills (`src/skills/`, `skills/`)
 

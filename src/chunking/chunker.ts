@@ -308,8 +308,8 @@ export function chunkText(chunk: Chunk): string {
   return chunk.parts.map((p) => p.text).join('\n');
 }
 
-/** Rendered code of only the parts a chunk reviews (`review`) or only its read-only context (`context`). */
-export function chunkTextFor(chunk: Chunk, role: 'review' | 'context'): string {
+/** Rendered code of the parts of one role: reviewed code, read-only context or related unchanged code. */
+export function chunkTextFor(chunk: Chunk, role: 'review' | 'context' | 'related'): string {
   return chunk.parts
     .filter((p) => (p.role ?? 'review') === role)
     .map((p) => p.text)

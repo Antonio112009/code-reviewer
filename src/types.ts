@@ -218,6 +218,10 @@ export interface Hunk {
   lines: DiffLine[];
 }
 
+/** How much related unchanged code a chunk gets (`chunking/expand.ts`). */
+export const EXPAND_LEVELS = ['off', 'refs', 'deep'] as const;
+export type ExpandLevel = (typeof EXPAND_LEVELS)[number];
+
 export type FileStatus = 'added' | 'modified' | 'deleted' | 'renamed' | 'file';
 
 export interface FileDiff {
@@ -253,9 +257,10 @@ export interface ChunkPart {
   part?: { index: number; total: number };
   /**
    * `review` (default) — code this chunk owns and must review;
-   * `context` — read-only excerpt of a related file owned by another chunk (no findings expected).
+   * `context` — read-only excerpt of a related file owned by another chunk (no findings expected);
+   * `related` — read-only excerpt of unchanged code that uses or is used by the change (`chunking/expand.ts`).
    */
-  role?: 'review' | 'context';
+  role?: 'review' | 'context' | 'related';
 }
 
 export interface Chunk {
@@ -267,6 +272,8 @@ export interface Chunk {
   files: string[];
   /** Related files included read-only for context (owned by other chunks). */
   contextFiles?: string[];
+  /** Unchanged files shown in part because they use or are used by the change, and why. */
+  related?: Array<{ path: string; why: string }>;
   languages: string[];
   /** Files mentioned only by name (deleted files etc.). */
   mentions: string[];
@@ -381,6 +388,8 @@ export interface ChunkRecord {
   id: string;
   files: string[];
   contextFiles?: string[];
+  /** Unchanged code shown in part (`review.expand`), and why. */
+  related?: Array<{ path: string; why: string }>;
   tokens: number;
   skills: string[];
   status: 'pending' | 'running' | 'done' | 'failed';

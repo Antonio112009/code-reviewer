@@ -75,6 +75,8 @@ concern or suggestion". Our comment text is the finding's title, failure scenari
 |---|---|---|---|---|---|---|---|---|
 | 2026-09-28 | `df35dd3` | `--full`, Sonnet review and critique, Sonnet judge | pilot, 9 of 10 | 30.0% (3/10) | 5.5% (3/55) | 9.3% | 1.1 | $1.03, 3.8 min |
 | 2026-09-28 | full-depth recall | `--full --reasoning high --critique-model sonnet`, Sonnet judge | pilot, 9 of 10 | 45.5% (5/11) | 9.1% (5/55) | 15.2% | 1.2 | $1.23, 5.7 min |
+| 2026-09-28 | full-depth recall | same, `--max-chunk-tokens 15000` | pilot, 9 of 10 | 57.1% (4/7) | 7.3% (4/55) | 12.9% | 0.8 | $1.35 |
+| 2026-09-28 | full-depth recall + expand | same, `--expand refs` | pilot, 9 of 10 | 20.0% (2/10) | 3.6% (2/55) | 6.1% | 1.1 | $1.21, 4.4 min |
 
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
@@ -90,5 +92,10 @@ Full-depth recall mode (the reviewer reports every plausible defect, submits fin
 and leaves precision to the critic) raised the reviewer's candidates from 12 to 20; the critique removed 9,
 and 5 of the 11 kept findings matched references. With 3–5 matches either way, the pilot is too small to
 call the gain final.
+
+The pilot is too small to measure changes of this size. Smaller chunks changed the split of only three
+PRs, and `--expand refs` added related code to four. Yet the other PRs, reviewed with the same prompt as
+before, moved by up to three matches between runs. Measure such changes by running each variant several
+times, or on a larger subset of the PRs they actually affect.
 
 A full run would cost about $190 and take about 4 hours at concurrency 3.

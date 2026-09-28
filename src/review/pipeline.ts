@@ -16,6 +16,7 @@ import {
 } from '../cache/review';
 import type { ResultCache } from '../cache/store';
 import { buildChunks, scheduleOrder, splitChunk } from '../chunking/chunker';
+import { expandChunks, revisionSource } from '../chunking/expand';
 import { buildFileGraph, type FileGraph } from '../chunking/graph';
 import { estimateTokens } from '../chunking/tokens';
 import type { Config } from '../config/schema';
@@ -115,6 +116,8 @@ const PROJECT_RULES_BUDGET = 3_000;
 const DEFAULT_CONTEXT_WINDOW = 200_000;
 const DEFAULT_OUTPUT_RESERVE = 16_000;
 const PROMPT_OVERHEAD = 2_000;
+/** Share of the chunk budget that related unchanged code may add to a chunk, per `review.expand` level. */
+const EXPAND_SHARE = { refs: 0.15, deep: 0.25 } as const;
 /** Rough prompt tokens per static hint line. */
 const TOKENS_PER_HINT = 60;
 /** Unclaimed hints at or above this prior confidence become candidate findings when their chunk failed. */
@@ -519,8 +522,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
   const promptRoom = contextWindow - outputReserve - overhead;
   const budget = Math.max(2_000, Math.min(config.review.maxChunkTokens, promptRoom));
 
-  const { chunks, mentions } = await phase('chunking', 'Grouping related files into chunks', async () =>
-    buildChunks(units, {
+  const { chunks, mentions } = await phase('chunking', 'Grouping related files into chunks', async () => {
+    const result = buildChunks(units, {
       budget,
       fullFileTokens: config.review.fullFileTokens,
       contextLines: config.review.contextLines,
@@ -528,8 +531,28 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       strategy: graph ? 'smart' : 'directory',
       contextShare: config.review.contextShare,
       maxTotalTokens: Math.max(budget, promptRoom),
-    }),
-  );
+    });
+    const level = config.review.expand;
+    if (level !== 'off' && target.kind === 'diff' && repo) {
+      const share = level === 'deep' ? EXPAND_SHARE.deep : EXPAND_SHARE.refs;
+      const stats = await expandChunks(result.chunks, units, revisionSource(repo, target.headSha), {
+        level,
+        changed: new Set(units.flatMap((u) => (u.oldPath ? [u.path, u.oldPath] : [u.path]))),
+        maxTokens: (c) => Math.max(0, Math.min(Math.floor(budget * share), promptRoom - c.tokens)),
+        signal: req.signal,
+      }).catch((err: unknown) => {
+        if (isAbort(err, req.signal)) throw err;
+        warn(`Could not add related unchanged code: ${errorMessage(err)}`);
+        return undefined;
+      });
+      if (stats) {
+        logger.debug(
+          `expand (${level}): ${stats.symbols} changed declaration(s), ${stats.files} related excerpt(s), ${stats.tokens} tokens${stats.tooCommon.length ? `; too common: ${stats.tooCommon.join(', ')}` : ''}`,
+        );
+      }
+    }
+    return result;
+  });
   if (chunks.length > config.review.maxChunks) {
     warn(
       `${chunks.length} chunks exceed review.maxChunks=${config.review.maxChunks}; consider narrowing the review.`,
@@ -603,6 +626,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       id: c.id,
       files: c.files,
       contextFiles: c.contextFiles ?? [],
+      ...(c.related?.length ? { related: c.related } : {}),
       tokens: c.tokens,
       skills: (chunkSkills.get(c.id) ?? []).map((m) => ({ id: m.skill.id, reasons: m.reasons })),
       groupReasons: c.groupReasons ?? [],
@@ -706,6 +730,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       id: c.id,
       files: c.files,
       contextFiles: c.contextFiles ?? [],
+      ...(c.related?.length ? { related: c.related } : {}),
       tokens: c.tokens,
       skills: (chunkSkills.get(c.id) ?? []).map((m) => m.skill.id),
       status: 'pending',
@@ -970,6 +995,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             id: part.id,
             files: part.files,
             contextFiles: part.contextFiles ?? [],
+            ...(part.related?.length ? { related: part.related } : {}),
             tokens: part.tokens,
             skills: chunkRecords.get(chunk.id)!.skills,
           },

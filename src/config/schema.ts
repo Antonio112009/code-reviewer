@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { z } from 'zod';
-import { REASONING_LEVELS, SEVERITIES } from '../types';
+import { EXPAND_LEVELS, REASONING_LEVELS, SEVERITIES } from '../types';
 
 export const ACP_PRESETS = ['claude', 'codex', 'copilot', 'gemini', 'custom'] as const;
 export type AcpPresetId = (typeof ACP_PRESETS)[number];
@@ -118,6 +118,11 @@ export const ReviewSettingsSchema = z.object({
   chunking: z.enum(['smart', 'directory']),
   /** Share of a chunk's budget that may hold read-only excerpts of related files owned by other chunks. */
   contextShare: z.number().min(0).max(0.5),
+  /**
+   * Related unchanged code added to each chunk (`chunking/expand.ts`): `refs` = usages of the changed
+   * declarations and definitions the new code calls; `deep` = also the callers of those usages.
+   */
+  expand: z.enum(EXPAND_LEVELS),
   /**
    * Where agents read code: `auto` = isolated snapshot for ACP agents, in place for API providers when the
    * checkout is clean and at head; `always` = always an isolated snapshot.
@@ -374,6 +379,7 @@ export const DEFAULT_CONFIG: Config = {
     summary: false,
     chunking: 'smart',
     contextShare: 0.1,
+    expand: 'off',
     isolation: 'auto',
   },
   git: {

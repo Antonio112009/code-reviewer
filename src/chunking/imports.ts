@@ -98,6 +98,9 @@ const KIND_BY_EXT: Record<string, SourceKind> = {
   '.dart': 'dart',
 };
 
+/** Extensions of the files the import scanner (and `expand`) understands, with the dot. */
+export const SOURCE_EXTENSIONS: readonly string[] = Object.keys(KIND_BY_EXT);
+
 /** Extractor family of a file, by extension. */
 export function sourceKind(file: string): SourceKind | undefined {
   return KIND_BY_EXT[posix.extname(file).toLowerCase()];

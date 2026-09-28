@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Related unchanged code (`--expand refs|deep`, `review.expand`).** Each chunk can get excerpts of the
+  unchanged code that uses the changed declarations and of the definitions the new code calls (`deep`: also
+  the callers of those usages), so the reviewer sees how the change is used without searching for it. Found
+  with one `git grep` per chunk at the head commit; names used all over the code base, files that do not
+  refer to the changed module and C `static` functions are left out. Off by default.
+
 - **Full depth reviews for recall.** At `--full` the reviewer goes through every changed hunk and reports
   each plausible defect (partly confirmed ones with a lower confidence), leaving precision to the critic
   and the confidence threshold. On a 10-PR subset of AACR-Bench (`evals/aacr`) precision went 30% → 45% and

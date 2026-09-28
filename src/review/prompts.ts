@@ -154,6 +154,16 @@ In "__new code__" blocks, lines marked "+" were added or modified by the change;
   lines.push('', '## Files to review', chunkTextFor(chunk, 'review'));
   const context = chunkTextFor(chunk, 'context');
   if (context.trim()) lines.push('', '## Related files (read-only context)', context);
+  const related = chunkTextFor(chunk, 'related');
+  if (related.trim()) {
+    lines.push(
+      '',
+      '## Related unchanged code (read-only)',
+      'Code the change does not touch that uses the changed declarations or is called by the new code. Use it to find defects the change causes there — e.g. a caller that relies on the old behaviour — and report them on the changed line that causes them, naming the affected code in the description.',
+      '',
+      related,
+    );
+  }
   if (opts.hints?.length) {
     lines.push('', '## Static analysis hints (unverified — confirm or ignore each)', renderHints(opts.hints));
   }
@@ -178,6 +188,7 @@ export function reviewPromptIdentity(opts: Parameters<typeof reviewPrompt>[0]): 
     stack: opts.stack ?? null,
     review: chunkTextFor(chunk, 'review'),
     context: chunkTextFor(chunk, 'context'),
+    related: chunkTextFor(chunk, 'related'),
     hints: (opts.hints ?? []).map((h) => [
       h.analyzer,
       h.ruleId,

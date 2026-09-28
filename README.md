@@ -111,7 +111,8 @@ flowchart LR
    develop → main`) and fetches it fresh.
 2. **Stack and hints.** Detects technologies and versions from manifests. Runs secret scanning, about
    130 bug-pattern rules and safe external linters, whose hits become hints.
-3. **Chunks.** Groups related files into chunks that fit the model's context window.
+3. **Chunks.** Groups related files into chunks that fit the model's context window. With `--expand`, each
+   chunk also gets excerpts of the unchanged code that uses what changed and of the functions it calls.
 4. **Review.** For every chunk:
    - selects the matching skills;
    - runs the model with read-only tools: `read_file`, `grep`, `find_symbol`, `git_blame`, `get_skill`;
@@ -176,6 +177,8 @@ Useful flags:
 - `--critique-*` and `--no-self-critique`: the verification pass;
 - `--skills a,b`: pick skills by hand;
 - `--analyzers eslint,tsc`: opt-in project linters;
+- `--expand refs|deep`: related unchanged code per chunk — usages of the changed declarations and the
+  definitions the new code calls (`deep`: also who calls those usages);
 - `--authors`: author attribution;
 - `--json`, `--plain`: output format;
 - `--format md,json,html,sarif,codequality`, `--out <dir>`: report files;

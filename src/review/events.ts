@@ -33,6 +33,8 @@ export interface PlannedChunk {
   id: string;
   files: string[];
   contextFiles: string[];
+  /** Unchanged code shown in part (`review.expand`), and why. */
+  related?: Array<{ path: string; why: string }>;
   tokens: number;
   skills: Array<{ id: string; reasons: string[] }>;
   /** Why the files are grouped together. */
