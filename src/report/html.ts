@@ -4,6 +4,8 @@ import {
   cacheLabel,
   chunkModelLabel,
   costLabel,
+  coverageLabel,
+  coverageRows,
   depthLabel,
   failureAdvice,
   fallbackLabel,
@@ -226,6 +228,21 @@ function analyzersSection(run: RunRecord): string {
   return `<p class="muted">${esc(analyzersSummary(runs))}</p>${table(['Analyzer', 'Tier', 'Status', 'Hints', 'Duration', 'Details'], rows, [3, 4])}`;
 }
 
+function coverageSection(run: RunRecord): string {
+  const rows = coverageRows(run);
+  if (!rows.length) return '';
+  const body = rows
+    .slice(0, 500)
+    .map(([file, changed, status, opened, findings]) => [
+      `<code>${esc(file)}</code>`,
+      String(changed),
+      esc(status),
+      opened ? 'yes' : '',
+      findings ? String(findings) : '',
+    ]);
+  return `<p>${esc(coverageLabel(run)!)}.</p>\n${table(['File', 'Changed lines', 'Review', 'Opened by the model', 'Findings'], body, [1, 4])}`;
+}
+
 function chunksSection(run: RunRecord): string {
   const rows = run.chunks.map((c) => [
     esc(c.id),
@@ -331,6 +348,7 @@ ${section('Static analysis', analyzersSection(run))}
 ${section('Skills used', chips(skills.map((s) => [s.id, `×${s.chunks}`])))}
 ${section('Tool usage', chips(tools.map((t) => [t.tool, `×${t.calls}`])))}
 ${section('Model fallbacks', fallbacks)}
+${section('Coverage', coverageSection(run))}
 ${section('Chunks', chunksSection(run))}
 ${section('Warnings', warnings)}
 </main>

@@ -92,6 +92,10 @@
 - **`RunRecord`** holds everything needed to re-render reports later (`runs export`):
   - chunk records (status, provider/model, attempts, timeout, hints, tools used, usage and cost of every
     attempt, `failure` kind, `recovery` notes);
+  - `coverage` (`review/coverage.ts`): per changed file, whether every part that owned it answered in full,
+    only with an early answer, partly or not at all, or the file was skipped; changed lines and whether the
+    model opened the file with a tool. Reports show it as "Coverage", problem files first, and the CLI
+    summary names files that were not fully reviewed;
   - `usage` and `cost` of the run (`amount`, `basis`, calls without a known cost, unpriced routes);
   - fallbacks, refs, stack, analyzer runs, skills and tools used;
   - rejected findings with `droppedReason` (`unknown-file`, `line-out-of-range`, `outside-changed-lines`,

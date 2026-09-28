@@ -3,6 +3,8 @@ import {
   analyzersSummary,
   cacheLabel,
   costLabel,
+  coverageLabel,
+  coverageStatus,
   failureAdvice,
   fallbackLabel,
   formatDuration,
@@ -187,6 +189,17 @@ export function renderSummary(run: RunRecord, ctx: SummaryContext): string {
   out.push(headline(run, theme));
   const status = statusLine(run, theme);
   if (status) out.push(status);
+  const notCovered = (run.coverage ?? []).filter((f) => f.status !== 'reviewed' && f.status !== 'skipped');
+  if (notCovered.length) {
+    out.push(
+      c.yellow(
+        `${sym.warn} Coverage: ${coverageLabel(run)} — ${notCovered
+          .slice(0, 5)
+          .map((f) => `${f.path} (${coverageStatus(f)})`)
+          .join(', ')}${notCovered.length > 5 ? ', …' : ''}`,
+      ),
+    );
+  }
   if (run.findings.length) out.push('', ...findingLines(run.findings, ctx));
   if (run.advisory?.length) {
     out.push(

@@ -97,6 +97,14 @@ describe('runReview (diff mode, mock provider)', () => {
     expect(run.rejected.map((f) => [f.file, f.droppedReason])).toEqual([['src/Widget.tsx', 'critique']]);
   });
 
+  it('maps which changed files were reviewed', () => {
+    expect(run.coverage).toEqual([
+      { path: 'package-lock.json', changed: 0, status: 'skipped', reason: expect.any(String) },
+      { path: 'src/Widget.tsx', changed: 6, status: 'reviewed' },
+      { path: 'src/math.ts', changed: 6, status: 'reviewed' },
+    ]);
+  });
+
   it('attributes authors via git blame', () => {
     expect(run.findings[0]!.author).toMatchObject({ name: 'Dev Two', email: 'two@example.com' });
   });
@@ -108,6 +116,8 @@ describe('runReview (diff mode, mock provider)', () => {
     const md = readFileSync(path.join(runDir, 'report.md'), 'utf8');
     expect(md).toContain('[MAJOR] off-by-one reads past the end');
     expect(md).toContain('## Rejected findings (1)');
+    expect(md).toContain('| Coverage | 2 of 3 changed files reviewed in full · 1 skipped |');
+    expect(md).toContain('## Coverage');
     const html = readFileSync(path.join(runDir, 'report.html'), 'utf8');
     expect(html).not.toMatch(/<\/script>[\s\S]*"findings"/); // JSON is embedded safely
     const store = new RunStore(path.join(repo.root, '.code-reviewer/runs'));

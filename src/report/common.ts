@@ -2,6 +2,7 @@ import { formatMoney } from '../models/pricing';
 import type {
   AnalyzerRun,
   FailureKind,
+  FileCoverage,
   Finding,
   Role,
   RunRecord,
@@ -395,4 +396,42 @@ export function fallbackLabel(
 export function chunkModelLabel(c: { provider?: string; model?: string }): string {
   if (!c.provider && !c.model) return '';
   return [c.provider, c.model].filter(Boolean).join(':');
+}
+
+const COVERAGE_WORDS: Record<FileCoverage['status'], string> = {
+  reviewed: 'reviewed',
+  interrupted: 'interrupted (early answer)',
+  partial: 'partly failed',
+  failed: 'not reviewed',
+  skipped: 'skipped',
+};
+
+/** Status of a file in the coverage map, in words. */
+export function coverageStatus(f: FileCoverage): string {
+  return `${COVERAGE_WORDS[f.status]}${f.reason ? `: ${f.reason}` : ''}`;
+}
+
+/** `12 of 14 changed files reviewed in full · 1 not reviewed · 1 skipped`, or undefined without a map. */
+export function coverageLabel(run: RunRecord): string | undefined {
+  const cov = run.coverage;
+  if (!cov?.length) return undefined;
+  const count = (s: FileCoverage['status']) => cov.filter((f) => f.status === s).length;
+  const parts = [`${count('reviewed')} of ${cov.length} changed files reviewed in full`];
+  for (const s of ['interrupted', 'partial', 'failed', 'skipped'] as const) {
+    if (count(s)) parts.push(`${count(s)} ${COVERAGE_WORDS[s]}`);
+  }
+  return parts.join(' · ');
+}
+
+/** Rows of the coverage table: file, changed lines, status, opened by the model, findings (kept). */
+export function coverageRows(run: RunRecord): Array<[string, number, string, boolean, number]> {
+  const findings = new Map<string, number>();
+  for (const f of run.findings) findings.set(f.file, (findings.get(f.file) ?? 0) + 1);
+  return (run.coverage ?? []).map((f) => [
+    f.path,
+    f.changed,
+    coverageStatus(f),
+    f.opened === true,
+    findings.get(f.path) ?? 0,
+  ]);
 }

@@ -79,6 +79,7 @@ import { newRunId, shortHash } from '../util/ids';
 import type { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
 import { attributeFindings } from './attribution';
+import { coverageMap, type PartResult } from './coverage';
 import { type CritiqueCache, critiqueFindings } from './critique';
 import { dedupeFindings } from './dedupe';
 import type { InteractionHost, PhaseId, ReviewEvent, ReviewPlan } from './events';
@@ -228,7 +229,7 @@ export function resolveRouting(config: Config): { review: RoleRouting; critique?
  * What reviewing a chunk (or one split part of it) produced: findings, a failure, or only usage (an attempt
  * that failed but was recovered by a split or a retry).
  */
-type PartOutcome = { id: string; spend: Spend[] } & (
+type PartOutcome = { id: string; files: string[]; spend: Spend[] } & (
   | {
       kind: 'done';
       hints: StaticHit[];
@@ -849,6 +850,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
   let reports: string[] = [];
   /** Findings reported by the models plus static candidates. */
   const collected: Finding[] = [];
+  /** How every reviewed part ended, for the coverage map. */
+  const partResults: PartResult[] = [];
   /** Static hints the reviewing model saw and did not confirm (kept for auditing). */
   const hintRejected: Finding[] = [];
   const costBudget =
@@ -1117,6 +1120,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         return {
           kind: 'done',
           id: part.id,
+          files: part.files,
           hints,
           spend,
           findings,
@@ -1172,6 +1176,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         return {
           kind: 'done',
           id: part.id,
+          files: part.files,
           hints,
           spend: [],
           findings,
@@ -1245,6 +1250,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           const failed: PartOutcome = {
             kind: 'failed',
             id: part.id,
+            files: part.files,
             hints,
             spend: spendOf(err),
             err,
@@ -1263,7 +1269,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             })
             .catch(() => undefined);
           // Failed attempts are not free: their usage stays in the record.
-          const spent: PartOutcome = { kind: 'spent', id: part.id, spend: failed.spend };
+          const spent: PartOutcome = { kind: 'spent', id: part.id, files: part.files, spend: failed.spend };
           const halves = level < MAX_SPLIT_LEVEL && SPLITTABLE.has(failure) ? splitChunk(part) : undefined;
           if (halves) {
             notes.push(`${part.id}: ${failure} — split into ${halves.map((h) => h.id).join(' + ')}`);
@@ -1349,6 +1355,14 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
               }
             }
             addCounts(run.toolUsage!, toolCalls);
+            for (const d of done) {
+              partResults.push({
+                files: d.files,
+                kind: d.salvaged ? 'interrupted' : 'done',
+                reads: d.reads ?? [],
+              });
+            }
+            for (const f of failed) partResults.push({ files: f.files, kind: 'failed' });
             const last = done.at(-1);
             const fromCacheCount = done.filter((d) => d.cached).length;
             Object.assign(rec, {
@@ -1381,6 +1395,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         ),
       );
     });
+
+    run.coverage = coverageMap(units, skipped, chunks, partResults);
 
     // 7. Validate + dedupe -------------------------------------------------------------------------
     const validated = await phase('validate', `Validating ${collected.length} raw finding(s)`, async () => {
