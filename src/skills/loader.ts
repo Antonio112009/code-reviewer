@@ -103,6 +103,11 @@ const ActivationSchema = z.strictObject({
   content: Strings.optional(),
   /** Tech id → version range (`framework.nextjs: ">=13"`); unknown versions pass. */
   versions: z.record(z.string(), z.string().min(1)).optional(),
+  /**
+   * Code the `content` regexes must fire on (a changed line or two each). Checked by the library test;
+   * never used for matching.
+   */
+  examples: Strings.optional(),
 });
 
 /** `_group.yaml`: what the technology is and how it is detected; inherited by every skill below. */

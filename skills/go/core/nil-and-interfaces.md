@@ -9,6 +9,11 @@ activation:
     - '\.\(\s*(?:\*?[A-Za-z_][\w.]{0,60}|\[\]|map\[)\s*\)'
     - '\bcomparable\b'
     - '\bmap\[(?:any|interface\{\})\]'
+  examples:
+    - 'if err != nil { return nil, err }'
+    - 'name := payload["name"].(string)'
+    - 'func Keys[K comparable, V any](m map[K]V) []K {'
+    - 'seen := map[any]bool{}'
 sources:
   - https://go.dev/doc/faq#nil_error
   - https://go.dev/ref/spec#Comparison_operators
