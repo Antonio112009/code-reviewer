@@ -1,5 +1,5 @@
 diff --git a/evaluation/evaluate.py b/evaluation/evaluate.py
-index 373fa1c..a7828d7 100644
+index 373fa1c..4023e5b 100644
 --- a/evaluation/evaluate.py
 +++ b/evaluation/evaluate.py
 @@ -21,6 +21,7 @@ note（语义比对文本）映射：
@@ -99,10 +99,12 @@ index 373fa1c..a7828d7 100644
          cr_stats = compute_cr_statistics(reference, generated_count)
          stats["evaluated_instances"] += 1
          stats["expected_notes"] += cr_stats["expected_notes"]
-@@ -440,6 +486,8 @@ def print_summary(reviewer: str, result_data: Dict[str, Any]) -> None:
+@@ -440,6 +486,10 @@ def print_summary(reviewer: str, result_data: Dict[str, Any]) -> None:
  
  
  def judge_mode_description() -> str:
++    import judge
++
 +    if judge.USE_CLAUDE_CLI:
 +        return f"claude CLI ({judge._CLAUDE_JUDGE_MODEL})"
      if USE_MOCK_LLM:
