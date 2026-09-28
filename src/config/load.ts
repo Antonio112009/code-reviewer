@@ -158,10 +158,12 @@ async function readPartial(file: string): Promise<Record<string, unknown>> {
 }
 
 const LAUNCH_FIELDS = ['command', 'args', 'env'] as const;
+/** OpenAI-compatible endpoints: where the code goes and which secret goes with it. */
+const ENDPOINT_FIELDS = ['baseUrl', 'apiKeyEnv'] as const;
 
 /**
  * The project config comes from the checkout being reviewed, which may be an untrusted branch.
- * It may choose providers and models, but not what program gets launched.
+ * It may choose providers and models, but not what program gets launched or which server receives the code.
  */
 function assertNoLaunchFields(partial: Record<string, unknown>, file: string): void {
   const globalPath = path.join(globalConfigDir(), 'config.yaml');
@@ -208,6 +210,12 @@ function assertNoLaunchFields(partial: Record<string, unknown>, file: string): v
       if (field) {
         throw new ConfigError(
           `${file}: ${where}.${id}.${field} is not allowed in a project config — it would let the reviewed repository choose which program to run. Put launch settings in ${globalPath}.`,
+        );
+      }
+      const endpoint = ENDPOINT_FIELDS.find((f) => cfg && cfg[f] !== undefined);
+      if (endpoint) {
+        throw new ConfigError(
+          `${file}: ${where}.${id}.${endpoint} is not allowed in a project config — it decides where your code and API key are sent. Put it in ${globalPath}.`,
         );
       }
     }

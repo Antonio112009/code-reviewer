@@ -28,6 +28,8 @@ export interface AiSdkModel {
   model: LanguageModel;
   modelId: string;
   caching?: PromptCaching;
+  /** Send the task's reasoning level (default true); some OpenAI-compatible models reject `reasoning_effort`. */
+  reasoning?: boolean;
 }
 
 /** Messages with the cache marker on the newest one only (other providerOptions kept). */
@@ -102,7 +104,7 @@ export async function runAiSdkTask(task: AgentTask, m: AiSdkModel): Promise<Agen
           instructions: instructions(`${task.instructions}\n\n${prompt}`),
         };
       },
-      reasoning: task.reasoning === 'none' ? 'none' : task.reasoning,
+      ...(m.reasoning === false ? {} : { reasoning: task.reasoning }),
       maxOutputTokens: task.maxOutputTokens,
       abortSignal: AbortSignal.any(signals),
       maxRetries: 3,

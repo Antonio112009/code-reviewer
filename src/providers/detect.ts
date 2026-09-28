@@ -1,6 +1,7 @@
-import type { Config } from '../config/schema';
+import type { Config, ProviderConfig } from '../config/schema';
 import { findExecutable, PRESETS } from './acp/presets';
 import { awsCredentialSources, bedrockRegion } from './aws';
+import { openAiEndpoint } from './openai';
 
 export interface ProviderStatus {
   id: string;
@@ -9,6 +10,13 @@ export interface ProviderStatus {
   available: boolean;
   experimental: boolean;
   detail: string;
+  /** The provider has no default model: a run needs `--model` or `roles.<role>.model`. */
+  needsModel?: boolean;
+}
+
+/** Providers without a default model (Bedrock, OpenAI-compatible APIs) unless the config names one. */
+export function providerNeedsModel(cfg: ProviderConfig | undefined): boolean {
+  return (cfg?.type === 'bedrock' || cfg?.type === 'openai') && !cfg.defaultModel;
 }
 
 /** Offline availability check: binaries on PATH, AWS credential sources, API keys. No network calls. */
@@ -33,6 +41,22 @@ export function detectProviders(config: Config): ProviderStatus[] {
         available: key,
         experimental: false,
         detail: key ? 'ANTHROPIC_API_KEY is set' : 'ANTHROPIC_API_KEY is not set',
+      };
+    }
+    if (cfg.type === 'openai') {
+      const { baseUrl, keyEnv } = openAiEndpoint(cfg);
+      const host = new URL(baseUrl).host;
+      const key = keyEnv ? Boolean(process.env[keyEnv]?.trim()) : true;
+      return {
+        id,
+        type: 'openai',
+        label: `OpenAI-compatible API (${host})`,
+        available: key,
+        experimental: false,
+        detail: keyEnv
+          ? `${baseUrl}; ${keyEnv} is ${key ? 'set' : 'not set'}`
+          : `${baseUrl}; no API key (server not checked)`,
+        ...(providerNeedsModel(cfg) ? { needsModel: true } : {}),
       };
     }
     if (cfg.type === 'bedrock') {

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **OpenAI-compatible providers.** A new provider type `openai` talks to any chat completions API with
+  tool calling, through the same tool loop as the Anthropic and Bedrock providers. Built in: `openai`
+  (`OPENAI_API_KEY`), `openrouter` (`OPENROUTER_API_KEY`) and `ollama` (a local server, no key, so the code
+  never leaves the machine); vLLM, LM Studio, LiteLLM or Azure OpenAI take a `baseUrl` and `apiKeyEnv` in the
+  global config. They have no default model (`--model`), `providers models` lists the server's `GET /models`,
+  and `reasoning_effort` is sent only with `reasoningEffort: true`. A project config may not set `baseUrl` or
+  `apiKeyEnv`: they decide where the code and which secret are sent.
+
 - **Full depth keeps what the critic did not reject from confidence 0.3 (was 0.5).** Findings below 0.6 were
   already listed only as "worth a look", so the main list, PR comments and gates are unchanged. On AACR-Bench
   ctx30 the findings the critic confirmed or found uncertain at 0.3–0.5 matched expert-verified references about as often

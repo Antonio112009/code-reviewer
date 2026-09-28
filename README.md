@@ -30,7 +30,8 @@ Codex, Copilot, Gemini or AWS Bedrock — in a review pipeline built against exa
 ## Quick start
 
 Requires **Node.js ≥ 24**, **git**, and one provider: the Claude Code, Codex, Copilot or Gemini CLI
-logged in, an `ANTHROPIC_API_KEY`, or AWS credentials for Bedrock.
+logged in, an `ANTHROPIC_API_KEY`, AWS credentials for Bedrock, or an OpenAI-compatible API (OpenAI,
+OpenRouter, a local Ollama, …).
 
 ```bash
 npm install -g @antonio112009/code-reviewer
@@ -132,6 +133,29 @@ flowchart LR
 | `gemini` | Gemini CLI over ACP | experimental |
 | `anthropic` | the Anthropic API directly | `ANTHROPIC_API_KEY`; `claude-sonnet-5` by default. No agent in between: a task carries only our prompt (Claude Code adds ~25× more context per task), with prompt caching — the cheaper choice for CI |
 | `bedrock` | AWS Bedrock (Converse API) | AWS credential chain (profile, SSO, role) or `AWS_BEARER_TOKEN_BEDROCK`; prompt caching for Anthropic models |
+| `openai` | the OpenAI API | `OPENAI_API_KEY`; no default model: `--model gpt-5` |
+| `openrouter` | [OpenRouter](https://openrouter.ai) | `OPENROUTER_API_KEY`; `--model` any OpenRouter id, e.g. `qwen/qwen3-coder` |
+| `ollama` | a local [Ollama](https://ollama.com) server | no key; `--model qwen3-coder:30b`. The code never leaves the machine |
+
+The model must support tool calling: findings come back through a tool. Any other OpenAI-compatible
+server (vLLM, LM Studio, LiteLLM, Azure OpenAI's v1 API, …) is a provider of type `openai` in your global
+config:
+
+```yaml
+providers:
+  lmstudio:
+    type: openai
+    baseUrl: http://localhost:1234/v1
+    apiKeyEnv: none            # the environment variable with the key; `none` for no authentication
+    defaultModel: qwen3-coder-30b
+    reasoningEffort: false     # true sends the role's reasoning level (reasoning models only)
+roles:
+  review: { provider: lmstudio }
+```
+
+Local models have small context windows: set `roles.review.contextWindow` (or `--max-chunk-tokens`) so
+that chunks fit. Ollama silently cuts prompts longer than its context length, so raise that too
+(`OLLAMA_CONTEXT_LENGTH`).
 
 ```bash
 code-reviewer providers list                   # what is installed and logged in
@@ -191,8 +215,9 @@ Useful flags:
 
 `code-reviewer config show` prints the effective configuration.
 
-A project config comes from the checkout under review, so it may not choose programs, model fallbacks or
-analyzers that execute code. Those live in the global config only.
+A project config comes from the checkout under review, so it may not choose programs, the server your code
+and API key are sent to (`baseUrl`, `apiKeyEnv`), model fallbacks or analyzers that execute code. Those
+live in the global config only.
 
 ### Cost
 
@@ -205,6 +230,7 @@ get an estimate, marked as such. `--dry-run` shows a lower bound before anything
 pricing:                          # example values: use your own prices
   "bedrock:global.anthropic.claude-sonnet-4-5": { input: 3, cachedInput: 0.3, output: 15 }  # USD / 1M tokens
   copilot: { request: 0.04 }      # per premium request
+  ollama: { input: 0, output: 0 } # local models
 ```
 
 ### Cache
