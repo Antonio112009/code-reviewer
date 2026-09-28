@@ -1,0 +1,94 @@
+title: Sort column from the query string interpolated into ORDER BY
+tags: [javascript, express, sql, security]
+base:
+  package.json: |
+    {
+      "name": "catalog-api",
+      "private": true,
+      "dependencies": { "express": "^4.21.2", "pg": "^8.13.1" }
+    }
+  src/db.js: |
+    const { Pool } = require('pg');
+
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: Number(process.env.PG_POOL_SIZE || 10),
+    });
+
+    module.exports = { pool };
+  src/routes/products.js: |
+    const express = require('express');
+    const { pool } = require('../db');
+
+    const router = express.Router();
+    const PAGE_SIZE = 20;
+
+    router.get('/', async (req, res, next) => {
+      try {
+        const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+        const params = [];
+        let where = 'WHERE p.archived = false';
+        if (req.query.category) {
+          params.push(req.query.category);
+          where += ` AND p.category_id = $${params.length}`;
+        }
+        params.push(PAGE_SIZE, (page - 1) * PAGE_SIZE);
+        const { rows } = await pool.query(
+          `SELECT p.id, p.name, p.price_cents, p.created_at
+             FROM products p
+             ${where}
+            ORDER BY p.created_at DESC
+            LIMIT $${params.length - 1} OFFSET $${params.length}`,
+          params,
+        );
+        res.json({ page, items: rows });
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    module.exports = router;
+head:
+  src/routes/products.js: |
+    const express = require('express');
+    const { pool } = require('../db');
+
+    const router = express.Router();
+    const PAGE_SIZE = 20;
+
+    router.get('/', async (req, res, next) => {
+      try {
+        const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+        const params = [];
+        let where = 'WHERE p.archived = false';
+        if (req.query.category) {
+          params.push(req.query.category);
+          where += ` AND p.category_id = $${params.length}`;
+        }
+        if (req.query.q) {
+          params.push(`%${req.query.q}%`);
+          where += ` AND p.name ILIKE $${params.length}`;
+        }
+        const sort = req.query.sort || 'created_at';
+        const direction = req.query.dir === 'asc' ? 'ASC' : 'DESC';
+        params.push(PAGE_SIZE, (page - 1) * PAGE_SIZE);
+        const { rows } = await pool.query(
+          `SELECT p.id, p.name, p.price_cents, p.created_at
+             FROM products p
+             ${where}
+            ORDER BY p.${sort} ${direction}, p.id
+            LIMIT $${params.length - 1} OFFSET $${params.length}`,
+          params,
+        );
+        res.json({ page, sort, direction: direction.toLowerCase(), items: rows });
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    module.exports = router;
+expect:
+  - file: src/routes/products.js
+    lines: [20, 27]
+    severity: major
+    note: req.query.sort is interpolated into ORDER BY unvalidated (SQL injection); only the direction is whitelisted

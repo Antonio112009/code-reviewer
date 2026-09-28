@@ -1,0 +1,60 @@
+title: Table-driven tests added for an existing slug function
+tags: [go, clean, tests]
+base:
+  go.mod: |
+    module example.com/blog
+
+    go 1.23
+  internal/slug/slug.go: |
+    package slug
+
+    import (
+    	"strings"
+    	"unicode"
+    )
+
+    // Make turns a title into a URL slug: lowercase ASCII letters and digits separated by single dashes.
+    func Make(title string) string {
+    	var b strings.Builder
+    	dash := false
+    	for _, r := range strings.ToLower(title) {
+    		switch {
+    		case r < unicode.MaxASCII && (unicode.IsLetter(r) || unicode.IsDigit(r)):
+    			b.WriteRune(r)
+    			dash = false
+    		case b.Len() > 0 && !dash:
+    			b.WriteByte('-')
+    			dash = true
+    		}
+    	}
+    	return strings.TrimSuffix(b.String(), "-")
+    }
+head:
+  internal/slug/slug_test.go: |
+    package slug
+
+    import "testing"
+
+    func TestMake(t *testing.T) {
+    	tests := []struct {
+    		name  string
+    		title string
+    		want  string
+    	}{
+    		{"words", "Hello World", "hello-world"},
+    		{"punctuation", "Hello, World!", "hello-world"},
+    		{"repeated separators", "a  --  b", "a-b"},
+    		{"leading and trailing space", "  Go 1.23 release  ", "go-1-23-release"},
+    		{"digits", "Top 10 tips", "top-10-tips"},
+    		{"empty", "", ""},
+    		{"only separators", "!!! ---", ""},
+    	}
+    	for _, tt := range tests {
+    		t.Run(tt.name, func(t *testing.T) {
+    			if got := Make(tt.title); got != tt.want {
+    				t.Errorf("Make(%q) = %q, want %q", tt.title, got, tt.want)
+    			}
+    		})
+    	}
+    }
+expect: []

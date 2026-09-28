@@ -13,6 +13,7 @@ import {
   DEPTH_PRESETS,
   type PartialConfig,
   PartialConfigSchema,
+  PUBLISH_URL_KEYS,
   type ReviewDepth,
 } from './schema';
 
@@ -180,6 +181,14 @@ function assertNoLaunchFields(partial: Record<string, unknown>, file: string): v
     if (analyzers?.project?.length) {
       throw new ConfigError(
         `${file}: ${prefix}analyzers.project is not allowed in a project config — those analyzers run repository code. Enable them in ${globalPath} or with --analyzers.`,
+      );
+    }
+    // A forge API URL receives the user's access token (GITHUB_TOKEN / GITLAB_TOKEN).
+    const publish = layer.publish as Record<string, unknown> | undefined;
+    const urlKey = PUBLISH_URL_KEYS.find((k) => publish?.[k] !== undefined);
+    if (urlKey) {
+      throw new ConfigError(
+        `${file}: ${prefix}publish.${urlKey} is not allowed in a project config — it decides where your access token is sent. Put it in ${globalPath} or pass --api-url.`,
       );
     }
   }

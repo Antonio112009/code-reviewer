@@ -1,0 +1,94 @@
+title: Shipping helper renamed across the module, its caller and its tests
+tags: [python, clean, rename]
+base:
+  shipping/rates.py: |
+    from decimal import Decimal
+
+    FREE_SHIPPING_THRESHOLD = Decimal("50.00")
+    BASE_RATE = Decimal("4.90")
+    PER_KG = Decimal("1.20")
+
+
+    def calc_ship(subtotal: Decimal, weight_kg: Decimal) -> Decimal:
+        if subtotal >= FREE_SHIPPING_THRESHOLD:
+            return Decimal("0.00")
+        return (BASE_RATE + PER_KG * weight_kg).quantize(Decimal("0.01"))
+  checkout/totals.py: |
+    from dataclasses import dataclass
+    from decimal import Decimal
+
+    from shipping.rates import calc_ship
+
+
+    @dataclass(frozen=True)
+    class Totals:
+        subtotal: Decimal
+        shipping: Decimal
+
+        @property
+        def total(self) -> Decimal:
+            return self.subtotal + self.shipping
+
+
+    def totals_for(lines, weight_kg: Decimal) -> Totals:
+        subtotal = sum((line.unit_price * line.quantity for line in lines), Decimal("0.00"))
+        return Totals(subtotal=subtotal, shipping=calc_ship(subtotal, weight_kg))
+  tests/test_rates.py: |
+    from decimal import Decimal
+
+    from shipping.rates import calc_ship
+
+
+    def test_free_above_threshold():
+        assert calc_ship(Decimal("50.00"), Decimal("3")) == Decimal("0.00")
+
+
+    def test_base_rate_plus_weight():
+        assert calc_ship(Decimal("20.00"), Decimal("2.5")) == Decimal("7.90")
+head:
+  shipping/rates.py: |
+    from decimal import Decimal
+
+    FREE_SHIPPING_THRESHOLD = Decimal("50.00")
+    BASE_RATE = Decimal("4.90")
+    PER_KG = Decimal("1.20")
+
+
+    def shipping_cost(subtotal: Decimal, weight_kg: Decimal) -> Decimal:
+        """Shipping for an order: free from the threshold on, else a base rate plus a rate per kg."""
+        if subtotal >= FREE_SHIPPING_THRESHOLD:
+            return Decimal("0.00")
+        return (BASE_RATE + PER_KG * weight_kg).quantize(Decimal("0.01"))
+  checkout/totals.py: |
+    from dataclasses import dataclass
+    from decimal import Decimal
+
+    from shipping.rates import shipping_cost
+
+
+    @dataclass(frozen=True)
+    class Totals:
+        subtotal: Decimal
+        shipping: Decimal
+
+        @property
+        def total(self) -> Decimal:
+            return self.subtotal + self.shipping
+
+
+    def totals_for(lines, weight_kg: Decimal) -> Totals:
+        subtotal = sum((line.unit_price * line.quantity for line in lines), Decimal("0.00"))
+        return Totals(subtotal=subtotal, shipping=shipping_cost(subtotal, weight_kg))
+  tests/test_rates.py: |
+    from decimal import Decimal
+
+    from shipping.rates import shipping_cost
+
+
+    def test_free_above_threshold():
+        assert shipping_cost(Decimal("50.00"), Decimal("3")) == Decimal("0.00")
+
+
+    def test_base_rate_plus_weight():
+        assert shipping_cost(Decimal("20.00"), Decimal("2.5")) == Decimal("7.90")
+expect: []

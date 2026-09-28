@@ -1,6 +1,8 @@
 import path from 'node:path';
 import {
   analyzersSummary,
+  costLabel,
+  failureAdvice,
   fallbackLabel,
   formatDuration,
   formatNumber,
@@ -210,6 +212,22 @@ export function renderSummary(run: RunRecord, ctx: SummaryContext): string {
     const [first, ...rest] = rejected.map((r) => `${r.count} ${clean(r.label)}`);
     items('Rejected', [`${total}${c.dim(':')} ${first}`, ...rest]);
   }
+  const failed = run.chunks.filter((ch) => ch.status === 'failed' && ch.failure !== 'aborted');
+  const maxFailed = ctx.verbose ? failed.length : 3;
+  failed.slice(0, maxFailed).forEach((ch, i) => {
+    const what = `${c.red(sym.fail)} ${clean(ch.id)} ${c.dim(clean(ch.files.slice(0, 2).join(', ')))} ${clean(failureAdvice(ch.failure))}`;
+    out.push(section(theme, i === 0 ? 'Failed' : '', what, width));
+  });
+  if (failed.length > maxFailed) {
+    out.push(
+      section(theme, '', c.dim(`${sym.ellipsis} ${failed.length - maxFailed} more in the report`), width),
+    );
+  }
+  const recovered = run.chunks.flatMap((ch) => ch.recovery ?? []);
+  items(
+    'Recovered',
+    recovered.slice(0, ctx.verbose ? undefined : 4).map((r) => clean(r)),
+  );
   for (const [i, f] of (run.fallbacks ?? []).entries()) {
     out.push(section(theme, i === 0 ? 'Fallbacks' : '', c.yellow(clean(fallbackLabel(f, sym.arrow))), width));
   }
@@ -229,15 +247,20 @@ export function renderSummary(run: RunRecord, ctx: SummaryContext): string {
     ...ctx.timings.filter((t) => t.ms >= 1).map((t) => `${t.id} ${c.dim(formatDuration(t.ms))}`),
   ]);
   const u = run.usage;
+  const approx = u.estimated ? '≥' : '';
   items(
     'Tokens',
     [
-      `in ${formatNumber(u.inputTokens)}`,
+      `in ${approx}${formatNumber(u.inputTokens)}`,
       u.cachedInputTokens ? `cached ${formatNumber(u.cachedInputTokens)}` : '',
-      `out ${formatNumber(u.outputTokens)}`,
+      `out ${approx}${formatNumber(u.outputTokens)}`,
       u.reasoningTokens ? `reasoning ${formatNumber(u.reasoningTokens)}` : '',
+      u.requests ? `${formatNumber(u.requests)} request${u.requests === 1 ? '' : 's'}` : '',
+      u.estimated ? c.dim('estimated: not reported by the provider') : '',
     ].filter(Boolean),
   );
+  const cost = costLabel(run);
+  if (cost) out.push(section(theme, 'Cost', clean(cost), width));
   const runDir = ctx.runDir ? ` ${c.dim(sym.arrow)} ${ctx.linker.path(ctx.runDir)}` : '';
   out.push(section(theme, 'Run', `${clean(run.id)} ${c.dim(`(${run.status})`)}${runDir}`, width));
   if (ctx.reports.length) {

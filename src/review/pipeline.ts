@@ -1,7 +1,7 @@
 import path from 'node:path';
 import pLimit from 'p-limit';
 import { type AnalyzeResult, runAnalyzers, skillsForHits } from '../analyzers';
-import { buildChunks, scheduleOrder } from '../chunking/chunker';
+import { buildChunks, scheduleOrder, splitChunk } from '../chunking/chunker';
 import { buildFileGraph, type FileGraph } from '../chunking/graph';
 import { estimateTokens } from '../chunking/tokens';
 import type { Config } from '../config/schema';
@@ -23,6 +23,7 @@ import {
   type RootFile,
 } from '../git/snapshot';
 import { formatUnavailable, type ModelListing, preflightModels } from '../models';
+import { CostMeter, costOf } from '../models/pricing';
 import { isUnconfined } from '../providers/acp/presets';
 import { detectProviders } from '../providers/detect';
 import { ProviderRegistry } from '../providers/registry';
@@ -36,6 +37,8 @@ import { loadSkills, type Skill } from '../skills/loader';
 import { changedPaths, collectDiffUnits, type SkippedFile } from '../sources/diff-source';
 import { collectFileUnits } from '../sources/files-source';
 import type {
+  Chunk,
+  FailureKind,
   Finding,
   ReasoningLevel,
   RefsInfo,
@@ -45,7 +48,6 @@ import type {
   RunRecord,
   RunTarget,
   StaticHit,
-  Usage,
 } from '../types';
 import { newRunId, shortHash } from '../util/ids';
 import type { Logger } from '../util/logger';
@@ -53,8 +55,20 @@ import { attributeFindings } from './attribution';
 import { critiqueFindings } from './critique';
 import { dedupeFindings } from './dedupe';
 import type { InteractionHost, PhaseId, ReviewEvent, ReviewPlan } from './events';
-import { ModelRouter, RoutedProvider, runRouted } from './execute';
+import {
+  attachSpend,
+  failureKindOf,
+  ModelRouter,
+  NoPayloadError,
+  RoutedProvider,
+  type RoutedResult,
+  runRouted,
+  type Spend,
+  spendOf,
+  sumUsage,
+} from './execute';
 import { resolveFindings, toFinding } from './findings';
+import { fingerprintFindings, reviewRootReader } from './fingerprint';
 import {
   addedCodeOf,
   analyzeFilesFrom,
@@ -139,13 +153,31 @@ export function resolveRouting(config: Config): { review: RoleRouting; critique?
   return { review: reviewRoute, critique };
 }
 
-function addUsage(total: Usage, u: Usage | undefined): void {
-  if (!u) return;
-  total.inputTokens += u.inputTokens;
-  total.outputTokens += u.outputTokens;
-  if (u.reasoningTokens) total.reasoningTokens = (total.reasoningTokens ?? 0) + u.reasoningTokens;
-  if (u.cachedInputTokens) total.cachedInputTokens = (total.cachedInputTokens ?? 0) + u.cachedInputTokens;
-}
+/**
+ * What reviewing a chunk (or one split part of it) produced: findings, a failure, or only usage (an attempt
+ * that failed but was recovered by a split or a retry).
+ */
+type PartOutcome = { id: string; spend: Spend[] } & (
+  | {
+      kind: 'done';
+      hints: StaticHit[];
+      findings: Finding[];
+      claimed: Set<string>;
+      result: RoutedResult;
+    }
+  | { kind: 'failed'; hints: StaticHit[]; err: unknown; failure: FailureKind }
+  | { kind: 'spent' }
+);
+
+/** Failures a smaller chunk can fix: out of time, steps, output or context window. */
+const SPLITTABLE: ReadonlySet<FailureKind> = new Set([
+  'timeout',
+  'step-limit',
+  'output-limit',
+  'context-limit',
+]);
+/** A failed chunk is halved at most this many times (up to four parts). */
+const MAX_SPLIT_LEVEL = 2;
 
 function addCounts(total: Record<string, number>, add: Record<string, number> | undefined): void {
   for (const [k, v] of Object.entries(add ?? {})) total[k] = (total[k] ?? 0) + v;
@@ -521,6 +553,30 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     analyzers: analysis.runs,
     skills: [...new Set([...chunkSkills.values()].flat().map((m) => m.skill.id))].sort(),
   };
+  const instructionTokens = estimateTokens(instructionsBase) + PROMPT_OVERHEAD;
+  const promptTokens = chunks.reduce(
+    (n, c) =>
+      n +
+      c.tokens +
+      instructionTokens +
+      (chunkSkills.get(c.id) ?? []).reduce((k, m) => k + m.skill.tokens, 0) +
+      (chunkHints.get(c.id)?.length ?? 0) * TOKENS_PER_HINT,
+    0,
+  );
+  if (chunks.length) {
+    const estimate = costOf(
+      {
+        provider: routing.review.provider,
+        model: routing.review.model,
+        usage: { inputTokens: promptTokens, outputTokens: 0, requests: chunks.length },
+      },
+      config.pricing,
+    );
+    plan.estimate = {
+      inputTokens: promptTokens,
+      ...(estimate ? { cost: { amount: estimate.amount, currency: estimate.currency } } : {}),
+    };
+  }
   emit({ type: 'plan', plan });
   if (req.dryRun) {
     await preflightP;
@@ -630,6 +686,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     signal: req.signal,
     emit,
   });
+  const meter = new CostMeter(config.pricing);
+  const chunkRecords = new Map(run.chunks.map((c) => [c.id, c]));
 
   try {
     // Agents read code from a detached, sanitized worktree: they never see (or touch) the user's
@@ -676,166 +734,274 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       const limit = pLimit(config.review.concurrency);
       const allFiles = units.filter((u) => u.status !== 'deleted').map((u) => u.path);
       const byId = new Map(chunks.map((c) => [c.id, c]));
+
+      /** One review task for a chunk (or a split part of one); throws with the usage it spent. */
+      const reviewOnce = async (
+        chunk: Chunk,
+        part: Chunk,
+        hints: StaticHit[],
+        limits: { timeoutMs: number; maxSteps: number },
+      ): Promise<PartOutcome & { kind: 'done' }> => {
+        const matches = chunkSkills.get(chunk.id) ?? [];
+        const task: AgentTask = {
+          kind: 'findings',
+          label: part.id,
+          instructions: reviewInstructions({
+            mode,
+            depth,
+            rules: rules.text,
+            rulesOrigin: rules.origin,
+            skills: matches,
+            project: config.project,
+            skillTools,
+            readTools: config.review.tools,
+          }),
+          prompt: reviewPrompt({
+            target,
+            chunk: part,
+            totalChunks: chunks.length,
+            otherFiles: allFiles,
+            hints,
+            stack: chunkStack.get(chunk.id),
+          }),
+          reasoning: 'medium',
+          readTools: config.review.tools,
+          root,
+          git,
+          maxSteps: limits.maxSteps,
+          timeoutMs: limits.timeoutMs,
+          stallTimeoutMs: config.review.stallTimeoutMs,
+          maxOutputTokens: reviewRole?.maxOutputTokens,
+          signal: req.signal,
+          onActivity: (a) => {
+            if (a.kind === 'tool') emit({ type: 'chunk-activity', chunkId: chunk.id, tool: a.name });
+          },
+          ...(skillTools
+            ? { skills: catalog, skillsExclude: config.review.skillsExclude, skillDepth: depth }
+            : {}),
+          ...(skillTools && projectSkillsRoot ? { projectRoot: projectSkillsRoot } : {}),
+        };
+        const result = await runRouted('review', task, router, registry);
+        const spend: Spend[] = [...result.spend];
+        let resolved = resolveFindings(result);
+        let replyText = result.text;
+        if (resolved.via === 'none' && result.text.trim()) {
+          try {
+            const repaired = await runRouted(
+              'review',
+              {
+                ...task,
+                label: `${part.id}-repair`,
+                prompt: repairPrompt(result.text),
+                readTools: false,
+                maxSteps: 3,
+                salvage: false,
+              },
+              router,
+              registry,
+            );
+            spend.push(...repaired.spend);
+            resolved = resolveFindings(repaired);
+            replyText = `${result.text}\n\n--- repair ---\n${repaired.text}`;
+          } catch (err) {
+            throw attachSpend(err, [...spend, ...spendOf(err)]);
+          }
+        }
+        // Neither the submit tool nor JSON in the reply (not even after the repair turn): the code was not
+        // reviewed — a failed chunk, never a clean one.
+        if (resolved.via === 'none') {
+          throw attachSpend(new NoPayloadError('the model returned no findings payload'), spend);
+        }
+        if (resolved.invalid) warn(`${part.id}: ${resolved.invalid} malformed finding(s) ignored`);
+        for (const w of result.warnings) warn(`${part.id}: ${w}`);
+
+        const hintById = new Map(hints.map((h) => [h.id, h]));
+        const claimed = new Set<string>();
+        const findings = resolved.items.map((r) => {
+          const f = toFinding(r, {
+            root,
+            chunkId: chunk.id,
+            provider: result.provider,
+            model: result.model,
+            skills: chunkRecords.get(chunk.id)!.skills,
+          });
+          f.origin = 'llm';
+          const hint = r.hint ? hintById.get(r.hint) : undefined;
+          // A claim counts only when the finding points at the hint's code.
+          if (hint && claimsHint(f, hint)) {
+            claimed.add(hint.id);
+            f.tool = { analyzer: hint.analyzer, ruleId: hint.ruleId };
+            if (hint.nonRejectable) {
+              f.nonRejectable = true;
+              mustReport.get(hint.id)?.claimedBy.add(f.id);
+            }
+          }
+          return f;
+        });
+        await store.saveArtifact(run.id, part.id, {
+          chunk: {
+            id: part.id,
+            files: part.files,
+            contextFiles: part.contextFiles ?? [],
+            tokens: part.tokens,
+            skills: chunkRecords.get(chunk.id)!.skills,
+          },
+          provider: result.provider,
+          model: result.model,
+          stopReason: result.stopReason,
+          toolCalls: result.toolCalls,
+          toolUsage: result.toolUsage,
+          via: resolved.via,
+          hints: hints.map((h) => h.id),
+          claimedHints: [...claimed],
+          reply: replyText,
+          submission: result.submission,
+          warnings: result.warnings,
+        });
+        return { kind: 'done', id: part.id, hints, spend, findings, claimed, result };
+      };
+
+      /**
+       * Reviews a chunk and recovers from failures a smaller or longer task can fix: a chunk that ran out of
+       * time, steps, output or context is split in two (twice at most), a single part that timed out gets
+       * one retry with twice the time, a stalled agent one fresh retry.
+       */
+      const reviewWithRecovery = async (
+        chunk: Chunk,
+        part: Chunk,
+        hints: StaticHit[],
+        limits: { timeoutMs: number; maxSteps: number },
+        level: number,
+        notes: string[],
+        retried = false,
+      ): Promise<PartOutcome[]> => {
+        try {
+          return [await reviewOnce(chunk, part, hints, limits)];
+        } catch (err) {
+          const failure = failureKindOf(err, req.signal);
+          const failed: PartOutcome = {
+            kind: 'failed',
+            id: part.id,
+            hints,
+            spend: spendOf(err),
+            err,
+            failure,
+          };
+          if (failure === 'aborted' || router.fatal || req.signal?.aborted) return [failed];
+          // Failed attempts are not free: their usage stays in the record.
+          const spent: PartOutcome = { kind: 'spent', id: part.id, spend: failed.spend };
+          const halves = level < MAX_SPLIT_LEVEL && SPLITTABLE.has(failure) ? splitChunk(part) : undefined;
+          if (halves) {
+            notes.push(`${part.id}: ${failure} — split into ${halves.map((h) => h.id).join(' + ')}`);
+            emit({ type: 'chunk-activity', chunkId: chunk.id, note: `${failure}: splitting` });
+            const out: PartOutcome[] = [spent];
+            for (const half of halves) {
+              const own = new Set(half.files);
+              const halfLimits = { ...limits, timeoutMs: taskTimeoutMs(config.review, half.tokens) };
+              const halfHints = hints.filter((h) => own.has(h.file));
+              out.push(...(await reviewWithRecovery(chunk, half, halfHints, halfLimits, level + 1, notes)));
+            }
+            return out;
+          }
+          const longer = Math.min(config.review.maxTimeoutMs, limits.timeoutMs * 2);
+          const retry = retried
+            ? undefined
+            : failure === 'stalled'
+              ? limits
+              : failure === 'timeout' && longer > limits.timeoutMs
+                ? { ...limits, timeoutMs: longer }
+                : undefined;
+          if (!retry) return [failed];
+          const more =
+            retry.timeoutMs > limits.timeoutMs ? ` with ${Math.round(retry.timeoutMs / 1000)}s` : '';
+          notes.push(`${part.id}: ${failure} — retried${more}`);
+          emit({ type: 'chunk-activity', chunkId: chunk.id, note: `${failure}: retrying` });
+          return [spent, ...(await reviewWithRecovery(chunk, part, hints, retry, level, notes, true))];
+        }
+      };
+
       await Promise.all(
         scheduleOrder(chunks).map((id) =>
           limit(async () => {
             const chunk = byId.get(id)!;
-            const rec = run.chunks.find((c) => c.id === chunk.id)!;
+            const rec = chunkRecords.get(chunk.id)!;
             if (req.signal?.aborted || router.fatal) {
               Object.assign(rec, {
                 status: 'failed',
+                failure: router.fatal ? failureKindOf(router.fatal) : 'aborted',
                 error: router.fatal ? errorMessage(router.fatal) : 'aborted',
               });
               return;
             }
-            const matches = chunkSkills.get(chunk.id) ?? [];
             const hints = chunkHints.get(chunk.id) ?? [];
             rec.status = 'running';
             emit({ type: 'chunk-start', chunk, record: rec });
             const started = Date.now();
-            const task: AgentTask = {
-              kind: 'findings',
-              label: chunk.id,
-              instructions: reviewInstructions({
-                mode,
-                depth,
-                rules: rules.text,
-                rulesOrigin: rules.origin,
-                skills: matches,
-                project: config.project,
-                skillTools,
-                readTools: config.review.tools,
-              }),
-              prompt: reviewPrompt({
-                target,
-                chunk,
-                totalChunks: chunks.length,
-                otherFiles: allFiles,
-                hints,
-                stack: chunkStack.get(chunk.id),
-              }),
-              reasoning: 'medium',
-              readTools: config.review.tools,
-              root,
-              git,
-              maxSteps: config.review.maxSteps,
-              timeoutMs: rec.timeoutMs ?? taskTimeoutMs(config.review, chunk.tokens),
-              stallTimeoutMs: config.review.stallTimeoutMs,
-              maxOutputTokens: reviewRole?.maxOutputTokens,
-              signal: req.signal,
-              onActivity: (a) => {
-                if (a.kind === 'tool') emit({ type: 'chunk-activity', chunkId: chunk.id, tool: a.name });
+            const notes: string[] = [];
+            const outcomes = await reviewWithRecovery(
+              chunk,
+              chunk,
+              hints,
+              {
+                timeoutMs: rec.timeoutMs ?? taskTimeoutMs(config.review, chunk.tokens),
+                maxSteps: config.review.maxSteps,
               },
-              ...(skillTools
-                ? { skills: catalog, skillsExclude: config.review.skillsExclude, skillDepth: depth }
-                : {}),
-              ...(skillTools && projectSkillsRoot ? { projectRoot: projectSkillsRoot } : {}),
-            };
-            try {
-              const result = await runRouted('review', task, router, registry);
-              const usage: Usage = { inputTokens: 0, outputTokens: 0 };
-              addUsage(usage, result.usage);
-              let resolved = resolveFindings(result);
-              let replyText = result.text;
-              if (resolved.via === 'none' && result.text.trim()) {
-                const repaired = await runRouted(
-                  'review',
-                  {
-                    ...task,
-                    label: `${chunk.id}-repair`,
-                    prompt: repairPrompt(result.text),
-                    readTools: false,
-                    maxSteps: 3,
-                  },
-                  router,
-                  registry,
-                );
-                addUsage(usage, repaired.usage);
-                resolved = resolveFindings(repaired);
-                replyText = `${result.text}\n\n--- repair ---\n${repaired.text}`;
-              }
-              // Neither the submit tool nor JSON in the reply (not even after the repair turn): the code was
-              // not reviewed — a failed chunk, never a clean one.
-              if (resolved.via === 'none') throw new Error('the model returned no findings payload');
-              if (resolved.invalid) warn(`${chunk.id}: ${resolved.invalid} malformed finding(s) ignored`);
-              for (const w of result.warnings) warn(`${chunk.id}: ${w}`);
+              0,
+              notes,
+            );
 
-              const hintById = new Map(hints.map((h) => [h.id, h]));
-              const claimed = new Set<string>();
-              const findings = resolved.items.map((r) => {
-                const f = toFinding(r, {
-                  root,
-                  chunkId: chunk.id,
-                  provider: result.provider,
-                  model: result.model,
-                  skills: rec.skills,
-                });
-                f.origin = 'llm';
-                const hint = r.hint ? hintById.get(r.hint) : undefined;
-                // A claim counts only when the finding points at the hint's code.
-                if (hint && claimsHint(f, hint)) {
-                  claimed.add(hint.id);
-                  f.tool = { analyzer: hint.analyzer, ruleId: hint.ruleId };
-                  if (hint.nonRejectable) {
-                    f.nonRejectable = true;
-                    mustReport.get(hint.id)?.claimedBy.add(f.id);
-                  }
-                }
-                return f;
-              });
-              collected.push(...findings);
+            const spend = outcomes.flatMap((o) => o.spend);
+            const usage = sumUsage(spend.map((s) => s.usage));
+            const cost = meter.add(spend);
+            run.usage = sumUsage([run.usage, usage]);
+            const done = outcomes.filter((o): o is PartOutcome & { kind: 'done' } => o.kind === 'done');
+            const failed = outcomes.filter((o): o is PartOutcome & { kind: 'failed' } => o.kind === 'failed');
+            const toolCalls: Record<string, number> = {};
+            for (const d of done) {
+              collected.push(...d.findings);
+              addCounts(toolCalls, d.result.toolUsage);
+              if (d.result.salvaged) notes.push(`${d.id}: ${d.result.salvaged} — early answer`);
               // Hints the model saw but did not confirm: it acted as the false-positive filter — except
               // for secrets / vulnerable dependencies, which `mustReport` reports unless a claim survives.
-              for (const h of hints) {
-                if (claimed.has(h.id) || h.nonRejectable) continue;
+              for (const h of d.hints) {
+                if (d.claimed.has(h.id) || h.nonRejectable) continue;
                 hintRejected.push({ ...staticFinding(h, chunk.id), droppedReason: 'hint-not-confirmed' });
               }
-              addUsage(run.usage, usage);
-              addCounts(run.toolUsage!, result.toolUsage);
-              Object.assign(rec, {
-                status: 'done',
-                findings: findings.length,
-                usage,
-                durationMs: Date.now() - started,
-                toolCalls: result.toolUsage ?? {},
-                provider: result.provider,
-                model: result.model,
-                attempts: result.attempts,
-              });
-              await store.saveArtifact(run.id, chunk.id, {
-                chunk: {
-                  id: chunk.id,
-                  files: chunk.files,
-                  contextFiles: chunk.contextFiles ?? [],
-                  tokens: chunk.tokens,
-                  skills: rec.skills,
-                },
-                provider: result.provider,
-                model: result.model,
-                stopReason: result.stopReason,
-                toolCalls: result.toolCalls,
-                toolUsage: result.toolUsage,
-                via: resolved.via,
-                hints: hints.map((h) => h.id),
-                claimedHints: [...claimed],
-                reply: replyText,
-                submission: result.submission,
-                warnings: result.warnings,
-              });
-            } catch (err) {
-              Object.assign(rec, {
-                status: 'failed',
-                error: isAbort(err, req.signal) ? 'aborted' : errorMessage(err),
-                durationMs: Date.now() - started,
-              });
-              if (!isAbort(err, req.signal)) warn(`${chunk.id} failed: ${errorMessage(err).split('\n')[0]}`);
+            }
+            for (const f of failed) {
+              if (f.failure !== 'aborted') {
+                warn(`${f.id} failed (${f.failure}): ${errorMessage(f.err).split('\n')[0]}`);
+              }
               // The model never answered: carry the strong hints as candidates for the critic (secrets and
               // vulnerable dependencies are reported through `mustReport`).
-              for (const h of hints) {
+              for (const h of f.hints) {
                 if (!h.nonRejectable && h.confidence >= STATIC_CANDIDATE_CONFIDENCE) {
                   collected.push(staticFinding(h, chunk.id));
                 }
               }
+            }
+            addCounts(run.toolUsage!, toolCalls);
+            const last = done.at(-1)?.result;
+            Object.assign(rec, {
+              status: failed.length ? 'failed' : 'done',
+              findings: done.reduce((n, d) => n + d.findings.length, 0),
+              usage,
+              ...(cost ? { cost } : {}),
+              durationMs: Date.now() - started,
+              toolCalls,
+              ...(last ? { provider: last.provider, model: last.model } : {}),
+              attempts: done.reduce((n, d) => n + d.result.attempts, 0) + outcomes.length - done.length,
+              ...(notes.length ? { recovery: notes } : {}),
+            });
+            if (failed.length) {
+              const first = failed[0]!;
+              rec.failure = first.failure;
+              rec.error =
+                first.failure === 'aborted'
+                  ? 'aborted'
+                  : failed.length > 1 || done.length
+                    ? `${failed.length} of ${failed.length + done.length} parts failed: ${errorMessage(first.err)}`
+                    : errorMessage(first.err);
             }
             emit({ type: 'chunk-done', chunk, record: rec });
             await persist();
@@ -891,7 +1057,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         });
         final = outcome.kept;
         rejected.push(...outcome.rejected);
-        for (const u of outcome.usage) addUsage(run.usage, u);
+        meter.add(outcome.spend);
+        run.usage = sumUsage([run.usage, ...outcome.spend.map((s) => s.usage)]);
         for (const w of outcome.warnings) warn(w);
       });
     }
@@ -928,6 +1095,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       });
     }
 
+    final = fingerprintFindings(final, reviewRootReader(root));
     run.findings = sortFindings(final);
     run.rejected = sortFindings(rejected);
     run.fallbacks = [...(preflight?.fallbacks ?? []), ...router.fallbacks];
@@ -947,6 +1115,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     throw err;
   } finally {
     run.durationMs = Date.now() - startedAt;
+    const cost = meter.summary();
+    if (cost) run.cost = cost;
     if (!req.providers) await registry.disposeAll();
     await snapshot?.dispose().catch(() => undefined);
     if (repo && statusBefore !== undefined) {

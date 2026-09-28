@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { formatMoney } from '../../models/pricing';
 import { analyzersSummary, formatDuration, formatNumber, stackEntries } from '../../report/common';
 import type { ReviewPlan } from '../../review/events';
 import { clean, join, padEnd, padStart, plural } from './format';
@@ -184,5 +185,16 @@ export function renderPlanText(
       ),
     ),
   );
+  if (plan.estimate) {
+    const e = plan.estimate;
+    const cost = e.cost ? ` ${sym.dot} at least ${formatMoney(e.cost)}` : '';
+    out.push(
+      row(
+        theme,
+        'Estimate',
+        `${formatNumber(e.inputTokens)} prompt tokens${cost} ${c.dim('(before tool calls, retries and critique)')}`,
+      ),
+    );
+  }
   return `${out.join('\n')}\n`;
 }

@@ -4,7 +4,7 @@ import { REASONING_LEVELS, SEVERITIES } from '../types';
 export const ACP_PRESETS = ['claude', 'codex', 'copilot', 'gemini', 'custom'] as const;
 export type AcpPresetId = (typeof ACP_PRESETS)[number];
 
-export const REPORT_FORMATS = ['md', 'json', 'html'] as const;
+export const REPORT_FORMATS = ['md', 'json', 'html', 'sarif', 'codequality'] as const;
 export type ReportFormat = (typeof REPORT_FORMATS)[number];
 
 /** AWS region names (us-east-1, eu-central-2, us-gov-west-1, ap-southeast-5, …). */
@@ -193,6 +193,46 @@ export const UiSettingsSchema = z.object({
 });
 export type UiSettings = z.infer<typeof UiSettingsSchema>;
 
+/**
+ * Price of a model, used for the cost of a run when the provider reports none. Token prices are per million
+ * tokens; `request` is a price per model request (e.g. a Copilot premium request).
+ */
+export const PriceSchema = z.strictObject({
+  input: z.number().nonnegative().optional(),
+  /** Input tokens read from the prompt cache (default: the `input` price). */
+  cachedInput: z.number().nonnegative().optional(),
+  /** Output tokens, reasoning included. */
+  output: z.number().nonnegative().optional(),
+  request: z.number().nonnegative().optional(),
+  /** ISO 4217 code (default USD). */
+  currency: z
+    .string()
+    .regex(/^[A-Z]{3}$/, 'must be an ISO 4217 code like USD')
+    .optional(),
+});
+export type Price = z.infer<typeof PriceSchema>;
+
+/** An http(s) URL (fully checked where it is used: `publish/target.ts#validateApiUrl`). */
+const ApiUrlSchema = z.string().regex(/^https?:\/\/\S+$/i, 'must be an http(s) URL');
+
+/** Posting reviews to GitHub pull requests / GitLab merge requests (`review --post`, `runs publish`). */
+export const PublishSettingsSchema = z.object({
+  /** Most inline comments per run; the rest are listed in the summary comment. */
+  maxInlineComments: z.number().int().nonnegative(),
+  /** Findings below this severity are listed in the summary only, never commented inline. */
+  minSeverity: z.enum(SEVERITIES),
+  /**
+   * GitHub Enterprise Server API (e.g. https://github.example.com/api/v3) and self-managed GitLab API
+   * (e.g. https://gitlab.example.com/api/v4). Your access token is sent there: global config / CLI only.
+   */
+  githubApiUrl: ApiUrlSchema.optional(),
+  gitlabApiUrl: ApiUrlSchema.optional(),
+});
+export type PublishSettings = z.infer<typeof PublishSettingsSchema>;
+
+/** `publish` keys that decide where an access token is sent: rejected in project configs. */
+export const PUBLISH_URL_KEYS = ['githubApiUrl', 'gitlabApiUrl'] as const;
+
 const RolesSchema = z.object({
   review: RoleConfigSchema.optional(),
   critique: RoleConfigSchema.optional(),
@@ -209,6 +249,9 @@ const ConfigBodySchema = z.object({
   models: ModelSettingsSchema,
   ui: UiSettingsSchema,
   output: OutputSettingsSchema,
+  /** Prices by `provider:model`, `model` or `provider` (the most specific key wins). */
+  pricing: z.record(z.string(), PriceSchema),
+  publish: PublishSettingsSchema,
 });
 
 export const ConfigSchema = ConfigBodySchema.extend({
@@ -333,6 +376,11 @@ export const DEFAULT_CONFIG: Config = {
     formats: ['md', 'json', 'html'],
     dir: '.code-reviewer/runs',
   },
+  pricing: {},
+  publish: {
+    maxInlineComments: 30,
+    minSeverity: 'info',
+  },
   profiles: {},
 };
 
@@ -367,6 +415,8 @@ export const PartialConfigSchema = z
     models: ModelSettingsSchema.partial().strict().optional(),
     ui: UiSettingsSchema.partial().strict().optional(),
     output: OutputSettingsSchema.partial().strict().optional(),
+    pricing: z.record(z.string(), PriceSchema).optional(),
+    publish: PublishSettingsSchema.partial().strict().optional(),
     profiles: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();

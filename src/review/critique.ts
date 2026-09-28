@@ -3,8 +3,9 @@ import pLimit from 'p-limit';
 import { estimateTokens } from '../chunking/tokens';
 import type { ReviewDepth } from '../config/schema';
 import type { AgentResult, AgentTask, Provider } from '../providers/types';
-import type { Finding, ReasoningLevel, RunTarget, Usage } from '../types';
+import type { FailureKind, Finding, ReasoningLevel, RunTarget } from '../types';
 import { resolveInside } from '../util/paths';
+import { failureKindOf, type Spend, spendOf, spendOfResult } from './execute';
 import { resolveVerdicts } from './findings';
 import { critiqueInstructions, critiquePrompt } from './prompts';
 
@@ -26,71 +27,94 @@ export interface CritiqueOptions {
   concurrency: number;
   batchTokenBudget: number;
   signal?: AbortSignal;
-  onBatchDone?: (info: { batch: number; total: number; result?: AgentResult; error?: Error }) => void;
+  onBatchDone?: (info: { batch: number; total: number }) => void;
 }
 
 export interface CritiqueOutcome {
   kept: Finding[];
   rejected: Finding[];
-  usage: Usage[];
+  /** Usage of every critique call, failed ones included. */
+  spend: Spend[];
   warnings: string[];
 }
+
+/** Failures a smaller batch can fix: out of time, steps, output or context. */
+const SPLITTABLE: ReadonlySet<FailureKind> = new Set([
+  'timeout',
+  'step-limit',
+  'output-limit',
+  'context-limit',
+]);
 
 /**
  * Second pass: a (usually stronger) model re-checks every finding against the code and returns a
  * verdict. Rejected findings are removed; confidence is replaced by the critic's calibrated value.
+ * A batch that runs out of time, steps or output is retried once as two smaller batches.
  */
 export async function critiqueFindings(findings: Finding[], opts: CritiqueOptions): Promise<CritiqueOutcome> {
   const excerpts = new Map(findings.map((f) => [f.id, excerpt(opts.root, f)]));
   const batches = makeBatches(findings, excerpts, opts.batchTokenBudget);
   const limit = pLimit(opts.concurrency);
   const verdicts = new Map<string, { verdict: Finding['critique']; severity?: Finding['severity'] }>();
-  const usage: Usage[] = [];
+  const spend: Spend[] = [];
   const warnings: string[] = [];
+
+  const runBatch = async (batch: Finding[], label: string, canSplit: boolean): Promise<void> => {
+    const task: AgentTask = {
+      kind: 'verdicts',
+      label: `critique-${label}`,
+      instructions: critiqueInstructions(opts.mode, opts.depth),
+      prompt: critiquePrompt(batch, excerpts),
+      model: opts.model,
+      reasoning: opts.reasoning,
+      readTools: opts.readTools,
+      root: opts.root,
+      git: opts.git,
+      maxSteps: opts.maxSteps,
+      timeoutMs: opts.timeoutMs,
+      signal: opts.signal,
+    };
+    let result: AgentResult;
+    try {
+      result = await opts.provider.run(task);
+    } catch (err) {
+      spend.push(...spendOf(err));
+      const kind = failureKindOf(err, opts.signal);
+      if (canSplit && batch.length > 1 && SPLITTABLE.has(kind)) {
+        const half = Math.ceil(batch.length / 2);
+        warnings.push(`critique ${label}: ${kind} — retrying as two smaller batches`);
+        await runBatch(batch.slice(0, half), `${label}.1`, false);
+        await runBatch(batch.slice(half), `${label}.2`, false);
+        return;
+      }
+      warnings.push(`critique batch ${label} failed: ${(err as Error).message}`);
+      return;
+    }
+    spend.push(...spendOfResult(result, opts.provider.id));
+    warnings.push(...result.warnings.map((w) => `critique ${label}: ${w}`));
+    const resolved = resolveVerdicts(result);
+    for (const v of resolved.items) {
+      const original = batch.find((f) => f.id === v.id);
+      if (!original) continue;
+      verdicts.set(v.id, {
+        verdict: {
+          verdict: v.verdict,
+          confidence: v.confidence,
+          reason: v.reason,
+          originalConfidence: original.confidence,
+          originalSeverity: v.severity && v.severity !== original.severity ? original.severity : undefined,
+        },
+        severity: v.severity,
+      });
+    }
+  };
 
   await Promise.all(
     batches.map((batch, i) =>
       limit(async () => {
         if (opts.signal?.aborted) return; // leave these findings unverified
-        const task: AgentTask = {
-          kind: 'verdicts',
-          label: `critique-${i + 1}`,
-          instructions: critiqueInstructions(opts.mode, opts.depth),
-          prompt: critiquePrompt(batch, excerpts),
-          model: opts.model,
-          reasoning: opts.reasoning,
-          readTools: opts.readTools,
-          root: opts.root,
-          git: opts.git,
-          maxSteps: opts.maxSteps,
-          timeoutMs: opts.timeoutMs,
-          signal: opts.signal,
-        };
-        try {
-          const result = await opts.provider.run(task);
-          if (result.usage) usage.push(result.usage);
-          warnings.push(...result.warnings.map((w) => `critique ${i + 1}: ${w}`));
-          const resolved = resolveVerdicts(result);
-          for (const v of resolved.items) {
-            const original = batch.find((f) => f.id === v.id);
-            if (!original) continue;
-            verdicts.set(v.id, {
-              verdict: {
-                verdict: v.verdict,
-                confidence: v.confidence,
-                reason: v.reason,
-                originalConfidence: original.confidence,
-                originalSeverity:
-                  v.severity && v.severity !== original.severity ? original.severity : undefined,
-              },
-              severity: v.severity,
-            });
-          }
-          opts.onBatchDone?.({ batch: i + 1, total: batches.length, result });
-        } catch (err) {
-          warnings.push(`critique batch ${i + 1} failed: ${(err as Error).message}`);
-          opts.onBatchDone?.({ batch: i + 1, total: batches.length, error: err as Error });
-        }
+        await runBatch(batch, String(i + 1), true);
+        opts.onBatchDone?.({ batch: i + 1, total: batches.length });
       }),
     ),
   );
@@ -133,7 +157,7 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
     } else if (v.verdict.verdict === 'rejected') rejected.push({ ...updated, droppedReason: 'critique' });
     else kept.push(updated);
   }
-  return { kept, rejected, usage, warnings };
+  return { kept, rejected, spend, warnings };
 }
 
 function excerpt(root: string, f: Finding): string {

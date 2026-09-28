@@ -18,8 +18,9 @@ import { REASONING_LEVELS, SEVERITIES, type Severity } from '../../types';
 import { EXIT, type GlobalOptions, loadCliConfig, makeLogger } from '../context';
 import { installLifecycle } from '../lifecycle';
 import { colorEnabled, createReviewUi, type ReviewUi, renderPlan } from '../ui';
+import { addPublishTargetOptions, type PublishCliFlags, postRun } from './publish';
 
-interface ReviewFlags {
+export interface ReviewFlags {
   depth?: string;
   essential?: boolean;
   full?: boolean;
@@ -56,6 +57,8 @@ interface ReviewFlags {
   plain?: boolean;
   onUnavailable?: string;
   chunking?: string;
+  /** Post the finished review to its pull / merge request (`--post`, with the publish target flags). */
+  post?: boolean;
 }
 
 function parseEnum<T extends string>(
@@ -70,7 +73,7 @@ function parseEnum<T extends string>(
   return value as T;
 }
 
-function parseNumber(
+export function parseNumber(
   value: string | undefined,
   flag: string,
   opts: { min?: number; max?: number; int?: boolean } = {},
@@ -230,7 +233,7 @@ function projectAnalyzersFrom(f: ReviewFlags): string[] | undefined {
 async function execute(
   command: 'review' | 'files',
   paths: string[],
-  flags: ReviewFlags,
+  flags: ReviewFlags & PublishCliFlags,
   globals: GlobalOptions,
 ): Promise<number> {
   const logger = makeLogger(globals);
@@ -290,6 +293,7 @@ async function execute(
     if (flags.dryRun) {
       activeUi.stop();
       logger.setSink(undefined);
+      if (flags.post) logger.note('--post: nothing is posted with --dry-run (no review ran).');
       if (flags.json) process.stdout.write(`${JSON.stringify(outcome.plan, null, 2)}\n`);
       else
         process.stderr.write(
@@ -313,9 +317,15 @@ async function execute(
     activeUi.finish(run, { reports, runDir: outcome.runDir });
     logger.setSink(undefined);
     if (flags.json) process.stdout.write(`${JSON.stringify(run, null, 2)}\n`);
+    // After the run and its reports are saved: a publishing failure never loses them.
+    const posted =
+      flags.post && !lifecycle.interrupted
+        ? await postRun({ run, repo: loaded.repo, config, flags, logger, signal: lifecycle.signal })
+        : true;
 
     if (lifecycle.interrupted) return lifecycle.interruptExitCode ?? EXIT.error;
     if (run.status === 'failed') return EXIT.error;
+    if (!posted) return EXIT.error;
     if (failOn && run.findings.some((f) => SEVERITY_ORDER[f.severity] <= SEVERITY_ORDER[failOn]))
       return EXIT.findings;
     // A gate must not pass on code that was never reviewed.
@@ -339,7 +349,8 @@ async function execute(
   }
 }
 
-function addReviewOptions(cmd: Command): Command {
+/** Models, depth, critique, skills and thresholds: shared by `review`, `files` and `eval`. */
+export function addTuningOptions(cmd: Command): Command {
   return cmd
     .option('--provider <id>', 'provider for the review (and critique, unless --critique-provider)')
     .option('--model <id>', 'model for the review role')
@@ -359,25 +370,35 @@ function addReviewOptions(cmd: Command): Command {
     .option('--skills <mode>', 'auto | none | comma-separated skill ids')
     .option('--tools', 'let the model use read-only tools (default)')
     .option('--no-tools', 'disable read-only tools (the model sees only the prompt)')
-    .option('--min-confidence <0..1>', 'drop findings below this confidence')
+    .option('--min-confidence <0..1>', 'drop findings below this confidence');
+}
+
+/** Chunk size, timeouts, chunking, the static pre-pass and model fallback: shared by `review`, `files` and `eval`. */
+export function addRunLimitOptions(cmd: Command): Command {
+  return cmd
+    .option('--max-chunk-tokens <n>', 'token budget of code per chunk')
+    .option('--timeout <seconds>', 'fixed timeout per LLM task (default: auto, scales with chunk size)')
+    .option('--chunking <mode>', 'smart (related files together) | directory')
+    .option('--no-analyzers', 'skip the static-analysis pre-pass')
+    .option('--on-unavailable <mode>', 'when a model is unavailable: ask | fallback | fail');
+}
+
+function addReviewOptions(cmd: Command): Command {
+  const tuned = addTuningOptions(cmd)
     .option('--authors', 'attribute findings to authors via git blame')
     .option('--no-authors', 'do not attribute authors')
     .option('--format <list>', `report formats: ${REPORT_FORMATS.join(',')}`)
     .option('--out <dir>', 'also copy the reports into this directory')
-    .option('--max-chunk-tokens <n>', 'token budget of code per chunk')
     .option('--concurrency <n>', 'parallel LLM calls')
-    .option('--timeout <seconds>', 'fixed timeout per LLM task (default: auto, scales with chunk size)')
     .option(
       '--fail-on <severity>',
       `exit with code 1 if a finding of this severity or worse remains (${SEVERITIES.join('|')})`,
     )
-    .option('--chunking <mode>', 'smart (related files together) | directory')
     .option(
       '--analyzers <ids>',
       'also run these opt-in project analyzers (eslint,tsc,golangci-lint,phpstan,semgrep,osv-scanner)',
-    )
-    .option('--no-analyzers', 'skip the static-analysis pre-pass')
-    .option('--on-unavailable <mode>', 'when a model is unavailable: ask | fallback | fail')
+    );
+  return addRunLimitOptions(tuned)
     .option('--plain', 'plain progress lines instead of the live dashboard')
     .option('--dry-run', 'show files, chunks, skills and hints without calling any model')
     .option('--json', 'print the run (or the plan with --dry-run) as JSON on stdout')
@@ -385,7 +406,7 @@ function addReviewOptions(cmd: Command): Command {
 }
 
 export function registerReviewCommands(program: Command): void {
-  addReviewOptions(
+  const review = addReviewOptions(
     program
       .command('review')
       .description('review the changes between two refs (like a pull request: merge-base(base, head)..head)')
@@ -400,11 +421,17 @@ export function registerReviewCommands(program: Command): void {
       .option('--offline', 'do not fetch or query the forge; use local refs only')
       .option('--no-fetch', 'alias of --offline')
       .option('--explain-refs', 'print how base and head were chosen'),
-  ).action(async (opts: ReviewFlags & { from?: string; to?: string }, cmd: Command) => {
+  ).action(async (opts: ReviewFlags & PublishCliFlags & { from?: string; to?: string }, cmd: Command) => {
     opts.base ??= opts.from;
     opts.head ??= opts.to;
     process.exitCode = await execute('review', [], opts, cmd.optsWithGlobals());
   });
+  addPublishTargetOptions(
+    review.option(
+      '--post',
+      'post the review to its GitHub pull request / GitLab merge request (see docs/ci.md)',
+    ),
+  );
 
   addReviewOptions(
     program

@@ -953,6 +953,8 @@ async function askChoices(
       md: 'Markdown, e.g. for PR comments',
       json: 'machine-readable',
       html: 'interactive report',
+      sarif: 'GitHub code scanning / SARIF viewers',
+      codequality: 'GitLab Code Quality',
     };
     c.formats = unwrap(
       await p.multiselect<ReportFormat>({

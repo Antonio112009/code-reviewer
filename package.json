@@ -41,6 +41,7 @@
   "files": [
     "dist",
     "skills",
+    "evals",
     "README.md",
     "CHANGELOG.md",
     "docs/assets/logo.svg",

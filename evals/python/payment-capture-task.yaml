@@ -1,0 +1,119 @@
+title: Failed payment capture is logged and the order is still marked as paid
+tags: [python, django, celery, error-handling, data-loss]
+base:
+  requirements.txt: |
+    Django==5.1.4
+    celery==5.4.0
+    stripe==11.3.0
+  billing/models.py: |
+    from django.db import models
+
+
+    class Order(models.Model):
+        class Status(models.TextChoices):
+            AUTHORIZED = "authorized"
+            PAID = "paid"
+            CANCELLED = "cancelled"
+
+        status = models.CharField(max_length=16, choices=Status.choices, default=Status.AUTHORIZED)
+        payment_intent_id = models.CharField(max_length=64, unique=True)
+        total = models.DecimalField(max_digits=12, decimal_places=2)
+        updated_at = models.DateTimeField(auto_now=True)
+  billing/tasks.py: |
+    import logging
+
+    import stripe
+    from celery import shared_task
+    from django.db import transaction
+
+    from .models import Order
+    from .notifications import send_receipt
+
+    logger = logging.getLogger(__name__)
+
+
+    @shared_task(bind=True, max_retries=5, default_retry_delay=60)
+    def capture_payment(self, order_id):
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=order_id)
+            if order.status != Order.Status.AUTHORIZED:
+                logger.info("order %s is %s, nothing to capture", order_id, order.status)
+                return
+            try:
+                stripe.PaymentIntent.capture(order.payment_intent_id)
+            except stripe.error.APIConnectionError as exc:
+                raise self.retry(exc=exc)
+            order.status = Order.Status.PAID
+            order.save(update_fields=["status", "updated_at"])
+        send_receipt.delay(order_id)
+head:
+  billing/models.py: |
+    from django.db import models
+
+
+    class Order(models.Model):
+        class Status(models.TextChoices):
+            AUTHORIZED = "authorized"
+            PAID = "paid"
+            CANCELLED = "cancelled"
+
+        status = models.CharField(max_length=16, choices=Status.choices, default=Status.AUTHORIZED)
+        payment_intent_id = models.CharField(max_length=64, unique=True)
+        total = models.DecimalField(max_digits=12, decimal_places=2)
+        captured_at = models.DateTimeField(null=True, blank=True)
+        updated_at = models.DateTimeField(auto_now=True)
+  billing/migrations/0007_order_captured_at.py: |
+    from django.db import migrations, models
+
+
+    class Migration(migrations.Migration):
+        dependencies = [("billing", "0006_order_payment_intent_unique")]
+
+        operations = [
+            migrations.AddField(
+                model_name="order",
+                name="captured_at",
+                field=models.DateTimeField(blank=True, null=True),
+            ),
+        ]
+  billing/tasks.py: |
+    import logging
+
+    import stripe
+    from celery import shared_task
+    from django.db import transaction
+    from django.utils import timezone
+
+    from .models import Order
+    from .notifications import send_receipt
+
+    logger = logging.getLogger(__name__)
+
+    RETRYABLE = (stripe.error.APIConnectionError, stripe.error.RateLimitError)
+
+
+    @shared_task(bind=True, max_retries=5, default_retry_delay=60)
+    def capture_payment(self, order_id):
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=order_id)
+            if order.status != Order.Status.AUTHORIZED:
+                logger.info("order %s is %s, nothing to capture", order_id, order.status)
+                return
+            try:
+                stripe.PaymentIntent.capture(
+                    order.payment_intent_id,
+                    idempotency_key=f"capture-{order.pk}",
+                )
+            except RETRYABLE as exc:
+                raise self.retry(exc=exc)
+            except stripe.error.StripeError as exc:
+                logger.warning("capture of order %s failed: %s", order_id, exc.user_message or exc)
+            order.status = Order.Status.PAID
+            order.captured_at = timezone.now()
+            order.save(update_fields=["status", "captured_at", "updated_at"])
+        send_receipt.delay(order_id)
+expect:
+  - file: billing/tasks.py
+    lines: [30, 33]
+    severity: major
+    note: non-retryable Stripe errors (declined, expired authorization) are only logged; the order is still marked PAID and a receipt is sent

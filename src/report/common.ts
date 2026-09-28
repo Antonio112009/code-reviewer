@@ -1,5 +1,7 @@
+import { formatMoney } from '../models/pricing';
 import type {
   AnalyzerRun,
+  FailureKind,
   Finding,
   Role,
   RunRecord,
@@ -23,6 +25,33 @@ const BIDI_CONTROLS = /[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
  */
 export function stripUnsafeChars(s: string): string {
   return s.replace(ANSI_ESCAPE, '').replace(CONTROL_CHARS, '').replace(BIDI_CONTROLS, '');
+}
+
+/** Project page, linked from SARIF tool metadata and pull request comments. */
+export const TOOL_INFO_URI = 'https://github.com/antonio112009/code-reviewer';
+
+/**
+ * Cuts `s` to at most `max` characters (an ellipsis marks the cut) without splitting a surrogate pair.
+ * Untrusted text is clipped before it is escaped or sent anywhere.
+ */
+export function clipText(s: string, max: number): string {
+  if (s.length <= max) return s;
+  let end = Math.max(0, max - 1);
+  const code = s.charCodeAt(end - 1);
+  if (code >= 0xd800 && code <= 0xdbff) end--;
+  return `${s.slice(0, end)}…`;
+}
+
+/**
+ * A repository-relative posix path, or undefined for anything that is not one (absolute, drive letter,
+ * `.`/`..`/empty segments). A run.json can come from the checkout, so its paths are checked before they are
+ * written into SARIF, Code Quality reports or API requests.
+ */
+export function safeRepoPath(file: unknown): string | undefined {
+  if (typeof file !== 'string') return undefined;
+  const p = stripUnsafeChars(file).replace(/\\/g, '/');
+  if (!p || p.length > 4096 || p.startsWith('/') || /^[a-zA-Z]:/.test(p)) return undefined;
+  return p.split('/').some((s) => s === '' || s === '.' || s === '..') ? undefined : p;
 }
 
 /** Severity rank: lower is worse (critical = 0). */
@@ -72,9 +101,60 @@ export function formatTokens(n: number): string {
 
 export function tokensLabel(run: RunRecord): string {
   const u = run.usage;
+  const approx = u.estimated ? '≥' : '';
   const cached = u.cachedInputTokens ? ` (+${formatNumber(u.cachedInputTokens)} cached)` : '';
   const reasoning = u.reasoningTokens ? `, reasoning ${formatNumber(u.reasoningTokens)}` : '';
-  return `in ${formatNumber(u.inputTokens)}${cached} / out ${formatNumber(u.outputTokens)}${reasoning}`;
+  const requests = u.requests ? `, ${formatNumber(u.requests)} request${u.requests === 1 ? '' : 's'}` : '';
+  const note = u.estimated ? ' (partly estimated: the provider did not report token counts)' : '';
+  return `in ${approx}${formatNumber(u.inputTokens)}${cached} / out ${approx}${formatNumber(u.outputTokens)}${reasoning}${requests}${note}`;
+}
+
+/**
+ * `$0.42 (reported by the provider)`, `~$0.31 (estimated tokens × pricing)`, `$0.42 + unknown (…)`, or
+ * `unknown — …`; undefined for runs without cost data.
+ */
+export function costLabel(run: Pick<RunRecord, 'cost'>): string | undefined {
+  const c = run.cost;
+  if (!c) return undefined;
+  const hint = c.unpriced.length
+    ? `no price for ${c.unpriced.join(', ')}; set \`pricing\` in the config`
+    : '';
+  if (c.basis.length === 0) return `unknown — ${hint || 'the provider reported no cost'}`;
+  const approx = c.basis.includes('estimated') ? '~' : '';
+  const how = c.basis
+    .map((b) =>
+      b === 'reported'
+        ? 'reported by the provider'
+        : b === 'priced'
+          ? 'tokens × pricing'
+          : 'estimated tokens × pricing',
+    )
+    .join(', ');
+  const known = `${approx}${formatMoney(c)}`;
+  if (c.unknownTasks === 0) return `${known} (${how})`;
+  return `${known} + unknown (${how}; ${c.unknownTasks} model call${c.unknownTasks === 1 ? '' : 's'} without cost: ${hint})`;
+}
+
+const FAILURE_ADVICE: Record<FailureKind, string> = {
+  timeout: 'ran out of time — raise review.timeout / review.maxTimeoutMs, or lower --max-chunk-tokens',
+  stalled:
+    'the agent stopped responding — check it with `code-reviewer providers test`, or raise review.stallTimeoutMs',
+  'step-limit': 'used every tool step — raise review.maxSteps (API providers) or lower --max-chunk-tokens',
+  'output-limit':
+    'the answer hit the output limit — raise roles.review.maxOutputTokens or lower --max-chunk-tokens',
+  'context-limit':
+    'the prompt exceeds the context window — set roles.review.contextWindow or lower --max-chunk-tokens',
+  'no-output': 'answered without findings, even after a repair turn — try another model (--model)',
+  refusal: 'the model declined — use another model (--model or models.fallbacks)',
+  unavailable: 'no usable model — see `code-reviewer providers list` and models.fallbacks',
+  auth: 'credentials missing or expired — log in to the provider again',
+  aborted: 'interrupted',
+  error: 'unexpected error — rerun with --verbose for details',
+};
+
+/** What went wrong with a failed chunk and what to change, e.g. `timeout: ran out of time — raise …`. */
+export function failureAdvice(kind: FailureKind | undefined): string {
+  return kind ? `${kind}: ${FAILURE_ADVICE[kind] ?? FAILURE_ADVICE.error}` : FAILURE_ADVICE.error;
 }
 
 /** `provider:model (reasoning level)` for a role, or undefined when the role is off. */

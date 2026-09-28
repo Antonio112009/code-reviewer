@@ -37,6 +37,11 @@ export interface AgentTask {
   skillsExclude?: string[];
   /** Review depth the skill tools serve (`essential`: essential-tier skills and bullets only). */
   skillDepth?: 'essential' | 'full';
+  /**
+   * When the turn runs out of time, steps or output without submitting, ask the model for what it has so
+   * far (one short extra turn) instead of losing the work. Default: on.
+   */
+  salvage?: boolean;
 }
 
 export type AgentActivity = { kind: 'tool'; name: string } | { kind: 'message' };
@@ -48,6 +53,10 @@ export interface AgentResult {
   usage?: Usage;
   model?: string;
   stopReason?: string;
+  /** The turn was cut short by our task timeout or stall watchdog (`stopReason` is then `cancelled`). */
+  interruptedBy?: 'timeout' | 'stalled';
+  /** Why the model was asked to submit early (see `AgentTask.salvage`); set when that happened. */
+  salvaged?: string;
   toolCalls: number;
   /** Tool calls by normalised tool name (read_file, grep, submit_findings, Read, …). */
   toolUsage?: Record<string, number>;

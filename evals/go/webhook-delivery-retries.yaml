@@ -1,0 +1,135 @@
+title: Webhook retries leave the response body of retried attempts open
+tags: [go, http, resource-leak]
+base:
+  go.mod: |
+    module example.com/hooks
+
+    go 1.23
+  internal/webhooks/dispatcher.go: |
+    package webhooks
+
+    import (
+    	"bytes"
+    	"context"
+    	"crypto/hmac"
+    	"crypto/sha256"
+    	"encoding/hex"
+    	"fmt"
+    	"net/http"
+    )
+
+    type Webhook struct {
+    	ID     string
+    	URL    string
+    	Secret string
+    }
+
+    type Dispatcher struct {
+    	client *http.Client
+    }
+
+    func NewDispatcher(client *http.Client) *Dispatcher {
+    	return &Dispatcher{client: client}
+    }
+
+    func sign(secret string, payload []byte) string {
+    	mac := hmac.New(sha256.New, []byte(secret))
+    	mac.Write(payload)
+    	return hex.EncodeToString(mac.Sum(nil))
+    }
+
+    func (d *Dispatcher) Deliver(ctx context.Context, hook Webhook, payload []byte) error {
+    	req, err := http.NewRequestWithContext(ctx, http.MethodPost, hook.URL, bytes.NewReader(payload))
+    	if err != nil {
+    		return err
+    	}
+    	req.Header.Set("Content-Type", "application/json")
+    	req.Header.Set("X-Signature", sign(hook.Secret, payload))
+    	resp, err := d.client.Do(req)
+    	if err != nil {
+    		return fmt.Errorf("webhook %s: %w", hook.ID, err)
+    	}
+    	defer resp.Body.Close()
+    	if resp.StatusCode >= 300 {
+    		return fmt.Errorf("webhook %s: status %d", hook.ID, resp.StatusCode)
+    	}
+    	return nil
+    }
+head:
+  internal/webhooks/dispatcher.go: |
+    package webhooks
+
+    import (
+    	"bytes"
+    	"context"
+    	"crypto/hmac"
+    	"crypto/sha256"
+    	"encoding/hex"
+    	"fmt"
+    	"net/http"
+    	"time"
+    )
+
+    type Webhook struct {
+    	ID     string
+    	URL    string
+    	Secret string
+    }
+
+    type Dispatcher struct {
+    	client      *http.Client
+    	maxAttempts int
+    }
+
+    func NewDispatcher(client *http.Client, maxAttempts int) *Dispatcher {
+    	return &Dispatcher{client: client, maxAttempts: max(1, maxAttempts)}
+    }
+
+    func sign(secret string, payload []byte) string {
+    	mac := hmac.New(sha256.New, []byte(secret))
+    	mac.Write(payload)
+    	return hex.EncodeToString(mac.Sum(nil))
+    }
+
+    func backoff(attempt int) time.Duration {
+    	return time.Duration(1<<min(attempt, 6)) * 250 * time.Millisecond
+    }
+
+    func (d *Dispatcher) Deliver(ctx context.Context, hook Webhook, payload []byte) error {
+    	var lastErr error
+    	for attempt := 0; attempt < d.maxAttempts; attempt++ {
+    		if attempt > 0 {
+    			select {
+    			case <-ctx.Done():
+    				return ctx.Err()
+    			case <-time.After(backoff(attempt)):
+    			}
+    		}
+    		req, err := http.NewRequestWithContext(ctx, http.MethodPost, hook.URL, bytes.NewReader(payload))
+    		if err != nil {
+    			return err
+    		}
+    		req.Header.Set("Content-Type", "application/json")
+    		req.Header.Set("X-Signature", sign(hook.Secret, payload))
+    		resp, err := d.client.Do(req)
+    		if err != nil {
+    			lastErr = fmt.Errorf("webhook %s: %w", hook.ID, err)
+    			continue
+    		}
+    		if resp.StatusCode >= 500 || resp.StatusCode == http.StatusTooManyRequests {
+    			lastErr = fmt.Errorf("webhook %s: status %d", hook.ID, resp.StatusCode)
+    			continue
+    		}
+    		defer resp.Body.Close()
+    		if resp.StatusCode >= 300 {
+    			return fmt.Errorf("webhook %s: status %d", hook.ID, resp.StatusCode)
+    		}
+    		return nil
+    	}
+    	return lastErr
+    }
+expect:
+  - file: internal/webhooks/dispatcher.go
+    lines: [60, 64]
+    severity: major
+    note: on 5xx/429 the loop continues without closing resp.Body, leaking a connection per retried attempt

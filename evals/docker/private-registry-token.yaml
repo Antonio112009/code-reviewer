@@ -1,0 +1,59 @@
+title: Registry token written to .npmrc in its own image layer
+tags: [docker, security]
+base:
+  Dockerfile: |
+    FROM node:22-bookworm-slim
+
+    ENV NODE_ENV=production
+    WORKDIR /app
+
+    COPY package.json package-lock.json ./
+    RUN npm ci --omit=dev
+
+    COPY --chown=node:node src ./src
+    USER node
+    EXPOSE 8080
+    CMD ["node", "src/server.js"]
+  package.json: |
+    {
+      "name": "notifications-service",
+      "version": "1.4.0",
+      "private": true,
+      "dependencies": {
+        "express": "^4.21.2",
+        "pino": "^9.5.0"
+      }
+    }
+head:
+  Dockerfile: |
+    FROM node:22-bookworm-slim
+
+    ENV NODE_ENV=production
+    WORKDIR /app
+
+    ARG NPM_TOKEN
+    COPY package.json package-lock.json ./
+    RUN printf '@acme:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n' "$NPM_TOKEN" > .npmrc
+    RUN npm ci --omit=dev
+    RUN rm -f .npmrc
+
+    COPY --chown=node:node src ./src
+    USER node
+    EXPOSE 8080
+    CMD ["node", "src/server.js"]
+  package.json: |
+    {
+      "name": "notifications-service",
+      "version": "1.5.0",
+      "private": true,
+      "dependencies": {
+        "@acme/templates": "^2.3.0",
+        "express": "^4.21.2",
+        "pino": "^9.5.0"
+      }
+    }
+expect:
+  - file: Dockerfile
+    lines: [6, 10]
+    severity: major
+    note: the token is baked into the layer of the printf RUN (removing .npmrc in a later layer does not help) and the build arg shows in the image history; use a BuildKit secret mount

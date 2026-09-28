@@ -1,0 +1,116 @@
+title: Batching helper overruns the list on the last partial batch
+tags: [java, spring, bug]
+base:
+  pom.xml: |
+    <project xmlns="http://maven.apache.org/POM/4.0.0">
+      <modelVersion>4.0.0</modelVersion>
+      <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+      </parent>
+      <groupId>com.acme</groupId>
+      <artifactId>billing</artifactId>
+      <version>1.0.0</version>
+      <dependencies>
+        <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+      </dependencies>
+    </project>
+  src/main/java/com/acme/billing/ReminderJob.java: |
+    package com.acme.billing;
+
+    import java.time.Clock;
+    import java.time.LocalDate;
+    import java.util.List;
+    import org.slf4j.Logger;
+    import org.slf4j.LoggerFactory;
+    import org.springframework.scheduling.annotation.Scheduled;
+    import org.springframework.stereotype.Component;
+
+    @Component
+    public class ReminderJob {
+        private static final Logger log = LoggerFactory.getLogger(ReminderJob.class);
+
+        private final InvoiceRepository invoices;
+        private final MailClient mail;
+        private final Clock clock;
+
+        public ReminderJob(InvoiceRepository invoices, MailClient mail, Clock clock) {
+            this.invoices = invoices;
+            this.mail = mail;
+            this.clock = clock;
+        }
+
+        @Scheduled(cron = "0 0 7 * * *")
+        public void sendReminders() {
+            List<Invoice> overdue = invoices.findUnpaidDueBefore(LocalDate.now(clock));
+            for (Invoice invoice : overdue) {
+                mail.send(ReminderMail.forInvoice(invoice));
+            }
+            log.info("sent {} payment reminders", overdue.size());
+        }
+    }
+head:
+  src/main/java/com/acme/billing/Batches.java: |
+    package com.acme.billing;
+
+    import java.util.ArrayList;
+    import java.util.List;
+
+    final class Batches {
+        private Batches() {}
+
+        static <T> List<List<T>> of(List<T> items, int size) {
+            if (size <= 0) {
+                throw new IllegalArgumentException("size must be positive");
+            }
+            List<List<T>> batches = new ArrayList<>();
+            for (int start = 0; start < items.size(); start += size) {
+                batches.add(items.subList(start, start + size));
+            }
+            return batches;
+        }
+    }
+  src/main/java/com/acme/billing/ReminderJob.java: |
+    package com.acme.billing;
+
+    import java.time.Clock;
+    import java.time.LocalDate;
+    import java.util.List;
+    import org.slf4j.Logger;
+    import org.slf4j.LoggerFactory;
+    import org.springframework.scheduling.annotation.Scheduled;
+    import org.springframework.stereotype.Component;
+
+    @Component
+    public class ReminderJob {
+        private static final Logger log = LoggerFactory.getLogger(ReminderJob.class);
+        private static final int BATCH_SIZE = 100;
+
+        private final InvoiceRepository invoices;
+        private final MailClient mail;
+        private final Clock clock;
+
+        public ReminderJob(InvoiceRepository invoices, MailClient mail, Clock clock) {
+            this.invoices = invoices;
+            this.mail = mail;
+            this.clock = clock;
+        }
+
+        @Scheduled(cron = "0 0 7 * * *")
+        public void sendReminders() {
+            List<Invoice> overdue = invoices.findUnpaidDueBefore(LocalDate.now(clock));
+            for (List<Invoice> batch : Batches.of(overdue, BATCH_SIZE)) {
+                mail.sendAll(batch.stream().map(ReminderMail::forInvoice).toList());
+            }
+            log.info("sent {} payment reminders", overdue.size());
+        }
+    }
+expect:
+  - file: src/main/java/com/acme/billing/Batches.java
+    lines: 15
+    severity: major
+    note: subList(start, start + size) throws IndexOutOfBoundsException for the last batch unless the size is a multiple of 100

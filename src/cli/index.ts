@@ -4,6 +4,7 @@ import { distrustDirectory } from '../util/executables';
 import { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
 import { registerConfigCommands } from './commands/config';
+import { registerEvalCommand } from './commands/eval';
 import { registerInitCommand } from './commands/init';
 import { registerProviderCommands } from './commands/providers';
 import { registerReviewCommands } from './commands/review';
@@ -29,6 +30,7 @@ export function buildProgram(): Command {
   registerProviderCommands(program);
   registerConfigCommands(program);
   registerSkillCommands(program);
+  registerEvalCommand(program);
 
   // Internal: MCP server spawned by ACP agents to expose our tools; not for direct use.
   program

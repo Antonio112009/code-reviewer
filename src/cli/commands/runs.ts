@@ -8,7 +8,9 @@ import { renderReport, writeReports } from '../../report';
 import { RunStore } from '../../runs/store';
 import { findTrustedExecutable } from '../../util/executables';
 import { EXIT, type GlobalOptions, loadCliConfig, makeLogger } from '../context';
+import { installLifecycle } from '../lifecycle';
 import { clean } from '../ui/format';
+import { addPublishTargetOptions, type PublishCliFlags, postRun } from './publish';
 
 async function openStore(globals: GlobalOptions): Promise<RunStore> {
   const { config, repo, cwd } = await loadCliConfig(globals);
@@ -77,7 +79,7 @@ export function registerRunsCommands(program: Command): void {
     .command('show')
     .description('print a run report (markdown by default)')
     .argument('[id]', 'run id, unique prefix/suffix, or "latest"', 'latest')
-    .option('--format <fmt>', 'md | json | html', 'md')
+    .option('--format <fmt>', REPORT_FORMATS.join(' | '), 'md')
     .action(async (id: string, opts: { format: string }, cmd: Command) => {
       const store = await openStore(cmd.optsWithGlobals());
       const run = await store.load(id);
@@ -116,6 +118,41 @@ export function registerRunsCommands(program: Command): void {
       if (opener) spawn(opener, [file!], { detached: true, stdio: 'ignore' }).unref();
       process.stdout.write(`${file}\n`);
     });
+
+  addPublishTargetOptions(
+    runs
+      .command('publish')
+      .description('post a saved review to its GitHub pull request / GitLab merge request')
+      .argument('[id]', 'run id or "latest"', 'latest')
+      .option('--dry-run', 'print what would be posted, without calling the forge API (no token needed)')
+      .option('--json', 'with --dry-run: print the comments as JSON'),
+  ).action(async (id: string, opts: PublishCliFlags & { dryRun?: boolean; json?: boolean }, cmd: Command) => {
+    const globals = cmd.optsWithGlobals<GlobalOptions>();
+    const logger = makeLogger(globals);
+    const lifecycle = installLifecycle();
+    try {
+      const { config, repo, cwd } = await loadCliConfig(globals);
+      const store = new RunStore(path.resolve(repo?.root ?? cwd, config.output.dir));
+      const run = await store.load(id);
+      const ok = await postRun({
+        run,
+        repo,
+        config,
+        flags: opts,
+        logger,
+        signal: lifecycle.signal,
+        dryRun: opts.dryRun,
+        json: opts.json,
+      });
+      process.exitCode = lifecycle.interrupted
+        ? (lifecycle.interruptExitCode ?? EXIT.error)
+        : ok
+          ? EXIT.ok
+          : EXIT.error;
+    } finally {
+      lifecycle.dispose();
+    }
+  });
 
   runs
     .command('rm')

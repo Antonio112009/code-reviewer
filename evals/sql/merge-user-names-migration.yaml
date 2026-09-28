@@ -1,0 +1,50 @@
+title: Name columns merged with a NULL-propagating concatenation, then dropped
+tags: [sql, postgresql, migration, data-loss]
+base:
+  db/migrations/20240108120000_create_users.sql: |
+    CREATE TABLE users (
+        id          bigserial PRIMARY KEY,
+        email       citext NOT NULL UNIQUE,
+        first_name  text NOT NULL,
+        last_name   text,
+        created_at  timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE INDEX users_created_at_idx ON users (created_at);
+  db/queries/users.sql: |
+    -- name: GetUser :one
+    SELECT id, email, first_name, last_name, created_at
+      FROM users
+     WHERE id = $1;
+
+    -- name: ListRecentUsers :many
+    SELECT id, email, first_name, last_name, created_at
+      FROM users
+     ORDER BY created_at DESC
+     LIMIT $1;
+head:
+  db/migrations/20260915093000_merge_user_names.sql: |
+    ALTER TABLE users ADD COLUMN display_name text;
+
+    UPDATE users
+       SET display_name = first_name || ' ' || last_name;
+
+    ALTER TABLE users
+        DROP COLUMN first_name,
+        DROP COLUMN last_name;
+  db/queries/users.sql: |
+    -- name: GetUser :one
+    SELECT id, email, display_name, created_at
+      FROM users
+     WHERE id = $1;
+
+    -- name: ListRecentUsers :many
+    SELECT id, email, display_name, created_at
+      FROM users
+     ORDER BY created_at DESC
+     LIMIT $1;
+expect:
+  - file: db/migrations/20260915093000_merge_user_names.sql
+    lines: [3, 8]
+    severity: major
+    note: last_name is nullable and || with NULL yields NULL, so those users' names are lost when the source columns are dropped

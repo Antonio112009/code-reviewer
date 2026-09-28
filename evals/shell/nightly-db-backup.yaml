@@ -1,0 +1,61 @@
+title: Backup pipeline hides pg_dump failures while old backups are pruned
+tags: [shell, bash, error-handling, data-loss]
+base:
+  scripts/backup.sh: |
+    #!/usr/bin/env bash
+    set -eu
+
+    : "${DATABASE_URL:?DATABASE_URL is required}"
+    BUCKET="${BACKUP_BUCKET:-s3://acme-db-backups}"
+    STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+    WORK_DIR="$(mktemp -d)"
+    trap 'rm -rf "$WORK_DIR"' EXIT
+
+    log() { printf '%s backup: %s\n' "$(date -u +%H:%M:%S)" "$*" >&2; }
+
+    dump="$WORK_DIR/app-$STAMP.dump"
+
+    log "dumping database"
+    pg_dump --no-owner --format=custom --file="$dump" "$DATABASE_URL"
+
+    log "uploading $(du -h "$dump" | cut -f1)"
+    aws s3 cp --only-show-errors "$dump" "$BUCKET/daily/"
+    log "done"
+head:
+  scripts/backup.sh: |
+    #!/usr/bin/env bash
+    set -eu
+
+    : "${DATABASE_URL:?DATABASE_URL is required}"
+    BUCKET="${BACKUP_BUCKET:-s3://acme-db-backups}"
+    RETENTION_DAYS="${RETENTION_DAYS:-14}"
+    STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+    WORK_DIR="$(mktemp -d)"
+    trap 'rm -rf "$WORK_DIR"' EXIT
+
+    log() { printf '%s backup: %s\n' "$(date -u +%H:%M:%S)" "$*" >&2; }
+
+    dump="$WORK_DIR/app-$STAMP.sql.gz"
+
+    log "dumping database"
+    pg_dump --no-owner --format=plain "$DATABASE_URL" | gzip -9 > "$dump"
+
+    log "uploading $(du -h "$dump" | cut -f1)"
+    aws s3 cp --only-show-errors "$dump" "$BUCKET/daily/"
+
+    log "removing backups older than $RETENTION_DAYS days"
+    cutoff="$(date -u -d "-$RETENTION_DAYS days" +%Y%m%d)"
+    aws s3 ls "$BUCKET/daily/" | while read -r _ _ _ name; do
+      day="${name#app-}"
+      day="${day%%T*}"
+      if [[ "$day" < "$cutoff" ]]; then
+        aws s3 rm --only-show-errors "$BUCKET/daily/$name"
+      fi
+    done
+    log "done"
+expect:
+  - file: scripts/backup.sh
+    lines: 16
+    also: [2]
+    severity: major
+    note: without pipefail a failing pg_dump still exits 0 through gzip; an empty backup is uploaded while retention deletes the good ones

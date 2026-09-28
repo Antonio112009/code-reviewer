@@ -1,0 +1,109 @@
+title: CSV export queries the customer and the item count once per order
+tags: [python, django, performance]
+base:
+  requirements.txt: |
+    Django==5.1.4
+    psycopg[binary]==3.2.3
+  shop/models.py: |
+    from django.db import models
+
+
+    class Customer(models.Model):
+        full_name = models.CharField(max_length=200)
+        email = models.EmailField()
+
+
+    class Order(models.Model):
+        shop = models.ForeignKey("accounts.Shop", on_delete=models.CASCADE, related_name="orders")
+        customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name="orders")
+        number = models.CharField(max_length=32, unique=True)
+        total = models.DecimalField(max_digits=12, decimal_places=2)
+        created_at = models.DateTimeField(auto_now_add=True)
+
+
+    class OrderItem(models.Model):
+        order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+        sku = models.CharField(max_length=64)
+        quantity = models.PositiveIntegerField()
+  shop/views.py: |
+    from django.contrib.auth.decorators import login_required
+    from django.core.paginator import Paginator
+    from django.shortcuts import render
+
+    from .models import Order
+
+
+    @login_required
+    def order_list(request):
+        orders = (
+            Order.objects.filter(shop=request.user.shop)
+            .select_related("customer")
+            .order_by("-created_at")
+        )
+        page = Paginator(orders, 50).get_page(request.GET.get("page"))
+        return render(request, "shop/order_list.html", {"page": page})
+  shop/urls.py: |
+    from django.urls import path
+
+    from . import views
+
+    urlpatterns = [
+        path("orders/", views.order_list, name="order-list"),
+    ]
+head:
+  shop/views.py: |
+    import csv
+
+    from django.contrib.auth.decorators import login_required
+    from django.core.paginator import Paginator
+    from django.http import HttpResponse
+    from django.shortcuts import render
+
+    from .models import Order
+
+
+    @login_required
+    def order_list(request):
+        orders = (
+            Order.objects.filter(shop=request.user.shop)
+            .select_related("customer")
+            .order_by("-created_at")
+        )
+        page = Paginator(orders, 50).get_page(request.GET.get("page"))
+        return render(request, "shop/order_list.html", {"page": page})
+
+
+    @login_required
+    def export_orders(request):
+        orders = Order.objects.filter(shop=request.user.shop).order_by("-created_at")
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="orders.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["number", "created_at", "customer", "email", "items", "total"])
+        for order in orders:
+            writer.writerow(
+                [
+                    order.number,
+                    order.created_at.isoformat(),
+                    order.customer.full_name,
+                    order.customer.email,
+                    order.items.count(),
+                    order.total,
+                ]
+            )
+        return response
+  shop/urls.py: |
+    from django.urls import path
+
+    from . import views
+
+    urlpatterns = [
+        path("orders/", views.order_list, name="order-list"),
+        path("orders/export.csv", views.export_orders, name="order-export"),
+    ]
+expect:
+  - file: shop/views.py
+    lines: [29, 36]
+    also: [24]
+    severity: major
+    note: two extra queries per order (customer without select_related, items.count()) — an N+1 over every order of the shop

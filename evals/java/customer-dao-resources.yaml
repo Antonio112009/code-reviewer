@@ -1,0 +1,94 @@
+title: JDBC resources closed with try-with-resources on every path
+tags: [java, jdbc, clean, fix]
+base:
+  src/main/java/com/acme/crm/Customer.java: |
+    package com.acme.crm;
+
+    public record Customer(long id, String email, String name) {}
+  src/main/java/com/acme/crm/CustomerDao.java: |
+    package com.acme.crm;
+
+    import java.sql.Connection;
+    import java.sql.PreparedStatement;
+    import java.sql.ResultSet;
+    import java.sql.SQLException;
+    import java.util.Optional;
+    import javax.sql.DataSource;
+
+    public class CustomerDao {
+        private final DataSource dataSource;
+
+        public CustomerDao(DataSource dataSource) {
+            this.dataSource = dataSource;
+        }
+
+        public Optional<Customer> findByEmail(String email) throws SQLException {
+            Connection conn = dataSource.getConnection();
+            PreparedStatement ps = conn.prepareStatement("SELECT id, email, name FROM customers WHERE email = ?");
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+            if (!rs.next()) {
+                return Optional.empty();
+            }
+            Customer customer = new Customer(rs.getLong("id"), rs.getString("email"), rs.getString("name"));
+            rs.close();
+            ps.close();
+            conn.close();
+            return Optional.of(customer);
+        }
+
+        public int rename(long id, String name) throws SQLException {
+            Connection conn = dataSource.getConnection();
+            PreparedStatement ps = conn.prepareStatement("UPDATE customers SET name = ? WHERE id = ?");
+            ps.setString(1, name);
+            ps.setLong(2, id);
+            int updated = ps.executeUpdate();
+            ps.close();
+            conn.close();
+            return updated;
+        }
+    }
+head:
+  src/main/java/com/acme/crm/CustomerDao.java: |
+    package com.acme.crm;
+
+    import java.sql.Connection;
+    import java.sql.PreparedStatement;
+    import java.sql.ResultSet;
+    import java.sql.SQLException;
+    import java.util.Optional;
+    import javax.sql.DataSource;
+
+    public class CustomerDao {
+        private static final String FIND_BY_EMAIL = "SELECT id, email, name FROM customers WHERE email = ?";
+        private static final String RENAME = "UPDATE customers SET name = ? WHERE id = ?";
+
+        private final DataSource dataSource;
+
+        public CustomerDao(DataSource dataSource) {
+            this.dataSource = dataSource;
+        }
+
+        public Optional<Customer> findByEmail(String email) throws SQLException {
+            try (Connection conn = dataSource.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(FIND_BY_EMAIL)) {
+                ps.setString(1, email);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        return Optional.empty();
+                    }
+                    return Optional.of(new Customer(rs.getLong("id"), rs.getString("email"), rs.getString("name")));
+                }
+            }
+        }
+
+        public int rename(long id, String name) throws SQLException {
+            try (Connection conn = dataSource.getConnection();
+                    PreparedStatement ps = conn.prepareStatement(RENAME)) {
+                ps.setString(1, name);
+                ps.setLong(2, id);
+                return ps.executeUpdate();
+            }
+        }
+    }
+expect: []
