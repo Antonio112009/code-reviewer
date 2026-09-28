@@ -207,7 +207,7 @@ code-reviewer runs publish latest --forge gitlab --repo group/project --pr 7 \
   --api-url https://gitlab.example.com/api/v4
 ```
 
-The target is resolved in this order (`-v` prints each decision):
+The target is resolved in this order (`--verbose` prints each decision):
 1. flags: `--pr <number>`, `--repo <owner/name | group/project | project id>`, `--forge github|gitlab`,
    `--api-url <url>`;
 2. the CI: GitHub Actions (`GITHUB_REPOSITORY`, the pull request of the event, `GITHUB_API_URL`), GitLab CI

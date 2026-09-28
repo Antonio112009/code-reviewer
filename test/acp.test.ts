@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import * as acp from '@agentclientprotocol/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { PRESETS } from '../src/providers/acp/presets';
 import { AcpProvider } from '../src/providers/acp/provider';
 import type { AgentTask } from '../src/providers/types';
 import { resolveFindings } from '../src/review/findings';
@@ -62,7 +63,7 @@ function fakeAgent(
     hang?: boolean;
     optionsAfterSet?: acp.SessionConfigOption[];
     /** How the first prompt of a session ends before any answer: hangs until cancelled, or hits a limit. */
-    firstTurn?: 'hang' | 'max_turn_requests';
+    firstTurn?: 'hang' | 'max_turn_requests' | 'silent';
     /** Cumulative session cost sent as a `usage_update`. */
     cost?: number;
     /** No token usage in the stop message (like Copilot). */
@@ -101,6 +102,7 @@ function fakeAgent(
       if (turn === 1 && opts.firstTurn === 'max_turn_requests') {
         return { stopReason: 'max_turn_requests' as const };
       }
+      if (turn === 1 && opts.firstTurn === 'silent') return { stopReason: 'end_turn' as const };
       if (opts.hang || (turn === 1 && opts.firstTurn === 'hang')) {
         const ac = new AbortController();
         aborts.set(sessionId, ac);
@@ -190,7 +192,7 @@ function task(over: Partial<AgentTask> = {}): AgentTask {
 
 describe('AcpProvider with an in-process agent', () => {
   it('runs a session: rejects edits, serves reads, sets model/effort, parses findings', async () => {
-    const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false };
+    const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false, prompts: [] };
     const provider = new AcpProvider('claude', { type: 'acp', preset: 'claude' }, silentLogger, 2, {
       endpoint: () => ({ kind: 'app', app: fakeAgent(log) }),
     });
@@ -212,6 +214,8 @@ describe('AcpProvider with an in-process agent', () => {
       const resolved = resolveFindings(result);
       expect(resolved.via).toBe('text');
       expect(resolved.items[0]).toMatchObject({ file: 'app.js', startLine: 2, title: 'Division by zero' });
+      // findings as JSON in the reply count as handed in: no reminder turn
+      expect(log.prompts).toHaveLength(1);
     } finally {
       await provider.dispose();
     }
@@ -300,6 +304,23 @@ describe('AcpProvider with an in-process agent', () => {
     }
   });
 
+  it('reminds an agent that ended its turn without submitting anything', async () => {
+    const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false, prompts: [] };
+    const provider = new AcpProvider('claude', { type: 'acp', preset: 'claude' }, silentLogger, 1, {
+      endpoint: () => ({ kind: 'app', app: fakeAgent(log, { firstTurn: 'silent' }) }),
+    });
+    try {
+      const result = await provider.run(task());
+      expect(log.prompts).toHaveLength(2);
+      expect(log.prompts![1]).toMatch(/ended your turn without calling `submit_findings`/);
+      expect(result.salvaged).toBeUndefined(); // a complete review, only the submission was missing
+      expect(result.warnings.join('\n')).toMatch(/reminded it to submit/);
+      expect(resolveFindings(result).items).toHaveLength(1);
+    } finally {
+      await provider.dispose();
+    }
+  });
+
   it('does not ask for an early answer when salvage is off', async () => {
     const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false, prompts: [] };
     const provider = new AcpProvider('claude', { type: 'acp', preset: 'claude' }, silentLogger, 1, {
@@ -353,6 +374,23 @@ describe('AcpProvider with an in-process agent', () => {
     } finally {
       await provider.dispose();
     }
+  });
+});
+
+describe('Claude preset', () => {
+  it('loads our MCP tools up front (no ToolSearch), unless the provider env says otherwise', () => {
+    const spec = PRESETS.claude.launch(
+      { type: 'acp', preset: 'claude', command: '/usr/bin/true' },
+      {
+        reasoning: 'high',
+      },
+    );
+    expect(spec?.env.ENABLE_TOOL_SEARCH).toBe('false');
+    const overridden = PRESETS.claude.launch(
+      { type: 'acp', preset: 'claude', command: '/usr/bin/true', env: { ENABLE_TOOL_SEARCH: 'auto' } },
+      { reasoning: 'high' },
+    );
+    expect(overridden?.env.ENABLE_TOOL_SEARCH).toBe('auto');
   });
 });
 

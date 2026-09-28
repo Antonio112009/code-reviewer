@@ -100,7 +100,7 @@ head:
 
       useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
-          if (e.key === '/' && document.activeElement !== inputRef.current) {
+          if (e.key === '/' && !(e.target instanceof Element && e.target.closest('input, textarea, [contenteditable]'))) {
             e.preventDefault();
             inputRef.current?.focus();
           }

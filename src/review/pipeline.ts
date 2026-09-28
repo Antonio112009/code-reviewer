@@ -36,7 +36,7 @@ import {
   type ReviewRoot,
   type RootFile,
 } from '../git/snapshot';
-import { formatUnavailable, type ModelListing, preflightModels } from '../models';
+import { findCatalogModel, formatUnavailable, type ModelListing, preflightModels } from '../models';
 import { CostMeter, costOf } from '../models/pricing';
 import { isUnconfined } from '../providers/acp/presets';
 import { detectProviders } from '../providers/detect';
@@ -44,6 +44,7 @@ import { ProviderRegistry } from '../providers/registry';
 import type { AgentTask } from '../providers/types';
 import { writeReports } from '../report';
 import { SEVERITY_ORDER, sortFindings } from '../report/common';
+import { RunLog } from '../runs/log';
 import { RunStore } from '../runs/store';
 import { createSkillCatalog } from '../skills/catalog';
 import { type SkillMatch, selectSkills, signalText, skillsForDepth } from '../skills/detector';
@@ -67,6 +68,7 @@ import type {
 } from '../types';
 import { newRunId, shortHash } from '../util/ids';
 import type { Logger } from '../util/logger';
+import { packageVersion } from '../util/paths';
 import { attributeFindings } from './attribution';
 import { type CritiqueCache, critiqueFindings } from './critique';
 import { dedupeFindings } from './dedupe';
@@ -255,8 +257,18 @@ export function runsDirExclude(repoRoot: string, runsDir: string, p: typeof path
 }
 
 export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
-  const { config, logger } = req;
-  const emit = req.onEvent ?? (() => {});
+  const { config } = req;
+  // Everything this run logs (debug included) and its main events end up in the run's `run.log`.
+  const runLog = new RunLog();
+  const logger = req.logger.child();
+  const untap = logger.tap((level, message) => runLog.add(level, message));
+  const emit = (e: ReviewEvent) => {
+    runLog.event(e);
+    req.onEvent?.(e);
+  };
+  logger.debug(
+    `code-reviewer ${packageVersion()} · node ${process.version} · ${process.platform}/${process.arch} · ${req.command} in ${req.cwd}`,
+  );
   const warnings: string[] = [];
   const warn = (message: string) => {
     warnings.push(message);
@@ -469,7 +481,14 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
 
   // 3. Chunking ------------------------------------------------------------------------------------------
   const reviewRole = config.roles.review;
-  const contextWindow = reviewRole?.contextWindow ?? DEFAULT_CONTEXT_WINDOW;
+  // Configured, else what the catalog knows about the review model (Sonnet 5 / Opus 5.5: 1M), else 200k.
+  const reviewProvider = config.providers[routing.review.provider];
+  const contextWindow =
+    reviewRole?.contextWindow ??
+    (reviewProvider && routing.review.model
+      ? findCatalogModel(reviewProvider, routing.review.model)?.contextWindow
+      : undefined) ??
+    DEFAULT_CONTEXT_WINDOW;
   const outputReserve = reviewRole?.maxOutputTokens ?? DEFAULT_OUTPUT_RESERVE;
   const depth = config.review.depth;
   /** Skills of this depth (essential: essential tier, `[full]` bullets removed). */
@@ -869,6 +888,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             provider,
             model,
             skills: chunkRecords.get(chunk.id)!.skills,
+            files: allFiles,
           });
           f.origin = 'llm';
           const hint = r.hint ? hintById.get(r.hint) : undefined;
@@ -904,7 +924,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
               {
                 ...task,
                 label: `${part.id}-repair`,
-                prompt: repairPrompt(result.text),
+                prompt: repairPrompt(result.text, part.files),
                 readTools: false,
                 maxSteps: 3,
                 salvage: false,
@@ -922,7 +942,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         // Neither the submit tool nor JSON in the reply (not even after the repair turn): the code was not
         // reviewed — a failed chunk, never a clean one.
         if (resolved.via === 'none') {
-          throw attachSpend(new NoPayloadError('the model returned no findings payload'), spend);
+          throw attachSpend(new NoPayloadError('the model returned no findings payload', replyText), spend);
         }
         if (resolved.invalid) warn(`${part.id}: ${resolved.invalid} malformed finding(s) ignored`);
         for (const w of result.warnings) warn(`${part.id}: ${w}`);
@@ -951,6 +971,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           hints: hints.map((h) => h.id),
           claimedHints: [...claimed],
           reads: result.reads ?? [],
+          instructions: task.instructions,
+          prompt: task.prompt,
           reply: replyText,
           submission: result.submission,
           warnings: result.warnings,
@@ -1092,6 +1114,17 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             failure,
           };
           if (failure === 'aborted' || router.fatal || req.signal?.aborted) return [failed];
+          // What went wrong, for `runs` debugging (the reply of a model that handed nothing in).
+          await store
+            .saveArtifact(run.id, `${part.id}-failed${retried ? '-retry' : ''}`, {
+              chunk: { id: part.id, files: part.files, tokens: part.tokens },
+              failure,
+              error: errorMessage(err),
+              ...(err instanceof NoPayloadError ? { reply: err.reply } : {}),
+              instructions: task.instructions,
+              prompt: task.prompt,
+            })
+            .catch(() => undefined);
           // Failed attempts are not free: their usage stays in the record.
           const spent: PartOutcome = { kind: 'spent', id: part.id, spend: failed.spend };
           const halves = level < MAX_SPLIT_LEVEL && SPLITTABLE.has(failure) ? splitChunk(part) : undefined;
@@ -1363,6 +1396,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     const dir = await store.save(run);
     reports = await writeReports(run, config.output.formats, dir).catch(() => []);
     emit({ type: 'done', run });
+    untap();
+    await store.saveLog(run.id, runLog.text()).catch(() => undefined);
   }
   return { plan, run, runDir: store.runDir(run.id), reports };
 }

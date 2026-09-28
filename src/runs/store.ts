@@ -48,7 +48,13 @@ export class RunStore {
     return dir;
   }
 
-  /** Raw per-chunk data (prompt size, reply text, submission) for debugging. */
+  /** The run's log (`run.log`: every message, debug included, and the main events). */
+  async saveLog(runId: string, text: string): Promise<void> {
+    if (!text) return;
+    await writeFile(path.join(this.runDir(runId), 'run.log'), text);
+  }
+
+  /** Raw per-chunk data (prompt, reply text, submission) for debugging. */
   async saveArtifact(runId: string, name: string, data: unknown): Promise<void> {
     const dir = path.join(this.runDir(runId), 'chunks');
     await mkdir(dir, { recursive: true });

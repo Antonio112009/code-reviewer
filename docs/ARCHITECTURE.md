@@ -33,7 +33,8 @@
   10. threshold   minConfidence (non-rejectable static findings bypass it)
   11. authors     review/attribution   git blame → author, commit/line URLs (GitHub/GitLab)
       fingerprint review/fingerprint   stable id per kept finding (file, category, rule, normalised code)
-  12. persist     runs/store.ts        run.json (+ chunk artifacts), report/* → md/json/html/sarif/codequality
+  12. persist     runs/store.ts        run.json, run.log (every message and event), chunk artifacts (prompt,
+                                       reply, submission; failed parts too), report/* → md/json/html/sarif/codequality
   13. publish     publish/*            optional (`review --post`, `runs publish`): PR/MR inline comments +
                                        a summary comment, after the run and its reports are saved
 
@@ -252,7 +253,9 @@ The code under review, and therefore model output, is treated as untrusted.
    - Our tools are recognised only by exact name.
 4. **Presets.**
    - Claude runs in its `default` permission mode, whatever the user's settings say, with write, shell
-     and web tools disallowed. Failing to apply a read-only mode fails the task.
+     and web tools disallowed. Failing to apply a read-only mode fails the task. `ENABLE_TOOL_SEARCH=false`
+     loads our MCP tools up front: behind Claude Code's ToolSearch, a model that skips the search ends
+     without calling `submit_findings`.
    - Codex cannot be confined to read-only by its adapter: it is flagged `unconfined`, never picked as an
      automatic fallback, and a warning is shown when it is configured.
 5. **Paths.** Every path from a model or tool call goes through `resolveInside`, a lexical check plus a

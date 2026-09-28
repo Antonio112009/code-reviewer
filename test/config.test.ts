@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { applyRoleFlags } from '../src/cli/commands/review';
 import { ConfigError, loadConfig } from '../src/config/load';
+import { findCatalogModel } from '../src/models';
 import { resolveRouting } from '../src/review/pipeline';
 
 let dir: string;
@@ -42,9 +43,20 @@ describe('loadConfig', () => {
     expect(loaded.config.roles.review).toMatchObject({
       provider: 'codex',
       model: 'gpt-x',
-      reasoning: 'medium',
+      reasoning: 'high', // the default
     });
     expect(loaded.config.providers.claude).toBeDefined(); // defaults kept
+  });
+
+  it('reviews with Sonnet at high reasoning by default (Opus on request)', async () => {
+    const { config } = await loadConfig({ cwd: dir, stopDir: dir, ignoreGlobal: true });
+    expect(resolveRouting(config)).toEqual({
+      review: { provider: 'claude', model: 'sonnet', reasoning: 'high' },
+      critique: { provider: 'claude', model: 'sonnet', reasoning: 'high' },
+    });
+    config.roles.review!.model = 'opus';
+    expect(resolveRouting(config).review.model).toBe('opus');
+    expect(findCatalogModel(config.providers.claude!, 'sonnet')?.contextWindow).toBe(1_000_000);
   });
 
   it('reports unknown keys, unknown profiles and unknown providers', async () => {

@@ -422,12 +422,21 @@ describe('compareResults', () => {
       cost: { amount: 0.25, currency: 'USD', basis: ['priced' as const], unknownTasks: 1, unpriced: ['x'] },
     };
     const scored = scoreRun([defect('x.js', 1)], priced);
-    expect(scored.metrics).toMatchObject({ cost: 0.25, unpricedCalls: 1 });
+    expect(scored.metrics).toMatchObject({ cost: 0.25, unpricedCalls: 1, cachedInputTokens: 0 });
+    // agents such as Claude Code serve most input from the prompt cache: it counts as tokens too
+    const cachedRun = {
+      ...run([]),
+      usage: { inputTokens: 14, outputTokens: 2_000, cachedInputTokens: 160_000 },
+    };
+    expect(scoreRun([defect('x.js', 1)], cachedRun).metrics).toMatchObject({
+      inputTokens: 14,
+      cachedInputTokens: 160_000,
+    });
 
     const withCost: CaseResult = { ...caseOf('a', [defect('x.js', 1)], []), metrics: scored.metrics };
     // an older result.json has no cost fields
     const old = caseOf('a', [defect('x.js', 1)], []);
-    const { cost: _cost, unpricedCalls: _unpriced, ...legacy } = old.metrics;
+    const { cost: _cost, unpricedCalls: _unpriced, cachedInputTokens: _cached, ...legacy } = old.metrics;
     const before = result('old', [{ ...old, metrics: legacy as typeof old.metrics }]);
     expect(sumMetrics([legacy as typeof old.metrics, scored.metrics]).cost).toBe(0.25);
     const cmp = compareResults(before, result('new', [withCost]), '/evals/old/result.json');

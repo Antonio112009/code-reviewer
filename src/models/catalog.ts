@@ -81,7 +81,13 @@ export const MODEL_CATALOG: Record<CatalogKey, CatalogModel[]> = {
   // Values offered by the Claude Code ACP adapter 0.81 (observed 2026-09-27): the aliases track the newest
   // model of each family (`opus` = Opus 5.5, `sonnet` = Sonnet 5, `haiku` = Haiku 4.5).
   claude: [
-    { id: 'opus', tier: 'frontier', label: 'Opus (newest; Claude Code alias)' },
+    {
+      id: 'opus',
+      tier: 'frontier',
+      label: 'Opus (newest; Claude Code alias)',
+      contextWindow: M,
+      maxOutputTokens: 128_000,
+    },
     {
       id: 'claude-opus-5-5',
       tier: 'frontier',
@@ -127,7 +133,13 @@ export const MODEL_CATALOG: Record<CatalogKey, CatalogModel[]> = {
       maxOutputTokens: 128_000,
       refusalProne: true,
     },
-    { id: 'sonnet', tier: 'balanced', label: 'Sonnet (newest; Claude Code alias)' },
+    {
+      id: 'sonnet',
+      tier: 'balanced',
+      label: 'Sonnet (newest; Claude Code alias)',
+      contextWindow: M,
+      maxOutputTokens: 128_000,
+    },
     {
       id: 'claude-sonnet-5',
       tier: 'balanced',

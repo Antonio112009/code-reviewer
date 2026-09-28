@@ -82,7 +82,10 @@ export interface Metrics {
   rawPrecision: number | null;
   chunks: number;
   failedChunks: number;
+  /** Input tokens not served from the prompt cache. */
   inputTokens: number;
+  /** Input tokens read from the prompt cache (agents such as Claude Code serve most of their input from it). */
+  cachedInputTokens: number;
   outputTokens: number;
   /** Known cost (reported by the provider or priced with `pricing`), in the aggregate's `costCurrency`. */
   cost: number;
@@ -201,6 +204,7 @@ export interface EvalComparison {
   falsePositives: MetricDelta;
   unexpected: MetricDelta;
   inputTokens: MetricDelta;
+  cachedInputTokens: MetricDelta;
   outputTokens: MetricDelta;
   /** Null on a side without cost data (older results, nothing priced). */
   cost: MetricDelta;

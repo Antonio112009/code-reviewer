@@ -14,7 +14,7 @@ import { PROJECT_DIR, toPosix } from '../../util/paths';
 import { EXIT, type GlobalOptions, loadCliConfig, makeLogger } from '../context';
 import { installLifecycle } from '../lifecycle';
 import { colorEnabled } from '../ui';
-import { pct, renderComparison, renderEvalSummary } from '../ui/eval';
+import { pct, renderComparison, renderEvalSummary, totalTokens } from '../ui/eval';
 import { createTheme, unicodeEnabled } from '../ui/theme';
 import {
   addRunLimitOptions,
@@ -55,7 +55,7 @@ function progress(logger: Logger, repeat: number): (e: EvalEvent) => void {
         const outcome = e.case.expect.length
           ? `${m.found}/${m.expected} found, ${m.unexpected} unexpected`
           : `clean change, ${m.falsePositives} false positive(s)`;
-        const cost = `${formatTokens(m.inputTokens + m.outputTokens)} tokens · ${formatDuration(m.durationMs)}`;
+        const cost = `${formatTokens(totalTokens(m))} tokens · ${formatDuration(m.durationMs)}`;
         if (e.run.status === 'error' || e.run.status === 'failed') {
           logger.error(`${name}: ${e.run.error ?? 'every chunk failed'}`);
         } else if (e.run.status === 'interrupted') logger.warn(`${name}: interrupted`);

@@ -42,6 +42,7 @@ const MetricsSchema = z.object({
   chunks: count,
   failedChunks: count,
   inputTokens: count,
+  cachedInputTokens: count.optional(),
   outputTokens: count,
   cost: count.optional(),
   unpricedCalls: count.optional(),

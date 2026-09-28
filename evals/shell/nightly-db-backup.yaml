@@ -56,6 +56,6 @@ head:
 expect:
   - file: scripts/backup.sh
     lines: 16
-    also: [2]
+    also: [2, [23, 29]]
     severity: major
-    note: without pipefail a failing pg_dump still exits 0 through gzip; an empty backup is uploaded while retention deletes the good ones
+    note: without pipefail a failing pg_dump still exits 0 through gzip; an empty backup is uploaded while retention deletes the good ones (the retention pipeline hides a failing `aws s3 ls` the same way)

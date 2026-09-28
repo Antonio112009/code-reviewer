@@ -11,7 +11,13 @@ import { trustedPath } from '../../util/executables';
 import type { Logger } from '../../util/logger';
 import { cliEntryPath, resolveInside } from '../../util/paths';
 import { type ManagedProcess, spawnManaged, terminate } from '../../util/processes';
-import { salvagePrompt, salvageReason, salvageTimeoutMs } from '../salvage';
+import {
+  endedWithoutSubmitting,
+  salvagePrompt,
+  salvageReason,
+  salvageTimeoutMs,
+  submitReminderPrompt,
+} from '../salvage';
 import type { AgentResult, AgentTask } from '../types';
 import { decidePermission } from './permissions';
 import { type AcpPreset, type LaunchSpec, THOUGHT_LEVEL_CANDIDATES } from './presets';
@@ -25,6 +31,9 @@ interface SessionState {
   /** Tool kind per tool call id: updates may omit it. */
   toolKinds: Map<string, string>;
 }
+
+/** Agent stderr lines written to the debug log per connection. */
+const MAX_STDERR_LOG_LINES = 200;
 
 /** Tool kinds whose locations are files the agent looked at. */
 const READ_KINDS = new Set(['read', 'search']);
@@ -97,6 +106,7 @@ export class AcpConnection {
   private proc?: ManagedProcess;
   private closing?: Promise<void>;
   private stderrTail: string[] = [];
+  private stderrLogged = 0;
   private conn!: acp.ClientConnection;
   private init!: acp.InitializeResponse;
   private tmpDir!: string;
@@ -179,8 +189,14 @@ export class AcpConnection {
         this.proc = proc;
         const child = proc.child;
         child.stderr?.setEncoding('utf8').on('data', (d: string) => {
-          this.stderrTail.push(...d.split('\n').filter(Boolean));
+          const lines = d.split('\n').filter(Boolean);
+          this.stderrTail.push(...lines);
           this.stderrTail = this.stderrTail.slice(-40);
+          // Into the debug log (and the run's run.log), capped: a chatty agent must not flood it.
+          for (const line of lines) {
+            if (this.stderrLogged++ < MAX_STDERR_LOG_LINES)
+              this.logger.debug(`[acp:${this.preset.id} stderr] ${line}`);
+          }
         });
         await new Promise<void>((resolve, reject) => {
           child.once('spawn', () => resolve());
@@ -317,6 +333,21 @@ export class AcpConnection {
           interruptedBy = undefined;
           warnings.push(`${why}: asked the agent for what it had found so far`);
         } else interruptedBy = turn.interruptedBy ?? interruptedBy;
+      } else if (
+        task.salvage !== false &&
+        !turn.aborted &&
+        readSubmission(submitFile).calls === 0 &&
+        endedWithoutSubmitting(turn.stopReason, turn.text)
+      ) {
+        // Finished, but handed nothing in: the review is complete, only the submission is missing.
+        const timeoutMs = salvageTimeoutMs(task.timeoutMs);
+        this.logger.debug(`[acp] ${task.label}: ended without submitting — reminding the agent`);
+        await this.runTurn(session, state, turn, task, submitReminderPrompt(task.kind), {
+          timeoutMs,
+          stallTimeoutMs: task.stallTimeoutMs ? Math.min(task.stallTimeoutMs, timeoutMs) : undefined,
+        });
+        warnings.push('the agent ended without submitting its findings: reminded it to submit them');
+        interruptedBy = turn.interruptedBy;
       }
     } finally {
       // an unfinished read rejects on dispose; nobody is waiting for it any more

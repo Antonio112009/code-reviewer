@@ -640,7 +640,7 @@ function defaultChoices(det: InitDetection, current: Config, scope: ConfigScope)
     review: {
       provider,
       model: sameProvider ? reviewRole?.model : undefined,
-      reasoning: reviewRole?.reasoning ?? 'medium',
+      reasoning: reviewRole?.reasoning ?? 'high',
     },
     critique: !current.review.selfCritique
       ? 'off'

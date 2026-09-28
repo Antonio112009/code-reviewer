@@ -190,7 +190,15 @@ export class UnfinishedTurnError extends Error {
 }
 
 /** The model answered, but neither the submit tool nor its reply carried a findings payload. */
-export class NoPayloadError extends Error {}
+export class NoPayloadError extends Error {
+  constructor(
+    message: string,
+    /** What the model replied instead (kept in the run's artifacts). */
+    readonly reply = '',
+  ) {
+    super(message);
+  }
+}
 
 /** Why a model task failed, for the run record and the advice shown to the user. */
 export function failureKindOf(err: unknown, signal?: AbortSignal): FailureKind {

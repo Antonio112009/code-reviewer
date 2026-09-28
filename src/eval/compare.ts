@@ -81,6 +81,7 @@ export function compareResults(before: EvalResult, after: EvalResult, file: stri
     falsePositives: pass((m) => m.falsePositives),
     unexpected: pass((m) => m.unexpected),
     inputTokens: pass((m) => m.inputTokens),
+    cachedInputTokens: pass((m) => m.cachedInputTokens ?? 0),
     outputTokens: pass((m) => m.outputTokens),
     cost: costDelta(commonBefore, commonAfter),
     durationMs: pass((m) => m.durationMs),

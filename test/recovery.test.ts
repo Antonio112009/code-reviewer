@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { splitChunk } from '../src/chunking/chunker';
@@ -153,8 +153,16 @@ describe('chunk recovery', () => {
     const provider = new ScriptedProvider((task) =>
       task.kind === 'findings' ? { text: 'Looks fine to me.', stopReason: 'end_turn' } : undefined,
     );
-    const { run } = await review(provider);
+    const { run, runDir } = await review(provider);
     expect(run.chunks[0]).toMatchObject({ status: 'failed', failure: 'no-output' });
+    // what the model said instead is kept for debugging
+    const artifact = JSON.parse(
+      readFileSync(path.join(runDir, 'chunks', `${run.chunks[0]!.id}-failed.json`), 'utf8'),
+    );
+    expect(artifact).toMatchObject({
+      failure: 'no-output',
+      reply: expect.stringContaining('Looks fine to me.'),
+    });
   });
 });
 

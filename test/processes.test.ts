@@ -97,6 +97,22 @@ describe.skipIf(process.platform === 'win32')('process trees (POSIX)', () => {
     expect(registry.trackedGroups()).toEqual([]);
   });
 
+  it('terminateAll() is awaited to the end even when nothing else keeps the process alive', async () => {
+    const fixture = (name: string) => fileURLToPath(new URL(`./fixtures/processes/${name}`, import.meta.url));
+    const res = await runManaged(NODE, ['--import', fixture('ts-resolve.mjs'), fixture('orphan-close.mjs')], {
+      label: 'orphan-close',
+      timeoutMs: 20_000,
+    });
+    const pids = JSON.parse(res.stdout.split('\n')[0]!) as TreePids;
+    leftovers.push(pids.grandchild);
+    // exit code 13 = the process quit while still awaiting (the orphaned group was never killed)
+    expect({ exitCode: res.exitCode, done: res.stdout.includes('done') }).toEqual({
+      exitCode: 0,
+      done: true,
+    });
+    expect(await waitDead([pids.grandchild])).toEqual([]);
+  });
+
   it('killAllSync() kills every tree synchronously', async () => {
     const registry = new ProcessRegistry();
     const mp = spawnManaged(NODE, [TREE, 'wait'], {

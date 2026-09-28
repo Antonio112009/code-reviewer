@@ -54,9 +54,17 @@ function validateAll<T>(
 /** Normalises paths and line order, assigns a stable id. */
 export function toFinding(
   reported: ReportedFinding,
-  ctx: { root: string; chunkId: string; provider: string; model?: string; skills: string[] },
+  ctx: {
+    root: string;
+    chunkId: string;
+    provider: string;
+    model?: string;
+    skills: string[];
+    /** Files under review: a shortened path (`Batches.java`) is resolved against them. */
+    files?: readonly string[];
+  },
 ): Finding {
-  const file = normalizePath(reported.file, ctx.root);
+  const file = completePath(normalizePath(reported.file, ctx.root), ctx.files ?? []);
   const startLine = Math.min(reported.startLine, reported.endLine);
   const endLine = Math.max(reported.startLine, reported.endLine);
   return {
@@ -68,6 +76,16 @@ export function toFinding(
     skills: ctx.skills,
     source: { chunkIds: [ctx.chunkId], provider: ctx.provider, model: ctx.model },
   };
+}
+
+/**
+ * Models sometimes name a file by its base name or a tail of its path (`Batches.java`,
+ * `billing/Batches.java`); when exactly one file under review ends that way, that file is meant.
+ */
+export function completePath(file: string, files: readonly string[]): string {
+  if (!file || files.includes(file)) return file;
+  const matches = files.filter((f) => f.endsWith(`/${file}`));
+  return matches.length === 1 ? matches[0]! : file;
 }
 
 export function normalizePath(p: string, root: string): string {

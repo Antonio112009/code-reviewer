@@ -1,4 +1,5 @@
 import { SUBMIT_TOOLS, type SubmitKind } from '../tools/definitions';
+import { extractJson } from '../util/json';
 
 /** Longest extra turn granted to collect an early answer. */
 const MAX_SALVAGE_MS = 90_000;
@@ -22,6 +23,24 @@ export function salvageReason(
   if (interruptedBy === 'timeout') return 'the time limit was reached';
   if (interruptedBy === 'stalled') return 'no progress was made for a while';
   return stopReason ? LIMIT_STOPS[stopReason] : undefined;
+}
+
+/**
+ * A turn that ended on its own but handed in nothing: no submit call (checked by the caller) and no JSON
+ * payload in its reply. Models sometimes finish a review — typically a clean one — with prose or nothing.
+ */
+export function endedWithoutSubmitting(stopReason: string | undefined, text: string): boolean {
+  return stopReason === 'end_turn' && extractJson(text) === undefined;
+}
+
+/** Follow-up prompt for a turn that ended without submitting (its review itself is complete). */
+export function submitReminderPrompt(kind: SubmitKind): string {
+  const tool = SUBMIT_TOOLS[kind].name;
+  const what =
+    kind === 'findings'
+      ? 'every defect you found (an empty list if there are none)'
+      : 'a verdict for every finding you were given';
+  return `You ended your turn without calling \`${tool}\`, so your review was not recorded. Do not read, search or open anything else. Call \`${tool}\` now with ${what}.`;
 }
 
 /** Time for the extra turn: a quarter of the task's timeout, within 30–90 s (never more than the task had). */

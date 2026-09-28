@@ -317,7 +317,8 @@ export const DEFAULT_EXCLUDES = [
 export const DEFAULT_CONFIG: Config = {
   project: {},
   providers: {
-    claude: { type: 'acp', preset: 'claude' },
+    // Sonnet is the everyday reviewer (cost/quality); pick Opus per run with `--model opus`.
+    claude: { type: 'acp', preset: 'claude', defaultModel: 'sonnet' },
     codex: { type: 'acp', preset: 'codex' },
     copilot: { type: 'acp', preset: 'copilot' },
     gemini: { type: 'acp', preset: 'gemini' },
@@ -327,7 +328,7 @@ export const DEFAULT_CONFIG: Config = {
   roles: {
     // No critique default: it follows the review provider (with high reasoning) unless configured,
     // so code is never sent to a provider the user did not choose.
-    review: { provider: 'claude', reasoning: 'medium' },
+    review: { provider: 'claude', reasoning: 'high' },
   },
   review: {
     // The depth-dependent values below are the `essential` preset (see DEPTH_PRESETS).

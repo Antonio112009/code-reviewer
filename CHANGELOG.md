@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **Sonnet by default.** Claude reviews and critiques with Sonnet at high reasoning unless a model is
+  configured (`--model opus` for a deeper, costlier pass). The review's context window comes from the model
+  catalog (Sonnet 5 and Opus 5.5: 1M tokens) instead of a fixed 200k.
+- **An empty review is still an answer.** Prompts insist on `submit_findings` with an empty list when nothing
+  is found; an ACP agent that ends its turn without handing anything in gets one short reminder turn, and
+  the reply of a part that still fails is kept in the run's chunk artifacts.
+- `providers models` (and other commands that stop agents) no longer exit with code 13 while an orphaned
+  agent process group is being terminated.
+- `eval` counts prompt-cache reads in its token totals (Claude Code serves most input from the cache).
+- **Debugging.** Every run keeps `run.log` (every message, debug included, and the main events) and each
+  chunk's prompt in its artifacts. `-v` now prints the version; debug output is `--verbose` only.
+- Claude Code gets our MCP tools up front (`ENABLE_TOOL_SEARCH=false`) instead of behind its ToolSearch,
+  which Sonnet sometimes skipped and then ended without handing in its review.
+
 - **Result cache.** A second review of the same code costs nothing: model answers are reused per chunk
   (and the critic's verdicts per finding) while the code, instructions, skills, hints, model and every
   file the model read are unchanged; after a fix only the changed chunks go to the model. Chunks that had

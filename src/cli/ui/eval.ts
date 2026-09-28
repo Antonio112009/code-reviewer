@@ -18,6 +18,11 @@ import type { Theme } from './theme';
 const MAX_LIST = 15;
 const ID_WIDTH = 44;
 
+/** Every token the runs processed: uncached and cached input, and output. */
+export function totalTokens(m: Pick<Metrics, 'inputTokens' | 'cachedInputTokens' | 'outputTokens'>): number {
+  return m.inputTokens + (m.cachedInputTokens ?? 0) + m.outputTokens;
+}
+
 export function pct(r: number | null | undefined): string {
   return r === null || r === undefined ? '—' : `${Math.round(r * 100)}%`;
 }
@@ -63,7 +68,7 @@ function caseRow(c: CaseResult, cols: number[], theme: Theme, repeat: number): s
           repeat,
         ),
     pct(m.precision),
-    formatTokens(m.inputTokens + m.outputTokens),
+    formatTokens(totalTokens(m)),
     formatDuration(m.durationMs),
   ];
   // Padded before colouring (escape sequences would break the widths): misses and false positives stand out.
@@ -99,7 +104,7 @@ function table(result: EvalResult, theme: Theme): string[] {
     ),
     padStart(ranged(agg.recall, agg.recallMin, agg.recallMax, repeat), cols[7]!),
     padStart(pct(agg.precision), cols[8]!),
-    padStart(formatTokens(agg.inputTokens + agg.outputTokens), cols[9]!),
+    padStart(formatTokens(totalTokens(agg)), cols[9]!),
     padStart(formatDuration(result.durationMs), cols[10]!),
   ].join('  ');
   const rule = theme.c.dim('─'.repeat(Math.min(120, header.length)));
@@ -169,7 +174,7 @@ export function renderEvalSummary(result: EvalResult, theme: Theme): string {
   const lines = table(result, theme);
   lines.push('');
   lines.push(
-    `F1 ${pct(agg.f1)} ${theme.sym.dot} precision ${pct(agg.precision)} ${theme.sym.dot} ${plural(agg.duplicates, 'duplicate')} ${theme.sym.dot} ${plural(agg.failedChunks, 'failed chunk')} ${theme.sym.dot} ${formatTokens(agg.inputTokens)} in / ${formatTokens(agg.outputTokens)} out tokens${costText(agg, theme)}`,
+    `F1 ${pct(agg.f1)} ${theme.sym.dot} precision ${pct(agg.precision)} ${theme.sym.dot} ${plural(agg.duplicates, 'duplicate')} ${theme.sym.dot} ${plural(agg.failedChunks, 'failed chunk')} ${theme.sym.dot} ${formatTokens(agg.inputTokens)} in${agg.cachedInputTokens ? ` (+${formatTokens(agg.cachedInputTokens)} cached)` : ''} / ${formatTokens(agg.outputTokens)} out tokens${costText(agg, theme)}`,
   );
   const critique = critiqueLine(agg, theme);
   if (critique) lines.push(critique);
@@ -255,6 +260,9 @@ export function renderComparison(cmp: EvalComparison, theme: Theme, currency = '
     `  false positives ${deltaText(cmp.falsePositives, 'count', true, theme)}`,
     `  unexpected      ${deltaText(cmp.unexpected, 'count', true, theme)}`,
     `  tokens in       ${deltaText(cmp.inputTokens, 'relative', true, theme, tokens)}`,
+    ...(cmp.cachedInputTokens && (cmp.cachedInputTokens.before || cmp.cachedInputTokens.after)
+      ? [`  tokens cached   ${deltaText(cmp.cachedInputTokens, 'relative', true, theme, tokens)}`]
+      : []),
     `  tokens out      ${deltaText(cmp.outputTokens, 'relative', true, theme, tokens)}`,
     ...(cmp.cost && (cmp.cost.before !== null || cmp.cost.after !== null)
       ? [`  cost            ${deltaText(cmp.cost, 'relative', true, theme, money(clean(currency)))}`]

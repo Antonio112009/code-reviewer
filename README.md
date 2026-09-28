@@ -117,7 +117,7 @@ flowchart LR
 
 | Provider | Uses | Notes |
 |---|---|---|
-| `claude` | Claude Code over [ACP](https://agentclientprotocol.com) | your Claude Code login; `--model opus\|sonnet\|haiku` |
+| `claude` | Claude Code over [ACP](https://agentclientprotocol.com) | your Claude Code login; Sonnet by default (1M context), `--model opus` for a deeper pass |
 | `codex` | OpenAI Codex over ACP | experimental; can run commands, so it is never picked as an automatic fallback |
 | `copilot` | GitHub Copilot CLI over ACP | experimental |
 | `gemini` | Gemini CLI over ACP | experimental |
@@ -152,7 +152,7 @@ project:
   name: billing-service
   focus: [security, data-integrity, concurrency]
 roles:
-  review:   { provider: claude, model: sonnet, reasoning: medium }
+  review:   { provider: claude, model: sonnet, reasoning: high }   # the defaults
   critique: { provider: claude, model: opus, reasoning: high }
 review:
   depth: essential          # or full
@@ -270,6 +270,11 @@ Report formats (`--format` or `output.formats`):
 
 Only reported findings are exported to SARIF and Code Quality, never rejected ones. Every finding has a stable
 fingerprint (its file, category and code, not line numbers), so code scanning and GitLab track it across runs.
+
+For debugging, every run also keeps `run.log` (every message, debug included, and the main events: plan,
+each chunk's outcome and recovery, fallbacks, warnings, totals) and, in `chunks/`, each chunk's prompt,
+the model's reply and what it handed in — also for chunks that failed. `--verbose` prints the same debug
+messages live; `-v` prints the version.
 
 ## Pull request comments and CI
 
