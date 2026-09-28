@@ -1,4 +1,4 @@
-import { copyFile, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, rm, stat, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { GitError, type GitRepo, hookIndexFile } from './repo';
@@ -80,11 +80,17 @@ export async function commitLocalChanges(
     try {
       const temp = path.join(dir, 'index');
       const env = { GIT_INDEX_FILE: temp };
-      // A copy keeps the stat data, so `add` hashes only the files that changed.
+      // A copy keeps the stat data, so `add` hashes only the files that changed. It keeps the original's
+      // mtime too: git re-reads a file changed in the same second as the index was written only while the
+      // index is not newer than it ("racy git"), and a fresh copy would hide such a change.
       const source =
         index ?? path.resolve(repo.root, (await repo.run(['rev-parse', '--git-path', 'index'])).trim());
       const copied = await copyFile(source, temp).then(
-        () => true,
+        async () => {
+          const { atime, mtime } = await stat(source);
+          await utimes(temp, atime, mtime);
+          return true;
+        },
         () => false,
       );
       if (!copied) await repo.run(['read-tree', 'HEAD'], { env });

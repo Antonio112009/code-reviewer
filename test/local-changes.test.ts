@@ -1,5 +1,14 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -87,6 +96,22 @@ describe('commitLocalChanges', () => {
     expect(userState()).toEqual(before);
   });
 
+  it('sees a file changed in the same second as the index was written ("racy git")', async () => {
+    // Git trusts stat data only for files older than the index; the temporary copy must keep that age.
+    repo.git('config', 'core.checkStat', 'minimal');
+    repo.git('config', 'core.trustctime', 'false');
+    const past = new Date('2020-01-01T00:00:10Z');
+    const file = path.join(repo.root, 'b.js');
+    utimesSync(file, past, past);
+    repo.git('add', 'b.js'); // the index entry now records the past mtime
+    writeFileSync(file, 'export const b = 9;\n'); // same size, same whole-second mtime
+    utimesSync(file, past, past);
+    utimesSync(path.join(repo.root, '.git', 'index'), past, past);
+
+    const snap = await commitLocalChanges(git, 'uncommitted');
+    expect(show(snap.sha, 'b.js')).toBe('export const b = 9;\n');
+  });
+
   it('says when there is nothing to review', async () => {
     await expect(commitLocalChanges(git, 'uncommitted')).rejects.toThrow('No uncommitted changes');
     repo.write({ 'a.js': 'export const a = 2;\n' });
@@ -99,7 +124,8 @@ describe('commitLocalChanges', () => {
     repo.write({ 'b.js': 'export const b = 2;\n' });
     // `git commit -a` hands its hook a temporary index holding every tracked change
     const index = path.join(repo.root, '.git', 'index.lock-test');
-    execFileSync('cp', [path.join(repo.root, '.git', 'index'), index]);
+    // -p: git's own temporary index is not newer than the files it describes either (see "racy git" below)
+    execFileSync('cp', ['-p', path.join(repo.root, '.git', 'index'), index]);
     execFileSync('git', ['add', '-u'], { cwd: repo.root, env: { ...process.env, GIT_INDEX_FILE: index } });
     const saved = process.env.GIT_INDEX_FILE;
     process.env.GIT_INDEX_FILE = index;
