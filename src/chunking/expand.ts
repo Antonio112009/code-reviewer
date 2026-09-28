@@ -298,6 +298,7 @@ export async function expandChunks(
     opts.signal?.throwIfAborted();
     const own = chunk.files.map((f) => byPath.get(f)).filter((u): u is ReviewUnit => u !== undefined);
     const symbols = own.flatMap(changedSymbols).slice(0, limits.symbols);
+    if (symbols.length) chunk.declarations = symbols.map(({ name, file, kind }) => ({ name, file, kind }));
     const callees = calledNames(own)
       .filter((n) => !symbols.some((s) => s.name === n))
       .slice(0, limits.callees);

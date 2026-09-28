@@ -218,6 +218,13 @@ export interface Hunk {
   lines: DiffLine[];
 }
 
+/**
+ * Review passes per chunk: `general` (one pass over everything, the default), or focused passes over the same
+ * code — `local` (the changed lines themselves) and `contracts` (changed declarations and their consumers).
+ */
+export const REVIEW_PASSES = ['general', 'local', 'contracts'] as const;
+export type ReviewPass = (typeof REVIEW_PASSES)[number];
+
 /** How much related unchanged code a chunk gets (`chunking/expand.ts`). */
 export const EXPAND_LEVELS = ['off', 'refs', 'deep'] as const;
 export type ExpandLevel = (typeof EXPAND_LEVELS)[number];
@@ -274,6 +281,10 @@ export interface Chunk {
   contextFiles?: string[];
   /** Unchanged files shown in part because they use or are used by the change, and why. */
   related?: Array<{ path: string; why: string }>;
+  /** A focused pass over the chunk's code (a chunk without one gets the general review). */
+  pass?: Exclude<ReviewPass, 'general'>;
+  /** Declarations the change touches (`chunking/expand.ts`): the checklist of the `contracts` pass. */
+  declarations?: Array<{ name: string; file: string; kind: 'removed' | 'signature' | 'body' }>;
   languages: string[];
   /** Files mentioned only by name (deleted files etc.). */
   mentions: string[];

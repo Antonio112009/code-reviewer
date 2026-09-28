@@ -59,6 +59,7 @@ import type {
   Finding,
   RefsInfo,
   ReportedFinding,
+  ReviewPass,
   ReviewUnit,
   Role,
   RoleRouting,
@@ -116,6 +117,28 @@ const PROJECT_RULES_BUDGET = 3_000;
 const DEFAULT_CONTEXT_WINDOW = 200_000;
 const DEFAULT_OUTPUT_RESERVE = 16_000;
 const PROMPT_OVERHEAD = 2_000;
+/**
+ * One chunk per configured pass: `general` keeps the chunk as it is; a focused pass gets a copy of it
+ * (`<id>-local`, `<id>-contracts`) that the review instructions point at one kind of defect.
+ */
+function withPasses(chunks: Chunk[], passes: readonly ReviewPass[]): Chunk[] {
+  const unique = [...new Set(passes)];
+  if (unique.length === 1 && unique[0] === 'general') return chunks;
+  return chunks.flatMap((c) =>
+    unique.map((pass) =>
+      pass === 'general'
+        ? c
+        : {
+            ...c,
+            id: `${c.id}-${pass}`,
+            pass,
+            parts: [...c.parts],
+            contextFiles: [...(c.contextFiles ?? [])],
+          },
+    ),
+  );
+}
+
 /** Share of the chunk budget that related unchanged code may add to a chunk, per `review.expand` level. */
 const EXPAND_SHARE = { refs: 0.15, deep: 0.25 } as const;
 /** Rough prompt tokens per static hint line. */
@@ -522,40 +545,51 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
   const promptRoom = contextWindow - outputReserve - overhead;
   const budget = Math.max(2_000, Math.min(config.review.maxChunkTokens, promptRoom));
 
-  const { chunks, mentions } = await phase('chunking', 'Grouping related files into chunks', async () => {
-    const result = buildChunks(units, {
-      budget,
-      fullFileTokens: config.review.fullFileTokens,
-      contextLines: config.review.contextLines,
-      graph,
-      strategy: graph ? 'smart' : 'directory',
-      contextShare: config.review.contextShare,
-      maxTotalTokens: Math.max(budget, promptRoom),
-    });
-    const level = config.review.expand;
-    if (level !== 'off' && target.kind === 'diff' && repo) {
-      const share = level === 'deep' ? EXPAND_SHARE.deep : EXPAND_SHARE.refs;
-      const stats = await expandChunks(result.chunks, units, revisionSource(repo, target.headSha), {
-        level,
-        changed: new Set(units.flatMap((u) => (u.oldPath ? [u.path, u.oldPath] : [u.path]))),
-        maxTokens: (c) => Math.max(0, Math.min(Math.floor(budget * share), promptRoom - c.tokens)),
-        signal: req.signal,
-      }).catch((err: unknown) => {
-        if (isAbort(err, req.signal)) throw err;
-        warn(`Could not add related unchanged code: ${errorMessage(err)}`);
-        return undefined;
+  const { chunks, mentions, baseChunks } = await phase(
+    'chunking',
+    'Grouping related files into chunks',
+    async () => {
+      const result = buildChunks(units, {
+        budget,
+        fullFileTokens: config.review.fullFileTokens,
+        contextLines: config.review.contextLines,
+        graph,
+        strategy: graph ? 'smart' : 'directory',
+        contextShare: config.review.contextShare,
+        maxTotalTokens: Math.max(budget, promptRoom),
       });
-      if (stats) {
-        logger.debug(
-          `expand (${level}): ${stats.symbols} changed declaration(s), ${stats.files} related excerpt(s), ${stats.tokens} tokens${stats.tooCommon.length ? `; too common: ${stats.tooCommon.join(', ')}` : ''}`,
-        );
+      const baseChunks = result.chunks.length;
+      result.chunks = withPasses(result.chunks, config.review.passes);
+      // The contracts pass always gets the changed declarations and their users; other passes per `expand`.
+      const configured = config.review.expand;
+      const level = configured !== 'off' ? configured : 'refs';
+      const toExpand = result.chunks.filter(
+        (c) => c.pass !== 'local' && (configured !== 'off' || c.pass === 'contracts'),
+      );
+      if (toExpand.length && target.kind === 'diff' && repo) {
+        const share = level === 'deep' ? EXPAND_SHARE.deep : EXPAND_SHARE.refs;
+        const stats = await expandChunks(toExpand, units, revisionSource(repo, target.headSha), {
+          level,
+          changed: new Set(units.flatMap((u) => (u.oldPath ? [u.path, u.oldPath] : [u.path]))),
+          maxTokens: (c) => Math.max(0, Math.min(Math.floor(budget * share), promptRoom - c.tokens)),
+          signal: req.signal,
+        }).catch((err: unknown) => {
+          if (isAbort(err, req.signal)) throw err;
+          warn(`Could not add related unchanged code: ${errorMessage(err)}`);
+          return undefined;
+        });
+        if (stats) {
+          logger.debug(
+            `expand (${level}): ${stats.symbols} changed declaration(s), ${stats.files} related excerpt(s), ${stats.tokens} tokens${stats.tooCommon.length ? `; too common: ${stats.tooCommon.join(', ')}` : ''}`,
+          );
+        }
       }
-    }
-    return result;
-  });
-  if (chunks.length > config.review.maxChunks) {
+      return { ...result, baseChunks };
+    },
+  );
+  if (baseChunks > config.review.maxChunks) {
     warn(
-      `${chunks.length} chunks exceed review.maxChunks=${config.review.maxChunks}; consider narrowing the review.`,
+      `${baseChunks} chunks exceed review.maxChunks=${config.review.maxChunks}; consider narrowing the review.`,
     );
   }
 
@@ -847,6 +881,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         reviewInstructions({
           mode,
           depth,
+          ...(chunk.pass ? { pass: chunk.pass } : {}),
           rules: rules.text,
           rulesOrigin: rules.origin,
           skills: chunkSkills.get(chunk.id) ?? [],

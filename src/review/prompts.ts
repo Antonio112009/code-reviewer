@@ -23,6 +23,19 @@ export interface ReviewInstructionOptions {
   skillTools?: boolean;
   /** Read-only exploration tools are available. */
   readTools?: boolean;
+  /** A focused pass (`review.passes`); undefined for the general review. */
+  pass?: 'local' | 'contracts';
+}
+
+/** What a focused pass looks for; the other pass covers the rest. */
+function passRules(pass: ReviewInstructionOptions['pass']): string {
+  if (pass === 'local') {
+    return `- Focus of this pass: the changed code itself. Go through it hunk by hunk: conditions and boundaries, absent or falsy values, error handling, cleanup of resources, concurrency, security and performance of each changed line and of the code around it in the same file. Another pass checks how the change affects the rest of the code base, so do not spend steps searching for callers elsewhere.`;
+  }
+  if (pass === 'contracts') {
+    return `- Focus of this pass: contracts between the change and the rest of the code base. For every declaration the change touches (listed under "Changed declarations", plus any other changed signature, return value, error, default, side effect, schema or removed code), find its consumers with the tools — callers, overrides and implementations, serializers, configs, tests — and check that each still holds; check the new code against the contracts of what it calls, too. Construct concrete counterexamples to the guarantees this change modifies. Another pass reviews the changed lines on their own, so report here only defects that involve another piece of code, on the changed line that causes them.`;
+  }
+  return '';
 }
 
 function projectSection(project: ProjectSettings | undefined): string | undefined {
@@ -70,7 +83,7 @@ export function reviewInstructions(opts: ReviewInstructionOptions): string {
 
 Rules:
 ${scope}
-${depthRules(opts.depth ?? 'full')}
+${depthRules(opts.depth ?? 'full')}${opts.pass ? `\n${passRules(opts.pass)}` : ''}
 - Review the files under "Files to review". "Related files" are read-only context owned by another reviewer: use them to understand the code, but report defects only in the files you review.
 - Do NOT report style, naming, formatting, missing comments/tests/docs, refactoring ideas, or anything a compiler, type checker or linter would catch.
 - Every finding needs a concrete failure scenario: which input or state triggers it and what goes wrong.
@@ -151,6 +164,14 @@ In "__new code__" blocks, lines marked "+" were added or modified by the change;
     );
   }
   if (chunk.mentions.length) lines.push(`Files deleted by the change: ${chunk.mentions.join(', ')}`);
+  if (chunk.pass === 'contracts' && chunk.declarations?.length) {
+    const what = { removed: 'removed', signature: 'declaration changed', body: 'body changed' } as const;
+    lines.push(
+      '',
+      '## Changed declarations (check the consumers of each)',
+      ...chunk.declarations.map((d) => `- \`${d.name}\` — ${what[d.kind]} in ${d.file}`),
+    );
+  }
   lines.push('', '## Files to review', chunkTextFor(chunk, 'review'));
   const context = chunkTextFor(chunk, 'context');
   if (context.trim()) lines.push('', '## Related files (read-only context)', context);
@@ -189,6 +210,8 @@ export function reviewPromptIdentity(opts: Parameters<typeof reviewPrompt>[0]): 
     review: chunkTextFor(chunk, 'review'),
     context: chunkTextFor(chunk, 'context'),
     related: chunkTextFor(chunk, 'related'),
+    pass: chunk.pass ?? null,
+    declarations: chunk.declarations ?? [],
     hints: (opts.hints ?? []).map((h) => [
       h.analyzer,
       h.ruleId,

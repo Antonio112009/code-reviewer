@@ -177,6 +177,8 @@ Useful flags:
 - `--critique-*` and `--no-self-critique`: the verification pass;
 - `--skills a,b`: pick skills by hand;
 - `--analyzers eslint,tsc`: opt-in project linters;
+- `--passes local,contracts`: review each chunk twice — once for defects in the changed lines, once for the
+  changed declarations and their consumers (about twice the cost);
 - `--expand refs|deep`: related unchanged code per chunk — usages of the changed declarations and the
   definitions the new code calls (`deep`: also who calls those usages);
 - `--authors`: author attribution;

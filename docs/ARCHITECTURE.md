@@ -20,6 +20,7 @@
    4. chunking    chunking/*           clusters of related files (imports, tests, siblings) → chunks ≤ budget;
                                        shared files added read-only as context to other chunks
                   chunking/expand.ts   review.expand: unchanged usages of changed declarations, called definitions
+                  review/pipeline.ts   review.passes: one copy of each chunk per focused pass (local, contracts)
    5. skills      skills/detector.ts   per chunk: group detection + gates + signals + versions → budget fill
    6. snapshot    git/snapshot.ts      isolated, sanitized worktree of head (agents / cross-provider fallback)
    7. review      review/execute.ts    one AgentTask per chunk (p-limit), ModelRouter: retry / fallback / fail
@@ -133,6 +134,16 @@ The depth also affects:
    - Excerpts are windows around each site (from the enclosing declaration when it is close), at most three
      sites per file, within 15% (`refs`) or 25% (`deep`) of the chunk budget. The reviewer is told to report
      a defect the change causes there on the changed line that causes it. A split drops them, like context.
+
+### Review passes (`review.passes`, `--passes`)
+
+`[general]` (the default) reviews each chunk once. A list of focused passes reviews every chunk once per
+pass instead: `withPasses` copies the chunk (`c001-local`, `c001-contracts`), and `reviewInstructions` adds
+the pass's focus. The copies go through scheduling, recovery, the cache and dedupe like any chunk.
+- `local` — the changed lines hunk by hunk; told not to spend steps on callers elsewhere.
+- `contracts` — the declarations the change touches and their consumers. It always gets `expand`
+  (`refs` unless `review.expand` says `deep`) and a "Changed declarations" checklist, is asked to construct
+  counterexamples to the guarantees the change modifies, and reports on the changed line.
 
 ## Skills (`src/skills/`, `skills/`)
 

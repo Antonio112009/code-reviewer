@@ -14,7 +14,7 @@ import { detectProviders } from '../../providers/detect';
 import { SEVERITY_ORDER } from '../../report/common';
 import type { ReviewEvent } from '../../review/events';
 import { runReview } from '../../review/pipeline';
-import { EXPAND_LEVELS, REASONING_LEVELS, SEVERITIES, type Severity } from '../../types';
+import { EXPAND_LEVELS, REASONING_LEVELS, REVIEW_PASSES, SEVERITIES, type Severity } from '../../types';
 import { EXIT, type GlobalOptions, loadCliConfig, makeLogger } from '../context';
 import { installLifecycle } from '../lifecycle';
 import { colorEnabled, createReviewUi, type ReviewUi, renderPlan } from '../ui';
@@ -60,6 +60,7 @@ export interface ReviewFlags {
   onUnavailable?: string;
   chunking?: string;
   expand?: string;
+  passes?: string;
   /** Post the finished review to its pull / merge request (`--post`, with the publish target flags). */
   post?: boolean;
 }
@@ -221,6 +222,17 @@ export function applyRunFlags(config: Config, f: ReviewFlags): void {
   if (chunking) config.review.chunking = chunking;
   const expand = parseEnum(f.expand, EXPAND_LEVELS, '--expand');
   if (expand) config.review.expand = expand;
+  if (f.passes) {
+    const passes = [
+      ...new Set(
+        f.passes
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
+    ];
+    config.review.passes = passes.map((p) => parseEnum(p, REVIEW_PASSES, '--passes')!);
+  }
   if (f.analyzers === false) {
     config.analyzers.builtin = false;
     config.analyzers.external = 'off';
@@ -386,6 +398,10 @@ export function addRunLimitOptions(cmd: Command): Command {
     .option('--max-chunk-tokens <n>', 'token budget of code per chunk')
     .option('--timeout <seconds>', 'fixed timeout per LLM task (default: auto, scales with chunk size)')
     .option('--chunking <mode>', 'smart (related files together) | directory')
+    .option(
+      '--passes <list>',
+      'review passes per chunk: general | local,contracts (changed lines, then consumers)',
+    )
     .option(
       '--expand <level>',
       'related unchanged code per chunk: off | refs (usages, called definitions) | deep',

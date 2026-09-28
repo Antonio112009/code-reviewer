@@ -331,4 +331,32 @@ describe('runReview with review.expand', () => {
     expect(artifact.prompt).toContain('## Related unchanged code (read-only)');
     expect(artifact.prompt).toContain('4     return "sum: " + total(rows);');
   });
+
+  it('reviews each chunk in a local and a contracts pass when asked', async () => {
+    const outcome = await runReview({
+      command: 'review',
+      cwd: repo.root,
+      base: 'main',
+      head: 'feature',
+      config: testConfig((c) => {
+        c.review.passes = ['local', 'contracts'];
+      }),
+      logger: silentLogger,
+    });
+    const run = outcome.run!;
+    expect(run.chunks.map((c) => c.id)).toEqual(['c001-local', 'c001-contracts']);
+    expect(run.chunks[0]!.related).toBeUndefined();
+    expect(run.chunks[1]!.related?.map((r) => r.path)).toEqual(['src/report.ts']);
+    const dir = path.join(outcome.runDir!, 'chunks');
+    const read = (id: string) =>
+      JSON.parse(readFileSync(path.join(dir, `${id}.json`), 'utf8')) as {
+        instructions: string;
+        prompt: string;
+      };
+    expect(read('c001-local').instructions).toContain('Focus of this pass: the changed code itself');
+    const contracts = read('c001-contracts');
+    expect(contracts.instructions).toContain('Focus of this pass: contracts');
+    expect(contracts.prompt).toContain('## Changed declarations (check the consumers of each)');
+    expect(contracts.prompt).toContain('- `total` — declaration changed in src/lib.ts');
+  });
 });

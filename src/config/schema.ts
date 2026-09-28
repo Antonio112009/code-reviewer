@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { z } from 'zod';
-import { EXPAND_LEVELS, REASONING_LEVELS, SEVERITIES } from '../types';
+import { EXPAND_LEVELS, REASONING_LEVELS, REVIEW_PASSES, SEVERITIES } from '../types';
 
 export const ACP_PRESETS = ['claude', 'codex', 'copilot', 'gemini', 'custom'] as const;
 export type AcpPresetId = (typeof ACP_PRESETS)[number];
@@ -123,6 +123,11 @@ export const ReviewSettingsSchema = z.object({
    * declarations and definitions the new code calls; `deep` = also the callers of those usages.
    */
   expand: z.enum(EXPAND_LEVELS),
+  /**
+   * Passes per chunk: `general` reviews everything in one pass; `local` + `contracts` review the same code
+   * twice, once for defects in the changed lines and once for the changed declarations and their consumers.
+   */
+  passes: z.array(z.enum(REVIEW_PASSES)).min(1),
   /**
    * Where agents read code: `auto` = isolated snapshot for ACP agents, in place for API providers when the
    * checkout is clean and at head; `always` = always an isolated snapshot.
@@ -380,6 +385,7 @@ export const DEFAULT_CONFIG: Config = {
     chunking: 'smart',
     contextShare: 0.1,
     expand: 'off',
+    passes: ['general'],
     isolation: 'auto',
   },
   git: {

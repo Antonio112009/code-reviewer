@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Focused review passes (`--passes local,contracts`, `review.passes`).** Each chunk can be reviewed twice:
+  once for defects in the changed lines, once for the declarations the change touches and their consumers
+  (with the related unchanged code and a checklist of the changed declarations). Other reviewers found that
+  splitting the work by concern, not by file, is what lifts cross-file recall. Off by default until measured.
+
 - **Related unchanged code (`--expand refs|deep`, `review.expand`).** Each chunk can get excerpts of the
   unchanged code that uses the changed declarations and of the definitions the new code calls (`deep`: also
   the callers of those usages), so the reviewer sees how the change is used without searching for it. Found
