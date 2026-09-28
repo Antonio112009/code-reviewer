@@ -2,6 +2,7 @@ import { generateText, hasToolCall, isStepCount, type LanguageModel, type ModelM
 import { toAiSdkTools } from '../tools/ai-sdk';
 import { SUBMIT_TOOLS, toolsFor } from '../tools/definitions';
 import { SubmissionCollector } from '../tools/submission';
+import { ActivityDeadline } from './deadline';
 import { mayAskForMore, salvagePrompt } from './salvage';
 import { type AgentResult, type AgentTask, ProviderError } from './types';
 
@@ -64,12 +65,34 @@ export async function runAiSdkTask(task: AgentTask, m: AiSdkModel): Promise<Agen
     },
     (name) => {
       toolUsage[name] = (toolUsage[name] ?? 0) + 1;
+      deadline.touch();
       task.onActivity?.({ kind: 'tool', name });
     },
   );
-  const signals = [AbortSignal.timeout(task.timeoutMs), ...(task.signal ? [task.signal] : [])];
+  // The task's time limit, extended while the model keeps calling tools.
+  const deadline = new ActivityDeadline(task.timeoutMs, task.extendMs ?? 0);
+  const timedOut = new AbortController();
+  let timer: NodeJS.Timeout | undefined;
+  const arm = () => {
+    timer = setTimeout(
+      () => {
+        if (deadline.tryExtend()) arm();
+        else
+          timedOut.abort(
+            new DOMException(
+              `timed out after ${Math.round((task.timeoutMs + deadline.extendedMs) / 1000)}s`,
+              'TimeoutError',
+            ),
+          );
+      },
+      Math.max(0, deadline.at - Date.now()),
+    );
+    timer.unref?.();
+  };
+  arm();
+  const signals = [timedOut.signal, ...(task.signal ? [task.signal] : [])];
   const submit = SUBMIT_TOOLS[task.kind].name;
-  const wrapUpAt = Date.now() + task.timeoutMs * WRAP_UP_SHARE;
+  const wrapUpAt = () => deadline.at - task.timeoutMs * (1 - WRAP_UP_SHARE);
   const caching = m.caching;
   const marker = caching?.kind === 'messages' ? caching.marker : undefined;
   const instructions = (text: string) =>
@@ -97,7 +120,7 @@ export async function runAiSdkTask(task: AgentTask, m: AiSdkModel): Promise<Agen
         const why =
           stepNumber >= task.maxSteps - 1
             ? 'this is the last step'
-            : Date.now() >= wrapUpAt
+            : Date.now() >= wrapUpAt()
               ? 'the time limit is close'
               : undefined;
         if (!why) return cached;
@@ -114,6 +137,7 @@ export async function runAiSdkTask(task: AgentTask, m: AiSdkModel): Promise<Agen
       abortSignal: AbortSignal.any(signals),
       maxRetries: 3,
     });
+    clearTimeout(timer);
     const toolCalls = result.steps.reduce((n, s) => n + s.toolCalls.length, 0);
     const details = result.usage.inputTokenDetails;
     const cacheRead = details?.cacheReadTokens ?? 0;
@@ -147,6 +171,7 @@ export async function runAiSdkTask(task: AgentTask, m: AiSdkModel): Promise<Agen
       ],
     };
   } catch (err) {
+    clearTimeout(timer);
     throw new ProviderError(
       `${m.label} call failed (${m.modelId}): ${(err as Error).message}`,
       m.providerId,

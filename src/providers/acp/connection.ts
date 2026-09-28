@@ -13,6 +13,7 @@ import { trustedPath } from '../../util/executables';
 import type { Logger } from '../../util/logger';
 import { cliEntryPath, resolveInside } from '../../util/paths';
 import { type ManagedProcess, spawnManaged, terminate } from '../../util/processes';
+import { ActivityDeadline } from '../deadline';
 import {
   endedWithoutSubmitting,
   mayAskForMore,
@@ -334,6 +335,7 @@ export class AcpConnection {
       await this.runTurn(session, state, turn, task, `${task.instructions}\n\n---\n\n${task.prompt}`, {
         timeoutMs: task.timeoutMs,
         stallTimeoutMs: task.stallTimeoutMs,
+        extendMs: task.extendMs,
       });
       interruptedBy = turn.interruptedBy;
       // Out of time, steps or output: one short extra turn keeps the work done so far (for a review also after
@@ -430,7 +432,7 @@ export class AcpConnection {
     turn: TurnState,
     task: AgentTask,
     prompt: string,
-    limits: { timeoutMs: number; stallTimeoutMs?: number },
+    limits: { timeoutMs: number; stallTimeoutMs?: number; extendMs?: number },
   ): Promise<void> {
     turn.prompts++;
     turn.interruptedBy = undefined;
@@ -440,7 +442,9 @@ export class AcpConnection {
       // failures surface through nextUpdate()/the connection; avoid unhandled rejections
     });
 
-    let deadline = Date.now() + limits.timeoutMs;
+    // Extended while the agent keeps calling tools (see providers/deadline.ts).
+    const activity = new ActivityDeadline(limits.timeoutMs, limits.extendMs ?? 0);
+    let deadline = activity.at;
     let lastActivity = Date.now();
     const stallMs = limits.stallTimeoutMs;
     const cancel = async () => {
@@ -480,7 +484,16 @@ export class AcpConnection {
           if (turn.aborted) throw new AbortedError();
           throw new Error(`agent did not stop after cancellation${this.stderrHint()}`);
         }
-        turn.warnings.push(`timed out after ${Math.round(limits.timeoutMs / 1000)}s — cancelled`);
+        if (activity.tryExtend()) {
+          deadline = activity.at;
+          this.logger.debug(
+            `[acp] ${task.label}: still calling tools at the time limit — extended to ${Math.round((limits.timeoutMs + activity.extendedMs) / 1000)}s`,
+          );
+          continue;
+        }
+        turn.warnings.push(
+          `timed out after ${Math.round((limits.timeoutMs + activity.extendedMs) / 1000)}s — cancelled`,
+        );
         turn.interruptedBy = 'timeout';
         deadline = Date.now() + this.timeouts.cancelGraceMs;
         await cancel();
@@ -514,6 +527,7 @@ export class AcpConnection {
         turn.text += update.content.text;
       } else if (update.sessionUpdate === 'tool_call') {
         state.toolCalls++;
+        activity.touch();
         const name = normalizeToolName(update.title, update.kind);
         turn.toolUsage[name] = (turn.toolUsage[name] ?? 0) + 1;
         task.onActivity?.({ kind: 'tool', name });

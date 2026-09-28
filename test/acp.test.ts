@@ -68,6 +68,8 @@ function fakeAgent(
     cost?: number;
     /** No token usage in the stop message (like Copilot). */
     noUsage?: boolean;
+    /** The first turn first calls a tool `calls` times, `delayMs` apart (cancellable). */
+    slowTools?: { calls: number; delayMs: number };
   } = {},
 ): acp.AgentApp {
   const aborts = new Map<string, AbortController>();
@@ -103,6 +105,30 @@ function fakeAgent(
         return { stopReason: 'max_turn_requests' as const };
       }
       if (turn === 1 && opts.firstTurn === 'silent') return { stopReason: 'end_turn' as const };
+      if (turn === 1 && opts.slowTools) {
+        const ac = new AbortController();
+        aborts.set(sessionId, ac);
+        for (let i = 0; i < opts.slowTools.calls; i++) {
+          const cancelled = await new Promise<boolean>((resolve) => {
+            const t = setTimeout(() => resolve(false), opts.slowTools!.delayMs);
+            ac.signal.addEventListener('abort', () => {
+              clearTimeout(t);
+              resolve(true);
+            });
+          });
+          if (cancelled) return { stopReason: 'cancelled' as const };
+          await client.notify(acp.methods.client.session.update, {
+            sessionId,
+            update: {
+              sessionUpdate: 'tool_call',
+              toolCallId: `slow${i}`,
+              title: 'Grep',
+              kind: 'search',
+              status: 'completed',
+            },
+          });
+        }
+      }
       if (opts.hang || (turn === 1 && opts.firstTurn === 'hang')) {
         const ac = new AbortController();
         aborts.set(sessionId, ac);
@@ -492,5 +518,30 @@ describe('Claude Code session settings', () => {
     const opted = meta({ type: 'acp', preset: 'claude', userSettings: true });
     expect(opted.settingSources).toEqual(['user']);
     expect(opted.settings).toBeUndefined();
+  });
+});
+
+describe('ACP time limit while the agent keeps working', () => {
+  const run = async (extendMs: number | undefined) => {
+    const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false, prompts: [] };
+    const provider = new AcpProvider('claude', { type: 'acp', preset: 'claude' }, silentLogger, 1, {
+      endpoint: () => ({ kind: 'app', app: fakeAgent(log, { slowTools: { calls: 4, delayMs: 150 } }) }),
+    });
+    try {
+      return { result: await provider.run(task({ timeoutMs: 400, extendMs, salvage: false })), log };
+    } finally {
+      await provider.dispose();
+    }
+  };
+
+  it('extends the turn while tool calls keep coming, and cuts it off without the extension', async () => {
+    const extended = await run(30_000);
+    expect(extended.log.cancelled).toBe(false);
+    expect(extended.result.interruptedBy).toBeUndefined();
+    expect(resolveFindings(extended.result).items).toHaveLength(1);
+
+    const cut = await run(undefined);
+    expect(cut.log.cancelled).toBe(true);
+    expect(cut.result.interruptedBy).toBe('timeout');
   });
 });

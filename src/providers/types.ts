@@ -21,6 +21,11 @@ export interface AgentTask {
   git: boolean;
   maxSteps: number;
   timeoutMs: number;
+  /**
+   * Extra time the task may get while the model keeps calling tools (see `providers/deadline.ts`); 0 or
+   * unset: `timeoutMs` is final.
+   */
+  extendMs?: number;
   maxOutputTokens?: number;
   signal?: AbortSignal;
   /** Cancel when the agent sends no update for this long (ACP); defaults to no stall detection. */

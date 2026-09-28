@@ -160,6 +160,10 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           doc: 'Let the model read installed dependency sources (Go module cache, node_modules, virtualenv, Cargo), read-only.',
           example: D.review.dependencySources,
         },
+        activeExtension: {
+          doc: 'Extra time a review task gets while the model keeps calling tools, as a share of its timeout (0 = off).',
+          example: D.review.activeExtension,
+        },
         maxCost: {
           doc: 'Most a run may spend, in USD (priced by `pricing` or reported by the provider). Unset = no limit.',
         },
