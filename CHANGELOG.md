@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Review changes before you commit.** `review --staged` reviews exactly what `git commit` would record,
+  `review --uncommitted` every local change including untracked files; both compare against HEAD unless
+  `--base` is given. The changes become a throw-away commit on top of HEAD, so index, working tree and
+  refs are left alone and the review runs as for any commit. `code-reviewer hook install` adds a
+  pre-commit hook (`--fail-on major` by default; findings block the commit, a review that cannot run does
+  not). It never replaces a hook it did not write, and prints the command for husky / lefthook setups.
+
+- A review started from a git hook no longer passes the hook's `GIT_INDEX_FILE` on to its own git
+  commands, which could have written the snapshot worktree's index into the commit being made.
+
 - **OpenAI-compatible providers.** A new provider type `openai` talks to any chat completions API with
   tool calling, through the same tool loop as the Anthropic and Bedrock providers. Built in: `openai`
   (`OPENAI_API_KEY`), `openrouter` (`OPENROUTER_API_KEY`) and `ollama` (a local server, no key, so the code

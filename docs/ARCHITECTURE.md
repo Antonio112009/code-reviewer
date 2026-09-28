@@ -9,6 +9,7 @@
  review/pipeline.ts  (phases emit ReviewEvents → cli/ui: live dashboard | plain lines | JSON)
    1. refs        git/refs.ts          base: --base | CI PR env | gh/glab PR | branch config | rules | default
                                        fetch remote base (deepen shallow clones), merge-base, commit count
+                  git/local-changes.ts --staged / --uncommitted: head = snapshot commit on top of HEAD, base HEAD
    2. collect     sources/*            ReviewUnit[] (diff hunks + new content | whole files), excludes
    3. context     in parallel:
                   context/stack/*      manifests → techs, package roots, versions (never runs repo code)
@@ -250,6 +251,26 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
   - authentication: fatal, remaining chunks are skipped.
 - Fallbacks are recorded in the run and shown in the summary.
 
+## Local changes (`git/local-changes.ts`, `cli/commands/hook.ts`)
+
+- `review --staged` / `--uncommitted` turn the changes into a commit whose parent is HEAD, so the rest of
+  the pipeline (diff, snapshot, blame, `git grep`, cache) runs unchanged:
+  - `staged`: `git write-tree` of the index — the one a pre-commit hook was given (`GIT_INDEX_FILE`, a
+    temporary index for `git commit -a`), else the repository's;
+  - `uncommitted`: a temporary copy of the index, `add --update`, then the untracked, non-ignored files
+    (literal pathspecs; the runs directory excluded), then `write-tree`;
+  - `commit-tree --no-gpg-sign` as "Not Committed Yet" (what `git blame` shows for such lines). No hook
+    runs, and no ref, index or working-tree file is written; the objects are unreachable and left to
+    `git gc`. An unchanged tree is "nothing to review" (exit 0), unmerged entries are an error.
+- The base is HEAD (`baseSource: local`) unless `--base` is given, which adds the branch's commits.
+  `RunTarget.local` marks the run: no forge links, and `publish` refuses it.
+- Every other git child runs without `GIT_INDEX_FILE` (`git/repo.ts#gitEnv`): a review started from a
+  hook must not let `status` or `worktree add` use, or write, the index being committed.
+- `hook install` writes `pre-commit` into `git rev-parse --git-path hooks` with a marker line; it
+  replaces or removes only a hook with that marker, and with `core.hooksPath` set (husky, lefthook) it
+  prints the command instead. The script runs `code-reviewer review --staged -y --fail-on <severity>`
+  from `PATH`; exit 1 (findings) blocks the commit, any other failure lets it through with a message.
+
 ## Reports and publishing
 
 - **Fingerprints** (`review/fingerprint.ts`). Right before the findings are stored, each kept finding gets
@@ -482,9 +503,7 @@ The code under review, and therefore model output, is treated as untrusted.
 
 ## Known limitations / roadmap
 
-- Reviewing uncommitted or staged changes.
 - Resolving PR/MR threads of fixed findings; Bitbucket / Azure DevOps comments; GitHub/GitLab username
   resolution.
 - An LLM run summary (`roles.summary` is reserved); a cost budget that stops a run.
-- An OpenAI direct API provider.
 - The Codex, Copilot and Gemini presets need more live verification.

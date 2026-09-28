@@ -111,6 +111,11 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
       'Only branch reviews (`code-reviewer review`) can be posted to a pull request; this run reviewed files.',
     );
   }
+  if (t.local) {
+    throw new PublishError(
+      `This run reviewed ${t.local} changes, which are on no pull request: commit and push them, then review the branch to post it.`,
+    );
+  }
   if (!SHA_RE.test(t.headSha) || !SHA_RE.test(t.mergeBase)) {
     throw new PublishError('The run does not record valid commit ids; it cannot be published.');
   }

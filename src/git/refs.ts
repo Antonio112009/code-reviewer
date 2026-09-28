@@ -4,6 +4,12 @@ import { untrustedGlobMatcher } from '../util/globs';
 import { PROJECT_DIR } from '../util/paths';
 import { type CiPullRequest, detectCiPullRequest } from './ci';
 import { type ForgePullRequest, findOpenPullRequest } from './forge';
+import {
+  commitLocalChanges,
+  type LocalChanges,
+  type LocalSnapshot,
+  type LocalSnapshotOptions,
+} from './local-changes';
 import { parseRemote } from './remote';
 import { type GitRepo, isValidBranchName, type NetworkResult, type UpstreamInfo } from './repo';
 
@@ -13,6 +19,11 @@ export interface ResolveRefsOptions {
   base?: string;
   /** User-supplied head (`--head`); default HEAD (local, including unpushed commits). */
   head?: string;
+  /**
+   * Review changes not committed yet (`--staged`, `--uncommitted`): the head is a snapshot commit of them on
+   * top of HEAD (see `commitLocalChanges`), and the base defaults to HEAD.
+   */
+  local?: { mode: LocalChanges } & LocalSnapshotOptions;
   settings: GitSettings;
   /** Never touch the network (`--offline` / `--no-fetch`). */
   offline?: boolean;
@@ -29,6 +40,8 @@ export interface ResolvedRefs {
   headSha: string;
   mergeBase: string;
   info: RefsInfo;
+  /** The snapshot of the local changes (with `local`). */
+  local?: LocalSnapshot;
 }
 
 /**
@@ -127,6 +140,8 @@ interface Resolved extends Located {
   sha: string;
   /** The local checkout's HEAD (working-tree notes apply). */
   isHead?: boolean;
+  /** A snapshot of the local changes on top of HEAD. */
+  local?: LocalSnapshot;
 }
 
 interface HeadPlan {
@@ -239,7 +254,7 @@ class RefResolver {
     // 4. Merge-base (deepening shallow clones), then notices (computed concurrently, applied in order).
     const [mergeBase, tree] = await Promise.all([
       this.mergeBase(base, head),
-      head.isHead ? this.repo.workingTreeStatus([PROJECT_DIR]) : undefined,
+      head.isHead && !head.local ? this.repo.workingTreeStatus([PROJECT_DIR]) : undefined,
     ]);
     // On the base branch itself (or a branch without commits of its own) there is nothing to compare.
     // Explicit --base and CI runs are left to the caller ("nothing to review" is a valid outcome there).
@@ -257,7 +272,8 @@ class RefResolver {
     const notices: Notices[] = await Promise.all([
       this.cacheNotices(base),
       head.ref !== base.ref ? this.cacheNotices(head) : Promise.resolve<Notices>({}),
-      this.headNotices(head, headPlan),
+      // On top of HEAD (the default), unpushed commits are not part of the review.
+      head.local && source === 'local' ? Promise.resolve<Notices>({}) : this.headNotices(head, headPlan),
       this.baseNotices(base, head),
     ]);
     for (const n of notices) {
@@ -271,7 +287,17 @@ class RefResolver {
         tree.changed ? plural(tree.changed, 'uncommitted change') : '',
         tree.untracked ? plural(tree.untracked, 'untracked file') : '',
       ].filter(Boolean);
-      this.notes.push(`${parts.join(' and ')} not reviewed (commit them to include them)`);
+      this.notes.push(
+        `${parts.join(' and ')} not reviewed (commit them, or pass --staged or --uncommitted to include them)`,
+      );
+    }
+    const left = head.local?.leftOut;
+    if (left && (left.unstaged || left.untracked)) {
+      const parts = [
+        left.unstaged ? plural(left.unstaged, 'unstaged change') : '',
+        left.untracked ? plural(left.untracked, 'untracked file') : '',
+      ].filter(Boolean);
+      this.notes.push(`${parts.join(' and ')} not reviewed (\`git add\` them, or use --uncommitted)`);
     }
 
     return {
@@ -293,6 +319,7 @@ class RefResolver {
         fetched: this.synced.size > 0 && this.failed.size === 0,
         notes: this.notes,
       },
+      ...(head.local ? { local: head.local } : {}),
     };
   }
 
@@ -363,6 +390,14 @@ class RefResolver {
   private planHead(): HeadPlan {
     const input = this.opts.head?.trim();
     const local: HeadPlan = { preferRemote: false, why: 'local' };
+    if (this.opts.local) {
+      if (input && input !== 'HEAD' && input !== '@') {
+        throw new Error(
+          `--${this.opts.local.mode} reviews the local checkout: it cannot be combined with --head.`,
+        );
+      }
+      return local;
+    }
     if (input && input !== 'HEAD' && input !== '@') {
       return {
         spec: classifyRef(input, this.remotes),
@@ -422,6 +457,10 @@ class RefResolver {
             ? ' (used as given)'
             : '';
       return [{ source: 'flag', why: `--base ${input}${how}`, specs: [spec], required: true }];
+    }
+    if (this.opts.local) {
+      const why = `--${this.opts.local.mode} reviews the changes on top of HEAD`;
+      return [{ source: 'local', why, specs: [{ kind: 'rev', rev: 'HEAD' }], required: true }];
     }
     const { base } = this.settings;
     if (base.useCi) {
@@ -883,11 +922,26 @@ class RefResolver {
     }
     const sha = await this.repo.tryResolve('HEAD');
     if (!sha) throw new Error('HEAD does not point to a commit yet; commit something first.');
+    if (this.opts.local) return this.localHead(sha);
     const display = this.branch ? `HEAD (${this.branch})` : `HEAD (detached at ${sha.slice(0, 7)})`;
     this.lines.head.push(
       `head ${display}: ${this.branch ? 'local branch, including unpushed commits' : 'local checkout'}`,
     );
     return { kind: 'local', ref: 'HEAD', display, branch: this.branch, sha, isHead: true };
+  }
+
+  /** The staged or uncommitted changes, committed on top of HEAD (`headSha`). */
+  private async localHead(headSha: string): Promise<Resolved> {
+    const { mode, ...options } = this.opts.local!;
+    const local = await commitLocalChanges(this.repo, mode, options);
+    const where = this.branch ? `on ${this.branch}` : `at ${headSha.slice(0, 7)}`;
+    const display = `${mode} changes ${where}`;
+    const what =
+      mode === 'staged'
+        ? 'the index, as `git commit` would record it'
+        : `tracked changes${local.untracked ? ` and ${plural(local.untracked, 'untracked file')}` : ''} of the working tree`;
+    this.lines.head.push(`head ${display}: ${what}, as snapshot ${local.sha.slice(0, 7)} on top of HEAD`);
+    return { kind: 'rev', ref: local.sha, display, branch: this.branch, sha: local.sha, isHead: true, local };
   }
 
   /**
