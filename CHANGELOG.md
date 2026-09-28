@@ -7,7 +7,6 @@
   is charged`). The critic checks it step by step, and reports and pull request comments show it. A critical
   or major finding without one is lowered a level before critique (`review.requireFailurePath: false` turns
   that off).
-
 - **Impact map.** Every chunk now lists where unchanged code uses the declarations the change modifies
   (file:line and the enclosing function, nearest first) and where the functions the new code calls are
   defined; a removed or redeclared name with no remaining uses says so. It costs a few hundred tokens at
