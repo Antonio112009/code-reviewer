@@ -17,7 +17,9 @@ import { EXIT } from './context';
 export function buildProgram(): Command {
   const program = new Command()
     .name('code-reviewer')
-    .description('LLM code review for diffs and files — Bedrock, Claude Code, Codex, Copilot, Gemini')
+    .description(
+      'LLM code review for diffs and files — Claude Code, Codex, Copilot, Gemini, Anthropic, Bedrock, OpenAI-compatible APIs',
+    )
     .version(packageVersion(), '-v, --version', 'print the version')
     .option('--verbose', 'debug logging (every run also keeps it in its run.log)')
     .option('-q, --quiet', 'only errors')
