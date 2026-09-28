@@ -130,6 +130,14 @@ describe('untrusted project config', () => {
       'profiles:\n  x:\n    providers:\n      evil: { type: acp, preset: custom, env: { NODE_OPTIONS: "--require /tmp/x" } }\n',
     );
     await expect(loadConfig({ cwd: dir, stopDir: dir })).rejects.toThrow(/profiles\.x\.providers\.evil\.env/);
+    // loading the user's Claude Code plugins and hooks in review sessions is the user's call
+    writeFileSync(
+      path.join(dir, '.code-reviewerrc.yaml'),
+      'providers:\n  claude: { type: acp, preset: claude, userSettings: true }\n',
+    );
+    await expect(loadConfig({ cwd: dir, stopDir: dir })).rejects.toThrow(
+      /providers\.claude\.userSettings is not allowed/,
+    );
   });
 
   it('allows launch settings in the global config', async () => {

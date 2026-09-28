@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import path from 'node:path';
 import type { AcpPresetId, AcpProviderConfig } from '../../config/schema';
 import type { ReasoningLevel } from '../../types';
 import { findTrustedExecutable } from '../../util/executables';
@@ -35,7 +38,7 @@ export interface AcpPreset {
   perProcessModel?: boolean;
   launch(cfg: AcpProviderConfig, proc: ProcessOptions): LaunchSpec | undefined;
   /** `_meta` sent with session/new. */
-  sessionMeta?(): Record<string, unknown>;
+  sessionMeta?(cfg: AcpProviderConfig): Record<string, unknown>;
 }
 
 /**
@@ -72,6 +75,41 @@ const CLAUDE_WRITE_TOOLS = [
   'WebSearch',
 ];
 
+/**
+ * Claude Code's sub-agents: their tool calls and cost never reach the session updates we log and meter,
+ * and a review task does not need them.
+ */
+const CLAUDE_SUBAGENT_TOOLS = ['Task', 'Agent'];
+/** The only built-in Claude Code tools a review session gets (our MCP tools come on top). */
+const CLAUDE_READ_TOOLS = ['Read', 'Grep', 'Glob'];
+
+/**
+ * The parts of the user's Claude Code settings (`$CLAUDE_CONFIG_DIR` or `~/.claude`, `settings.json`) that
+ * sign in and route requests: `env` (e.g. `ANTHROPIC_BASE_URL`, `CLAUDE_CODE_USE_BEDROCK`) and `apiKeyHelper`.
+ * Review sessions load no settings files, so these are handed over programmatically; plugins, hooks,
+ * permissions and the rest stay out.
+ */
+export function claudeAuthSettings(
+  env: NodeJS.ProcessEnv = process.env,
+): Record<string, unknown> | undefined {
+  const dir = env.CLAUDE_CONFIG_DIR?.trim() || path.join(homedir(), '.claude');
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(path.join(dir, 'settings.json'), 'utf8'));
+  } catch {
+    return undefined;
+  }
+  if (!parsed || typeof parsed !== 'object') return undefined;
+  const s = parsed as { env?: unknown; apiKeyHelper?: unknown };
+  const out: Record<string, unknown> = {};
+  if (s.env && typeof s.env === 'object' && !Array.isArray(s.env)) {
+    const vars = Object.entries(s.env).filter(([, v]) => typeof v === 'string');
+    if (vars.length) out.env = Object.fromEntries(vars);
+  }
+  if (typeof s.apiKeyHelper === 'string' && s.apiKeyHelper.trim()) out.apiKeyHelper = s.apiKeyHelper;
+  return Object.keys(out).length ? out : undefined;
+}
+
 export const PRESETS: Record<AcpPresetId, AcpPreset> = {
   claude: {
     id: 'claude',
@@ -96,15 +134,25 @@ export const PRESETS: Record<AcpPresetId, AcpPreset> = {
     // `default` mode: every tool use goes through session/request_permission (our policy), whatever
     // `permissions.defaultMode` (bypassPermissions / auto) the user's Claude settings select.
     readOnlyMode: 'default',
-    sessionMeta: () => ({
-      claudeCode: {
-        options: {
-          disallowedTools: CLAUDE_WRITE_TOOLS,
-          permissionMode: 'default',
-          allowDangerouslySkipPermissions: false,
+    // Review sessions load no settings files (the adapter's default is user, project and local): the user's
+    // plugins, hooks and skills stay out of every review — tokens, and language servers or hooks running in
+    // a snapshot of untrusted code — unless `userSettings` asks for them. Project and local settings would
+    // come from the reviewed checkout; the snapshot removes its `.claude/` anyway.
+    sessionMeta: (cfg) => {
+      const auth = cfg.userSettings ? undefined : claudeAuthSettings();
+      return {
+        claudeCode: {
+          options: {
+            settingSources: cfg.userSettings ? ['user'] : [],
+            tools: CLAUDE_READ_TOOLS,
+            ...(auth ? { settings: auth } : {}),
+            disallowedTools: [...CLAUDE_WRITE_TOOLS, ...CLAUDE_SUBAGENT_TOOLS],
+            permissionMode: 'default',
+            allowDangerouslySkipPermissions: false,
+          },
         },
-      },
-    }),
+      };
+    },
   },
   codex: {
     id: 'codex',

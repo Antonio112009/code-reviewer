@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Claude Code reviews cost about a third.** Review sessions no longer load the user's Claude Code
+  settings (plugins, hooks, skills; the ACP adapter loaded user, project and local settings), get only the
+  `Read`, `Grep` and `Glob` built-in tools next to ours, and cannot start sub-agents, whose calls and cost
+  were invisible. A one-file review went from 75k to 22k cache-written tokens and from $0.32 to $0.10 with
+  the same finding; a cross-file one still read the other file and found the bug. It also keeps language
+  servers and hooks from plugins out of snapshots of untrusted code. The `env` and `apiKeyHelper` of
+  `~/.claude/settings.json` are still handed over for sign-in; `providers.claude.userSettings: true`
+  (global config only) loads the user settings as before.
+
 - **Skills are matched per file.** A chunk's added lines used to be matched as one text, so Java lines
   picked C++ and Python skills in a mixed chunk, Go lines JavaScript skills, a Markdown table the crypto
   checklist and SQL in C++ strings the SQL skills, each taking budget from the chunk's own language. Now a

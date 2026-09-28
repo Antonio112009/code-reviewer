@@ -157,7 +157,8 @@ async function readPartial(file: string): Promise<Record<string, unknown>> {
   return parsePartial(raw, file);
 }
 
-const LAUNCH_FIELDS = ['command', 'args', 'env'] as const;
+/** Provider fields that decide what runs: `userSettings` loads the user's Claude Code plugins and hooks. */
+const LAUNCH_FIELDS = ['command', 'args', 'env', 'userSettings'] as const;
 /** OpenAI-compatible endpoints: where the code goes and which secret goes with it. */
 const ENDPOINT_FIELDS = ['baseUrl', 'apiKeyEnv'] as const;
 

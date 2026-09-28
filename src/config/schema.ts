@@ -32,6 +32,11 @@ const AcpProviderSchema = z.strictObject({
   defaultModel: z.string().optional(),
   /** Model of the self-critique pass when the critique role names none (e.g. a stronger model than the review's). */
   critiqueModel: z.string().optional(),
+  /**
+   * `claude` only: load your Claude Code user settings (plugins, hooks, …) in review sessions. Off by default:
+   * sessions get only the `env` and `apiKeyHelper` of `~/.claude/settings.json` (see `acp/presets.ts`).
+   */
+  userSettings: z.boolean().optional(),
 });
 
 /** The Anthropic API with `ANTHROPIC_API_KEY` (no agent in between: see `providers/anthropic.ts`). */

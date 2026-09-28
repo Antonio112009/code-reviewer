@@ -244,7 +244,7 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
   set per session (config options) or per process (Copilot flags).
 - **`connection.ts`** — one agent process (its own process group, neutral cwd) plus an ACP client.
   - Each task gets a **fresh session** with our MCP server attached:
-    `code-reviewer mcp-serve --root <snapshot> --kind findings --submit-file <tmp> --project-root <repo>`.
+    `code-reviewer mcp-serve --root <snapshot> --kind findings --submit-file <tmp>`.
   - Model, effort and read-only mode are applied with `session/set_config_option`. The option list
     returned by each call replaces the current one.
   - Every request has a timeout. A stall watchdog cancels a turn with no activity for
@@ -360,6 +360,14 @@ The code under review, and therefore model output, is treated as untrusted.
      and web tools disallowed. Failing to apply a read-only mode fails the task. `ENABLE_TOOL_SEARCH=false`
      loads our MCP tools up front: behind Claude Code's ToolSearch, a model that skips the search ends
      without calling `submit_findings`.
+   - Claude review sessions load **no settings files** (`settingSources: []`; the adapter's default is
+     user, project and local): the user's plugins, hooks and skills stay out — no language servers or hooks
+     run in a snapshot of untrusted code, and no one's personal setup changes a review. Only `env` and
+     `apiKeyHelper` of the user's `settings.json` are handed over (`claudeAuthSettings`), so gateways and
+     Bedrock/Vertex routing keep working; `providers.claude.userSettings: true` (global config only) loads
+     the user settings instead. Built-in tools are limited to `Read`, `Grep` and `Glob` (`tools`), and
+     sub-agents (`Task`, `Agent`), whose calls and cost we cannot see, are disallowed. On a one-file review
+     this took a task from 75k to 22k cache-written tokens ($0.32 → $0.10) with the same finding.
    - Codex cannot be confined to read-only by its adapter: it is flagged `unconfined`, never picked as an
      automatic fallback, and a warning is shown when it is configured.
 5. **Paths.** Every path from a model or tool call goes through `resolveInside`, a lexical check plus a

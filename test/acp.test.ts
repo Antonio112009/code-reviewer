@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import * as acp from '@agentclientprotocol/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { PRESETS } from '../src/providers/acp/presets';
+import { claudeAuthSettings, PRESETS } from '../src/providers/acp/presets';
 import { AcpProvider } from '../src/providers/acp/provider';
 import type { AgentTask } from '../src/providers/types';
 import { resolveFindings } from '../src/review/findings';
@@ -205,7 +205,14 @@ describe('AcpProvider with an in-process agent', () => {
         { configId: 'effort', value: 'high' },
       ]);
       expect(log.meta).toMatchObject({
-        claudeCode: { options: { disallowedTools: expect.arrayContaining(['Edit', 'Bash']) } },
+        claudeCode: {
+          options: {
+            // no settings files: the user's plugins and hooks stay out of review sessions
+            settingSources: [],
+            tools: ['Read', 'Grep', 'Glob'],
+            disallowedTools: expect.arrayContaining(['Edit', 'Bash', 'Task', 'Agent']),
+          },
+        },
       });
       expect(result.stopReason).toBe('end_turn');
       expect(result.toolCalls).toBe(1);
@@ -447,5 +454,43 @@ describe('AcpProvider with a real agent process', () => {
     } finally {
       await provider.dispose();
     }
+  });
+});
+
+describe('Claude Code session settings', () => {
+  const meta = (cfg: Parameters<NonNullable<(typeof PRESETS)['claude']['sessionMeta']>>[0]) =>
+    (PRESETS.claude.sessionMeta!(cfg) as { claudeCode: { options: Record<string, unknown> } }).claudeCode
+      .options;
+
+  it('hands over only the sign-in parts of the user settings', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'cr-claude-home-'));
+    try {
+      writeFileSync(
+        path.join(dir, 'settings.json'),
+        JSON.stringify({
+          env: { ANTHROPIC_BASE_URL: 'https://gateway.example', BAD: 1 },
+          apiKeyHelper: '~/bin/key',
+          enabledPlugins: { 'lsp@market': true },
+          hooks: { PreToolUse: [] },
+        }),
+      );
+      expect(claudeAuthSettings({ CLAUDE_CONFIG_DIR: dir })).toEqual({
+        env: { ANTHROPIC_BASE_URL: 'https://gateway.example' },
+        apiKeyHelper: '~/bin/key',
+      });
+      writeFileSync(path.join(dir, 'settings.json'), JSON.stringify({ enabledPlugins: {} }));
+      expect(claudeAuthSettings({ CLAUDE_CONFIG_DIR: dir })).toBeUndefined();
+      writeFileSync(path.join(dir, 'settings.json'), '{ not json');
+      expect(claudeAuthSettings({ CLAUDE_CONFIG_DIR: dir })).toBeUndefined();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('loads the user settings only when asked to', () => {
+    expect(meta({ type: 'acp', preset: 'claude' }).settingSources).toEqual([]);
+    const opted = meta({ type: 'acp', preset: 'claude', userSettings: true });
+    expect(opted.settingSources).toEqual(['user']);
+    expect(opted.settings).toBeUndefined();
   });
 });
