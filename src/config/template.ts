@@ -156,6 +156,9 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           example: D.review.minConfidence,
         },
         concurrency: { doc: 'Review tasks running in parallel.', example: D.review.concurrency },
+        maxCost: {
+          doc: 'Most a run may spend, in USD (priced by `pricing` or reported by the provider). Unset = no limit.',
+        },
         timeout: {
           doc: 'Per-task timeout: auto (scales with the chunk size) or a number of seconds.',
           example: D.review.timeout,

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Cost limit per run.** `--max-cost <usd>` (`review.maxCost`) stops starting model calls once a run has
+  spent that much, counting the provider's reported cost or your `pricing`. With self-critique on, reviews
+  stop at 85% so the findings can still be verified. Unreviewed parts are marked `budget` (with advice) and
+  keep a `--fail-on` gate from passing; calls without a known cost are named in a warning.
+
 - **Fixed findings resolve their threads.** When a push changes the code an earlier inline comment was on
   and the new review does not report that finding again, the comment's thread on the GitHub pull request or
   GitLab merge request gets a short reply and is resolved. A model can miss a finding it reported before, so

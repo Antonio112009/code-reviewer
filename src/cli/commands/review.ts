@@ -45,6 +45,7 @@ export interface ReviewFlags {
   format?: string;
   out?: string;
   maxChunkTokens?: string;
+  maxCost?: string;
   concurrency?: string;
   timeout?: string;
   failOn?: string;
@@ -115,6 +116,8 @@ export function flagsToOverrides(f: ReviewFlags): PartialConfig {
   if (minConfidence !== undefined) review.minConfidence = minConfidence;
   const maxChunkTokens = parseNumber(f.maxChunkTokens, '--max-chunk-tokens', { min: 1000, int: true });
   if (maxChunkTokens !== undefined) review.maxChunkTokens = maxChunkTokens;
+  const maxCost = parseNumber(f.maxCost, '--max-cost', { min: 0.01 });
+  if (maxCost !== undefined) review.maxCost = maxCost;
   const concurrency = parseNumber(f.concurrency, '--concurrency', { min: 1, max: 32, int: true });
   if (concurrency !== undefined) review.concurrency = concurrency;
   const timeout = parseNumber(f.timeout, '--timeout', { min: 10 });
@@ -441,6 +444,7 @@ function addReviewOptions(cmd: Command): Command {
     .option('--format <list>', `report formats: ${REPORT_FORMATS.join(',')}`)
     .option('--out <dir>', 'also copy the reports into this directory')
     .option('--concurrency <n>', 'parallel LLM calls')
+    .option('--max-cost <usd>', 'stop starting model calls once the run has spent this much (review.maxCost)')
     .option(
       '--fail-on <severity>',
       `exit with code 1 if a finding of this severity or worse remains (${SEVERITIES.join('|')})`,

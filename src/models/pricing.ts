@@ -100,6 +100,51 @@ export class CostMeter {
   }
 }
 
+/**
+ * `review.maxCost` for one run. Every model call is added as it completes; a call without a known cost (no
+ * price, another currency) cannot count and is reported once per route. With self-critique on, reviews stop
+ * at `1 - critiqueReserve` of the budget so the findings can still be verified.
+ */
+export class CostBudget {
+  private amount = 0;
+  private readonly unpriced = new Set<string>();
+
+  constructor(
+    readonly max: number,
+    private readonly pricing: Record<string, Price>,
+    private readonly opts: {
+      /** Share kept for the critique (0 without self-critique). */
+      critiqueReserve?: number;
+      currency?: string;
+      /** Called once per route whose calls cannot be counted. */
+      onUnpriced?: (route: string) => void;
+    } = {},
+  ) {}
+
+  add(spend: PricedSpend): void {
+    const cost = costOf(spend, this.pricing);
+    if (cost && cost.currency === (this.opts.currency ?? DEFAULT_CURRENCY)) {
+      this.amount += cost.amount;
+      return;
+    }
+    const route = spend.model ? `${spend.provider}:${spend.model}` : spend.provider;
+    if (!this.unpriced.has(route)) {
+      this.unpriced.add(route);
+      this.opts.onUnpriced?.(route);
+    }
+  }
+
+  get spent(): Money {
+    return { amount: this.amount, currency: this.opts.currency ?? DEFAULT_CURRENCY };
+  }
+
+  /** Whether a new call for `role` may start. */
+  allows(role: 'review' | 'critique' | string): boolean {
+    const limit = role === 'critique' ? this.max : this.max * (1 - (this.opts.critiqueReserve ?? 0));
+    return this.amount < limit;
+  }
+}
+
 /** `$0.42`, `€1.20`, `0.0031 GBP`: small amounts keep significant digits. */
 export function formatMoney(m: Money): string {
   const digits = m.amount === 0 ? 2 : m.amount < 0.01 ? 4 : m.amount < 1 ? 3 : 2;

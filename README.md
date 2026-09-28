@@ -263,6 +263,11 @@ pricing:                          # example values: use your own prices
   ollama: { input: 0, output: 0 } # local models
 ```
 
+`--max-cost 2` (`review.maxCost`) caps a run at $2: no model call starts once that much is spent, and with
+self-critique on, reviews stop at 85% so the rest can verify their findings. Calls already running finish.
+Parts left unreviewed are marked `budget` in the summary, and `--fail-on` does not pass them. Calls without
+a known cost cannot count and are named in a warning.
+
 ### Cache
 
 Model answers are cached, so a second review of the same code costs nothing: after a fix, only the chunks
