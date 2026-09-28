@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Full depth reviews for recall.** At `--full` the reviewer goes through every changed hunk and reports
+  each plausible defect (partly confirmed ones with a lower confidence), leaving precision to the critic
+  and the confidence threshold. On a 10-PR subset of AACR-Bench (`evals/aacr`) precision went 30% → 45% and
+  recall 5.5% → 9.1%; essential depth is unchanged.
+- **Findings are submitted as they are verified.** `submit_findings` calls add up and no longer tell the
+  model it is done, so a review cut off by its time limit keeps what it found; the extra turn after a
+  timeout asks for the findings not submitted yet. The direct API loop continues after a submission until
+  the model answers without a tool call; critiques still end at their first submission.
+
 - **Hard eval cases** (`--filter hard`): 16 cases where a weak review fails — defects visible only in an
   unchanged file, a 1,100-line rename with one wrong call, subtle logic (keyset pagination, int overflow,
   retry double charges), tempting-but-clean code, and two real bugs from `click` and `werkzeug` replayed

@@ -23,7 +23,8 @@
    6. snapshot    git/snapshot.ts      isolated, sanitized worktree of head (agents / cross-provider fallback)
    7. review      review/execute.ts    one AgentTask per chunk (p-limit), ModelRouter: retry / fallback / fail
                   providers/*          ACP agents or Bedrock; read-only tools + submit_findings;
-                                       out of time/steps/output → one short "submit what you have" turn
+                                       findings submitted as verified (several calls add up);
+                                       out of time/steps/output → one short "submit the rest" turn
                   review/findings.ts   submit payload → fallback JSON in text → one repair retry
                   review/pipeline.ts   still failed: split the chunk (≤ 2 levels) or retry once with 2× time
                   models/pricing.ts    usage of every attempt → cost (reported, or tokens × `pricing`)
@@ -48,8 +49,8 @@
   - The task carries: instructions, prompt, model, reasoning level, review root, read tools, skill
     catalog, timeout, stall timeout and an abort signal.
   - The result carries: the collected `submit_*` payload, the final text, usage, tool usage and warnings,
-    plus `interruptedBy` (our timeout / stall watchdog) and `salvaged` (the model was asked for an early
-    answer).
+    plus `interruptedBy` (our timeout / stall watchdog) and `salvaged` (a partial answer: the model was
+    asked for an early answer, or was cut short after submitting some findings).
   - `Usage` holds uncached input, cached input, output and reasoning tokens, the number of model
     requests, `estimated` (the provider reported no token counts) and `reportedCost` (ACP `usage_update`).
 - **Structured output through a tool.** ACP has no response-schema field, so every provider gets the same
@@ -92,7 +93,9 @@ the config files and flags, so explicit settings always win.
 
 The depth also affects:
 - **Prompts.** The review instructions (`prompts.ts#depthRules`) narrow the scope to serious production
-  defects and require a concrete fix. At essential depth the critic also rejects real but low-impact
+  defects and require a concrete fix. At full depth they ask for recall instead: go through every changed
+  hunk and report each plausible defect, partly confirmed ones with a lower confidence, since the critic
+  and the confidence threshold remove the false positives. At essential depth the critic also rejects real but low-impact
   findings.
 - **Skills.** `skillsForDepth(skills, depth)` keeps only `tier: essential` skills and swaps in their
   `essentialBody`, i.e. without bullets marked `[full]`. The same view feeds per-chunk selection,
@@ -164,9 +167,10 @@ The depth also affects:
 ## Providers
 
 ### Direct APIs (`providers/ai-sdk-agent.ts`: Bedrock, Anthropic)
-- One tool loop for both: Vercel AI SDK v7 `generateText` with `tools` and
-  `stopWhen: [isStepCount(maxSteps), hasToolCall(submit)]`; the last step (or one after 80% of the time)
-  offers only the submit tool. The portable `reasoning` level maps to the provider's reasoning settings.
+- One tool loop for both: Vercel AI SDK v7 `generateText` with `tools`, capped by `isStepCount(maxSteps)`.
+  A review continues after submitting findings until the model answers without a tool call; a critique ends
+  at its first `submit_verdicts`. The last step (or one after 80% of the time) offers only the submit tool,
+  and a review's submission there ends the loop. The portable `reasoning` level maps to the provider's reasoning settings.
 - **Prompt caching.** Every step of the loop sends the whole conversation again, so the prefix is cached:
   the Anthropic API gets request-level `cache_control` (it places the breakpoint itself); Bedrock gets a
   `cachePoint` on the instructions and on the newest message of each step (moved, not piled up: at most
@@ -324,12 +328,15 @@ The code under review, and therefore model output, is treated as untrusted.
 - **Long lines** (minified code, inline base64) are clipped at 2,000 characters. Pieces still over
   budget are split again.
 - **Unfinished turns** are never recorded as a clean review. Recovery, cheapest first:
-  1. **Early answer.** A turn that ran out of time (task timeout, stall watchdog), steps or output without
-     submitting gets one short extra turn (`providers/salvage.ts`, ¼ of the timeout, 30–90 s): "stop, call
-     `submit_findings` with what you have". ACP agents get it as a follow-up prompt in the same session;
-     Bedrock offers only the submit tool on its last step, or once 80% of the time is gone (not a forced
-     tool choice, which extended thinking rejects). Findings from such a turn are kept; the chunk's
-     `recovery` says so.
+  1. **Early answer.** Reviews submit findings as they verify them (`submit_findings` calls add up), so a
+     cut-off review keeps what it submitted. A turn that ran out of time (task timeout, stall watchdog),
+     steps or output gets one short extra turn (`providers/salvage.ts`, ¼ of the timeout, 30–90 s): "stop,
+     call `submit_findings` with what you have" — or, after earlier submissions, with what it has not
+     submitted yet. A critique gets it only when it submitted nothing: verdicts come in one call. ACP agents
+     get it as a follow-up prompt in the same session; the direct API loop (Anthropic, Bedrock) offers only
+     the submit tool on its last step, or once 80% of the time is gone (not a forced tool choice, which
+     extended thinking rejects), and ends with that submission. Findings from such a turn are kept; the
+     chunk's `recovery` says so.
   2. **Split.** A chunk that still failed with `timeout`, `step-limit`, `output-limit` or `context-limit` is
      halved (`chunking/chunker.ts#splitChunk`, at a file boundary near the middle, read-only context
      dropped) and each half is reviewed on its own, up to two levels (four parts).

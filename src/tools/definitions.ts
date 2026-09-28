@@ -327,11 +327,12 @@ const getSkillTool = defineTool({
 const submitFindingsTool = defineTool({
   name: 'submit_findings',
   description:
-    'Submit the defects you found. Call it exactly once at the end with ALL findings (an empty array if there are none). Lines refer to the NEW version of the file.',
+    'Record defects you have verified. Each call adds to your review: submit findings as you confirm them instead of keeping them for the end, and call it at least once (an empty array if there are none). Lines refer to the NEW version of the file.',
   inputSchema: SubmitFindingsSchema,
   async execute(input, ctx) {
     ctx.collector?.add('findings', input);
-    return `Received ${input.findings.length} finding(s). You are done — reply with a one-line confirmation.`;
+    const total = ctx.collector?.submission.findings?.length ?? input.findings.length;
+    return `Recorded ${input.findings.length} finding(s), ${total} in total. Continue with the rest of the change and submit further defects as you verify them; when you have covered everything, reply with a one-line summary.`;
   },
 });
 

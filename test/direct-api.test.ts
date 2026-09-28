@@ -34,15 +34,20 @@ function toolCall(toolName: string, input: unknown, id: string): LanguageModelV4
   };
 }
 
-/** Reads a file once, then submits an empty review. */
+/** Reads a file once, submits an empty review, then answers with a one-line summary. */
 function readThenSubmit() {
   let n = 0;
   return new MockLanguageModelV4({
     doGenerate: async () => {
       n++;
-      return n === 1
-        ? toolCall('read_file', { path: 'app.js' }, 'c1')
-        : toolCall('submit_findings', { findings: [] }, 'c2');
+      if (n === 1) return toolCall('read_file', { path: 'app.js' }, 'c1');
+      if (n === 2) return toolCall('submit_findings', { findings: [] }, 'c2');
+      return {
+        content: [{ type: 'text', text: 'No defects found.' }],
+        finishReason: { unified: 'stop', raw: 'end_turn' },
+        usage: USAGE,
+        warnings: [],
+      };
     },
   });
 }
@@ -77,18 +82,18 @@ describe('Anthropic API provider', () => {
       () => model,
     );
     const result = await provider.run(task());
-    expect(model.doGenerateCalls).toHaveLength(2);
+    expect(model.doGenerateCalls).toHaveLength(3);
     for (const call of model.doGenerateCalls) {
       expect(call.providerOptions?.anthropic).toMatchObject({ cacheControl: { type: 'ephemeral' } });
     }
     expect(result.submission.calls).toBe(1);
     expect(result.model).toBe('claude-sonnet-5');
     expect(result.usage).toMatchObject({
-      inputTokens: 2_000,
-      cachedInputTokens: 12_000,
-      cacheWriteTokens: 4_000,
-      outputTokens: 600,
-      requests: 2,
+      inputTokens: 3_000,
+      cachedInputTokens: 18_000,
+      cacheWriteTokens: 6_000,
+      outputTokens: 900,
+      requests: 3,
     });
     expect(result.reads).toEqual(['app.js']);
   });
