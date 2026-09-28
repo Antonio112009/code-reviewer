@@ -14,7 +14,7 @@ export interface ModelListing {
   provider: string;
   /** Model ids the provider offers (for ACP: the `model` config option values), or 'unknown'. */
   models: string[] | 'unknown';
-  source: 'acp-config' | 'bedrock-api' | 'catalog';
+  source: 'acp-config' | 'bedrock-api' | 'openai-api' | 'catalog';
   error?: string;
   /** Display names by model id (ACP option names), when the provider reports them. */
   labels?: Record<string, string>;

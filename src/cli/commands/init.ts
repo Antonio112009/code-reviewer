@@ -19,7 +19,7 @@ import {
 import { type ConfigScope, renderConfigTemplate, validateRenderedConfig } from '../../config/template';
 import { detectStack, isTechId, techCategory, techName } from '../../context/stack';
 import { GitRepo } from '../../git/repo';
-import { detectProviders, type ProviderStatus } from '../../providers/detect';
+import { detectProviders, type ProviderStatus, providerNeedsModel } from '../../providers/detect';
 import { techVersionsForChunk } from '../../review/planning';
 import { classifySkills, type RepoSkillRow, technologyGroup } from '../../skills/detector';
 import { loadSkills, type Skill } from '../../skills/loader';
@@ -661,13 +661,14 @@ function defaultChoices(det: InitDetection, current: Config, scope: ConfigScope)
 
 /**
  * The configured review provider when it is available here, else the first available one (stable agents
- * before experimental ones; Bedrock only when a model is known, since it has no default model).
+ * before experimental ones; Bedrock and OpenAI-compatible APIs only when a model is known, since they have no
+ * default model).
  */
 function pickDefaultProvider(statuses: ProviderStatus[], current: Config): string {
   const configured = current.roles.review?.provider;
   const available = statuses.filter((s) => s.available);
   if (configured && available.some((s) => s.id === configured)) return configured;
-  const usable = available.filter((s) => s.type !== 'bedrock' || bedrockModelKnown(current, s.id));
+  const usable = available.filter((s) => modelKnown(current, s.id));
   const rank = (id: string) => {
     const i = PROVIDER_PREFERENCE.indexOf(id);
     return i < 0 ? PROVIDER_PREFERENCE.length : i;
@@ -679,9 +680,8 @@ function pickDefaultProvider(statuses: ProviderStatus[], current: Config): strin
   return usable[0]?.id ?? configured ?? 'claude';
 }
 
-function bedrockModelKnown(current: Config, id: string): boolean {
-  const cfg = current.providers[id];
-  return Boolean((cfg?.type === 'bedrock' && cfg.defaultModel) || current.roles.review?.model);
+function modelKnown(current: Config, id: string): boolean {
+  return !providerNeedsModel(current.providers[id]) || Boolean(current.roles.review?.model);
 }
 
 function resolveChoices(defaults: InitChoices, answers: InitAnswers): InitChoices {
@@ -1049,18 +1049,20 @@ async function askRole(
     }),
   );
   const cfg = current.providers[provider];
-  const needsModel = cfg?.type === 'bedrock' && !cfg.defaultModel;
+  const needsModel = providerNeedsModel(cfg);
   const model = unwrap(
     await p.text({
       ...io,
       message: `Model for the ${role} role`,
-      placeholder: needsModel
-        ? 'Bedrock model or inference profile id, e.g. us.anthropic.claude-…'
-        : "empty = the agent's default (e.g. opus, sonnet, gpt-5-codex)",
+      placeholder: !needsModel
+        ? "empty = the agent's default (e.g. opus, sonnet, gpt-5-codex)"
+        : cfg?.type === 'bedrock'
+          ? 'Bedrock model or inference profile id, e.g. us.anthropic.claude-…'
+          : 'a model id the API serves (with tool calling), e.g. qwen3-coder:30b',
       initialValue: provider === d.provider ? (d.model ?? '') : '',
       validate: (v) => {
         const value = v?.trim() ?? '';
-        if (needsModel && !value) return 'Bedrock needs a model id';
+        if (needsModel && !value) return `${provider} needs a model id`;
         return /\s/.test(value) ? 'Model ids contain no spaces' : undefined;
       },
     }),

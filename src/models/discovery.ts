@@ -3,7 +3,12 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
 import { AwsClient } from 'aws4fetch';
-import type { AcpProviderConfig, BedrockProviderConfig, ProviderConfig } from '../config/schema';
+import type {
+  AcpProviderConfig,
+  BedrockProviderConfig,
+  OpenAiProviderConfig,
+  ProviderConfig,
+} from '../config/schema';
 import {
   AcpConnection,
   type AgentEndpoint,
@@ -12,6 +17,7 @@ import {
   selectValuesOf,
 } from '../providers/acp/connection';
 import { findExecutable, PRESETS } from '../providers/acp/presets';
+import { openAiEndpoint } from '../providers/openai';
 import type { Logger } from '../util/logger';
 import { catalogFor } from './catalog';
 import type { ModelListing } from './types';
@@ -36,13 +42,16 @@ export interface ListModelsOptions {
   refresh?: boolean;
   /** Test hook: connect to an in-process ACP agent instead of launching the preset. */
   endpoint?: () => AgentEndpoint;
-  /** Test hook: HTTP client for the Bedrock control plane. */
+  /** Test hook: HTTP client for the Bedrock control plane and OpenAI-compatible `/models`. */
   fetch?: typeof fetch;
   /** Test hook: AWS credentials instead of the default provider chain. */
   credentials?: () => Promise<AwsCredentials>;
 }
 
 const BEDROCK_TIMEOUT_MS = 15_000;
+const OPENAI_TIMEOUT_MS = 10_000;
+/** Bounds a `/models` answer (OpenRouter lists several hundred models). */
+const MAX_OPENAI_MODELS = 2_000;
 const MAX_PROFILE_PAGES = 10;
 /** Region names only: the region becomes part of a URL that receives signed requests. */
 const REGION = /^[a-z]{2}(?:-[a-z]+)+-\d{1,2}$/;
@@ -75,7 +84,7 @@ export function listModels(
     (err: unknown): ModelListing => ({
       provider: providerId,
       models: 'unknown',
-      source: cfg.type === 'bedrock' ? 'bedrock-api' : cfg.type === 'acp' ? 'acp-config' : 'catalog',
+      source: sourceOf(cfg),
       error: err instanceof Error ? err.message : String(err),
     }),
   );
@@ -104,6 +113,21 @@ async function discover(
       return listBedrockModels(providerId, cfg, opts);
     case 'anthropic':
       return catalogListing(providerId, cfg);
+    case 'openai':
+      return listOpenAiModels(providerId, cfg, opts);
+  }
+}
+
+function sourceOf(cfg: ProviderConfig): ModelListing['source'] {
+  switch (cfg.type) {
+    case 'bedrock':
+      return 'bedrock-api';
+    case 'acp':
+      return 'acp-config';
+    case 'openai':
+      return 'openai-api';
+    default:
+      return 'catalog';
   }
 }
 
@@ -316,6 +340,59 @@ function awsErrorText(res: Response, body: string): string {
     // not JSON
   }
   return `HTTP ${res.status}${type ? ` ${type}` : ''}${message ? `: ${message.slice(0, 300)}` : ''}`;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// OpenAI-compatible APIs
+// ---------------------------------------------------------------------------------------------------------
+
+/** `GET {baseUrl}/models` (OpenAI, OpenRouter, Ollama, vLLM, LM Studio and LiteLLM all serve it). */
+async function listOpenAiModels(
+  providerId: string,
+  cfg: OpenAiProviderConfig,
+  opts: ListModelsOptions,
+): Promise<ModelListing> {
+  const failed = (error: string): ModelListing => ({
+    provider: providerId,
+    models: 'unknown',
+    source: 'openai-api',
+    error,
+  });
+  const { baseUrl, keyEnv } = openAiEndpoint(cfg);
+  const key = keyEnv ? process.env[keyEnv]?.trim() : undefined;
+  if (keyEnv && !key) return failed(`${keyEnv} is not set`);
+  const timeout = AbortSignal.timeout(opts.timeoutMs ?? OPENAI_TIMEOUT_MS);
+  const signal = opts.signal ? AbortSignal.any([opts.signal, timeout]) : timeout;
+  try {
+    const res = await (opts.fetch ?? fetch)(`${baseUrl}/models`, {
+      headers: { accept: 'application/json', ...(key ? { authorization: `Bearer ${key}` } : {}) },
+      signal,
+    });
+    const body = await res.text();
+    if (!res.ok) return failed(`HTTP ${res.status}${openAiErrorText(body)}`);
+    const data = JSON.parse(body) as { data?: unknown };
+    if (!Array.isArray(data.data)) return failed('unexpected /models answer (no "data" list)');
+    const ids = data.data
+      .map((m: { id?: unknown }) => m?.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= 200);
+    const models = [...new Set(ids)].slice(0, MAX_OPENAI_MODELS).sort();
+    return { provider: providerId, models, source: 'openai-api' };
+  } catch (err) {
+    if (opts.signal?.aborted) return failed('aborted');
+    return failed(errorText(err));
+  }
+}
+
+function openAiErrorText(body: string): string {
+  let message = body.trim();
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: unknown } | string };
+    const m = typeof parsed.error === 'string' ? parsed.error : parsed.error?.message;
+    if (typeof m === 'string') message = m;
+  } catch {
+    // not JSON
+  }
+  return message ? `: ${message.slice(0, 300)}` : '';
 }
 
 function errorText(err: unknown): string {

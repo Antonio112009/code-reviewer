@@ -197,8 +197,8 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
 
 ## Providers
 
-### Direct APIs (`providers/ai-sdk-agent.ts`: Bedrock, Anthropic)
-- One tool loop for both: Vercel AI SDK v7 `generateText` with `tools`, capped by `isStepCount(maxSteps)`.
+### Direct APIs (`providers/ai-sdk-agent.ts`: Bedrock, Anthropic, OpenAI-compatible)
+- One tool loop for all of them: Vercel AI SDK v7 `generateText` with `tools`, capped by `isStepCount(maxSteps)`.
   A review continues after submitting findings until the model answers without a tool call; a critique ends
   at its first `submit_verdicts`. The last step (or one after 80% of the time) offers only the submit tool,
   and a review's submission there ends the loop. The portable `reasoning` level maps to the provider's reasoning settings.
@@ -212,6 +212,13 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
   over ACP a task carries only our instructions, prompt and tools: in the eval corpus Claude Code read
   ~143k input tokens per review task for a ~5k-token prompt (its own system prompt and tools, re-read every
   turn).
+- **OpenAI-compatible** (`openai.ts`, `@ai-sdk/openai-compatible`): chat completions at `baseUrl` (default
+  `https://api.openai.com/v1`) with the key from `apiKeyEnv` (default `OPENAI_API_KEY`; `none` sends no
+  key). Built in: `openai`, `openrouter`, `ollama` (localhost, no key). No default model and no catalog:
+  the model comes from `--model`, the role or `defaultModel`; `providers models` lists `GET /models`, and a
+  model missing from that list is `unverified`, not unavailable (Azure deployments, LiteLLM wildcard
+  routes). `reasoning_effort` is sent only with `reasoningEffort: true`, since models without reasoning
+  reject it. No prompt caching option: OpenAI caches long prefixes by itself.
 
 ### ACP (`providers/acp/`)
 - **`presets.ts`** — for each agent: how to launch it, its read-only lever, and whether model/effort are
@@ -312,7 +319,8 @@ The code under review, and therefore model output, is treated as untrusted.
    redirect `npx`.
 7. **Project configs.**
    - Only YAML/JSON is accepted. Unknown keys are errors.
-   - They may not set `models`, `analyzers.project`, provider `command`/`args`/`env` or
+   - They may not set `models`, `analyzers.project`, provider `command`/`args`/`env`, provider
+     `baseUrl`/`apiKeyEnv` (where the code and which secret are sent) or
      `publish.githubApiUrl`/`gitlabApiUrl`, profiles included.
    - The search stops at the repository root, never walks up outside a repository, and never takes the
      global config for a project config. `CODE_REVIEWER_HOME` counts only when absolute.
@@ -364,7 +372,7 @@ The code under review, and therefore model output, is treated as untrusted.
      steps or output gets one short extra turn (`providers/salvage.ts`, ¼ of the timeout, 30–90 s): "stop,
      call `submit_findings` with what you have" — or, after earlier submissions, with what it has not
      submitted yet. A critique gets it only when it submitted nothing: verdicts come in one call. ACP agents
-     get it as a follow-up prompt in the same session; the direct API loop (Anthropic, Bedrock) offers only
+     get it as a follow-up prompt in the same session; the direct API loop (Anthropic, Bedrock, OpenAI-compatible) offers only
      the submit tool on its last step, or once 80% of the time is gone (not a forced tool choice, which
      extended thinking rejects), and ends with that submission. Findings from such a turn are kept; the
      chunk's `recovery` says so.

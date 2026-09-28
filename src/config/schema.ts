@@ -42,6 +42,30 @@ const AnthropicProviderSchema = z.strictObject({
   critiqueModel: z.string().optional(),
 });
 
+/** Environment variable names (`none`: a server without authentication, such as a local Ollama). */
+const API_KEY_ENV_RE = /^(none|[A-Za-z_][A-Za-z0-9_]*)$/;
+
+/**
+ * An OpenAI-compatible chat completions API — OpenAI, OpenRouter, Ollama, vLLM, LM Studio, LiteLLM, … (see
+ * `providers/openai.ts`). `baseUrl` and `apiKeyEnv` decide where the code and which secret are sent, so a
+ * project config may not set them (`config/load.ts`).
+ */
+const OpenAiProviderSchema = z.strictObject({
+  type: z.literal('openai'),
+  /** API base URL, e.g. `http://localhost:11434/v1` (default `https://api.openai.com/v1`). */
+  baseUrl: z.url({ protocol: /^https?$/, error: 'must be an http(s) URL' }).optional(),
+  /** Environment variable holding the API key (default `OPENAI_API_KEY`); `none` for no authentication. */
+  apiKeyEnv: z.string().regex(API_KEY_ENV_RE, 'must be an environment variable name or "none"').optional(),
+  /**
+   * Send the role's reasoning level as `reasoning_effort` (reasoning models such as GPT-5 or o3). Off by default:
+   * models without reasoning, and some servers, reject the parameter.
+   */
+  reasoningEffort: z.boolean().optional(),
+  defaultModel: z.string().optional(),
+  /** Model of the self-critique pass when the critique role names none (e.g. a stronger model than the review's). */
+  critiqueModel: z.string().optional(),
+});
+
 const MockProviderSchema = z.strictObject({
   type: z.literal('mock'),
   /** Path to a JSON file with canned `submit_findings` payloads keyed by file path. */
@@ -51,12 +75,14 @@ const MockProviderSchema = z.strictObject({
 export const ProviderConfigSchema = z.discriminatedUnion('type', [
   BedrockProviderSchema,
   AnthropicProviderSchema,
+  OpenAiProviderSchema,
   AcpProviderSchema,
   MockProviderSchema,
 ]);
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 export type BedrockProviderConfig = z.infer<typeof BedrockProviderSchema>;
 export type AnthropicProviderConfig = z.infer<typeof AnthropicProviderSchema>;
+export type OpenAiProviderConfig = z.infer<typeof OpenAiProviderSchema>;
 export type AcpProviderConfig = z.infer<typeof AcpProviderSchema>;
 export type MockProviderConfig = z.infer<typeof MockProviderSchema>;
 
@@ -356,6 +382,10 @@ export const DEFAULT_CONFIG: Config = {
     gemini: { type: 'acp', preset: 'gemini' },
     bedrock: { type: 'bedrock' },
     anthropic: { type: 'anthropic', defaultModel: 'claude-sonnet-5', critiqueModel: 'claude-opus-5-5' },
+    // OpenAI-compatible APIs: no default model (pass --model or set roles.review.model / defaultModel).
+    openai: { type: 'openai' },
+    openrouter: { type: 'openai', baseUrl: 'https://openrouter.ai/api/v1', apiKeyEnv: 'OPENROUTER_API_KEY' },
+    ollama: { type: 'openai', baseUrl: 'http://localhost:11434/v1', apiKeyEnv: 'none' },
     mock: { type: 'mock' },
   },
   roles: {

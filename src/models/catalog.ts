@@ -219,6 +219,8 @@ export const MODEL_CATALOG: Record<CatalogKey, CatalogModel[]> = {
 export function catalogKeyOf(provider: ProviderConfig | string): CatalogKey | undefined {
   if (typeof provider !== 'string') {
     if (provider.type === 'acp') return provider.preset === 'custom' ? undefined : provider.preset;
+    // OpenAI-compatible endpoints serve arbitrary models: nothing to suggest.
+    if (provider.type === 'openai') return undefined;
     return provider.type;
   }
   const key = provider.startsWith('acp:') ? provider.slice(4) : provider;
@@ -311,14 +313,18 @@ export function isDefiniteListing(listing: ModelListing | undefined): listing is
 /**
  * The listed value that `model` selects, or undefined. Bedrock ids must match exactly (a `us.` profile is
  * not an `eu.` one); ACP agents are matched like the session setup does: exact value or name first, then a
- * substring (`opus` selects `opus[1m]` when that is all the agent offers).
+ * substring (`opus` selects `opus[1m]` when that is all the agent offers). Ollama lists `name:latest` for
+ * a model requested as `name`.
  */
 export function matchListedModel(listing: ModelListing, model: string): string | undefined {
   if (!Array.isArray(listing.models)) return undefined;
   const wanted = model.trim().toLowerCase();
   const label = (v: string) => (listing.labels?.[v] ?? '').toLowerCase();
   const exact = listing.models.find((v) => v.toLowerCase() === wanted || label(v) === wanted);
-  if (exact || listing.source !== 'acp-config') return exact;
+  if (exact) return exact;
+  if (listing.source === 'openai-api')
+    return listing.models.find((v) => v.toLowerCase() === `${wanted}:latest`);
+  if (listing.source !== 'acp-config') return undefined;
   return listing.models.find((v) => v.toLowerCase().includes(wanted) || label(v).includes(wanted));
 }
 
@@ -341,6 +347,9 @@ export function modelStatus(listing: ModelListing | undefined, model: string | u
   if (matchListedModel(listing, model)) return 'available';
   if (listing.source === 'bedrock-api' && (outsideBedrockListing(model) || listing.error))
     return 'unverified';
+  // `/models` of some servers omits what they serve (Azure deployments, LiteLLM wildcard routes): let the
+  // request tell, and a "model not found" answer goes through the usual fallback.
+  if (listing.source === 'openai-api') return 'unverified';
   return 'unavailable';
 }
 
@@ -381,9 +390,9 @@ export interface AlternativesOptions {
   includeUnconfined?: boolean;
 }
 
-/** `api` for direct APIs (Bedrock, Anthropic), `acp` for agents, `mock` for the offline provider. */
+/** `api` for direct APIs (Bedrock, Anthropic, OpenAI-compatible), `acp` for agents, `mock` for the offline provider. */
 export function providerKind(cfg: ProviderConfig): 'api' | 'acp' | 'mock' {
-  return cfg.type === 'bedrock' || cfg.type === 'anthropic' ? 'api' : cfg.type;
+  return cfg.type === 'acp' || cfg.type === 'mock' ? cfg.type : 'api';
 }
 
 function candidatesOf(p: ProviderInfo): Array<{ model: string; tier: ModelTier; entry?: CatalogModel }> {

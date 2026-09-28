@@ -365,7 +365,8 @@ function renderProvider(
   const definite = isDefiniteListing(listing);
   const count = Array.isArray(listing.models) ? listing.models.length : 0;
   const builtin = config.providers[s.id]?.type === 'mock';
-  const via = listing.source === 'bedrock-api' ? 'Bedrock API' : 'agent';
+  const via =
+    listing.source === 'bedrock-api' ? 'Bedrock API' : listing.source === 'openai-api' ? '/models' : 'agent';
   const summary = definite
     ? pc.dim(`${count} model${count === 1 ? '' : 's'} (${via})`)
     : builtin

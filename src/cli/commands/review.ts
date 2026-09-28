@@ -186,7 +186,7 @@ async function interactiveDefaults(
     !process.stderr.isTTY
   )
     return;
-  const usable = available.filter((s) => s.available && s.type !== 'mock');
+  const usable = available.filter((s) => s.available && s.type !== 'mock' && (!s.needsModel || flags.model));
   if (usable.length === 0) return;
   const io = { output: process.stderr };
   p.intro('code-reviewer', io);

@@ -4,6 +4,7 @@ import { AcpProvider } from './acp/provider';
 import { AnthropicProvider } from './anthropic';
 import { BedrockProvider } from './bedrock';
 import { MockProvider } from './mock';
+import { OpenAiProvider } from './openai';
 import { type Provider, ProviderError } from './types';
 
 /** Lazily instantiates providers referenced by roles; shares instances between roles. */
@@ -48,6 +49,8 @@ export function createProvider(
       return new BedrockProvider(id, cfg);
     case 'anthropic':
       return new AnthropicProvider(id, cfg);
+    case 'openai':
+      return new OpenAiProvider(id, cfg);
     case 'acp':
       return new AcpProvider(id, cfg, logger, concurrency);
     case 'mock':
