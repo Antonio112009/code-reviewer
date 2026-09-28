@@ -154,6 +154,32 @@ It was not merged. The exhaustive full-depth prompt, findings submitted as they 
 refute-to-drop critique already recover what the rounds recover in OpenCodeReview: coverage lost when a
 model cuts corners on a large group.
 
+#### Skills on vs off (after the tool fixes and the Claude Code isolation)
+
+Skills add ~3.8k tokens of checklists to every full-depth chunk, and their effect had never been measured.
+Both variants ran the same build (main at 4100cc8: `grep`/`find_symbol` fixes, per-file skill matching, Claude
+Code sessions without user settings), `--full`, two runs each, the variants side by side.
+
+| ctx30, two runs each | Findings | Precision | Recall | F1 | Cost / run |
+|---|---|---|---|---|---|
+| Skills (default) | 50 | 40.0% | 7.0% (18, 22) | 11.9% (10.9, 12.9) | $14.3 |
+| `--skills none` | 44.5 | 46.0% | 7.2% (22, 19) | 12.4% (13.3, 11.6) | $13.0 |
+| Earlier baseline (threshold 0.3, before these changes) | 46 | 44.7% | 7.2% (22, 19) | 12.3% (13.1, 11.6) | $19.8 |
+
+- **No measurable effect on recall or F1.** The runs of each variant overlap. With skills, the reviewer
+  reports a few more findings at lower precision, for ~9% more cost.
+- **Skills make runs more consistent:** 15 references matched in both runs with skills, 10 without. Over two
+  runs, the variants matched 25 and 31 references, 20 of them in common.
+- **Some matches came from a skill:** the immich service worker's `cache.addAll` rejecting the whole install
+  (`web/service-worker/caching`) and a null check after use (dbeaver) were matched with skills only. Only one
+  reference was matched in both runs without skills and never with them (FreeCAD).
+- **The isolation paid off on its own:** $19.8 → $14.3 per run at the same F1. Claude Code sessions no longer
+  load the user's settings and get three built-in tools.
+
+AACR-Bench is a weak test of skills. 42% of its references are maintainability and readability comments that
+no checklist targets, and two runs of 30 PRs cannot resolve a difference this small. Skills stay on. A larger
+sample, or the eval corpus with and without skills, is needed before trimming them.
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).
