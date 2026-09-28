@@ -86,6 +86,7 @@ export class AcpProvider implements Provider {
           this.preset,
           this.logger,
           this.timeouts,
+          this.cfg,
         );
         this.all.add(conn);
         this.logger.debug(`[acp] ${this.id}: connected to ${conn.agentName}`);

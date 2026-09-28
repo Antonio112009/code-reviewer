@@ -173,10 +173,13 @@ async function listAcpModels(
 
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUTS.setupMs;
   const probeDir = await mkdtemp(path.join(tmpdir(), 'code-reviewer-models-'));
-  const opening = AcpConnection.open(endpoint, preset, opts.logger, {
-    ...DEFAULT_TIMEOUTS,
-    setupMs: timeoutMs,
-  });
+  const opening = AcpConnection.open(
+    endpoint,
+    preset,
+    opts.logger,
+    { ...DEFAULT_TIMEOUTS, setupMs: timeoutMs },
+    cfg,
+  );
   let conn: AcpConnection | undefined;
   try {
     const probe = opening.then((c) => {

@@ -129,7 +129,7 @@ flowchart LR
 
 | Provider | Uses | Notes |
 |---|---|---|
-| `claude` | Claude Code over [ACP](https://agentclientprotocol.com) | your Claude Code login; reviews with Sonnet (1M context) and critiques with Opus by default; `--model opus` for a deeper review |
+| `claude` | Claude Code over [ACP](https://agentclientprotocol.com) | your Claude Code login; reviews with Sonnet (1M context) and critiques with Opus by default; `--model opus` for a deeper review. Review sessions load none of your plugins, hooks or settings (only the `env` / `apiKeyHelper` sign-in); `providers.claude.userSettings: true` in the global config loads them |
 | `codex` | OpenAI Codex over ACP | experimental; can run commands, so it is never picked as an automatic fallback |
 | `copilot` | GitHub Copilot CLI over ACP | experimental |
 | `gemini` | Gemini CLI over ACP | experimental |

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { Readable, Writable } from 'node:stream';
 import * as acp from '@agentclientprotocol/sdk';
+import type { AcpProviderConfig } from '../../config/schema';
 import { MCP_SERVER_NAME } from '../../tools/mcp-server';
 import type { Submission } from '../../tools/submission';
 import type { Money, Usage } from '../../types';
@@ -120,6 +121,8 @@ export class AcpConnection {
     private readonly preset: AcpPreset,
     private readonly logger: Logger,
     private readonly timeouts: AcpTimeouts,
+    /** The provider config (session options such as `userSettings`); the preset's defaults when unset. */
+    private readonly cfg: AcpProviderConfig,
   ) {}
 
   static async open(
@@ -127,8 +130,9 @@ export class AcpConnection {
     preset: AcpPreset,
     logger: Logger,
     timeouts: AcpTimeouts = DEFAULT_TIMEOUTS,
+    cfg: AcpProviderConfig = { type: 'acp', preset: preset.id },
   ): Promise<AcpConnection> {
-    const c = new AcpConnection(preset, logger, timeouts);
+    const c = new AcpConnection(preset, logger, timeouts, cfg);
     await c.start(endpoint);
     return c;
   }
@@ -283,7 +287,7 @@ export class AcpConnection {
           .buildSession({
             cwd: task.root,
             mcpServers: mcp ? [mcp] : [],
-            ...(this.preset.sessionMeta ? { _meta: this.preset.sessionMeta() } : {}),
+            ...(this.preset.sessionMeta ? { _meta: this.preset.sessionMeta(this.cfg) } : {}),
           })
           .start(),
         this.timeouts.setupMs,
@@ -538,7 +542,7 @@ export class AcpConnection {
         .buildSession({
           cwd,
           mcpServers: [],
-          ...(this.preset.sessionMeta ? { _meta: this.preset.sessionMeta() } : {}),
+          ...(this.preset.sessionMeta ? { _meta: this.preset.sessionMeta(this.cfg) } : {}),
         })
         .start(),
       this.timeouts.setupMs,
