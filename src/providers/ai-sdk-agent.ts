@@ -2,7 +2,7 @@ import { generateText, hasToolCall, isStepCount, type LanguageModel, type ModelM
 import { toAiSdkTools } from '../tools/ai-sdk';
 import { SUBMIT_TOOLS, toolsFor } from '../tools/definitions';
 import { SubmissionCollector } from '../tools/submission';
-import { salvagePrompt } from './salvage';
+import { mayAskForMore, salvagePrompt } from './salvage';
 import { type AgentResult, type AgentTask, ProviderError } from './types';
 
 /** Share of the task timeout after which the next step is the last one. */
@@ -46,6 +46,8 @@ export function withCachePoint(messages: ModelMessage[], marker: ProviderOptions
  * One task as an AI SDK tool loop (read-only tools and the submit tool), shared by the direct API providers:
  * the last step — or one after most of the time is gone — offers only the submit tool and asks for the
  * findings so far; a loop that used every step without submitting reports `max_turn_requests`.
+ * Findings are submitted as they are verified, so a review continues after a submission until the model
+ * answers without a tool call (or wraps up); verdicts end the loop on their first submission.
  */
 export async function runAiSdkTask(task: AgentTask, m: AiSdkModel): Promise<AgentResult> {
   const collector = new SubmissionCollector();
@@ -65,6 +67,7 @@ export async function runAiSdkTask(task: AgentTask, m: AiSdkModel): Promise<Agen
   const marker = caching?.kind === 'messages' ? caching.marker : undefined;
   const instructions = (text: string) =>
     marker ? { role: 'system' as const, content: text, providerOptions: marker } : text;
+  const incremental = task.kind === 'findings';
   let salvaged: string | undefined;
 
   try {
@@ -73,12 +76,17 @@ export async function runAiSdkTask(task: AgentTask, m: AiSdkModel): Promise<Agen
       instructions: instructions(task.instructions),
       prompt: task.prompt,
       tools,
-      stopWhen: [isStepCount(task.maxSteps), hasToolCall(submit)],
+      stopWhen: incremental
+        ? // A submission during the wrap-up is the last one.
+          [isStepCount(task.maxSteps), (run) => salvaged !== undefined && hasToolCall(submit)(run)]
+        : [isStepCount(task.maxSteps), hasToolCall(submit)],
       ...(caching?.kind === 'request' ? { providerOptions: caching.providerOptions } : {}),
       // Not a forced tool choice for the last step: that is rejected together with extended thinking.
       prepareStep: ({ stepNumber, messages }) => {
         const cached = marker ? { messages: withCachePoint(messages, marker) } : {};
-        if (task.salvage === false || task.maxSteps < 2 || collector.submitted) return cached;
+        if (task.salvage === false || task.maxSteps < 2 || !mayAskForMore(task.kind, collector.submitted)) {
+          return cached;
+        }
         const why =
           stepNumber >= task.maxSteps - 1
             ? 'this is the last step'
@@ -87,10 +95,11 @@ export async function runAiSdkTask(task: AgentTask, m: AiSdkModel): Promise<Agen
               : undefined;
         if (!why) return cached;
         salvaged = why;
+        const prompt = salvagePrompt(task.kind, why, collector.submitted);
         return {
           ...cached,
           activeTools: [submit],
-          instructions: instructions(`${task.instructions}\n\n${salvagePrompt(task.kind, why)}`),
+          instructions: instructions(`${task.instructions}\n\n${prompt}`),
         };
       },
       reasoning: task.reasoning === 'none' ? 'none' : task.reasoning,

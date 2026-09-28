@@ -6,7 +6,7 @@ import type { Config } from '../src/config/schema';
 import { CostMeter, costOf, formatMoney, priceFor } from '../src/models/pricing';
 import { MockProvider } from '../src/providers/mock';
 import { ProviderRegistry } from '../src/providers/registry';
-import { salvagePrompt, salvageReason, salvageTimeoutMs } from '../src/providers/salvage';
+import { mayAskForMore, salvagePrompt, salvageReason, salvageTimeoutMs } from '../src/providers/salvage';
 import type { AgentResult, AgentTask, Provider } from '../src/providers/types';
 import {
   failureKindOf,
@@ -346,6 +346,15 @@ describe('salvage helpers', () => {
   it('names the submit tool of the task', () => {
     expect(salvagePrompt('findings', 'the step limit was reached')).toMatch(/`submit_findings`/);
     expect(salvagePrompt('verdicts', 'the step limit was reached')).toMatch(/`submit_verdicts`.*uncertain/);
+  });
+
+  it('asks a review that already submitted findings for the rest, but not a critique', () => {
+    expect(mayAskForMore('findings', false)).toBe(true);
+    expect(mayAskForMore('findings', true)).toBe(true);
+    expect(mayAskForMore('verdicts', false)).toBe(true);
+    expect(mayAskForMore('verdicts', true)).toBe(false);
+    expect(salvagePrompt('findings', 'the time limit was reached', true)).toMatch(/not submitted yet/);
+    expect(salvagePrompt('findings', 'the time limit was reached')).not.toMatch(/not submitted yet/);
   });
 });
 

@@ -74,6 +74,7 @@ concern or suggestion". Our comment text is the finding's title, failure scenari
 | Date | code-reviewer | Setup | PRs | Precision | Recall | F1 | Findings / PR | Cost / PR |
 |---|---|---|---|---|---|---|---|---|
 | 2026-09-28 | `df35dd3` | `--full`, Sonnet review and critique, Sonnet judge | pilot, 9 of 10 | 30.0% (3/10) | 5.5% (3/55) | 9.3% | 1.1 | $1.03, 3.8 min |
+| 2026-09-28 | full-depth recall | `--full --reasoning high --critique-model sonnet`, Sonnet judge | pilot, 9 of 10 | 45.5% (5/11) | 9.1% (5/55) | 15.2% | 1.2 | $1.23, 5.7 min |
 
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
@@ -84,5 +85,10 @@ unmatched findings read as real bugs that the references do not contain. Recall 
 - The reviewer reported about one finding per PR.
 - Self-critique dropped only 2 of 12 findings.
 - Even Code Defect references were found 3 times out of 36.
+
+Full-depth recall mode (the reviewer reports every plausible defect, submits findings as it verifies them,
+and leaves precision to the critic) raised the reviewer's candidates from 12 to 20; the critique removed 9,
+and 5 of the 11 kept findings matched references. With 3–5 matches either way, the pilot is too small to
+call the gain final.
 
 A full run would cost about $190 and take about 4 hours at concurrency 3.

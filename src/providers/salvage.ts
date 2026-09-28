@@ -43,6 +43,14 @@ export function submitReminderPrompt(kind: SubmitKind): string {
   return `You ended your turn without calling \`${tool}\`, so your review was not recorded. Do not read, search or open anything else. Call \`${tool}\` now with ${what}.`;
 }
 
+/**
+ * Whether a cut-off turn may be asked for more: always when it submitted nothing; after a submission only
+ * for findings, which are submitted as they are verified (verdicts come in one final call).
+ */
+export function mayAskForMore(kind: SubmitKind, submittedBefore: boolean): boolean {
+  return !submittedBefore || kind === 'findings';
+}
+
 /** Time for the extra turn: a quarter of the task's timeout, within 30–90 s (never more than the task had). */
 export function salvageTimeoutMs(taskTimeoutMs: number): number {
   const floor = Math.min(MIN_SALVAGE_MS, taskTimeoutMs);
@@ -50,11 +58,13 @@ export function salvageTimeoutMs(taskTimeoutMs: number): number {
 }
 
 /** Follow-up prompt that asks for the results gathered so far through the submit tool. */
-export function salvagePrompt(kind: SubmitKind, why: string): string {
+export function salvagePrompt(kind: SubmitKind, why: string, submittedBefore = false): string {
   const tool = SUBMIT_TOOLS[kind].name;
   const what =
     kind === 'findings'
-      ? 'the defects you have already confirmed (an empty list if there are none). Report only what the code you have seen supports'
+      ? submittedBefore
+        ? 'the defects you have confirmed but not submitted yet (an empty list if you submitted everything). Report only what the code you have seen supports'
+        : 'the defects you have already confirmed (an empty list if there are none). Report only what the code you have seen supports'
       : 'a verdict for every finding you were given; use `uncertain` for those you could not check';
   return `Stop here: ${why}. Do not read, search or open anything else. Call \`${tool}\` now with ${what}. Keep each description short.`;
 }

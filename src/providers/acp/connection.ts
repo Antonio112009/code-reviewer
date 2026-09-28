@@ -13,6 +13,7 @@ import { cliEntryPath, resolveInside } from '../../util/paths';
 import { type ManagedProcess, spawnManaged, terminate } from '../../util/processes';
 import {
   endedWithoutSubmitting,
+  mayAskForMore,
   salvagePrompt,
   salvageReason,
   salvageTimeoutMs,
@@ -311,6 +312,8 @@ export class AcpConnection {
     };
     let salvaged: string | undefined;
     let interruptedBy: TurnState['interruptedBy'];
+    /** Why the first turn was cut short (time, steps, output), if it was. */
+    let cutOff: string | undefined;
     try {
       warnings.push(...(await this.configureSession(session, task)));
       await this.runTurn(session, state, turn, task, `${task.instructions}\n\n---\n\n${task.prompt}`, {
@@ -318,12 +321,15 @@ export class AcpConnection {
         stallTimeoutMs: task.stallTimeoutMs,
       });
       interruptedBy = turn.interruptedBy;
-      // Out of time, steps or output without submitting: one short extra turn keeps the work done so far.
+      // Out of time, steps or output: one short extra turn keeps the work done so far (for a review also after
+      // earlier submissions, which may not hold everything it found).
       const why = salvageReason(turn.stopReason, turn.interruptedBy);
-      if (why && task.salvage !== false && !turn.aborted && readSubmission(submitFile).calls === 0) {
+      cutOff = why;
+      const submittedBefore = readSubmission(submitFile).calls > 0;
+      if (why && task.salvage !== false && !turn.aborted && mayAskForMore(task.kind, submittedBefore)) {
         const timeoutMs = salvageTimeoutMs(task.timeoutMs);
         this.logger.debug(`[acp] ${task.label}: ${why} — asking for an early answer`);
-        await this.runTurn(session, state, turn, task, salvagePrompt(task.kind, why), {
+        await this.runTurn(session, state, turn, task, salvagePrompt(task.kind, why, submittedBefore), {
           timeoutMs,
           stallTimeoutMs: task.stallTimeoutMs ? Math.min(task.stallTimeoutMs, timeoutMs) : undefined,
         });
@@ -376,6 +382,12 @@ export class AcpConnection {
     };
     const submission = readSubmission(submitFile);
     noteReads(state, submission.reads ?? []);
+    // Findings come in as they are verified: a review cut short after submitting some is partial even when the
+    // extra turn did not complete it (never cached, and the chunk's recovery says so).
+    if (!salvaged && cutOff && submission.calls > 0 && task.kind === 'findings') {
+      salvaged = cutOff;
+      warnings.push(`${cutOff}: kept the findings submitted before it`);
+    }
     return {
       submission,
       ...(state.reads.size ? { reads: [...state.reads] } : {}),

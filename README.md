@@ -219,8 +219,9 @@ Early answers from a model that ran out of time are never cached, and `eval` nev
 
 ## When a model runs out of time or steps
 
-A chunk is never silently skipped. If the model runs out of time, tool steps or output before it
-submits, it first gets one short turn to submit what it has already found. If that fails too, the chunk
+A chunk is never silently skipped. The model submits findings as it verifies them, so a review cut short
+keeps what was already submitted. If it runs out of time, tool steps or output, it also gets one short turn
+to submit what it found but had not submitted yet. If nothing comes of it, the chunk
 is split in two and the halves are reviewed separately; a single file that timed out gets one retry with
 twice the time. A chunk that still fails is reported with the reason and what to change (for example
 `step-limit: raise review.maxSteps or lower --max-chunk-tokens`), and `--fail-on` fails the gate.
