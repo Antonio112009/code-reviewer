@@ -71,7 +71,7 @@ export function reviewInstructions(opts: ReviewInstructionOptions): string {
   const tools =
     opts.readTools === false
       ? '- No tools except the submit tool are available: reason from the code shown.'
-      : '- Verify before reporting. Use the read-only tools (read_file, grep, find_symbol, list_dir, git_log, git_blame) to check callers, definitions and invariants. Never claim something is unused, undefined, unvalidated or unhandled without searching for it.';
+      : '- Verify before reporting. Use the read-only tools (read_file, grep, find_symbol, find_references, list_dir, git_log, git_blame) to check callers, definitions and invariants: find_references lists every caller of a changed function or reader of a changed field. Never claim something is unused, undefined, unvalidated or unhandled without searching for it.';
   const sections = [
     `You are a meticulous senior software engineer doing a code review. Your ONLY goal is to find real defects: logic bugs, security vulnerabilities, data loss or corruption, race conditions, resource leaks, broken error handling, API misuse and severe performance problems.
 

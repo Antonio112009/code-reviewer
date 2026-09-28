@@ -58,7 +58,7 @@
   - `Usage` holds uncached input, cached input, output and reasoning tokens, the number of model
     requests, `estimated` (the provider reported no token counts) and `reportedCost` (ACP `usage_update`).
 - **Read tools** (`src/tools/definitions.ts`, the same for ACP agents over MCP and for direct APIs):
-  `read_file`, `grep`, `find_symbol`, `list_dir`, `git_log`, `git_blame`.
+  `read_file`, `grep`, `find_symbol`, `find_references`, `list_dir`, `git_log`, `git_blame`.
   - `grep` runs `git grep -P` (PCRE, so `\b`, `\w`, `(?:…)` work; POSIX ERE with a translation when git
     lacks PCRE), `-F` for plain text (no metacharacters, or `literal: true`), 20 s at most. A pattern that
     does not compile is searched as plain text, with a note; any other git error is returned as an error,
@@ -67,6 +67,9 @@
   - `find_symbol` greps definition forms only: declaration keywords (JS/TS, Python, Go, Rust, Kotlin,
     Swift, …) and C-family definitions (return type and modifiers before `name(` on a line without `;`,
     so calls and prototypes are left out), not in docs or data files.
+  - `find_references` greps a name as a whole word (`git grep -w -F`, code files only) and groups the hits by
+    file and by the enclosing declaration (`chunking/expand.ts#enclosingDeclaration`), marking definitions:
+    the callers of a changed function in one call (at most 30 files, 80 references).
   - Every call is logged (`runTool` → `SubmissionCollector.noteCall`: name, clipped arguments, result
     size, error, duration) to `run.log` and the chunk artifacts; ACP agents' MCP server hands the log back
     through the submission file.

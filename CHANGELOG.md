@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **`find_references` tool.** Every use of a function, method, class, field or variable, grouped by file and
+  by the enclosing function, with definitions marked: the callers of a changed function in one call. Cross-file
+  (repository-level) defects were the weakest spot on AACR-Bench: 6 of 45 such references were ever found.
+
 ## 0.3.0 — 2026-09-28
 
 Pull request threads of fixed findings are resolved, a run can be capped by cost, and reviews through Claude

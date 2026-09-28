@@ -35,7 +35,16 @@ describe('MCP server', () => {
   it('exposes the read-only tools and the submit tool', async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
-      ['find_symbol', 'git_blame', 'git_log', 'grep', 'list_dir', 'read_file', 'submit_findings'].sort(),
+      [
+        'find_references',
+        'find_symbol',
+        'git_blame',
+        'git_log',
+        'grep',
+        'list_dir',
+        'read_file',
+        'submit_findings',
+      ].sort(),
     );
   });
 
