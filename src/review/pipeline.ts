@@ -967,6 +967,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         ...(dependencies.length ? { dependencyRoots: dependencies.map((d) => d.dir) } : {}),
         maxSteps: limits.maxSteps,
         timeoutMs: limits.timeoutMs,
+        extendMs: Math.round(limits.timeoutMs * config.review.activeExtension),
         stallTimeoutMs: config.review.stallTimeoutMs,
         maxOutputTokens: reviewRole?.maxOutputTokens,
         signal: req.signal,

@@ -424,8 +424,10 @@ The code under review, and therefore model output, is treated as untrusted.
 ## Robustness
 
 - **Timeouts.** Each task has one: `review.timeout: auto` = 120 s + 12 s per 1k chunk tokens, capped at
-  `maxTimeoutMs`. The stall watchdog, request timeouts and the grace period after `session/cancel` all
-  apply. A timed-out or exited agent is marked `broken` and replaced.
+  `maxTimeoutMs`. A model still calling tools when the time is up (a call in the last minute) gets more
+  time in steps of ¼ of the timeout (at least 30 s), up to `review.activeExtension` × the timeout in all
+  (`providers/deadline.ts`); a model that went quiet is cut off on time. The stall watchdog, request
+  timeouts and the grace period after `session/cancel` all apply. A timed-out or exited agent is marked `broken` and replaced.
 - **Ctrl+C** (`cli/lifecycle.ts`):
   - First press: the abort signal fires. Running sessions get `session/cancel`, no new agents are
     spawned, critique and blame are skipped, and the run is saved with status `partial` (exit 130).

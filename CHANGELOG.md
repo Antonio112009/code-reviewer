@@ -2,12 +2,14 @@
 
 ## Unreleased
 
+- **More time while the model is working.** A review task that is still calling tools when its time runs out
+  is extended in steps, up to `review.activeExtension` × its timeout (default 0.5; 0 turns it off). About 8%
+  of review tasks were cut off by the time limit, and they were the most thorough ones.
 - **The model can read installed dependencies.** `read_file` (and Claude Code's own reads) accept absolute
   paths into the Go module cache, the Cargo registry, and the checkout's `node_modules` and virtualenv, read
   only, so a review can check what a called library function really does. On AACR-Bench, models tried and
   were refused 7 times. Only real directories count, and a file must resolve inside one (no symlink out);
   `review.dependencySources: false` turns it off.
-
 - **`find_references` tool.** Every use of a function, method, class, field or variable, grouped by file and
   by the enclosing function, with definitions marked: the callers of a changed function in one call. Cross-file
   (repository-level) defects were the weakest spot on AACR-Bench: 6 of 45 such references were ever found.

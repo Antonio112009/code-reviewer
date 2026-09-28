@@ -157,6 +157,11 @@ export const ReviewSettingsSchema = z.object({
   timeout: z.union([z.literal('auto'), z.number().positive()]),
   /** Upper bound for any task timeout. */
   maxTimeoutMs: z.number().int().positive(),
+  /**
+   * Extra time a review task may get while the model keeps calling tools, as a share of its timeout (0.5 =
+   * up to +50%, in steps of a quarter); 0 turns it off.
+   */
+  activeExtension: z.number().min(0).max(2),
   /** Cancel a task when the agent sends no update for this long. */
   stallTimeoutMs: z.number().int().positive(),
   maxSteps: z.number().int().positive(),
@@ -438,6 +443,7 @@ export const DEFAULT_CONFIG: Config = {
     exclude: DEFAULT_EXCLUDES,
     timeout: 'auto',
     maxTimeoutMs: 15 * 60_000,
+    activeExtension: 0.5,
     stallTimeoutMs: 4 * 60_000,
     maxSteps: 15,
     summary: false,
