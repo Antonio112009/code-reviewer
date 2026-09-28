@@ -1,10 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
-import { createSkillCatalog } from '../skills/catalog';
-import { skillsForDepth } from '../skills/detector';
-import { loadSkills } from '../skills/loader';
 import { packageVersion } from '../util/paths';
-import { type AnyToolDef, type SubmitKind, type ToolContext, toolsFor } from './definitions';
+import { type AnyToolDef, runTool, type SubmitKind, type ToolContext, toolsFor } from './definitions';
 import { SubmissionCollector } from './submission';
 
 export const MCP_SERVER_NAME = 'code-reviewer';
@@ -17,14 +14,8 @@ export function createMcpServer(defs: AnyToolDef[], ctx: ToolContext): McpServer
       def.name,
       { description: def.description, inputSchema: def.inputSchema },
       async (input: unknown) => {
-        try {
-          return { content: [{ type: 'text' as const, text: await def.execute(input, ctx) }] };
-        } catch (err) {
-          return {
-            content: [{ type: 'text' as const, text: `Error: ${(err as Error).message}` }],
-            isError: true,
-          };
-        }
+        const { text, isError } = await runTool(def, input, ctx);
+        return { content: [{ type: 'text' as const, text }], ...(isError ? { isError: true } : {}) };
       },
     );
   }
@@ -37,17 +28,6 @@ export interface McpServeOptions {
   kind: SubmitKind;
   submitFile: string;
   readTools: boolean;
-  /**
-   * Repository root for project skills (`.code-reviewer/skills`). Project skills are not loaded when
-   * omitted — never implicitly from `root`, which may be an untrusted revision.
-   */
-  projectRoot?: string;
-  /** Expose `list_skills` / `get_skill` (review tasks with read tools only). Default true. */
-  skills?: boolean;
-  /** Skill ids hidden from the skill tools (`review.skillsExclude`). */
-  skillsExclude?: string[];
-  /** Review depth: `essential` serves essential-tier skills (and bullets) only. Default `full`. */
-  depth?: 'essential' | 'full';
 }
 
 /**
@@ -77,13 +57,7 @@ export async function runMcpServe(opts: McpServeOptions): Promise<void> {
     git: opts.git,
     collector: new SubmissionCollector(opts.submitFile),
   };
-  if (opts.readTools && opts.kind === 'findings' && opts.skills !== false) {
-    // Warnings were already shown by the CLI process that planned the review; stay quiet here.
-    const skills = await loadSkills(opts.projectRoot).catch(() => []);
-    const visible = skillsForDepth(skills, opts.depth ?? 'full');
-    if (visible.length) ctx.skills = createSkillCatalog(visible, opts.skillsExclude);
-  }
-  const server = createMcpServer(toolsFor(opts.kind, opts.readTools, ctx), ctx);
+  const server = createMcpServer(toolsFor(opts.kind, opts.readTools), ctx);
   await server.connect(new StdioServerTransport());
   startParentWatchdog();
 }

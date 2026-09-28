@@ -265,9 +265,6 @@ export class AcpConnection {
     const args = [entry, 'mcp-serve', '--root', task.root, '--kind', task.kind, '--submit-file', submitFile];
     if (!task.git) args.push('--no-git');
     if (!task.readTools) args.push('--no-read-tools');
-    if (task.projectRoot) args.push('--project-root', task.projectRoot);
-    if (task.skillsExclude?.length) args.push('--skills-exclude', task.skillsExclude.join(','));
-    if (task.skillDepth) args.push('--depth', task.skillDepth);
     return { name: MCP_SERVER_NAME, command: process.execPath, args, env: [] };
   }
 
@@ -374,7 +371,9 @@ export class AcpConnection {
     if (turn.aborted) throw new AbortedError();
 
     if (state.denied.length) {
-      warnings.push(`denied ${state.denied.length} write/exec request(s): ${state.denied.join('; ')}`);
+      warnings.push(
+        `denied ${state.denied.length} request(s) (writes, commands or reads outside the review root): ${state.denied.join('; ')}`,
+      );
     }
     // Agents that report no token counts get `estimated` (filled in from the prompt and reply by runRouted).
     const usage: Usage = {

@@ -50,13 +50,26 @@
 
 - **`Provider.run(AgentTask) → AgentResult`** (`src/providers/types.ts`) is the only thing the pipeline
   knows about models.
-  - The task carries: instructions, prompt, model, reasoning level, review root, read tools, skill
-    catalog, timeout, stall timeout and an abort signal.
+  - The task carries: instructions, prompt, model, reasoning level, review root, read tools, timeout,
+    stall timeout and an abort signal.
   - The result carries: the collected `submit_*` payload, the final text, usage, tool usage and warnings,
     plus `interruptedBy` (our timeout / stall watchdog) and `salvaged` (a partial answer: the model was
     asked for an early answer, or was cut short after submitting some findings).
   - `Usage` holds uncached input, cached input, output and reasoning tokens, the number of model
     requests, `estimated` (the provider reported no token counts) and `reportedCost` (ACP `usage_update`).
+- **Read tools** (`src/tools/definitions.ts`, the same for ACP agents over MCP and for direct APIs):
+  `read_file`, `grep`, `find_symbol`, `list_dir`, `git_log`, `git_blame`.
+  - `grep` runs `git grep -P` (PCRE, so `\b`, `\w`, `(?:…)` work; POSIX ERE with a translation when git
+    lacks PCRE), `-F` for plain text (no metacharacters, or `literal: true`), 20 s at most. A pattern that
+    does not compile is searched as plain text, with a note; any other git error is returned as an error,
+    never as "No matches.", which a model would take as evidence. A glob without `/` matches in every
+    directory (`*.java` → `**/*.java`).
+  - `find_symbol` greps definition forms only: declaration keywords (JS/TS, Python, Go, Rust, Kotlin,
+    Swift, …) and C-family definitions (return type and modifiers before `name(` on a line without `;`,
+    so calls and prototypes are left out), not in docs or data files.
+  - Every call is logged (`runTool` → `SubmissionCollector.noteCall`: name, clipped arguments, result
+    size, error, duration) to `run.log` and the chunk artifacts; ACP agents' MCP server hands the log back
+    through the submission file.
 - **Structured output through a tool.** ACP has no response-schema field, so every provider gets the same
   `submit_findings` / `submit_verdicts` tool with zod-validated input.
   - Invalid input returns an error to the model, so it can fix it.
@@ -175,8 +188,8 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
 - **Sources and overrides.** Loading order is builtin < global < project. User skills inherit builtin
   groups for folders they do not define. Project skills cannot be always-on or replace always-on skills.
   Their regexes are length- and nested-quantifier-checked, since they come from an untrusted checkout.
-- **Loading on demand.** Agents can call `list_skills` (prefix / query / category filters) and `get_skill`
-  to load checklists that were not preselected.
+- **No loading on demand.** `list_skills` / `get_skill` tools were removed: in 875 recorded review tasks
+  (AACR-Bench and the eval corpus) models never called them, and they cost ~380 tokens per request.
 - **Validation.** `test/skills-library.test.ts` validates the library: tree, groups, frontmatter, tech
   and language ids, version ranges, ReDoS timing on adversarial inputs, glob examples, size and bullet
   limits, source URLs. `code-reviewer skills lint` runs the loader checks on a user directory.
@@ -363,7 +376,8 @@ The code under review, and therefore model output, is treated as untrusted.
      per segment, at most two `**`).
    - Project-skill regexes are vetted against adversarial inputs in a worker with a hard time limit
      (`skills/regex-guard.ts`) and only ever run on bounded text.
-   - The non-git `grep` fallback rejects backtracking-prone patterns.
+   - The non-git `grep` fallback rejects backtracking-prone patterns and vets globs like other untrusted
+     globs; `git grep -P` relies on PCRE's backtracking limit and a 20 s timeout.
 9. **Project rules.** In diff mode they are read from the base commit.
 10. **Analyzers.** They never execute repository code without an explicit opt-in. Hits in untrusted text
     are parsed linearly (tokenizer, import graph, JSON extraction and rendering are all bounded).

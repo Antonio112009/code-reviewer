@@ -19,8 +19,6 @@ export interface ReviewInstructionOptions {
   rulesOrigin?: string;
   skills: SkillMatch[];
   project?: ProjectSettings;
-  /** `list_skills` / `get_skill` are available. */
-  skillTools?: boolean;
   /** Read-only exploration tools are available. */
   readTools?: boolean;
   /** A focused pass (`review.passes`); undefined for the general review. */
@@ -73,11 +71,7 @@ export function reviewInstructions(opts: ReviewInstructionOptions): string {
   const tools =
     opts.readTools === false
       ? '- No tools except the submit tool are available: reason from the code shown.'
-      : `- Verify before reporting. Use the read-only tools (read_file, grep, find_symbol, git_log, git_blame) to check callers, definitions and invariants. Never claim something is unused, undefined, unvalidated or unhandled without searching for it.${
-          opts.skillTools
-            ? '\n- If the code uses a technology whose checklist is not included below, call `list_skills` and `get_skill` to load it.'
-            : ''
-        }`;
+      : '- Verify before reporting. Use the read-only tools (read_file, grep, find_symbol, list_dir, git_log, git_blame) to check callers, definitions and invariants. Never claim something is unused, undefined, unvalidated or unhandled without searching for it.';
   const sections = [
     `You are a meticulous senior software engineer doing a code review. Your ONLY goal is to find real defects: logic bugs, security vulnerabilities, data loss or corruption, race conditions, resource leaks, broken error handling, API misuse and severe performance problems.
 

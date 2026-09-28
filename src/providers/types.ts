@@ -1,4 +1,3 @@
-import type { SkillCatalog } from '../skills/catalog';
 import type { SubmitKind } from '../tools/definitions';
 import type { Submission } from '../tools/submission';
 import type { ReasoningLevel, Usage } from '../types';
@@ -26,17 +25,6 @@ export interface AgentTask {
   stallTimeoutMs?: number;
   /** Live activity for progress UIs (tool calls as they happen). */
   onActivity?: (activity: AgentActivity) => void;
-  /**
-   * Skill catalog for the on-demand `list_skills` / `get_skill` tools (in-process providers). ACP agents
-   * get the same tools from `code-reviewer mcp-serve --project-root`.
-   */
-  skills?: SkillCatalog;
-  /** Repository root used to load project skills in `mcp-serve` (ACP). */
-  projectRoot?: string;
-  /** Skill ids hidden from the skill tools (`review.skillsExclude`). */
-  skillsExclude?: string[];
-  /** Review depth the skill tools serve (`essential`: essential-tier skills and bullets only). */
-  skillDepth?: 'essential' | 'full';
   /**
    * When the turn runs out of time, steps or output without submitting, ask the model for what it has so
    * far (one short extra turn) instead of losing the work. Default: on.

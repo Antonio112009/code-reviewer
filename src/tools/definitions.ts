@@ -4,9 +4,8 @@ import { z } from 'zod';
 import { parseBlamePorcelain } from '../git/blame';
 import { GitRepo } from '../git/repo';
 import { hasNestedQuantifier } from '../skills/activation';
-import type { SkillCatalog } from '../skills/catalog';
-import { SKILL_CATEGORIES } from '../skills/loader';
 import { SubmitFindingsSchema, SubmitVerdictsSchema } from '../types';
+import { unsafeGlobReason, untrustedGlobMatcher } from '../util/globs';
 import { resolveInside, toPosix } from '../util/paths';
 import type { SubmissionCollector } from './submission';
 
@@ -16,8 +15,6 @@ export interface ToolContext {
   /** Whether `root` is inside a git work tree (enables git-based tools). */
   git: boolean;
   collector?: SubmissionCollector;
-  /** Loaded review skills; when set, `list_skills` / `get_skill` are exposed with the read tools. */
-  skills?: SkillCatalog;
 }
 
 export interface ToolDef<I = unknown> {
@@ -36,6 +33,40 @@ function clip(text: string): string {
 
 function defineTool<I>(def: ToolDef<I>): ToolDef<I> {
   return def;
+}
+
+const MAX_LOGGED_ARGS = 200;
+
+/**
+ * Runs a tool for a model: errors become a message the model can act on (never an aborted run), and read-tool
+ * calls are logged to the task's collector (name, clipped arguments, result size, error, duration).
+ */
+export async function runTool(
+  def: AnyToolDef,
+  input: unknown,
+  ctx: ToolContext,
+): Promise<{ text: string; isError: boolean }> {
+  const started = Date.now();
+  let text: string;
+  let isError = false;
+  try {
+    text = await def.execute(input, ctx);
+  } catch (err) {
+    text = `Error: ${(err as Error).message}`;
+    isError = true;
+  }
+  if (!def.name.startsWith('submit_')) {
+    const args = JSON.stringify(input) ?? '';
+    ctx.collector?.noteCall({
+      name: def.name,
+      args: args.length > MAX_LOGGED_ARGS ? `${args.slice(0, MAX_LOGGED_ARGS)}…` : args,
+      chars: text.length,
+      lines: text ? text.split('\n').length : 0,
+      ...(isError ? { error: true } : {}),
+      ms: Date.now() - started,
+    });
+  }
+  return { text, isError };
 }
 
 const readFileTool = defineTool({
@@ -63,58 +94,208 @@ const readFileTool = defineTool({
   },
 });
 
+/** A search running longer than this is stopped (the model gets an error, not a partial answer). */
+const GREP_TIMEOUT_MS = 20_000;
+/** Regular-expression metacharacters: a pattern without any is searched as plain text. */
+const REGEX_META = /[\\^$.|?*+()[\]{}]/;
+/** Set once git says it was built without PCRE: patterns are then translated to POSIX ERE. */
+let gitLacksPcre = false;
+
+/**
+ * PCRE → POSIX ERE, roughly, for git built without PCRE: shorthand classes become bracket classes and
+ * `(?:` a plain group; `\b` has no ERE form and is dropped (more matches, never fewer).
+ */
+export function pcreToEre(pattern: string): string {
+  return stripLookarounds(pattern)
+    .replace(/\(\?:/g, '(')
+    .replace(/\\d/g, '[0-9]')
+    .replace(/\\D/g, '[^0-9]')
+    .replace(/\\w/g, '[[:alnum:]_]')
+    .replace(/\\W/g, '[^[:alnum:]_]')
+    .replace(/\\s/g, '[[:space:]]')
+    .replace(/\\S/g, '[^[:space:]]')
+    .replace(/\\b/g, '');
+}
+
+/** The glob of the no-git fallback (model output: vetted like other untrusted globs). */
+function fallbackGlob(glob: string): (file: string) => boolean {
+  const g = glob.trim().replace(/^\.\//, '');
+  const full = g.includes('/') ? g : `**/${g}`;
+  const reason = unsafeGlobReason(full);
+  if (reason) throw new Error(`unsupported glob "${glob}": ${reason}`);
+  return untrustedGlobMatcher(full);
+}
+
+/** Removes lookaround groups (`(?!…)`, `(?=…)`, `(?<!…)`, `(?<=…)`), which ERE lacks. */
+function stripLookarounds(pattern: string): string {
+  let out = '';
+  for (let i = 0; i < pattern.length; i++) {
+    if (pattern[i] === '\\') {
+      out += pattern.slice(i, i + 2);
+      i++;
+      continue;
+    }
+    if (/^\(\?<?[!=]/.test(pattern.slice(i, i + 4))) {
+      let depth = 0;
+      for (; i < pattern.length; i++) {
+        if (pattern[i] === '\\') i++;
+        else if (pattern[i] === '(') depth++;
+        else if (pattern[i] === ')' && --depth === 0) break;
+      }
+      continue;
+    }
+    out += pattern[i];
+  }
+  return out;
+}
+
+/** A glob without a directory (`*.java`) matches in every directory, as a model expects. */
+export function globPathspec(glob: string): string {
+  const g = glob.trim().replace(/^\.\//, '');
+  return `:(glob)${g.includes('/') ? g : `**/${g}`}`;
+}
+
+interface GitGrepOptions {
+  pattern: string;
+  /** `fixed`: plain text; `regex`: PCRE (ERE when git lacks PCRE). */
+  mode: 'fixed' | 'regex';
+  ignoreCase?: boolean;
+  pathspecs?: string[];
+}
+
+/**
+ * `git grep` over the review root. Exit 1 is "no match"; anything else (an invalid pattern, PCRE's backtracking
+ * limit, a timeout) is an error the model sees, never an empty result it could take as evidence.
+ */
+async function gitGrep(ctx: ToolContext, opts: GitGrepOptions): Promise<string[]> {
+  const repo = new GitRepo(ctx.root);
+  const run = (flag: '-F' | '-P' | '-E', pattern: string) => {
+    const args = ['grep', '-n', '-I', flag, '--untracked', '--no-color'];
+    if (opts.ignoreCase) args.push('-i');
+    args.push('-e', pattern, '--', ...(opts.pathspecs ?? []));
+    return repo.runStatus(args, { timeoutMs: GREP_TIMEOUT_MS });
+  };
+  let res =
+    opts.mode === 'fixed'
+      ? await run('-F', opts.pattern)
+      : gitLacksPcre
+        ? await run('-E', pcreToEre(opts.pattern))
+        : await run('-P', opts.pattern);
+  if (opts.mode === 'regex' && !gitLacksPcre && res.code > 1 && /pcre|perl/i.test(res.stderr)) {
+    if (/not compiled|without|USE_LIBPCRE|not supported/i.test(res.stderr)) {
+      gitLacksPcre = true;
+      res = await run('-E', pcreToEre(opts.pattern));
+    }
+  }
+  if (res.timedOut) {
+    throw new Error(
+      `the search took longer than ${GREP_TIMEOUT_MS / 1000}s: narrow the pattern or add a glob`,
+    );
+  }
+  if (res.code > 1) {
+    const reason = (res.stderr.split('\n').find((l) => l.trim()) ?? `git grep exited with ${res.code}`)
+      .replace(/^fatal:\s*/, '')
+      .slice(0, 200);
+    throw new GrepError(reason, opts.mode === 'regex' && !/limit/i.test(reason));
+  }
+  return res.stdout.split('\n').filter(Boolean);
+}
+
+/** A failed search; `badPattern` when the regular expression did not compile. */
+class GrepError extends Error {
+  constructor(
+    readonly reason: string,
+    readonly badPattern: boolean,
+  ) {
+    super(
+      `invalid search (${reason}). Escape regex characters such as ( [ { with a backslash, or pass literal: true.`,
+    );
+  }
+}
+
 const grepTool = defineTool({
   name: 'grep',
   description:
-    'Search the reviewed revision with an extended regular expression. Returns "path:line:text" matches. Use it to find usages, callers and definitions before claiming something is unused, undefined or unhandled.',
+    'Search the reviewed revision. `pattern` is a Perl-compatible regular expression (\\b, \\w, \\d, (?:…) work); a pattern without regex characters, or literal: true, is searched as plain text. Returns "path:line:text" matches; an invalid pattern returns an error, never an empty result. Use it to find usages, callers and definitions before claiming something is unused, undefined or unhandled.',
   inputSchema: z.object({
-    pattern: z.string().min(1).describe('Extended (POSIX ERE) regular expression'),
-    glob: z.string().optional().describe('Optional pathspec glob, e.g. "src/**/*.ts"'),
+    pattern: z
+      .string()
+      .min(1)
+      .describe('Perl-compatible regular expression, or plain text with literal: true'),
+    literal: z.boolean().optional().describe('Search the pattern as plain text'),
+    glob: z
+      .string()
+      .optional()
+      .describe('Optional file glob: "*.ts" matches in every directory, "src/**/*.ts" under src'),
     ignoreCase: z.boolean().optional(),
     maxResults: z.number().int().positive().max(200).optional(),
   }),
-  async execute({ pattern, glob, ignoreCase, maxResults }, ctx) {
+  async execute({ pattern, literal, glob, ignoreCase, maxResults }, ctx) {
     const limit = maxResults ?? 60;
+    const fixed = literal ?? !REGEX_META.test(pattern);
     if (ctx.git) {
-      const args = ['grep', '-n', '-I', '-E', '--untracked', '--no-color'];
-      if (ignoreCase) args.push('-i');
-      args.push('-e', pattern, '--');
-      if (glob) args.push(`:(glob)${glob}`);
-      const { ok, stdout } = await new GitRepo(ctx.root).tryRun(args);
-      if (!ok && !stdout) return 'No matches.';
-      const lines = stdout.split('\n').filter(Boolean);
+      const search = { pattern, ignoreCase, pathspecs: glob ? [globPathspec(glob)] : [] };
+      let lines: string[];
+      let note = '';
+      try {
+        lines = await gitGrep(ctx, { ...search, mode: fixed ? 'fixed' : 'regex' });
+      } catch (err) {
+        // `foo(` or `a[i`: the model almost always meant the text itself.
+        if (!(err instanceof GrepError) || !err.badPattern) throw err;
+        lines = await gitGrep(ctx, { ...search, mode: 'fixed' });
+        note = `(not a valid regular expression: ${err.reason}; searched as plain text)\n`;
+      }
       noteMatchedFiles(lines.slice(0, limit), ctx);
-      return clip(formatMatches(lines, limit));
+      return clip(note + formatMatches(lines, limit));
     }
     // No git: JS regexes backtrack, and both the pattern (model output) and the files are untrusted.
-    if (pattern.length > MAX_FALLBACK_PATTERN || hasNestedQuantifier(pattern) || /\\[1-9]/.test(pattern)) {
+    if (
+      !fixed &&
+      (pattern.length > MAX_FALLBACK_PATTERN || hasNestedQuantifier(pattern) || /\\[1-9]/.test(pattern))
+    ) {
       throw new Error(
         'Pattern too complex for this repository (no git): use a simpler regex without nested quantifiers or backreferences.',
       );
     }
-    const re = new RegExp(posixToJs(pattern), ignoreCase ? 'i' : undefined);
-    const matches: string[] = [];
-    const deadline = Date.now() + FALLBACK_BUDGET_MS;
-    let partial = false;
-    for (const file of await walkFiles(ctx.root)) {
-      if (Date.now() > deadline) {
-        partial = true;
-        break;
-      }
-      const text = await readFile(path.join(ctx.root, file), 'utf8').catch(() => '');
-      text.split('\n').forEach((l, i) => {
-        if (matches.length <= limit && l.length <= MAX_FALLBACK_LINE && re.test(l))
-          matches.push(`${file}:${i + 1}:${l}`);
-      });
-      if (matches.length > limit) break;
+    const literalRe = () =>
+      new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), ignoreCase ? 'i' : undefined);
+    if (fixed) return jsGrep(ctx, literalRe(), limit, glob);
+    let re: RegExp;
+    try {
+      re = new RegExp(posixToJs(pattern), ignoreCase ? 'i' : undefined);
+    } catch (err) {
+      const note = `(not a valid regular expression: ${(err as Error).message}; searched as plain text)\n`;
+      return note + (await jsGrep(ctx, literalRe(), limit, glob));
     }
-    noteMatchedFiles(matches.slice(0, limit), ctx);
-    const out = formatMatches(matches, limit);
-    return clip(
-      partial ? `${out}\n(search stopped after ${FALLBACK_BUDGET_MS / 1000}s; narrow the pattern)` : out,
-    );
+    return jsGrep(ctx, re, limit, glob);
   },
 });
+
+/** Searches the files of a review root without git (bounded time, files and line length). */
+async function jsGrep(ctx: ToolContext, re: RegExp, limit: number, glob?: string): Promise<string> {
+  const inGlob = glob ? fallbackGlob(glob) : undefined;
+  const matches: string[] = [];
+  const deadline = Date.now() + FALLBACK_BUDGET_MS;
+  let partial = false;
+  for (const file of await walkFiles(ctx.root)) {
+    if (Date.now() > deadline) {
+      partial = true;
+      break;
+    }
+    if (inGlob && !inGlob(file)) continue;
+    const text = await readFile(path.join(ctx.root, file), 'utf8').catch(() => '');
+    text.split('\n').forEach((l, i) => {
+      if (matches.length <= limit && l.length <= MAX_FALLBACK_LINE && re.test(l))
+        matches.push(`${file}:${i + 1}:${l}`);
+    });
+    if (matches.length > limit) break;
+  }
+  noteMatchedFiles(matches.slice(0, limit), ctx);
+  const out = formatMatches(matches, limit);
+  return clip(
+    partial ? `${out}\n(search stopped after ${FALLBACK_BUDGET_MS / 1000}s; narrow the pattern)` : out,
+  );
+}
 
 /** Limits of the plain-JS grep used without git (backtracking regex engine, untrusted input). */
 const MAX_FALLBACK_PATTERN = 300;
@@ -234,93 +415,47 @@ const gitBlameTool = defineTool({
   },
 });
 
+/** Words that can start a line before `name(` without declaring anything (`return foo(`, `else bar(`). */
+const NOT_A_TYPE =
+  'return|else|new|throw|case|await|yield|delete|goto|co_return|co_await|if|while|for|switch|sizeof|typeof|assert|echo|print';
+
+/**
+ * Definition patterns (PCRE) for `name`: declaration keywords (JS/TS, Python, Go, Rust, Kotlin, Swift, …),
+ * bindings, and C-family definitions — a return type and modifiers before `name(` on a line without `;`, so
+ * calls (`foo(x);`) and prototypes are left out.
+ */
+export function definitionPattern(name: string): string {
+  const n = name.replace(/\$/g, '\\$');
+  return [
+    `\\b(?:function|class|interface|type|enum|struct|union|trait|impl|def|fn|func|fun|module|record|object|protocol|extension|namespace|typealias)\\s+${n}(?![\\w$])`,
+    `\\b(?:const|let|var|val)\\s+${n}\\s*[:=]`,
+    `\\bfunc\\s+\\([^)]*\\)\\s+${n}\\s*[(\\[]`,
+    `^\\s*(?:(?:export|default|public|private|protected|internal|static|async|override|abstract|readonly|final|open|suspend)\\s+)*(?:get\\s+|set\\s+|\\*\\s*)?${n}\\s*(?:<[^>]*>)?\\s*\\([^;]*$`,
+    `^\\s*(?!(?:${NOT_A_TYPE})\\b)(?:[\\w:<>,*&\\[\\]~.?]+\\s+)+[*&\\s]*(?:[\\w<>]+::)*~?${n}\\s*\\([^;]*$`,
+    `^\\s*#\\s*define\\s+${n}\\b`,
+  ].join('|');
+}
+
+/** Files that hold no definitions: documentation and data. */
+const NON_CODE = ['md', 'markdown', 'rst', 'txt', 'adoc', 'json', 'lock', 'csv', 'svg'].map(
+  (ext) => `:(exclude,glob)**/*.${ext}`,
+);
+
 const findSymbolTool = defineTool({
   name: 'find_symbol',
   description:
-    'Find likely definitions of a function/class/type/variable by name across the reviewed revision (regex heuristics for common languages).',
+    'Find the definitions of a function, method, class, type or variable by name across the reviewed revision (heuristics for JS/TS, Python, Go, Rust, Java, Kotlin, C#, C and C++; call sites are left out, use grep for those).',
   inputSchema: z.object({ name: z.string().regex(/^[\w$]+$/, 'identifier expected') }),
   async execute({ name }, ctx) {
-    const n = name.replace(/\$/g, '\\$');
-    const pattern = [
-      `(function|class|interface|type|enum|struct|trait|def|fn|func|module|record|object)[[:space:]]+${n}([^[:alnum:]_$]|$)`,
-      `(const|let|var|val)[[:space:]]+${n}[[:space:]]*[:=]`,
-      `^[[:space:]]*(export[[:space:]]+)?(async[[:space:]]+)?${n}[[:space:]]*\\(`,
-      `func[[:space:]]+\\([^)]*\\)[[:space:]]+${n}\\(`,
-    ].join('|');
-    return grepTool.execute({ pattern, maxResults: 40 }, ctx);
-  },
-});
-
-const listSkillsTool = defineTool({
-  name: 'list_skills',
-  description:
-    'List review checklists (skills) you can fetch with get_skill. Skills form a tree by technology (e.g. javascript/react/..., python/django/..., databases/postgresql/..., security/...). Filter with `prefix` (a folder such as "javascript/nextjs") and/or `query` (words to search in names and descriptions). Checklists selected for this chunk are already in your instructions; use this when the code touches a technology or risk they do not cover.',
-  inputSchema: z.object({
-    prefix: z.string().max(100).optional().describe('Folder prefix, e.g. "javascript/react" or "databases"'),
-    query: z.string().max(100).optional().describe('Words to look for in skill names and descriptions'),
-    category: z.enum(SKILL_CATEGORIES).optional().describe('Only list skills of this category'),
-  }),
-  async execute({ prefix, query, category }, ctx) {
-    if (!ctx.skills) return 'Skills are not available for this review.';
-    const pre = prefix
-      ?.trim()
-      .replace(/^\/+|\/+$/g, '')
-      .toLowerCase();
-    const words = (query ?? '')
-      .toLowerCase()
-      .split(/\W+/)
-      .filter((w) => w.length > 1);
-    const skills = ctx.skills.list().filter((s) => {
-      if (category && s.category !== category) return false;
-      if (pre && s.id !== pre && !s.id.startsWith(`${pre}/`)) return false;
-      if (words.length) {
-        const hay = `${s.id} ${s.name} ${s.description}`.toLowerCase();
-        return words.every((w) => hay.includes(w));
-      }
-      return true;
+    // Our own pattern: no complexity check (lines stay bounded by the fallback's limits).
+    if (!ctx.git) return jsGrep(ctx, new RegExp(definitionPattern(name)), 40);
+    const lines = await gitGrep(ctx, {
+      pattern: definitionPattern(name),
+      mode: 'regex',
+      pathspecs: NON_CODE,
     });
-    if (skills.length === 0) return 'No matching skills. Try a shorter prefix or fewer words.';
-    const lines: string[] = [];
-    let current = '';
-    for (const s of skills) {
-      const folder = s.id.includes('/') ? s.id.slice(0, s.id.lastIndexOf('/')) : '(root)';
-      if (folder !== current) {
-        current = folder;
-        lines.push(`${lines.length ? '\n' : ''}${current}/`);
-      }
-      lines.push(`- ${s.id}: ${s.name} — ${s.description}`);
-    }
-    return clip(lines.join('\n'));
-  },
-});
-
-const getSkillTool = defineTool({
-  name: 'get_skill',
-  description:
-    'Fetch the full checklist of a skill by id (see list_skills), e.g. when the chunk uses a framework, database or risky API whose checklist is not already in your instructions. Findings still need evidence in the code.',
-  inputSchema: z.object({
-    id: z
-      .string()
-      .min(1)
-      .max(200)
-      .describe('Skill id (path) from list_skills, e.g. javascript/react/effects'),
-  }),
-  async execute({ id }, ctx) {
-    if (!ctx.skills) return 'Skills are not available for this review.';
-    const wanted = id.trim().toLowerCase();
-    const body = ctx.skills.get(wanted);
-    const summary = ctx.skills.list().find((s) => s.id === wanted);
-    if (body === undefined || !summary) {
-      const similar = ctx.skills
-        .list()
-        .map((s) => s.id)
-        .filter((s) => s.includes(wanted) || wanted.includes(s))
-        .slice(0, 5);
-      throw new Error(
-        `Unknown skill "${id}".${similar.length ? ` Did you mean: ${similar.join(', ')}?` : ''} Call list_skills for the available ids.`,
-      );
-    }
-    return clip(`# ${summary.name} (${summary.id}, ${summary.category})\n\n${body}`);
+    noteMatchedFiles(lines.slice(0, 40), ctx);
+    return clip(formatMatches(lines, 40));
   },
 });
 
@@ -359,9 +494,6 @@ export const READ_TOOLS: AnyToolDef[] = [
   gitBlameTool,
 ];
 
-/** On-demand skill tools, exposed with the read tools when the task has a skill catalog. */
-export const SKILL_TOOLS: AnyToolDef[] = [listSkillsTool, getSkillTool];
-
 export type SubmitKind = 'findings' | 'verdicts';
 
 export const SUBMIT_TOOLS: Record<SubmitKind, AnyToolDef> = {
@@ -369,22 +501,13 @@ export const SUBMIT_TOOLS: Record<SubmitKind, AnyToolDef> = {
   verdicts: submitVerdictsTool,
 };
 
-/**
- * Tools exposed for a task: optional read-only helpers (plus `list_skills` / `get_skill` when `ctx.skills`
- * is set) and the submit tool.
- */
-export function toolsFor(
-  kind: SubmitKind,
-  withReadTools: boolean,
-  ctx?: Pick<ToolContext, 'skills'>,
-): AnyToolDef[] {
-  if (!withReadTools) return [SUBMIT_TOOLS[kind]];
-  return [...READ_TOOLS, ...(ctx?.skills ? SKILL_TOOLS : []), SUBMIT_TOOLS[kind]];
+/** Tools exposed for a task: optional read-only helpers and the submit tool. */
+export function toolsFor(kind: SubmitKind, withReadTools: boolean): AnyToolDef[] {
+  return withReadTools ? [...READ_TOOLS, SUBMIT_TOOLS[kind]] : [SUBMIT_TOOLS[kind]];
 }
 
 /** Names of every tool we can expose (used to recognise our own MCP tools in agent permission requests). */
 export const TOOL_NAMES: ReadonlySet<string> = new Set([
   ...READ_TOOLS.map((t) => t.name),
-  ...SKILL_TOOLS.map((t) => t.name),
   ...Object.values(SUBMIT_TOOLS).map((t) => t.name),
 ]);

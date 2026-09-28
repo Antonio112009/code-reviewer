@@ -210,7 +210,9 @@ describe('AcpProvider with an in-process agent', () => {
       expect(result.stopReason).toBe('end_turn');
       expect(result.toolCalls).toBe(1);
       expect(result.usage).toMatchObject({ inputTokens: 100, outputTokens: 20 });
-      expect(result.warnings.join('\n')).toMatch(/denied 1 write\/exec request/);
+      expect(result.warnings.join('\n')).toMatch(
+        /denied 1 request\(s\) \(writes, commands or reads outside the review root\): Edit app.js/,
+      );
       const resolved = resolveFindings(result);
       expect(resolved.via).toBe('text');
       expect(resolved.items[0]).toMatchObject({ file: 'app.js', startLine: 2, title: 'Division by zero' });

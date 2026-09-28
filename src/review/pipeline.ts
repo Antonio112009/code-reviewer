@@ -48,7 +48,6 @@ import { writeReports } from '../report';
 import { SEVERITY_ORDER, sortFindings } from '../report/common';
 import { RunLog } from '../runs/log';
 import { RunStore } from '../runs/store';
-import { createSkillCatalog } from '../skills/catalog';
 import { type SkillMatch, selectSkills, signalText, skillsForDepth } from '../skills/detector';
 import { loadSkills, type Skill } from '../skills/loader';
 import { changedPaths, collectDiffUnits, type SkippedFile } from '../sources/diff-source';
@@ -886,8 +885,6 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       }
     }
     const git = repo !== undefined;
-    const catalog = createSkillCatalog(depthSkills, config.review.skillsExclude);
-    const skillTools = config.review.tools && depthSkills.length > 0;
 
     // Answers for code (and every file the model read) reviewed before with the same instructions and model.
     const opened = chunks.length ? await openResultCache({ config, repoRoot, warn, logger }) : undefined;
@@ -918,7 +915,6 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           rulesOrigin: rules.origin,
           skills: chunkSkills.get(chunk.id) ?? [],
           project: config.project,
-          skillTools,
           readTools: config.review.tools,
         });
       const promptOptions = (chunk: Chunk, part: Chunk, hints: StaticHit[]) => ({
@@ -951,10 +947,6 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         onActivity: (a) => {
           if (a.kind === 'tool') emit({ type: 'chunk-activity', chunkId: chunk.id, tool: a.name });
         },
-        ...(skillTools
-          ? { skills: catalog, skillsExclude: config.review.skillsExclude, skillDepth: depth }
-          : {}),
-        ...(skillTools && projectSkillsRoot ? { projectRoot: projectSkillsRoot } : {}),
       });
       /** Result cache key of a task on a route (see `reviewPromptIdentity` for what counts). */
       const cacheKeyFor = (
@@ -969,7 +961,6 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           instructions: task.instructions,
           prompt: reviewPromptIdentity(promptOptions(chunk, part, hints)),
           readTools: task.readTools,
-          skillTools: task.skills !== undefined,
           git: task.git,
           maxOutputTokens: task.maxOutputTokens,
         });
@@ -1071,6 +1062,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           stopReason: result.stopReason,
           toolCalls: result.toolCalls,
           toolUsage: result.toolUsage,
+          ...(result.submission.toolLog?.length ? { toolLog: result.submission.toolLog } : {}),
           via: resolved.via,
           hints: hints.map((h) => h.id),
           claimedHints: [...claimed],

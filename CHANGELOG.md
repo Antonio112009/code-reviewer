@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **Search tools that do not mislead the model.** `grep` failed silently: an unbalanced `(`, `(?:`, `\b`,
+  `\w` or `\d` (common in model-written patterns) returned "No matches." on macOS, and a glob like
+  `*.java` searched the repository root only. It now takes Perl-compatible regexes, searches plain text
+  as plain text, retries a pattern that does not compile as plain text (and says so), returns git's
+  errors instead of an empty result, and matches directory-less globs everywhere. `find_symbol` now
+  finds C, C++, Java, C# and Kotlin definitions instead of call sites, and skips docs.
+- **Tool calls are logged.** Every read-tool call (arguments, result size, error, duration) is in
+  `run.log` and the chunk artifacts, so empty searches and errors can be measured.
+- `list_skills` / `get_skill` are gone: models never called them in 875 recorded review tasks, and they
+  cost ~380 tokens per request plus loading every skill in each agent's MCP server.
+
 - **Cost limit per run.** `--max-cost <usd>` (`review.maxCost`) stops starting model calls once a run has
   spent that much, counting the provider's reported cost or your `pricing`. With self-critique on, reviews
   stop at 85% so the findings can still be verified. Unreviewed parts are marked `budget` (with advice) and

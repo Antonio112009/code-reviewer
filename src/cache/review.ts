@@ -103,7 +103,6 @@ export function reviewCacheKey(material: {
   instructions: string;
   prompt: unknown;
   readTools: boolean;
-  skillTools: boolean;
   git: boolean;
   maxOutputTokens?: number;
 }): string {
@@ -118,7 +117,6 @@ export function reviewCacheKey(material: {
     instructions: material.instructions,
     prompt: material.prompt,
     readTools: material.readTools,
-    skillTools: material.skillTools,
     git: material.git,
     maxOutputTokens: material.maxOutputTokens ?? null,
   });

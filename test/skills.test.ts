@@ -1,11 +1,9 @@
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { activationSummary, classifySkills, renderSkillList } from '../src/cli/commands/skills';
 import { hasNestedQuantifier } from '../src/skills/activation';
-import { createSkillCatalog } from '../src/skills/catalog';
 import { gatesPass, matchSkill, type SkillContext, selectSkills } from '../src/skills/detector';
 import {
   legacyDependencyTech,
@@ -15,8 +13,6 @@ import {
   type Skill,
   type SkillGroup,
 } from '../src/skills/loader';
-import { SKILL_TOOLS, TOOL_NAMES, toolsFor } from '../src/tools/definitions';
-import { createMcpServer } from '../src/tools/mcp-server';
 
 interface Meta {
   id: string;
@@ -455,72 +451,6 @@ describe('skill loading', () => {
   });
 });
 
-describe('skill tools', () => {
-  const catalog = createSkillCatalog([react, security, javascript, generalBugs, postgres], ['postgresql']);
-  const toolCtx = { root: tmpdir(), git: false, skills: catalog };
-  const tool = (name: string) => SKILL_TOOLS.find((t) => t.name === name)!;
-
-  it('are exposed with the read tools only when a catalog is provided', () => {
-    const names = (defs: Array<{ name: string }>) => defs.map((d) => d.name);
-    expect(names(toolsFor('findings', true))).not.toContain('get_skill');
-    expect(names(toolsFor('findings', true, toolCtx))).toEqual(
-      expect.arrayContaining(['list_skills', 'get_skill']),
-    );
-    expect(names(toolsFor('findings', false, toolCtx))).toEqual(['submit_findings']);
-    expect(TOOL_NAMES.has('list_skills') && TOOL_NAMES.has('get_skill')).toBe(true);
-  });
-
-  it('list_skills lists by folder in prompt order, filters, and hides excluded skills', async () => {
-    const out = await tool('list_skills').execute({}, toolCtx);
-    expect(out.split('\n')).toEqual([
-      '(root)/',
-      '- general-bugs: GENERAL-BUGS — Checklist for general-bugs.',
-      '- security: SECURITY — Checklist for security.',
-      '- javascript: JAVASCRIPT — Checklist for javascript.',
-      '- react: REACT — Checklist for react.',
-    ]);
-    expect(await tool('list_skills').execute({ category: 'framework' }, toolCtx)).toBe(
-      '(root)/\n- react: REACT — Checklist for react.',
-    );
-    expect(await tool('list_skills').execute({ query: 'checklist JAVASCRIPT' }, toolCtx)).toBe(
-      '(root)/\n- javascript: JAVASCRIPT — Checklist for javascript.',
-    );
-    expect(await tool('list_skills').execute({ prefix: 'python' }, toolCtx)).toMatch(/No matching skills/);
-  });
-
-  it('get_skill returns the full checklist and fails helpfully for unknown ids', async () => {
-    expect(await tool('get_skill').execute({ id: 'react' }, toolCtx)).toBe(
-      '# REACT (react, framework)\n\n- **Check**: something concrete.',
-    );
-    await expect(tool('get_skill').execute({ id: 'reac' }, toolCtx)).rejects.toThrow(/Did you mean: react/);
-    await expect(tool('get_skill').execute({ id: 'postgresql' }, toolCtx)).rejects.toThrow(/Unknown skill/);
-    expect(await tool('get_skill').execute({ id: 'react' }, { root: tmpdir(), git: false })).toMatch(
-      /not available/,
-    );
-  });
-
-  it('are served over MCP', async () => {
-    const server = createMcpServer(toolsFor('findings', true, toolCtx), toolCtx);
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-    await server.connect(serverTransport);
-    const client = new Client({ name: 'test', version: '0' });
-    await client.connect(clientTransport);
-    try {
-      const { tools } = await client.listTools();
-      expect(tools.map((t) => t.name)).toEqual(expect.arrayContaining(['list_skills', 'get_skill']));
-      const text = (r: unknown) => (r as { content: Array<{ text: string }> }).content[0]?.text ?? '';
-      const listed = await client.callTool({ name: 'list_skills', arguments: { category: 'security' } });
-      expect(text(listed)).toBe('(root)/\n- security: SECURITY — Checklist for security.');
-      const missing = await client.callTool({ name: 'get_skill', arguments: { id: 'nope' } });
-      expect(missing.isError).toBe(true);
-      const bad = await client.callTool({ name: 'list_skills', arguments: { category: 'nope' } });
-      expect(bad.isError).toBe(true);
-    } finally {
-      await client.close();
-    }
-  });
-});
-
 describe('skills command helpers', () => {
   it('summarises activation', () => {
     expect(activationSummary(react)).toBe(
@@ -752,26 +682,6 @@ describe('skill tree (groups, inherited detection, versions)', () => {
       // the broken python group is skipped with a warning; its skill loads without detection
       expect(warnings.join('\n')).toMatch(/Skipping skill group .*python\/_group\.yaml: .*unknown language/);
       expect(byId.get('python/async')?.groups).toEqual([]);
-    });
-
-    it('list_skills filters by folder prefix', async () => {
-      write('b/javascript/_group.yaml', 'name: JavaScript\ndescription: JS.\ncategory: language');
-      write('b/javascript/closures.md', skillText({ id: 'closures' }));
-      write('b/javascript/react/_group.yaml', 'name: React\ndescription: React.\ncategory: framework');
-      write('b/javascript/react/effects.md', skillText({ id: 'effects' }));
-      write('b/javascript/react-native/_group.yaml', 'name: RN\ndescription: RN.\ncategory: framework');
-      write('b/javascript/react-native/lists.md', skillText({ id: 'lists' }));
-      const skills = await loadSkillsFrom([{ dir: path.join(dir, 'b'), source: 'builtin' }]);
-      const catalog = createSkillCatalog(skills, []);
-      const list = SKILL_TOOLS.find((t) => t.name === 'list_skills')!;
-      const out = await list.execute(
-        { prefix: 'javascript/react' },
-        { root: dir, git: false, skills: catalog },
-      );
-      expect(out.split('\n')).toEqual([
-        'javascript/react/',
-        '- javascript/react/effects: EFFECTS — Checklist for effects.',
-      ]);
     });
   });
 });
