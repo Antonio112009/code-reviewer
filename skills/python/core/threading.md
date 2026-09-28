@@ -9,6 +9,11 @@ activation:
     - "(?<![\\w.])(?:R?Lock|Semaphore|Condition|Event|Barrier)\\s*\\(\\s*\\)"
     - "\\bos\\.fork\\s*\\(|\\bsignal\\.signal\\s*\\(|\\bcatch_warnings\\s*\\("
     - "\\bqueue\\.(?:Simple)?Queue\\s*\\(|\\.task_done\\s*\\(|\\bsys\\._is_gil_enabled\\b"
+  examples:
+    - 'executor = ThreadPoolExecutor(max_workers=4)'
+    - 'lock = Lock()'
+    - 'signal.signal(signal.SIGTERM, handler)'
+    - 'q = queue.Queue()'
 sources:
   - https://docs.python.org/3/library/threading.html#thread-objects
   - https://docs.python.org/3/library/concurrent.futures.html#future-objects

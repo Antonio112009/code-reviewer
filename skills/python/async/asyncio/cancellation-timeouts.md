@@ -9,6 +9,11 @@ activation:
     - "\\b(?:wait_for|timeout|timeout_at|shield)\\s*\\("
     - "\\bTimeoutError\\b"
     - "\\bopen_connection\\s*\\(|\\bawait\\s+[\\w.]+\\.(?:get|recv|read|readline|acquire|wait|communicate)\\s*\\("
+  examples:
+    - 'task.cancel()'
+    - 'await asyncio.wait_for(fetch(), timeout=5)'
+    - 'except TimeoutError:'
+    - 'data = await reader.read()'
 sources:
   - https://docs.python.org/3/library/asyncio-task.html#task-cancellation
   - https://docs.python.org/3/library/asyncio-task.html#asyncio.timeout

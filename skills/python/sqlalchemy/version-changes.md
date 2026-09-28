@@ -10,6 +10,12 @@ activation:
     - '\b(?:backref|back_populates)\s*=|\bcascade_backrefs\b'
     - '\bcreate(?:_async)?_engine\(\s*["''](?:postgresql|postgres)://|\bMappedAsDataclass\b|\.filter_by\('
     - '\b[Ss][Qq][Ll][Aa]lchemy\b[^\n]{0,20}(?:==|>=|~=|<)'
+  examples:
+    - 'conn.execute("SELECT 1")'
+    - 'rows = session.execute(select(User)).all()'
+    - 'items = relationship("Item", back_populates="parent")'
+    - 'engine = create_engine("postgresql://user:pass@host/db")'
+    - 'SQLAlchemy==2.0.25'
 sources:
   - https://docs.sqlalchemy.org/en/20/changelog/migration_20.html
   - https://docs.sqlalchemy.org/en/20/orm/cascades.html#save-update

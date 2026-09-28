@@ -6,6 +6,9 @@ activation:
   content:
     - "^[ \\t]*match\\s[^\\n]{1,120}:[ \\t]*(?:#[^\\n]*)?$"
     - "^[ \\t]*case\\s[^\\n]{1,160}:[ \\t]*(?:#[^\\n]*)?$"
+  examples:
+    - 'match command:'
+    - '    case {"type": "user"}:'
 sources:
   - https://docs.python.org/3/reference/compound_stmts.html#the-match-statement
   - https://peps.python.org/pep-0636/

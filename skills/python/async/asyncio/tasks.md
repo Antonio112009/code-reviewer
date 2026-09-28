@@ -8,6 +8,11 @@ activation:
     - "\\basyncio\\.(?:gather|wait|as_completed|shield)\\s*\\(|\\bgather\\s*\\(\\s*\\*"
     - "\\bTaskGroup\\b|\\badd_done_callback\\s*\\("
     - "\\beager_(?:task_factory|start)\\b"
+  examples:
+    - 'task = asyncio.create_task(worker())'
+    - 'results = await asyncio.gather(*tasks)'
+    - 'async with asyncio.TaskGroup() as tg:'
+    - 'loop.set_task_factory(eager_task_factory)'
 sources:
   - https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
   - https://docs.python.org/3/library/asyncio-task.html#asyncio.gather

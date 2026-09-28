@@ -8,6 +8,10 @@ activation:
     - '\b(?:select_related|prefetch_related|Prefetch|iterator|aiterator|only|defer|fetch_mode)\('
     - '\.(?:all|filter|exclude)\([^)\n]{0,120}\)\s*:'
     - '\b(?:len|list|bool)\(\s*\w+(?:\.\w+){0,3}\.(?:all|filter|exclude)\('
+  examples:
+    - 'orders = Order.objects.select_related("customer")'
+    - 'for order in Order.objects.filter(status="paid"):'
+    - 'if len(Order.objects.filter(status="paid")):'
 sources:
   - https://docs.djangoproject.com/en/stable/topics/db/optimization/
   - https://docs.djangoproject.com/en/stable/ref/models/querysets/

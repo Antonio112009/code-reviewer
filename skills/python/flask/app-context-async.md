@@ -8,6 +8,11 @@ activation:
     - '\bThread\(|\bThreadPoolExecutor\(|\.submit\(|\bcreate_task\('
     - '@\w+\.(?:route|get|post|put|patch|delete)\([^)\n]{0,120}\)[ \t]*\r?\n[ \t]*async[ \t]+def\b'
     - '\byield\b[^\n]{0,80}\brequest\.'
+  examples:
+    - 'user = current_app.config["SECRET_KEY"]'
+    - 'threading.Thread(target=send_email, args=(user,)).start()'
+    - "@app.route('/upload')\nasync def upload():"
+    - 'yield f"user={request.remote_addr}"'
 sources:
   - https://flask.palletsprojects.com/en/stable/appcontext/
   - https://flask.palletsprojects.com/en/stable/patterns/streaming/

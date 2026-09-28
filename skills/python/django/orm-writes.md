@@ -10,6 +10,12 @@ activation:
     - '=\s*F\('
     - '\bGeneratedField\('
     - '\b(?:DB_CASCADE|DB_SET_NULL|DB_SET_DEFAULT)\b'
+  examples:
+    - 'order.save(update_fields=["status"])'
+    - 'Order.objects.filter(pk=pk).update(status="paid")'
+    - 'order.total = F("total") + 10'
+    - 'total = models.GeneratedField(expression=F("price") * F("qty"), output_field=models.DecimalField(), db_persist=True)'
+    - 'user = models.ForeignKey(Account, on_delete=models.DB_CASCADE)'
 sources:
   - https://docs.djangoproject.com/en/stable/ref/models/querysets/#bulk-create
   - https://docs.djangoproject.com/en/stable/ref/models/instances/#specifying-which-fields-to-save

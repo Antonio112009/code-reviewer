@@ -11,6 +11,13 @@ activation:
     - '\b(?:full_clean|clean_fields|validate_constraints|JSONNull)\b'
     - '\bdatetime\.(?:now|utcnow|today)\(\)|\bdate\.today\(\)'
     - '__(?:date|day|week_day|month|year|hour)\b|\bTrunc(?:Date|Day|Hour|Month|Week)?\('
+  examples:
+    - 'name = models.CharField(max_length=255)'
+    - '        ordering = ["-created"]'
+    - 'user = models.ForeignKey(User, on_delete=models.CASCADE)'
+    - 'obj.full_clean()'
+    - 'created = datetime.now()'
+    - 'Order.objects.filter(created__date=today)'
 sources:
   - https://docs.djangoproject.com/en/stable/ref/models/instances/#validating-objects
   - https://docs.djangoproject.com/en/stable/ref/models/fields/

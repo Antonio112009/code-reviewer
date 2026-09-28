@@ -8,6 +8,11 @@ activation:
     - "@(?:functools\\.)?cached_property\\b|@\\w+\\.setter\\b|@(?:abc\\.)?abstractmethod\\b"
     - "@classmethod[ \\t]*\\r?\\n[ \\t]*@property\\b|\\bdef\\s+__getattr__\\s*\\("
     - "^[ \\t]+\\w+\\s*=\\s*(?:functools\\.)?partial\\s*\\("
+  examples:
+    - 'super().__init__(**kwargs)'
+    - '@cached_property'
+    - 'def __getattr__(self, name):'
+    - '    handler = functools.partial(send, retries=3)'
 sources:
   - https://docs.python.org/3/library/functools.html#functools.cached_property
   - https://docs.python.org/3/whatsnew/3.13.html#builtins

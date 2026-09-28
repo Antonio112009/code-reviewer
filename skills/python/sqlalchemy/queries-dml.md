@@ -9,6 +9,11 @@ activation:
     - '\b(?:literal_column|column|text)\(|\.order_by\(\s*text\('
     - '\.(?:like|ilike|contains|startswith|endswith)\('
     - '\b(?:update|delete)\(\s*\w+\s*\)|\bsynchronize_session\b|\.merge\('
+  examples:
+    - 'query = session.query(User).filter(User.id == user_id)'
+    - 'query = query.order_by(text(request_sort))'
+    - 'matches = User.name.like(f"%{term}%")'
+    - 'session.execute(update(User).where(User.id == 1).values(name="x"))'
 sources:
   - https://docs.sqlalchemy.org/en/20/core/operators.html
   - https://docs.sqlalchemy.org/en/20/orm/queryguide/dml.html#orm-queryguide-update-delete-caveats

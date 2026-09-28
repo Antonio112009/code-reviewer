@@ -18,3 +18,5 @@ detect:
     - "**/pyproject.toml"
   content:
     - '^[ \t]*(?:from|import)[ \t]+(?:django|rest_framework)\b'
+  examples:
+    - 'from django.db import models'

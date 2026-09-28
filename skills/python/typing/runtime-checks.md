@@ -9,6 +9,12 @@ activation:
     - "\\bruntime_checkable\\b|\\bProtocol\\b"
     - "\\b(?:TypeGuard|TypeIs)\\b|@(?:typing\\.)?overload\\b"
     - "\\bOptional\\s*\\["
+  examples:
+    - 'user = cast(User, json.loads(body))'
+    - 'if isinstance(value, list[int]):'
+    - '@runtime_checkable'
+    - 'def is_str_list(val: list) -> TypeGuard[list[str]]:'
+    - 'def f(x: Optional[int] = None):'
 sources:
   - https://docs.python.org/3/library/typing.html#typing.cast
   - https://docs.python.org/3/library/typing.html#typing.runtime_checkable

@@ -8,6 +8,11 @@ activation:
     - '\bBackgroundTasks?\b|\.add_task\('
     - '\b(?:httpx\.AsyncClient|aiohttp\.ClientSession|create_async_engine|AsyncClient)\('
     - '\bTestClient\('
+  examples:
+    - 'app = FastAPI(lifespan=lifespan)'
+    - 'background_tasks.add_task(send_welcome_email, user.email)'
+    - 'client = httpx.AsyncClient(base_url=settings.API_URL)'
+    - 'with TestClient(app) as client:'
 sources:
   - https://fastapi.tiangolo.com/advanced/events/
   - https://fastapi.tiangolo.com/tutorial/background-tasks/

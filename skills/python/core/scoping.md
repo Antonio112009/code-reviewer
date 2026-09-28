@@ -8,6 +8,11 @@ activation:
     - "\\b(?:nonlocal|global)\\s+\\w"
     - "(?<![\\w.])(?:exec|eval)\\s*\\(|\\blocals\\s*\\(\\s*\\)"
     - ":=\\s*"
+  examples:
+    - 'callbacks.append(lambda: handle(i))'
+    - 'nonlocal counter'
+    - 'exec("x = 1")'
+    - 'if (n := len(data)) > 10:'
 sources:
   - https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
   - https://docs.python.org/3/reference/compound_stmts.html#except-clause

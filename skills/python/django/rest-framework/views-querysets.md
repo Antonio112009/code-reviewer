@@ -9,6 +9,11 @@ activation:
     - '\b(?:get_queryset|get_object|perform_create|perform_update|perform_destroy|lookup_field|http_method_names)\b'
     - '^[ \t]*queryset\s*='
     - '\b(?:SerializerMethodField|StringRelatedField|source\s*=)'
+  examples:
+    - 'class OrderViewSet(viewsets.ModelViewSet):'
+    - '    def get_queryset(self):'
+    - '    queryset = Order.objects.all()'
+    - '    total = serializers.SerializerMethodField()'
 sources:
   - https://www.django-rest-framework.org/api-guide/generic-views/
   - https://www.django-rest-framework.org/api-guide/viewsets/

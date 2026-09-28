@@ -9,6 +9,11 @@ activation:
     - '\b(?:BeforeValidator|AfterValidator|WrapValidator|PlainValidator|ValidationInfo)\b'
     - '\b(?:validate_default|validate_assignment|each_item|skip_on_failure)\b'
     - '\binfo\.data\b'
+  examples:
+    - '@field_validator("email")'
+    - 'def normalize(v: str, info: ValidationInfo) -> str:'
+    - 'model_config = ConfigDict(validate_assignment=True)'
+    - 'password = info.data["password"]'
 sources:
   - https://docs.pydantic.dev/latest/concepts/validators/
   - https://docs.pydantic.dev/latest/migration/#changes-to-validators

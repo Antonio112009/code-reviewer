@@ -13,6 +13,14 @@ activation:
     - '<script\b[^>\n]{0,80}>[^<\n]{0,200}\{\{'
     - '\b(?:href|src|action)=["'']?\{\{'
     - '\b(?:Template|from_string)\(\s*(?:request|self\.request|data|text|body|content|user)'
+  examples:
+    - 'return mark_safe(f"<div>{user_bio}</div>")'
+    - '{{ comment.body|safe }}'
+    - '{% autoescape off %}'
+    - '@register.filter(is_safe=True)'
+    - '<script>var data = {{ user_json }};</script>'
+    - '<a href="{{ profile_url }}">Profile</a>'
+    - 'return Template(request.POST["template"]).render(Context({}))'
 sources:
   - https://docs.djangoproject.com/en/stable/ref/utils/#django.utils.html.format_html
   - https://docs.djangoproject.com/en/stable/ref/templates/builtins/#json-script

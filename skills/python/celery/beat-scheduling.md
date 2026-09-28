@@ -8,6 +8,10 @@ activation:
     - '\b(?:beat_schedule|CELERY_BEAT_SCHEDULE|crontab|solar|PeriodicTask|PeriodicTasks|IntervalSchedule|CrontabSchedule)\b'
     - '\bcelery\b[^\n]{0,80}\b(?:beat|worker)\b[^\n]{0,80}(?:\s-B\b|--beat\b)'
     - '\b(?:countdown|eta)\s*=|\bworker_eta_task_limit\b|\b(?:timezone|enable_utc)\s*='
+  examples:
+    - 'beat_schedule = {"nightly": {"schedule": crontab(hour=2)}}'
+    - 'celery -A proj worker -B'
+    - 'send_reminder.apply_async(countdown=60)'
 sources:
   - https://docs.celeryq.dev/en/stable/userguide/periodic-tasks.html
   - https://github.com/celery/django-celery-beat

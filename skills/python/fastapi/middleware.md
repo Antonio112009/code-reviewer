@@ -9,6 +9,10 @@ activation:
     - '\badd_middleware\(|@\w+\.middleware\(|\bMiddleware\('
     - '\ballow_(?:origins|origin_regex|credentials)\s*='
     - '--forwarded-allow-ips|\bforwarded_allow_ips\b|\bproxy_headers\b'
+  examples:
+    - 'app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True)'
+    - '@app.middleware("http")'
+    - 'uvicorn.run(app, forwarded_allow_ips="*")'
 sources:
   - https://fastapi.tiangolo.com/tutorial/cors/
   - https://starlette.dev/middleware/

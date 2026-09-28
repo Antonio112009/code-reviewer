@@ -8,6 +8,11 @@ activation:
     - "\\b(?:addHandler|setLevel|setFormatter)\\s*\\(|\\.propagate\\s*=|\\bdisable_existing_loggers\\b"
     - "\\b(?:Stream|File|RotatingFile|TimedRotatingFile|Null|Queue|Syslog)Handler\\s*\\("
     - "\\.exception\\s*\\(|\\bexc_info\\s*="
+  examples:
+    - 'logging.basicConfig(level=logging.INFO)'
+    - 'logger.addHandler(handler)'
+    - 'handler = logging.StreamHandler()'
+    - 'logger.exception("failed")'
 sources:
   - https://docs.python.org/3/library/logging.html#logging.basicConfig
   - https://docs.python.org/3/library/logging.config.html#dictionary-schema-details

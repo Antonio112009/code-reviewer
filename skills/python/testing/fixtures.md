@@ -7,6 +7,10 @@ activation:
     - "@pytest\\.fixture\\b|@pytest_asyncio\\.fixture\\b"
     - "\\bscope\\s*=\\s*[\"'](?:session|package|module|class)[\"']|\\bautouse\\s*=\\s*True\\b"
     - "\\baddfinalizer\\s*\\(|\\bgetfixturevalue\\s*\\("
+  examples:
+    - '@pytest.fixture'
+    - '@pytest.fixture(scope="session")'
+    - 'request.addfinalizer(cleanup)'
 sources:
   - https://docs.pytest.org/en/stable/how-to/fixtures.html
   - https://docs.pytest.org/en/stable/deprecations.html

@@ -10,3 +10,6 @@ detect:
   content:
     - '^[ \t]*(?:from|import)[ \t]+rest_framework(?:_simplejwt)?\b'
     - '\b(?:REST_FRAMEWORK|SIMPLE_JWT)\s*='
+  examples:
+    - 'from rest_framework import serializers'
+    - 'REST_FRAMEWORK = {"DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"]}'

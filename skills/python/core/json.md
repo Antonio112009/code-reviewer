@@ -7,6 +7,10 @@ activation:
     - "\\bjson\\.(?:loads?|dumps?)\\s*\\("
     - "\\bJSON(?:En|De)coder\\b|\\b(?:object_pairs_hook|parse_float|allow_nan|ensure_ascii)\\s*="
     - "\\b(?:orjson|ujson|simplejson)\\b"
+  examples:
+    - 'payload = json.dumps(data)'
+    - 'data = json.loads(body, parse_float=Decimal)'
+    - 'import orjson'
 sources:
   - https://docs.python.org/3/library/json.html#json.dumps
   - https://docs.python.org/3/library/json.html#repeated-names-within-an-object

@@ -11,6 +11,12 @@ activation:
     - '\brender_template\(\s*["''][^"''\n]{1,120}\.(?:txt|j2|jinja2?|HTML|Html|md)["'']'
     - '<script\b[^>\n]{0,80}>[^<\n]{0,200}\{\{'
     - '\b(?:href|src|action)=["'']?\{\{'
+  examples:
+    - 'html = render_template_string(f"Hello {user_input}")'
+    - '{% autoescape false %}'
+    - 'return render_template("email.txt", user=user)'
+    - '<script>var user = {{ user_name }};</script>'
+    - '<a href={{ profile_url }}>Profile</a>'
 sources:
   - https://flask.palletsprojects.com/en/stable/templating/
   - https://flask.palletsprojects.com/en/stable/web-security/#cross-site-scripting-xss

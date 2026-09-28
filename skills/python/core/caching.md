@@ -8,6 +8,10 @@ activation:
     - "@(?:functools\\.)?(?:lru_cache|cache)\\b"
     - "\\b(?:lru_cache|cache_clear|cache_info)\\s*\\("
     - "\\b(?:TTLCache|LRUCache|cachetools)\\b"
+  examples:
+    - '@lru_cache(maxsize=None)'
+    - 'self._cache.cache_clear()'
+    - 'from cachetools import TTLCache'
 sources:
   - https://docs.python.org/3/library/functools.html#functools.lru_cache
   - https://docs.python.org/3/faq/programming.html#how-do-i-cache-method-calls

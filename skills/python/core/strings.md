@@ -10,6 +10,13 @@ activation:
     - "\\.is(?:digit|numeric|decimal)\\s*\\(\\s*\\)"
     - "\\.split\\s*\\(\\s*[\"'] [\"']\\s*\\)"
     - "\\.(?:decode|encode|casefold)\\s*\\(|\\bunicodedata\\b|\\.lower\\s*\\(\\s*\\)\\s*==|\\bstr\\s*\\(\\s*\\w*(?:body|content|data|raw|payload|bytes)\\w*\\s*\\)"
+  examples:
+    - 'name = raw.rstrip(".json")'
+    - 'debug = bool(os.getenv("DEBUG"))'
+    - 'token = os.environ["TOKEN"]'
+    - 'if code.isdigit():'
+    - 'parts = text.split(" ")'
+    - 'text = raw_bytes.decode("utf-8")'
 sources:
   - https://docs.python.org/3/library/stdtypes.html#str.strip
   - https://docs.python.org/3/library/argparse.html#type

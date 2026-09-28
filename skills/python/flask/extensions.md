@@ -10,6 +10,12 @@ activation:
     - '\b(?:CSRFProtect|csrf\.exempt|WTF_CSRF_\w+)\b'
     - '\bCORS\(|@cross_origin\b|\bsupports_credentials\b'
     - '\bLimiter\(|\bRATELIMIT_\w+|\bget_remote_address\b'
+  examples:
+    - 'from flask_sqlalchemy import SQLAlchemy'
+    - 'items = db.paginate(select(Item))'
+    - 'csrf = CSRFProtect(app)'
+    - 'CORS(app, supports_credentials=True)'
+    - 'limiter = Limiter(get_remote_address, app=app)'
 sources:
   - https://flask-sqlalchemy.readthedocs.io/en/stable/pagination/
   - https://flask-wtf.readthedocs.io/en/latest/csrf/

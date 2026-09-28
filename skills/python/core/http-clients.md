@@ -8,6 +8,11 @@ activation:
     - "\\bhttpx\\.\\w+|\\baiohttp\\.\\w+|\\b(?:ClientSession|AsyncClient)\\s*\\("
     - "\\burlopen\\s*\\(|\\burllib3\\b|\\bRetry\\s*\\("
     - "\\.(?:get|post|put|patch|delete|request|stream)\\s*\\([^)\\n]{0,160}\\b(?:timeout|stream|follow_redirects|allow_redirects)\\s*="
+  examples:
+    - 'resp = requests.get(url)'
+    - 'client = httpx.AsyncClient()'
+    - 'resp = urlopen(request)'
+    - 'resp = session.get(url, timeout=5)'
 sources:
   - https://requests.readthedocs.io/en/latest/user/advanced/#timeouts
   - https://www.python-httpx.org/compatibility/#redirects

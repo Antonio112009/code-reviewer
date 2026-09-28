@@ -9,6 +9,12 @@ activation:
     - "\\.cast\\s*\\(|\\bread_csv\\s*\\(|\\bscan_\\w+\\s*\\(|\\binfer_schema_length\\b"
     - "\\.str\\.contains\\s*\\(|\\.(?:lazy|collect|collect_all)\\s*\\(|\\.(?:map_elements|map_rows)\\s*\\("
     - "^[ \\t]*\\w+\\.(?:with_columns|rename|drop|filter|sort)\\s*\\("
+  examples:
+    - 'df = df.fill_null(0)'
+    - 'joined = left.join(right, on="id")'
+    - 'df = pl.read_csv("data.csv")'
+    - 'result = lazy_df.collect()'
+    - 'df.with_columns(pl.col("x") * 2)'
 sources:
   - https://docs.pola.rs/user-guide/expressions/missing-data/
   - https://docs.pola.rs/api/python/stable/reference/dataframe/api/polars.DataFrame.join.html

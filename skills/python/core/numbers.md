@@ -10,6 +10,13 @@ activation:
     - "\\bfloat\\s*\\("
     - "\\bset_int_max_str_digits\\b"
     - "\\bisinstance\\s*\\([^)\\n]{1,80}\\bint\\b"
+  examples:
+    - 'total = Decimal("19.99")'
+    - 'price = round(total, 2)'
+    - 'if not math.isfinite(value):'
+    - 'amount = float(raw)'
+    - 'sys.set_int_max_str_digits(0)'
+    - 'if isinstance(quantity, int):'
 sources:
   - https://docs.python.org/3/library/functions.html#round
   - https://docs.python.org/3/library/decimal.html

@@ -8,6 +8,11 @@ activation:
     - "\\b(?:xfail|skipif|importorskip)\\b|\\bpytest\\.skip\\s*\\("
     - "^class\\s+Test\\w*|\\b__test__\\b"
     - "\\b(?:xfail_strict|strict_xfail|strict_markers|--strict-markers)\\b"
+  examples:
+    - '@pytest.mark.slow'
+    - '@pytest.mark.xfail(strict=True)'
+    - 'class TestUser:'
+    - 'strict_markers = True'
 sources:
   - https://docs.pytest.org/en/stable/deprecations.html#non-collection-iterables-in-pytest-mark-parametrize
   - https://docs.pytest.org/en/stable/how-to/skipping.html

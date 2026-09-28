@@ -9,6 +9,12 @@ activation:
     - "(?<![\\w.])hash\\s*\\("
     - "\\b(?:unsafe_hash|frozen)\\s*=\\s*True\\b"
     - "\\bNotImplemented\\b"
+  examples:
+    - 'def __eq__(self, other):'
+    - 'if role is "admin":'
+    - 'digest = hash(key)'
+    - '@dataclass(unsafe_hash=True)'
+    - 'return NotImplemented'
 sources:
   - https://docs.python.org/3/reference/datamodel.html#object.__hash__
   - https://docs.python.org/3/library/stdtypes.html#mapping-types-dict

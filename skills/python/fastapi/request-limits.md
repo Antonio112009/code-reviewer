@@ -10,6 +10,12 @@ activation:
     - '\{\w+:path\}'
     - '\bstrict_content_type\s*=|\bmax_body_size\s*='
     - '\b(?:str|bytes|list\[\w+\])\s*=\s*(?:Body|Query|Form)\('
+  examples:
+    - 'async def upload(file: UploadFile = File(...)):'
+    - 'save_path = os.path.join(UPLOAD_DIR, file.filename)'
+    - '@app.get("/files/{file_path:path}")'
+    - 'app = FastAPI(strict_content_type=False)'
+    - 'name: str = Body(..., max_length=200)'
 sources:
   - https://fastapi.tiangolo.com/tutorial/request-files/
   - https://fastapi.tiangolo.com/advanced/strict-content-type/

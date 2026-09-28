@@ -7,6 +7,9 @@ activation:
   content:
     - '\b(?:BaseSettings|SettingsConfigDict|pydantic_settings)\b'
     - '\b(?:env_prefix|env_file|env_nested_delimiter|case_sensitive|secrets_dir|env_ignore_empty|env_prefix_target)\b'
+  examples:
+    - 'class Settings(BaseSettings):'
+    - 'model_config = SettingsConfigDict(env_prefix="APP_", env_file=".env")'
 sources:
   - https://docs.pydantic.dev/latest/concepts/pydantic_settings/
   - https://docs.pydantic.dev/latest/migration/#basesettings-has-moved-to-pydantic-settings

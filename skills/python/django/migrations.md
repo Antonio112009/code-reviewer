@@ -8,6 +8,9 @@ activation:
   content:
     - '\b(?:RunPython|RunSQL|SeparateDatabaseAndState|AddIndexConcurrently|RemoveIndexConcurrently|AddField|RemoveField|RenameField|RenameModel|AlterField)\b'
     - '\bmigrations\.Migration\b'
+  examples:
+    - 'migrations.RunPython(forwards, reverse_code=migrations.RunPython.noop)'
+    - 'class Migration(migrations.Migration):'
 sources:
   - https://docs.djangoproject.com/en/stable/ref/migration-operations/
   - https://docs.djangoproject.com/en/stable/topics/migrations/

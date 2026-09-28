@@ -10,3 +10,5 @@ detect:
     - "**/templates/**/*.{html,htm,xml,svg,j2,jinja,jinja2,txt}"
   content:
     - '^[ \t]*(?:from|import)[ \t]+flask(?:_\w+)?\b'
+  examples:
+    - 'from flask import Flask, request'

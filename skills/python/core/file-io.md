@@ -10,6 +10,13 @@ activation:
     - "\\.r?glob\\s*\\(|\\bglob\\.i?glob\\s*\\("
     - "\\.(?:exists|is_file|is_dir)\\s*\\(\\s*\\)|\\bos\\.path\\.(?:exists|isfile|isdir)\\s*\\("
     - "\\.read(?:lines|_text|_bytes)?\\s*\\(\\s*\\)"
+  examples:
+    - 'open(path, "w")'
+    - 'os.rename(tmp_path, dest_path)'
+    - 'writer = csv.writer(f)'
+    - 'for p in root.glob("*.csv"):'
+    - 'if not path.exists():'
+    - 'data = f.read()'
 sources:
   - https://docs.python.org/3/library/os.html#os.replace
   - https://docs.python.org/3/library/csv.html#csv.reader

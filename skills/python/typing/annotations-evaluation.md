@@ -7,6 +7,10 @@ activation:
     - "\\bTYPE_CHECKING\\b"
     - "\\bfrom\\s+__future__\\s+import\\s+annotations\\b"
     - "\\b(?:get_type_hints|get_annotations)\\s*\\(|\\b__annotations__\\b|\\bannotationlib\\b|\\bForwardRef\\b"
+  examples:
+    - 'if TYPE_CHECKING:'
+    - 'from __future__ import annotations'
+    - 'hints = typing.get_type_hints(User)'
 sources:
   - https://docs.python.org/3/library/typing.html#typing.TYPE_CHECKING
   - https://docs.python.org/3/whatsnew/3.14.html#changes-in-annotations-pep-649-and-pep-749

@@ -9,6 +9,12 @@ activation:
     - "==\\s*(?:np\\.nan|None|pd\\.NA)\\b|\\.fillna\\s*\\(|\\.isna\\s*\\(|\\bpd\\.NA\\b"
     - "\\)\\s*(?:and|or)\\s*\\(?\\s*df\\b|\\bdf\\w*\\[[^\\]\\n]{0,80}\\]\\s*[<>=!]=?[^&|\\n]{1,40}&"
     - "\\.(?:tz_localize|tz_convert)\\s*\\(|\\.tz\\.(?:zone|localize)\\b|\\bas_unit\\s*\\("
+  examples:
+    - 'df = pd.read_csv("data.csv", dtype={"zip": str})'
+    - 'df["id"] = df["id"].astype("Int64")'
+    - 'mask = df["x"] == np.nan'
+    - 'mask = df["a"] > 1 & df["b"] < 2'
+    - 'df["ts"] = df["ts"].dt.tz_localize("UTC")'
 sources:
   - https://pandas.pydata.org/docs/whatsnew/v3.0.0.html
   - https://pandas.pydata.org/docs/user_guide/missing_data.html

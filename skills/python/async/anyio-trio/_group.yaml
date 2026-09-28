@@ -6,3 +6,5 @@ detect:
   languages: [python]
   content:
     - "^[ \\t]*(?:import|from)\\s+(?:anyio|trio)\\b"
+  examples:
+    - "import anyio"

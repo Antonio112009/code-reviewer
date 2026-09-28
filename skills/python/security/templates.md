@@ -9,6 +9,11 @@ activation:
     - "\\bautoescape\\s*=|\\bMarkup\\s*\\(|\\|\\s*safe\\b"
     - "\\b\\w*(?:template|tmpl|fmt|format_str|pattern|message)\\w*\\.format(?:_map)?\\s*\\("
     - "\\.format\\s*\\(\\s*\\*\\*|\\.format_map\\s*\\(|\\bstring\\.Template\\b"
+  examples:
+    - 'template = jinja2.Template(user_text)'
+    - 'env = Environment(autoescape=False)'
+    - 'output = message_template.format(**request.args)'
+    - 'output = template.format_map(ctx)'
 sources:
   - https://jinja.palletsprojects.com/en/stable/api/#autoescaping
   - https://jinja.palletsprojects.com/en/stable/sandbox/

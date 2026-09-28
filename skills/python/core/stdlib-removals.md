@@ -9,6 +9,12 @@ activation:
     - "\\bSafeConfigParser\\b|\\.readfp\\s*\\(|\\bssl\\.(?:wrap_socket|match_hostname)\\b|\\blocale\\.(?:format|resetlocale)\\s*\\(|\\btyping\\.(?:io|re)\\b"
     - "\\bast\\.(?:Num|Str|Bytes|NameConstant|Ellipsis)\\b|\\bdef\\s+visit_(?:Num|Str|Bytes|NameConstant)\\b|\\bpkgutil\\.(?:find_loader|get_loader)\\b|\\b(?:set|get)_child_watcher\\b|\\b(?:Fancy)?URLopener\\b|\\bsqlite3\\.version\\b"
     - "\\bload_module\\s*\\(|\\bis_reserved\\s*\\(|\\bjava_ver\\s*\\(|\\bCGIHTTPRequestHandler\\b"
+  examples:
+    - 'import distutils.util'
+    - 'self.assertEquals(result, expected)'
+    - 'sock = ssl.wrap_socket(raw_sock)'
+    - 'if isinstance(node, ast.Num):'
+    - 'module = loader.load_module(name)'
 sources:
   - https://docs.python.org/3/whatsnew/3.12.html#removed
   - https://docs.python.org/3/whatsnew/3.13.html#removed-modules-and-apis

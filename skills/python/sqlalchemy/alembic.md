@@ -9,6 +9,10 @@ activation:
     - '^[ \t]*from[ \t]+alembic[ \t]+import\b'
     - '\bop\.(?:drop_table|drop_column|add_column|alter_column|create_index|create_unique_constraint|execute|batch_alter_table)\('
     - '\b(?:target_metadata|compare_type|compare_server_default|naming_convention|autocommit_block|down_revision)\b'
+  examples:
+    - 'from alembic import op'
+    - 'op.add_column("users", sa.Column("email", sa.String()))'
+    - 'down_revision = "abc123"'
 sources:
   - https://alembic.sqlalchemy.org/en/latest/autogenerate.html
   - https://alembic.sqlalchemy.org/en/latest/naming.html

@@ -8,6 +8,10 @@ activation:
     - '\.(?:delay|apply_async|s|si|signature)\('
     - '\b(?:accept_content|task_serializer|result_serializer|CELERY_ACCEPT_CONTENT|CELERY_TASK_SERIALIZER)\b'
     - '@(?:shared_task|\w+\.task)\b'
+  examples:
+    - 'send_email.delay(user_id)'
+    - 'accept_content = ["pickle", "json"]'
+    - '@shared_task'
 sources:
   - https://docs.celeryq.dev/en/stable/userguide/tasks.html#state
   - https://docs.celeryq.dev/en/stable/userguide/calling.html#serializers

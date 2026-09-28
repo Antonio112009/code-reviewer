@@ -9,6 +9,11 @@ activation:
     - "\\bssl\\.(?:SSLContext|create_default_context|PROTOCOL_\\w+)\\b"
     - "\\burl(?:open|retrieve)\\s*\\(|\\burl(?:parse|split)\\s*\\("
     - "\\bipaddress\\.ip_(?:address|network)\\s*\\(|\\bis_private\\b|\\ballow_redirects\\s*=|\\bfollow_redirects\\s*=\\s*True\\b|\\btrust_env\\b"
+  examples:
+    - 'resp = requests.get(url, verify=False)'
+    - 'ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)'
+    - 'resp = urlopen(user_url)'
+    - 'if ipaddress.ip_address(host).is_private:'
 sources:
   - https://docs.python.org/3/library/ssl.html#security-considerations
   - https://docs.python.org/3/library/urllib.request.html#urllib.request.build_opener

@@ -6,3 +6,5 @@ detect:
   languages: [python]
   content:
     - '^[ \t]*(?:from|import)[ \t]+pydantic(?:_settings|_core)?\b'
+  examples:
+    - 'from pydantic import BaseModel'

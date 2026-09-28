@@ -8,3 +8,7 @@ detect:
     - "\\basync\\s+(?:def|with|for)\\b"
     - "\\bawait\\s"
     - "^[ \\t]*(?:import|from)\\s+(?:asyncio|anyio|trio)\\b"
+  examples:
+    - "async def handler(request):"
+    - "result = await fetch(url)"
+    - "import asyncio"

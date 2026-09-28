@@ -6,3 +6,5 @@ detect:
   languages: [python]
   content:
     - "^[ \\t]*(?:import|from)\\s+pandas\\b"
+  examples:
+    - 'import pandas as pd'

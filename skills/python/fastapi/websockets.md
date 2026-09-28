@@ -8,6 +8,10 @@ activation:
     - '@\w+\.websocket\(|\bWebSocket\b|\bWebSocketRoute\('
     - '\bwebsocket\.(?:accept|receive\w*|send\w*|close|iter_\w+)\('
     - '\bWebSocketDisconnect(?:ed)?\b|--ws-max-size|\bws_max_size\b'
+  examples:
+    - '@app.websocket("/ws")'
+    - 'await websocket.accept()'
+    - 'except WebSocketDisconnect:'
 sources:
   - https://fastapi.tiangolo.com/advanced/websockets/
   - https://starlette.dev/websockets/

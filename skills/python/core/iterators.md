@@ -9,6 +9,12 @@ activation:
     - "(?<![\\w.])next\\s*\\("
     - "^[ \\t]*(?:yield\\b|[^#\\n]{0,80}=\\s*\\([^()\\n]{1,80}\\bfor\\b)"
     - "\\bcsv\\.(?:reader|DictReader)\\s*\\("
+  examples:
+    - 'rows = list(zip(ids, names))'
+    - 'groups = itertools.groupby(rows, key=lambda r: r.id)'
+    - 'value = next(it)'
+    - 'yield chunk'
+    - 'rows = csv.DictReader(f)'
 sources:
   - https://docs.python.org/3/glossary.html#term-iterator
   - https://docs.python.org/3/library/functions.html#zip

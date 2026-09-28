@@ -9,6 +9,11 @@ activation:
     - '\blazy\s*=\s*["''](?:select|joined|selectin|subquery|dynamic|raise|noload|write_only)["'']'
     - '\b(?:WriteOnlyMapped|DynamicMapped|AppenderQuery)\b|\.unique\(\)'
     - '\bcascade\s*=\s*["''][^"''\n]{0,60}delete'
+  examples:
+    - 'children = relationship("Child", back_populates="parent")'
+    - 'items = relationship("Item", lazy="dynamic")'
+    - 'rows = session.execute(stmt).unique().all()'
+    - 'children = relationship("Child", cascade="all, delete-orphan")'
 sources:
   - https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html
   - https://docs.sqlalchemy.org/en/20/orm/large_collections.html

@@ -8,6 +8,9 @@ activation:
     - '\b(?:permission_classes|get_permissions|has_permission|has_object_permission|check_object_permissions|DEFAULT_PERMISSION_CLASSES)\b'
     - '\b(?:BasePermission|IsAuthenticated|IsAdminUser|AllowAny|IsAuthenticatedOrReadOnly|DjangoModelPermissions|DjangoObjectPermissions)\b'
     - '@action\(|@api_view\(|\bperform_create\b'
+  examples:
+    - 'permission_classes = [IsAuthenticated]'
+    - '@action(detail=True, methods=["post"])'
 sources:
   - https://www.django-rest-framework.org/api-guide/permissions/
   - https://github.com/encode/django-rest-framework/blob/main/rest_framework/permissions.py

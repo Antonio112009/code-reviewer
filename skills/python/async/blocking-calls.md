@@ -9,6 +9,12 @@ activation:
     - "\\b(?:bcrypt\\.hashpw|hashlib\\.(?:scrypt|pbkdf2_hmac)|checkpw)\\s*\\(|\\.result\\s*\\(\\s*\\)|\\bconcurrent\\.futures\\.wait\\s*\\("
     - "\\b(?:asyncio\\.run|run_until_complete|anyio\\.run|trio\\.run)\\s*\\(|\\bnest_asyncio\\b"
     - "\\b(?:to_thread|run_in_executor|run_sync)\\s*\\("
+  examples:
+    - 'time.sleep(2)'
+    - 'conn = psycopg2.connect(dsn)'
+    - 'hashed = bcrypt.hashpw(password, salt)'
+    - 'asyncio.run(worker())'
+    - 'await asyncio.to_thread(blocking_fn)'
 sources:
   - https://docs.python.org/3/library/asyncio-dev.html#running-blocking-code
   - https://docs.python.org/3/library/asyncio-dev.html#detect-never-awaited-coroutines

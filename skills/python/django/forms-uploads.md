@@ -10,6 +10,11 @@ activation:
     - '\b(?:commit\s*=\s*False|save_m2m|cleaned_data)\b'
     - '\b(?:request\.FILES|UploadedFile|FileField|ImageField|upload_to|FileResponse|default_storage)\b'
     - '\b(?:DATA_UPLOAD_MAX_\w+|FILE_UPLOAD_\w+)\b'
+  examples:
+    - 'class OrderForm(forms.ModelForm):'
+    - 'obj = form.save(commit=False)'
+    - 'avatar = request.FILES["avatar"]'
+    - 'DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760'
 sources:
   - https://docs.djangoproject.com/en/stable/topics/forms/modelforms/
   - https://docs.djangoproject.com/en/stable/ref/forms/fields/#disabled

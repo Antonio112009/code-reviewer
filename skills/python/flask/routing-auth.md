@@ -9,6 +9,10 @@ activation:
     - '\b(?:before_request|before_app_request|login_required|login_user|logout_user|user_loader|request_loader|current_user)\b'
     - '\bredirect\([^)\n]{0,80}\b(?:next|args|values|form)\b'
     - '\bREMEMBER_COOKIE_\w+|\bremember\s*=\s*True\b'
+  examples:
+    - "@login_required\n@app.route('/admin')\ndef admin_panel():"
+    - 'return redirect(request.args.get("next"))'
+    - 'login_user(user, remember=True)'
 sources:
   - https://flask.palletsprojects.com/en/stable/patterns/viewdecorators/
   - https://flask.palletsprojects.com/en/stable/blueprints/
