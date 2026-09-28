@@ -170,13 +170,18 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
   `name`, `description`, `category`, `priority`, `tier` and `detect`. Category, priority and tier are
   inherited by the skills below. A bullet marked `[full]` is left out at essential depth (see Review
   depth).
-- **Matching** (`detector.ts#matchSkill`):
-  1. Every ancestor group's `detect` must match the chunk. Gates (`stack`, `languages`, `versions`) must
-     pass. If signals are declared, one of them must hit: `files` on the chunk's paths, `content` on the
-     **full content** of the chunk's files.
+- **Matching** (`detector.ts#matchSkill`), **one file at a time**: a skill matches a chunk when it matches
+  one of its files on that file's language, path, content and added lines (the stack gate uses the
+  chunk's techs). So Java lines cannot trigger a C++ skill in a mixed chunk. Prose files (`markdown`,
+  `text`) feed `content` signals only to skills whose own or group `languages` name that language (a CMake
+  file is `text`, and the C/C++ group names it). Per file:
+  1. Every ancestor group's `detect` must match. Gates (`stack`, `languages`, `versions`) must pass. If
+     signals are declared, one of them must hit: `files` on the path, `content` on the **full content**.
   2. The skill's own gates must pass.
   3. Its signals must hit. In diff mode, `content` runs on the **added lines**.
-  4. The score is priority + specificity (content 40 > files 30 > stack 20 > language 10) + depth × 3.
+  4. The score is priority + specificity (content 40 > files 30 > stack 20 > language 10) + depth × 3; the
+     best-scoring file counts. On the AACR-Bench chunks this removed every wrong-language pick found
+     (8 of 38 chunks changed, each only by those picks and what filled their budget).
 - **Versions.** The stack detector records the lowest version each manifest allows, per package root
   (`TechHit.version` / `versions`). `planning.ts#techVersionsForChunk` resolves each chunk file to its
   nearest package. If the files disagree, the version is unknown, and an unknown version passes every

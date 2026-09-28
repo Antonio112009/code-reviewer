@@ -48,7 +48,13 @@ import { writeReports } from '../report';
 import { SEVERITY_ORDER, sortFindings } from '../report/common';
 import { RunLog } from '../runs/log';
 import { RunStore } from '../runs/store';
-import { type SkillMatch, selectSkills, signalText, skillsForDepth } from '../skills/detector';
+import {
+  type FileSignals,
+  type SkillMatch,
+  selectSkills,
+  signalText,
+  skillsForDepth,
+} from '../skills/detector';
 import { loadSkills, type Skill } from '../skills/loader';
 import { changedPaths, collectDiffUnits, type SkippedFile } from '../sources/diff-source';
 import { collectFileUnits } from '../sources/files-source';
@@ -285,6 +291,16 @@ function staticFinding(hit: StaticHit, chunkId: string): Finding {
     ...(hit.nonRejectable ? { nonRejectable: true } : {}),
     source: { chunkIds: [chunkId], provider: `static:${hit.analyzer}` },
   };
+}
+
+/** The chunk's files for per-file skill matching (see `SkillContext.perFile`). */
+function perFileSignals(owned: ReviewUnit[], mode: 'diff' | 'files'): FileSignals[] {
+  return owned.map((u) => ({
+    path: u.path,
+    language: u.language,
+    code: signalText(mode === 'diff' ? addedCodeOf([u]) : rawCodeOf([u])),
+    fileCode: signalText(fileCodeOf([u])),
+  }));
 }
 
 /**
@@ -645,6 +661,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         code: signalText(rawCodeOf(owned)),
         fileCode: signalText(fileCodeOf(owned)),
         ...(mode === 'diff' ? { addedCode: signalText(addedCodeOf(owned)) } : {}),
+        perFile: perFileSignals(owned, mode),
       },
       config.review.skills,
       config.review.skillTokenBudget,

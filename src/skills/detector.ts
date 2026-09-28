@@ -22,6 +22,23 @@ export interface SkillContext {
   addedCode?: string;
   /** Full content of the chunk's files: group `detect.content` runs on it ("is this a React file?"). */
   fileCode?: string;
+  /**
+   * The chunk's files one by one. When set, a skill matches the chunk if it matches one of its files on
+   * that file's own language, code and added lines (the stack stays the chunk's), so Java lines cannot
+   * trigger a C++ skill in a mixed chunk and a Markdown table cannot trigger a crypto skill.
+   */
+  perFile?: FileSignals[];
+}
+
+/** One file of a chunk, for per-file skill matching. */
+export interface FileSignals {
+  path: string;
+  /** Language id (`src/util/language.ts`). */
+  language: string;
+  /** What skill `content` regexes see: the file's added lines (diff mode), else its code. */
+  code: string;
+  /** The file's full content: what a group's `detect.content` sees. */
+  fileCode: string;
 }
 
 export interface SkillMatch {
@@ -49,6 +66,8 @@ export type SkillSelection = 'auto' | 'none' | string[];
 
 /** Specificity weights added to a skill's priority: content > files > stack > language. */
 const WEIGHT = { content: 40, files: 30, stack: 20, language: 10, depth: 3 } as const;
+/** Prose: content signals never fire on it unless a skill is about that language. */
+const PROSE_LANGUAGES = new Set(['markdown', 'text']);
 /** Always-on skills are filled into the budget first. */
 const ALWAYS_ON_BONUS = 1_000;
 
@@ -179,6 +198,31 @@ export function groupMatches(group: SkillGroup, ctx: SkillContext, reasons: stri
  * Project skills without any gate or signal (own or inherited) never auto-activate.
  */
 export function matchSkill(skill: Skill, ctx: SkillContext): SkillMatch | undefined {
+  if (!ctx.perFile?.length) return matchIn(skill, ctx);
+  let best: SkillMatch | undefined;
+  for (const f of ctx.perFile) {
+    const prose = PROSE_LANGUAGES.has(f.language) && !declaresLanguage(skill, f.language);
+    const m = matchIn(skill, {
+      ...ctx,
+      files: [f.path],
+      languages: [f.language],
+      code: prose ? '' : f.code,
+      addedCode: prose ? '' : f.code,
+      fileCode: prose ? '' : f.fileCode,
+      perFile: undefined,
+    });
+    if (m && (!best || m.score > best.score)) best = m;
+  }
+  return best;
+}
+
+/** Whether the skill or one of its groups gates on `language`. */
+function declaresLanguage(skill: Skill, language: string): boolean {
+  if (skill.activation.languages?.includes(language)) return true;
+  return skill.groups.some((g) => g.detect?.languages?.includes(language));
+}
+
+function matchIn(skill: Skill, ctx: SkillContext): SkillMatch | undefined {
   const reasons: string[] = [];
   for (const group of skill.groups) if (!groupMatches(group, ctx, reasons)) return undefined;
   const gates = checkGates(skill.activation, ctx);

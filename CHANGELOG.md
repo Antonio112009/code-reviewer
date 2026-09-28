@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Skills are matched per file.** A chunk's added lines used to be matched as one text, so Java lines
+  picked C++ and Python skills in a mixed chunk, Go lines JavaScript skills, a Markdown table the crypto
+  checklist and SQL in C++ strings the SQL skills, each taking budget from the chunk's own language. Now a
+  skill must match one file on that file's language, content and added lines, and prose (Markdown, plain
+  text) only feeds skills about it. On the 38 AACR-Bench chunks, the 8 that changed lost exactly those
+  picks, and relevant skills took their budget.
+
 - **Search tools that do not mislead the model.** `grep` failed silently: an unbalanced `(`, `(?:`, `\b`,
   `\w` or `\d` (common in model-written patterns) returned "No matches." on macOS, and a glob like
   `*.java` searched the repository root only. It now takes Perl-compatible regexes, searches plain text
