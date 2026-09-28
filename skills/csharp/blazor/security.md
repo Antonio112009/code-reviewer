@@ -8,6 +8,17 @@ activation:
     - '\bMarkupString\b|<AuthorizeView\b|\[Authorize\b|\bAuthenticationStateProvider\b'
     - '\bDetailedErrors\b|\bCircuitOptions\b|\bContentSecurityFrameAncestorsPolicy\b|\bDisableWebSocketCompression\b'
     - '\bNavigateTo\(|\b(?:ApiKey|ClientSecret|ConnectionStrings?)\b'
+  examples:
+    - '@((MarkupString)userSuppliedHtml)'
+    - '<AuthorizeView Roles="Admin">'
+    - '[Authorize(Roles = "Admin")]'
+    - 'public class CustomAuthStateProvider : AuthenticationStateProvider'
+    - 'options.DetailedErrors = builder.Environment.IsDevelopment();'
+    - 'builder.Services.Configure<CircuitOptions>(o => o.DetailedErrors = false);'
+    - 'options.ContentSecurityFrameAncestorsPolicy = frameAncestorsPolicy;'
+    - 'options.DisableWebSocketCompression = true;'
+    - 'NavigationManager.NavigateTo(returnUrl, forceLoad: true);'
+    - 'var apiKey = Configuration["ApiKey"];'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/security/
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/security/webassembly/

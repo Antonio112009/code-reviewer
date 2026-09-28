@@ -7,6 +7,11 @@ activation:
   content:
     - '\[(?:Timestamp|ConcurrencyCheck)\]|\bIsRowVersion\(|\bIsConcurrencyToken\(|\bRowVersion\b|\bxmin\b'
     - '\bDbUpdate(?:Concurrency)?Exception\b|\bOriginalValue\b|\bGetDatabaseValues\w*\('
+  examples:
+    - '[Timestamp] public byte[] RowVersion { get; set; } = default!;'
+    - 'builder.Property(p => p.Version).IsRowVersion();'
+    - 'catch (DbUpdateConcurrencyException ex) { var entry = ex.Entries.Single(); }'
+    - 'var databaseValues = await entry.GetDatabaseValuesAsync();'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/saving/concurrency
   - https://learn.microsoft.com/en-us/ef/core/saving/execute-insert-update-delete

@@ -8,6 +8,10 @@ activation:
     - '\bHtml\.Raw\(|\bHtmlString\b|\bIHtmlContent\b'
     - '\bUnsafeRelaxedJsonEscaping\b|\bJavaScriptEncoder\b|@Json\.Serialize\(|\bJsonConvert\.SerializeObject\('
     - '<script\b|\b(?:href|src|action|formaction)="@|\bon[a-z]+="@'
+  examples:
+    - '@Html.Raw(Model.Description)'
+    - 'var json = JsonConvert.SerializeObject(model);'
+    - '<a href="@Model.ProfileUrl">Profile</a>'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/security/cross-site-scripting
   - https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/character-encoding

@@ -7,6 +7,10 @@ activation:
   content:
     - '\bOnDelete\(|\bDeleteBehavior\.|\bHas(?:One|Many)\(|\bWith(?:One|Many)\(|\bHasForeignKey\('
     - '\.(?:Remove|RemoveRange)\(|\.Clear\(\)|\bCascadeDeleteTiming\b|\bDeleteOrphansTiming\b'
+  examples:
+    - 'builder.HasOne(o => o.Customer).WithMany(c => c.Orders).HasForeignKey(o => o.CustomerId).OnDelete(DeleteBehavior.Restrict);'
+    - 'order.Lines.Remove(line);'
+    - 'context.ChangeTracker.CascadeDeleteTiming = CascadeTiming.OnSaveChanges;'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/saving/cascade-delete
   - https://learn.microsoft.com/en-us/ef/core/change-tracking/relationship-changes

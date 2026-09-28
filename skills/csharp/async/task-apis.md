@@ -8,6 +8,14 @@ activation:
     - '\bTask\.(?:WhenAll|WhenAny|WaitAll|WaitAny)\(|\bParallel\.ForEachAsync\('
     - '\bTaskCompletionSource\b|\bValueTask\b'
     - '\.Select\(\s*(?:async\s+)?\w+\s*=>\s*[\w.]+Async\('
+  examples:
+    - 'Task.Factory.StartNew(async () => await ProcessAsync());'
+    - 'task.ContinueWith(t => LogResult(t));'
+    - 'await Task.WhenAll(saveTask, notifyTask);'
+    - 'await Parallel.ForEachAsync(items, async (item, ct) => await ProcessAsync(item, ct));'
+    - 'var tcs = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);'
+    - 'public ValueTask<int> GetCachedAsync(string key)'
+    - 'var tasks = items.Select(x => CallAsync(x));'
 sources:
   - https://devblogs.microsoft.com/dotnet/task-run-vs-task-factory-startnew/
   - https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall

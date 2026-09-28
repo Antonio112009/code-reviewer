@@ -8,6 +8,10 @@ activation:
     - '\bapp\.(?:Use|UseWhen|Map|MapWhen|Run)\w*\('
     - '\bIApplicationBuilder\b|\bIMiddleware\b|\bRequestDelegate\b|\bInvokeAsync\(\s*HttpContext\b'
     - '\bEnableBuffering\(|\bResponse\.HasStarted\b|\bOnStarting\(|\bRequest\.ContentLength\b'
+  examples:
+    - 'app.UseRouting();'
+    - 'public Task InvokeAsync(HttpContext context)'
+    - 'Request.Body.EnableBuffering();'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/
   - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/best-practices

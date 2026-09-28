@@ -8,6 +8,13 @@ activation:
     - '\bHasPrecision\(|\[Precision\(|\bdecimal\b'
     - '\bHasConversion\b|\bValueConverter\b|\bValueComparer\b|\bHasTrigger\(|\bToTable\('
     - '\bIEntityTypeConfiguration<|\bmodelBuilder\.Entity<|\bToJson\(|\bUseAzureSql\(|\bUseCompatibilityLevel\('
+  examples:
+    - 'builder.Property(p => p.Rate).HasPrecision(18, 4);'
+    - '[Precision(18, 4)] public decimal Rate { get; set; }'
+    - 'builder.Property(p => p.Tags).HasConversion(v => string.Join(",", v), v => v.Split(",").ToList());'
+    - 'builder.ToTable(t => t.HasTrigger("TR_Users_Audit"));'
+    - 'public class UserConfiguration : IEntityTypeConfiguration<User> { }'
+    - 'modelBuilder.Entity<Order>().ToJson();'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/modeling/value-comparers
   - https://learn.microsoft.com/en-us/ef/core/what-is-new/ef-core-7.0/breaking-changes

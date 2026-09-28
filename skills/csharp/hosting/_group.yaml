@@ -10,3 +10,8 @@ detect:
     - '\bI(?:ServiceCollection|ServiceProvider|ServiceScopeFactory|HostedService|Configuration|Options|OptionsMonitor|OptionsSnapshot|Logger|LoggerFactory|HostApplicationLifetime)\b'
     - '\b(?:BackgroundService|WebApplication|HostApplicationBuilder|LoggerMessage)\b'
     - '\bAdd(?:Singleton|Scoped|Transient|HostedService|Options|Keyed\w+)\b'
+  examples:
+    - 'using Microsoft.Extensions.DependencyInjection;'
+    - 'public Worker(IServiceScopeFactory scopeFactory) { }'
+    - 'var app = WebApplication.CreateBuilder(args).Build();'
+    - 'builder.Services.AddSingleton<IMyService, MyService>();'

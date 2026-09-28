@@ -11,3 +11,8 @@ detect:
     - '\b(?:ComponentBase|OwningComponentBase|IJSRuntime|IJSObjectReference|RenderFragment|NavigationManager|AuthenticationStateProvider|EditForm|EditContext)\b'
     - '\[(?:Parameter|CascadingParameter|Inject|JSInvokable|SupplyParameterFromForm|PersistentState)\b'
     - '\b(?:AddRazorComponents|AddInteractiveServerComponents|AddInteractiveWebAssemblyComponents|MapRazorComponents|AddServerSideBlazor)\b'
+  examples:
+    - 'using Microsoft.AspNetCore.Components;'
+    - 'public class CounterComponent : ComponentBase'
+    - '[Parameter] public int Count { get; set; }'
+    - 'builder.Services.AddRazorComponents().AddInteractiveServerComponents();'

@@ -8,6 +8,10 @@ activation:
     - '\bForwardedHeaders(?:Options)?\b|\bUseForwardedHeaders\(|\bKnown(?:Proxies|Networks|IPNetworks)\b|\bForwardLimit\b'
     - 'X-Forwarded-|X-Real-IP|ASPNETCORE_FORWARDEDHEADERS_ENABLED|\bRemoteIpAddress\b'
     - '\bRequest\.(?:Host|Scheme)\b|\bGet(?:Display|Encoded)Url\(|"AllowedHosts"\s*:|\bUseHttpsRedirection\('
+  examples:
+    - 'app.UseForwardedHeaders(new ForwardedHeadersOptions { KnownProxies = { IPAddress.Parse("10.0.0.1") } });'
+    - 'var clientIp = context.Connection.RemoteIpAddress;'
+    - 'var resetLink = $"{Request.Scheme}://{Request.Host}/reset?token={token}";'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer
   - https://learn.microsoft.com/en-us/aspnet/core/breaking-changes/8/forwarded-headers-unknown-proxies

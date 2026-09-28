@@ -7,6 +7,10 @@ activation:
     - '\.(?:Select|SelectMany|Where|GroupBy|OrderBy|OrderByDescending|ThenBy|Distinct|DistinctBy|ToDictionary|ToLookup|First|Single|SingleOrDefault|Last|ElementAt|Aggregate|Zip)\('
     - '\byield\s+(?:return|break)\b'
     - '\bIEnumerable<'
+  examples:
+    - 'var active = users.Where(u => u.IsActive).ToList();'
+    - 'yield return item;'
+    - 'public IEnumerable<int> GetIds() {'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/standard/linq/deferred-execution-lazy-evaluation
   - https://learn.microsoft.com/en-us/dotnet/csharp/iterators

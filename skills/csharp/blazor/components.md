@@ -7,6 +7,15 @@ activation:
     - '\bStateHasChanged\(|\bInvokeAsync\(|\bEventCallback\b'
     - '\[(?:Parameter|CascadingParameter)\]|\bOn(?:ParametersSet|AfterRender|Initialized)(?:Async)?\('
     - '@implements\s+I(?:Async)?Disposable|@key\b|@foreach\b|\basync\s+void\b'
+  examples:
+    - 'await InvokeAsync(() => { _count++; StateHasChanged(); });'
+    - '[Parameter] public EventCallback<int> OnCountChanged { get; set; }'
+    - 'protected override async Task OnParametersSetAsync()'
+    - 'protected override void OnAfterRender(bool firstRender)'
+    - '@implements IDisposable'
+    - '@foreach (var item in Items)'
+    - '<ItemRow @key="item.Id" Item="item" />'
+    - 'private async void OnClick() => await SaveAsync();'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/components/synchronization-context
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/components/overwriting-parameters

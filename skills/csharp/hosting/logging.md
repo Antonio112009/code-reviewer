@@ -8,6 +8,10 @@ activation:
     - '\b_?[Ll]ogger\.Log(?:Trace|Debug|Information|Warning|Error|Critical)?\('
     - '\[LoggerMessage\b|\bBeginScope\(|\bLoggerFactory\.Create\('
     - '\bEnableSensitiveDataLogging\(|\bAddHttpLogging\(|\bHttpLoggingFields\b'
+  examples:
+    - '_logger.LogError(ex.Message);'
+    - 'using var scope = logger.BeginScope("OrderId {OrderId}", orderId);'
+    - 'optionsBuilder.EnableSensitiveDataLogging();'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/core/extensions/logging/overview
   - https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2254

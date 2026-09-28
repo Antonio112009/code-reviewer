@@ -8,6 +8,12 @@ activation:
     - '\.(?:Update|UpdateRange|Attach|AttachRange|Entry)\(|\bEntityState\.\w+|\.State\s*='
     - '\bAsNoTracking(?:WithIdentityResolution)?\(|\bQueryTrackingBehavior\b|\.SetValues\('
     - '\bSaveChanges(?:Async)?\('
+  examples:
+    - 'context.Update(order);'
+    - 'entry.State = EntityState.Modified;'
+    - 'context.Entry(order).CurrentValues.SetValues(dto);'
+    - 'var orders = await context.Orders.AsNoTracking().ToListAsync();'
+    - 'await context.SaveChangesAsync();'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/saving/disconnected-entities
   - https://learn.microsoft.com/en-us/ef/core/change-tracking/identity-resolution

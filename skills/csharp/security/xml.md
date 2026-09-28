@@ -9,6 +9,11 @@ activation:
     - '\bXslCompiledTransform\b|\bXsltSettings\b'
     - '\bXmlTextReader\b|\bXmlDocument\b|\bXmlReader\.Create\(|\bXDocument\.(?:Load|Parse)\('
     - '\.(?:SelectNodes|SelectSingleNode|XPathSelectElements?|XPathEvaluate)\('
+  examples:
+    - 'var settings = new XmlReaderSettings { XmlResolver = new XmlUrlResolver(), DtdProcessing = DtdProcessing.Parse };'
+    - 'transform.Load(userStylesheetPath, XsltSettings.TrustedXslt, null);'
+    - 'var doc = new XmlDocument(); doc.LoadXml(userXml);'
+    - 'var node = doc.SelectSingleNode(xpath);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca3075
   - https://learn.microsoft.com/en-us/dotnet/standard/data/xml/xslt-security-considerations

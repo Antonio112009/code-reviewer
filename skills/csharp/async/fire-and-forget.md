@@ -8,6 +8,12 @@ activation:
     - '\b_\s*=\s*[\w.]+Async\('
     - '\bTask\.Run\(|\bTask\.Factory\.StartNew\(|\bThreadPool\.QueueUserWorkItem\('
     - '\breturn\s+(?!await\b)[\w.]+Async\('
+  examples:
+    - '_ = ProcessOrderAsync(order);'
+    - 'Task.Run(() => CleanupAsync());'
+    - 'Task.Factory.StartNew(() => Process());'
+    - 'ThreadPool.QueueUserWorkItem(_ => DoWork());'
+    - 'return SaveChangesAsync();'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/best-practices
   - https://github.com/davidfowl/AspNetCoreDiagnosticScenarios/blob/master/AsyncGuidance.md

@@ -9,6 +9,11 @@ activation:
     - '\bXmlSerializer\b|\[Obsolete\b'
     - '\[JsonPolymorphic\b|\bTypeDiscriminatorPropertyName\b|\bReferenceHandler\.Preserve\b'
     - '\bBufferedStream\b'
+  examples:
+    - 'AppDomain.CurrentDomain.ProcessExit += (_, _) => Cleanup();'
+    - 'var serializer = new XmlSerializer(typeof(Order));'
+    - '[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]'
+    - 'using var buffered = new BufferedStream(fileStream);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/10.0/sigterm-signal-handler
   - https://learn.microsoft.com/en-us/dotnet/core/compatibility/serialization/10/xmlserializer-obsolete-properties

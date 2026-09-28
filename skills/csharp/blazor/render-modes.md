@@ -8,6 +8,15 @@ activation:
     - '@rendermode\b|\bRenderMode\.\w+|\bInteractive(?:Server|WebAssembly|Auto)(?:RenderMode)?\b'
     - '\bAddInteractive(?:Server|WebAssembly)(?:Components|RenderMode)\(|\bprerender:\s*false\b'
     - '\bPersistentComponentState\b|\[PersistentState\]|\bRendererInfo\b|\bOnInitialized(?:Async)?\('
+  examples:
+    - '<Counter @rendermode="InteractiveServer" />'
+    - 'var mode = RenderMode.InteractiveAuto;'
+    - 'builder.Services.AddInteractiveServerComponents();'
+    - '<Counter @rendermode="new InteractiveServerRenderMode(prerender: false)" />'
+    - '[Inject] public PersistentComponentState ApplicationState { get; set; } = default!;'
+    - '[PersistentState] public WeatherForecast[]? Forecasts { get; set; }'
+    - 'if (RendererInfo.IsInteractive) { await LoadDataAsync(); }'
+    - 'protected override async Task OnInitializedAsync()'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/components/prerender

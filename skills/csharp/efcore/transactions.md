@@ -7,6 +7,10 @@ activation:
   content:
     - '\bBeginTransaction(?:Async)?\(|\bCommit(?:Async)?\(|\bRollback(?:Async)?\(|\bIDbContextTransaction\b'
     - '\bCreateExecutionStrategy\(|\bEnableRetryOnFailure\(|\bUseTransaction(?:Async)?\(|\bCreateSavepoint(?:Async)?\('
+  examples:
+    - 'await using IDbContextTransaction transaction = await context.Database.BeginTransactionAsync();'
+    - 'await transaction.CommitAsync();'
+    - 'var strategy = context.Database.CreateExecutionStrategy();'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency
   - https://learn.microsoft.com/en-us/ef/core/saving/transactions

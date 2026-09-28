@@ -7,6 +7,10 @@ activation:
     - '\bJsonSerializer\.(?:Serialize|Deserialize)\w*|\bJsonSerializerOptions\b|\bJsonSerializerContext\b'
     - '\[Json\w+|\bJsonConvert\.|using\s+(?:System\.Text\.Json|Newtonsoft\.Json)\b'
     - '\bJson(?:Document|Element|Node)\b|\b(?:ReadFrom|GetFrom|PostAs|PutAs)Json\w*\b'
+  examples:
+    - 'var user = JsonSerializer.Deserialize<User>(json);'
+    - '[JsonPropertyName("user_id")] public int UserId { get; set; }'
+    - 'using var doc = JsonDocument.Parse(json);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/migrate-from-newtonsoft
   - https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/nullable-annotations

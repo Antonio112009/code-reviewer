@@ -8,6 +8,10 @@ activation:
     - ':\s*Hub(?:<\w+>)?\b|\bIHubContext<|\bMapHub<|\bHubConnection(?:Builder)?\b'
     - '\bClients\.(?:All|Caller|Others|Group|Groups|User|Users|Client|AllExcept)\b|\bGroups\.(?:Add|Remove)\w*Async\('
     - '\bOnConnectedAsync\(|\baccess_token\b|\bMaximumReceiveMessageSize\b|\bMaximumParallelInvocationsPerClient\b|\bEnableDetailedErrors\b'
+  examples:
+    - 'public class ChatHub : Hub'
+    - 'await Clients.Group(groupName).SendAsync("ReceiveMessage", message);'
+    - 'public override Task OnConnectedAsync() => Groups.AddToGroupAsync(Context.ConnectionId, groupName);'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/signalr/authn-and-authz
   - https://learn.microsoft.com/en-us/aspnet/core/signalr/security

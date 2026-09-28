@@ -7,6 +7,10 @@ activation:
     - '\b(?:List|Dictionary|HashSet|SortedDictionary|SortedSet|SortedList|Queue|Stack|LinkedList)<'
     - '\.(?:Sort|RemoveAll|TryGetValue|ContainsKey|TryAdd|GetValueOrDefault)\('
     - '\bIEqualityComparer<|\bIComparer<|\bComparison<|\boverride\s+int\s+GetHashCode\('
+  examples:
+    - 'var cache = new Dictionary<string, User>();'
+    - 'if (!cache.TryGetValue(id, out var user)) return null;'
+    - 'public override int GetHashCode() => Id.GetHashCode();'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2
   - https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.list-1.sort

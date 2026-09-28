@@ -7,6 +7,9 @@ activation:
   content:
     - '\[(?:FromBody|FromForm|Bind|BindNever|BindRequired|BindProperty|Required)\b'
     - '\bTryUpdateModel(?:Async)?\(|\bJsonPatchDocument\b|\.ApplyTo\('
+  examples:
+    - '[FromBody] OrderDto dto'
+    - 'await TryUpdateModelAsync(order, "", o => o.Name, o => o.Description);'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/mvc/models/model-binding
   - https://learn.microsoft.com/en-us/aspnet/core/mvc/models/validation

@@ -7,6 +7,11 @@ activation:
   content:
     - '\bTransactionScope\b|\bTransactionScopeAsyncFlowOption\b|\bTransactionOptions\b'
     - '\bTransaction\.Current\b|\bImplicitDistributedTransactions\b'
+  examples:
+    - 'using var scope = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled);'
+    - 'var options = new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted };'
+    - 'if (Transaction.Current is not null) throw new InvalidOperationException();'
+    - 'TransactionManager.ImplicitDistributedTransactions = true;'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/api/system.transactions.transactionscope
   - https://learn.microsoft.com/en-us/archive/blogs/dbrowne/using-new-transactionscope-considered-harmful

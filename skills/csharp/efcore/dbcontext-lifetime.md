@@ -8,6 +8,12 @@ activation:
     - '\bIDbContextFactory<|\bAddDbContext(?:Pool|Factory)?\b|\bPooledDbContextFactory\b|\bChangeTracker\b'
     - '\bTask\.WhenAll\(|\bParallel\.(?:For|ForEach|ForEachAsync)\('
     - ':\s*DbContext\b|\bDbContext\s+\w+\s*[;,)=]'
+  examples:
+    - 'services.AddDbContextFactory<AppDbContext>();'
+    - 'public MyService(IDbContextFactory<AppDbContext> factory) { }'
+    - 'await Task.WhenAll(orders.Select(o => ProcessAsync(o)));'
+    - 'public class AppDbContext : DbContext {'
+    - 'context.ChangeTracker.Clear();'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/
   - https://learn.microsoft.com/en-us/ef/core/performance/advanced-performance-topics

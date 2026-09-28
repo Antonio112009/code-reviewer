@@ -8,6 +8,11 @@ activation:
     - '\.(?:Include|ThenInclude|AsSplitQuery|AsSingleQuery|AsEnumerable|AsAsyncEnumerable|Skip|Take)\('
     - '\.(?:ToList|ToListAsync|Count|CountAsync|Any|AnyAsync|Contains|Select)\('
     - '\bUseLazyLoadingProxies\(|\bvirtual\s+(?:ICollection|IList|List)<|\bUseCompatibilityLevel\('
+  examples:
+    - 'var orders = await context.Orders.Include(o => o.Lines).AsSplitQuery().ToListAsync();'
+    - 'var page = await context.Orders.OrderBy(o => o.Id).Skip(50).Take(25).ToListAsync();'
+    - 'var count = context.Orders.Where(o => ids.Contains(o.Id)).Count();'
+    - 'public virtual ICollection<OrderLine> Lines { get; set; } = new List<OrderLine>();'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/performance/efficient-querying
   - https://learn.microsoft.com/en-us/ef/core/querying/single-split-queries

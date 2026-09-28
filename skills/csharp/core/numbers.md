@@ -9,6 +9,11 @@ activation:
     - '\bConvert\.ToInt(?:16|32|64)\(|\((?:int|long|short|byte|uint|ulong)\)\s*[\w(]'
     - '\bdecimal\b|\b(?:double|float)\s+\w*(?:[Pp]rice|[Aa]mount|[Tt]otal|[Bb]alance|[Cc]ost|[Rr]ate)\b'
     - '\bEnum\.(?:Parse|TryParse|IsDefined)\b'
+  examples:
+    - 'var rounded = Math.Round(total, MidpointRounding.AwayFromZero);'
+    - 'int total = (int)computedValue;'
+    - 'decimal total = price * quantity;'
+    - 'Enum.TryParse(input, out Role role);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/checked-and-unchecked
   - https://learn.microsoft.com/en-us/dotnet/core/compatibility/jit/9.0/fp-to-integer

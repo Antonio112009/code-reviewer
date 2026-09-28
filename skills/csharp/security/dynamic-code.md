@@ -9,6 +9,11 @@ activation:
     - 'System\.Linq\.Dynamic|\bDynamicExpressionParser\b|\.(?:Where|OrderBy|Select)\(\s*\$?"'
     - '\bRowFilter\b|\.Compute\(|\bDataTable\b[^\n]{0,60}\.Select\(|\.Expression\s*='
     - '\bCSharpScript\b|\bCSharpCompilation\b|\bRazorLight\b|\bRazorEngine\b|\.(?:GetMethod|GetProperty|InvokeMember)\('
+  examples:
+    - 'var type = Type.GetType(typeName); var instance = Activator.CreateInstance(type);'
+    - 'using System.Linq.Dynamic.Core;'
+    - 'dataView.RowFilter = "Name = " + userInput;'
+    - 'var result = await CSharpScript.EvaluateAsync<int>(userExpression);'
 sources:
   - https://github.com/advisories/GHSA-w65q-jcmv-28gj
   - https://learn.microsoft.com/en-us/dotnet/api/system.data.dataview.rowfilter

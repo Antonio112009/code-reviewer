@@ -8,6 +8,18 @@ activation:
     - '\block\s*\(|\bSemaphoreSlim\b|\bMonitor\.(?:Enter|TryEnter|Exit|Wait|Pulse)'
     - '\bMutex\b|\bReaderWriterLock(?:Slim)?\b|\bSpinLock\b|\bThreading\.Lock\b|\bLock\s+_?\w+\s*=\s*new\b'
     - '\bvolatile\b|\bVolatile\.|\bLazyInitializer\b'
+  examples:
+    - 'lock (_gate) { count++; }'
+    - 'private readonly SemaphoreSlim _sem = new(1, 1);'
+    - 'Monitor.Enter(_gate);'
+    - 'private readonly Mutex _mutex = new();'
+    - 'private readonly ReaderWriterLockSlim _rw = new();'
+    - 'private readonly SpinLock _spin = new();'
+    - 'private System.Threading.Lock _gate = new();'
+    - 'Lock _door = new();'
+    - 'private volatile bool _initialized;'
+    - 'Volatile.Write(ref _flag, true);'
+    - 'var value = LazyInitializer.EnsureInitialized(ref _cache);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/lock
   - https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim

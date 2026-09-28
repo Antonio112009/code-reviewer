@@ -8,6 +8,10 @@ activation:
     - '\bAddDataProtection\(|\bIDataProtect(?:or|ionProvider)\b|\bITimeLimitedDataProtector\b'
     - '\bPersistKeysTo\w+\(|\bProtectKeysWith\w+\(|\bSetApplicationName\(|\bSetDefaultKeyLifetime\('
     - '\bCreateProtector\(|\bToTimeLimitedDataProtector\('
+  examples:
+    - 'services.AddDataProtection();'
+    - '.PersistKeysToAzureBlobStorage(blobUri);'
+    - 'var protector = provider.CreateProtector("EmailConfirmation");'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/security/data-protection/configuration/default-settings
   - https://learn.microsoft.com/en-us/aspnet/core/security/data-protection/configuration/overview

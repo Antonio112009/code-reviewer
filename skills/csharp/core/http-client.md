@@ -8,6 +8,10 @@ activation:
     - '\bHttpClient\b|\bIHttpClientFactory\b|\bAddHttpClient\b'
     - '\bHttp(?:Request|Response)Message\b|\bBaseAddress\b|\bDefaultRequestHeaders\b'
     - '\b(?:SocketsHttpHandler|HttpClientHandler|ConfigurePrimaryHttpMessageHandler)\b'
+  examples:
+    - 'var client = new HttpClient();'
+    - 'client.BaseAddress = new Uri("https://api.example.com/v1/");'
+    - 'services.AddHttpClient<OrdersClient>().ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler());'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/http/httpclient-guidelines
   - https://learn.microsoft.com/en-us/dotnet/core/extensions/httpclient-factory

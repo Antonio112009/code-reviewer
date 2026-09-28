@@ -7,6 +7,11 @@ activation:
   content:
     - '\.(?:Query|QueryFirst|QueryFirstOrDefault|QuerySingle|QuerySingleOrDefault|QueryMultiple|QueryUnbuffered|Execute|ExecuteScalar|ExecuteReader)(?:Async)?\s*(?:<[^>\n]{1,80}>)?\('
     - '\bDynamicParameters\b|\bCommandDefinition\b|\bDbString\b|\bsplitOn\b|\bAsTableValuedParameter\('
+  examples:
+    - 'var users = await connection.QueryAsync<User>(sql, new { active = true });'
+    - 'var order = connection.QuerySingleOrDefault<Order>(sql, new { id });'
+    - 'var parameters = new DynamicParameters();'
+    - 'var rows = await connection.QueryAsync<User, Order, User>(sql, Map, splitOn: "OrderId");'
 sources:
   - https://github.com/DapperLib/Dapper/blob/main/Readme.md
   - https://learn.microsoft.com/en-us/sql/sql-server/maximum-capacity-specifications-for-sql-server

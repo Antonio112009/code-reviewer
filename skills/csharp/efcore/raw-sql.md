@@ -6,6 +6,9 @@ tags: [CWE-89, A05:2025]
 activation:
   content:
     - '\b(?:FromSql|FromSqlRaw|FromSqlInterpolated|SqlQuery|SqlQueryRaw|ExecuteSql|ExecuteSqlRaw|ExecuteSqlInterpolated)(?:Async)?\b'
+  examples:
+    - 'var users = context.Users.FromSqlInterpolated($"SELECT * FROM Users WHERE Id = {id}");'
+    - 'await context.Database.ExecuteSqlRawAsync("UPDATE Users SET Active = 0 WHERE Id = " + id);'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/querying/sql-queries
   - https://learn.microsoft.com/en-us/ef/core/saving/execute-insert-update-delete

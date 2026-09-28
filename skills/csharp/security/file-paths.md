@@ -8,6 +8,10 @@ activation:
     - '\bPath\.(?:Combine|Join|GetFullPath|GetFileName|GetRelativePath)\('
     - '\bFile\.(?:ReadAll\w*|WriteAll\w*|Open\w*|Delete|Copy|Move|Create)\(|\bnew\s+FileStream\(|\bDirectory\.(?:Delete|GetFiles|EnumerateFiles)\('
     - '\bZipArchive\b|\bZipFile\.|\bExtractToFile\(|\bTarReader\b|\bTarFile\.'
+  examples:
+    - 'var path = Path.Combine(baseDir, userFileName);'
+    - 'File.WriteAllBytes(path, uploadedBytes);'
+    - 'archive.GetEntry(entryName).ExtractToFile(destinationPath, overwrite: true);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/api/system.io.path.combine
   - https://learn.microsoft.com/en-us/dotnet/api/system.io.compression.zipfileextensions.extracttofile

@@ -8,6 +8,14 @@ activation:
     - '\b(?:Sql|Npgsql|MySql|Sqlite|Oracle|Odbc|OleDb)(?:Command|Connection|Parameter|DataReader|Transaction)\b|\bI?Db(?:Command|Connection|DataReader|Parameter)\b'
     - '\.(?:ExecuteReader|ExecuteNonQuery|ExecuteScalar)(?:Async)?\(|\bCommandText\b'
     - '\bAddWithValue\(|\bDBNull\b|\bCommandTimeout\b|\bBeginTransaction(?:Async)?\('
+  examples:
+    - 'using var command = new SqlCommand(sql, connection);'
+    - 'var reader = await command.ExecuteReaderAsync();'
+    - 'command.CommandText = "UPDATE Accounts SET Balance = Balance - @amount WHERE Id = @id";'
+    - 'parameter.Value = (object?)email ?? DBNull.Value;'
+    - 'command.Parameters.AddWithValue("@name", name);'
+    - 'command.CommandTimeout = 120;'
+    - 'using var transaction = connection.BeginTransaction();'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/configuring-parameters-and-parameter-data-types
   - https://learn.microsoft.com/en-us/sql/connect/ado-net/sql-server-connection-pooling

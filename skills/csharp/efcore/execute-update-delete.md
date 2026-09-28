@@ -6,6 +6,9 @@ tags: [CWE-362, CWE-778]
 activation:
   content:
     - '\bExecute(?:Update|Delete)(?:Async)?\(|\bSetProperty\('
+  examples:
+    - 'await context.Orders.Where(o => o.Id == id).ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, "Shipped"));'
+    - 'await context.Orders.Where(o => o.IsCancelled).ExecuteDeleteAsync();'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/saving/execute-insert-update-delete
   - https://learn.microsoft.com/en-us/ef/core/saving/cascade-delete

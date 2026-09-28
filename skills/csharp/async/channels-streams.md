@@ -7,6 +7,16 @@ activation:
     - '\bChannel\.Create(?:Bounded|Unbounded)\b|\bChannel(?:Reader|Writer)<|\bBoundedChannel(?:Options|FullMode)\b'
     - '\bIAsyncEnumerable<|\bawait\s+foreach\b|\[EnumeratorCancellation\]|\bWithCancellation\('
     - '\.(?:TryWrite|ReadAllAsync|WaitToReadAsync|WaitToWriteAsync|TryComplete)\('
+  examples:
+    - 'var channel = Channel.CreateBounded<int>(new BoundedChannelOptions(100) { FullMode = BoundedChannelFullMode.Wait });'
+    - 'ChannelWriter<Order> writer = channel.Writer;'
+    - 'public async IAsyncEnumerable<int> ReadAllAsync([EnumeratorCancellation] CancellationToken ct)'
+    - 'await foreach (var item in source.WithCancellation(ct))'
+    - 'if (!writer.TryWrite(item)) { await writer.WriteAsync(item, ct); }'
+    - 'await foreach (var item in channel.Reader.ReadAllAsync(ct))'
+    - 'while (await reader.WaitToReadAsync(ct)) { }'
+    - 'while (await writer.WaitToWriteAsync(ct)) { }'
+    - 'writer.TryComplete(ex);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/core/extensions/channels
   - https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/generate-consume-asynchronous-stream

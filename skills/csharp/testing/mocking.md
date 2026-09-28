@@ -6,6 +6,10 @@ activation:
   content:
     - '\bnew\s+Mock<|\bMock\.Of<|\.Setup(?:Get|Set|Sequence)?\(|\.Verify(?:All|NoOtherCalls|Get|Set)?\(|\bMockBehavior\.'
     - '\bIt\.(?:IsAny|Is|IsIn|IsRegex)\b|\bSubstitute\.For<|\bArg\.(?:Any|Is|Do)\b|\.Received\('
+  examples:
+    - 'var mock = new Mock<IEmailSender>(MockBehavior.Strict);'
+    - 'mock.Setup(x => x.Send(It.IsAny<string>())).Returns(Task.CompletedTask);'
+    - 'substitute.Received(1).Send(Arg.Any<string>());'
 sources:
   - https://github.com/devlooped/moq/wiki/Quickstart
   - https://nsubstitute.github.io/help/argument-matchers/

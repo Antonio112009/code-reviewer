@@ -9,6 +9,13 @@ activation:
     - '\bNuGetAudit\w*|\bNU1[89]\d\d\b'
     - '<(?:packageSources?|packageSourceMapping|clear)\b|\ballowInsecureConnections\b'
     - '\b(?:RestorePackagesWithLockFile|RestoreLockedMode|ManagePackageVersionsCentrally|VersionOverride)\b'
+  examples:
+    - '<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />'
+    - '<NuGetAudit>false</NuGetAudit>'
+    - '<NoWarn>NU1901;NU1902</NoWarn>'
+    - '<packageSources><clear /></packageSources>'
+    - '<add key="internal" value="http://pkgs.example.com/index.json" allowInsecureConnections="true" />'
+    - '<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>'
 sources:
   - https://learn.microsoft.com/en-us/nuget/concepts/auditing-packages
   - https://learn.microsoft.com/en-us/dotnet/core/compatibility/sdk/10.0/nugetaudit-transitive-packages
