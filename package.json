@@ -42,6 +42,7 @@
     "dist",
     "skills",
     "evals",
+    "!evals/aacr",
     "README.md",
     "CHANGELOG.md",
     "docs/assets/logo.svg",
