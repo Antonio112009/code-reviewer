@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs a reviewer on AACR-Bench and scores it. Run setup.sh first.
 #
-#   evals/aacr/run.sh <run-id> [--pilot] [--stage all|review|eval] [--limit N] [--concurrency N]
+#   evals/aacr/run.sh <run-id> [--pilot | --subset <name>] [--stage all|review|eval] [--limit N] [--concurrency N]
 #                     [--reviewer code-reviewer|claude|codex|ocr] [-- <code-reviewer arguments>]
 #
 # code-reviewer arguments default to "--full". Results: $AACR_DIR/aacr-bench/evaluation/results/<dataset>/
@@ -26,6 +26,7 @@ CR_ARGS=(--full)
 while [ $# -gt 0 ]; do
   case $1 in
     --pilot) DATASET=data/aacr_pilot.jsonl ;;
+    --subset) DATASET=data/aacr_$2.jsonl; shift ;;
     --stage) STAGE=$2; shift ;;
     --limit | --concurrency) EXTRA+=("$1" "$2"); shift ;;
     --reviewer) REVIEWER=$2; shift ;;
@@ -37,6 +38,7 @@ while [ $# -gt 0 ]; do
 done
 
 [ -d "$EVAL/.venv" ] || { echo "Run evals/aacr/setup.sh first." >&2; exit 1; }
+[ -f "$EVAL/$DATASET" ] || { echo "$DATASET not found: run evals/aacr/setup.sh (subsets come from evals/aacr/subsets/)." >&2; exit 1; }
 
 # The benchmark measures whatever dist/ contains: build first (or point CODE_REVIEWER_CLI at another build).
 export CODE_REVIEWER_CLI=${CODE_REVIEWER_CLI:-$ROOT/dist/cli.js}

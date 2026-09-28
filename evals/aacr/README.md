@@ -15,6 +15,8 @@ package, and `code-reviewer eval` ignores it (it only reads `*.yaml` cases).
 | `run.sh` | runs a reviewer on all PRs or the pilot subset and scores it |
 | `code_reviewer.py` | the reviewer adapter (installed as `evaluation/reviewers/code_reviewer.py`) |
 | `harness.patch` | changes to the harness (below) |
+| `subsets/*.txt` | named subsets (one PR URL per line) for `run.sh --subset` |
+| `report.py` | recall by context level (Diff / File / Repo) and category, averaged over repeated runs |
 
 ## Running
 
@@ -28,6 +30,8 @@ evals/aacr/run.sh full-1 --concurrency 3             # every PR
 evals/aacr/run.sh full-1 --stage eval                # re-score a finished run (e.g. with another judge)
 evals/aacr/run.sh opus-1 --pilot -- --full --model opus   # code-reviewer arguments after --
 evals/aacr/run.sh cc-1 --pilot --reviewer claude     # baseline: Claude Code's /code-review, same judge
+evals/aacr/run.sh base-1 --subset ctx30 --concurrency 4   # a named subset (evals/aacr/subsets/ctx30.txt)
+evals/aacr/report.py ctx30 base-1 base-2             # recall by context level and category, averaged
 ```
 
 - `$AACR_DIR` (default `~/.cache/code-reviewer-aacr`) holds the harness, its results and the cloned
@@ -38,6 +42,15 @@ evals/aacr/run.sh cc-1 --pilot --reviewer claude     # baseline: Claude Code's /
 - Results: `$AACR_DIR/aacr-bench/evaluation/results/<dataset>/<reviewer>/<run-id>/`. Each PR has a result
   file with the full `report.json`, and `runs/<instance>/` keeps the run directory (prompts, replies,
   `run.log`). Metrics are in the mirrored `metrics/` directory, and the console prints a summary.
+
+## Subsets
+
+- `pilot` (`--pilot`): 10 random PRs (seed 42). Cheap, but a change moving a few matches cannot be told
+  from run-to-run noise on it.
+- `ctx30` (`--subset ctx30`): 30 PRs from 22 repositories and 9 languages, picked at random (seed 20260928,
+  at most two per repository) among the available PRs with ≤ 800 changed lines and at least three File- or
+  Repo-level references. 286 references: 134 Diff, 107 File and 45 Repo level. Meant for changes to context
+  and cross-file checking; run each variant at least twice.
 
 ## How it is scored
 
