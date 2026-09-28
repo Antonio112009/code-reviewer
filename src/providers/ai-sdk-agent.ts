@@ -56,7 +56,12 @@ export async function runAiSdkTask(task: AgentTask, m: AiSdkModel): Promise<Agen
   const toolUsage: Record<string, number> = {};
   const tools = toAiSdkTools(
     toolsFor(task.kind, task.readTools),
-    { root: task.root, git: task.git, collector },
+    {
+      root: task.root,
+      git: task.git,
+      collector,
+      ...(task.dependencyRoots?.length ? { dependencyRoots: task.dependencyRoots } : {}),
+    },
     (name) => {
       toolUsage[name] = (toolUsage[name] ?? 0) + 1;
       task.onActivity?.({ kind: 'tool', name });

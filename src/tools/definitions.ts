@@ -8,6 +8,7 @@ import { hasNestedQuantifier } from '../skills/activation';
 import { SubmitFindingsSchema, SubmitVerdictsSchema } from '../types';
 import { unsafeGlobReason, untrustedGlobMatcher } from '../util/globs';
 import { resolveInside, toPosix } from '../util/paths';
+import { resolveDependencyPath } from './dependencies';
 import type { SubmissionCollector } from './submission';
 
 export interface ToolContext {
@@ -16,6 +17,8 @@ export interface ToolContext {
   /** Whether `root` is inside a git work tree (enables git-based tools). */
   git: boolean;
   collector?: SubmissionCollector;
+  /** Installed dependency sources `read_file` also reads by absolute path (see `tools/dependencies.ts`). */
+  dependencyRoots?: string[];
 }
 
 export interface ToolDef<I = unknown> {
@@ -73,16 +76,22 @@ export async function runTool(
 const readFileTool = defineTool({
   name: 'read_file',
   description:
-    'Read a file from the reviewed revision with line numbers. Use it to inspect callers, definitions or surrounding code. Max 400 lines per call.',
+    'Read a file from the reviewed revision with line numbers. Use it to inspect callers, definitions or surrounding code. Max 400 lines per call. An absolute path reads an installed dependency (the instructions list where they are).',
   inputSchema: z.object({
-    path: z.string().describe('Repository-relative path'),
+    path: z
+      .string()
+      .describe('Repository-relative path, or an absolute path inside the installed dependencies'),
     startLine: z.number().int().positive().optional(),
     endLine: z.number().int().positive().optional(),
   }),
   async execute({ path: rel, startLine, endLine }, ctx) {
-    const abs = resolveInside(ctx.root, rel);
+    // An absolute path into installed dependencies (read-only, real path checked), else the review root.
+    const dependency = path.isAbsolute(rel)
+      ? resolveDependencyPath(ctx.dependencyRoots ?? [], rel)
+      : undefined;
+    const abs = dependency ?? resolveInside(ctx.root, rel);
     const lines = (await readFile(abs, 'utf8')).split('\n');
-    ctx.collector?.noteRead(toPosix(path.relative(ctx.root, abs)));
+    if (!dependency) ctx.collector?.noteRead(toPosix(path.relative(ctx.root, abs)));
     const start = Math.max(1, startLine ?? 1);
     const end = Math.min(lines.length, endLine ?? start + MAX_READ_LINES - 1, start + MAX_READ_LINES - 1);
     const body = lines

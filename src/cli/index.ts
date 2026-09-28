@@ -46,6 +46,11 @@ export function buildProgram(): Command {
     .requiredOption('--submit-file <file>')
     .option('--no-git')
     .option('--no-read-tools')
+    .option(
+      '--dependency-root <dir>',
+      'installed dependency sources read_file may read (repeatable)',
+      (v: string, all: string[] = []) => [...all, v],
+    )
     .action(
       async (opts: {
         root: string;
@@ -53,6 +58,7 @@ export function buildProgram(): Command {
         submitFile: string;
         git: boolean;
         readTools: boolean;
+        dependencyRoot?: string[];
       }) => {
         await runMcpServe({
           root: opts.root,
@@ -60,6 +66,7 @@ export function buildProgram(): Command {
           submitFile: opts.submitFile,
           git: opts.git,
           readTools: opts.readTools,
+          ...(opts.dependencyRoot?.length ? { dependencyRoots: opts.dependencyRoot } : {}),
         });
       },
     );

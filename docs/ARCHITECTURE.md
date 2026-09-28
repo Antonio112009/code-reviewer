@@ -374,7 +374,12 @@ The code under review, and therefore model output, is treated as untrusted.
    - Codex cannot be confined to read-only by its adapter: it is flagged `unconfined`, never picked as an
      automatic fallback, and a warning is shown when it is configured.
 5. **Paths.** Every path from a model or tool call goes through `resolveInside`, a lexical check plus a
-   `realpath` check. `files` mode and skill loading skip symlinks, and findings must name a regular file
+   `realpath` check. The one exception is installed dependency sources (`tools/dependencies.ts`,
+   `review.dependencySources`): the Go module cache and Cargo registry from the user's environment, and
+   `node_modules` / a virtualenv's `site-packages` of the user's checkout, only as real directories with no
+   symlink between the checkout and them. `read_file`, ACP read permissions and `fs/read_text_file` accept
+   an absolute path there only when its real path is an existing file inside one of them, so a link from
+   `node_modules` to `~/.ssh` is refused. The instructions list the directories. `files` mode and skill loading skip symlinks, and findings must name a regular file
    inside the root.
 6. **Agent processes.** They start in a neutral temp directory, so a repository's `.npmrc` cannot
    redirect `npx`.

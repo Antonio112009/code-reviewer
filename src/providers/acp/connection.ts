@@ -5,6 +5,7 @@ import path from 'node:path';
 import { Readable, Writable } from 'node:stream';
 import * as acp from '@agentclientprotocol/sdk';
 import type { AcpProviderConfig } from '../../config/schema';
+import { resolveDependencyPath } from '../../tools/dependencies';
 import { MCP_SERVER_NAME } from '../../tools/mcp-server';
 import type { Submission } from '../../tools/submission';
 import type { Money, Usage } from '../../types';
@@ -26,6 +27,8 @@ import { type AcpPreset, type LaunchSpec, THOUGHT_LEVEL_CANDIDATES } from './pre
 
 interface SessionState {
   root: string;
+  /** Installed dependency sources the agent may read too (real paths). */
+  dependencyRoots: string[];
   denied: string[];
   toolCalls: number;
   /** Files the agent read or searched (root-relative), from tool call locations and fs reads. */
@@ -147,7 +150,11 @@ export class AcpConnection {
       .onRequest(acp.methods.client.session.requestPermission, async ({ params }) => {
         const state = this.sessions.get(params.sessionId);
         // Without a known session root nothing is read-safe: decide as if the root were unknown → reject reads.
-        const decision = decidePermission(params, state?.root ?? '\0no-session');
+        const decision = decidePermission(
+          params,
+          state?.root ?? '\0no-session',
+          state?.dependencyRoots ?? [],
+        );
         if (!decision.allowed) {
           state?.denied.push(decision.label);
           this.logger.debug(`[acp] denied: ${decision.label}`);
@@ -158,10 +165,13 @@ export class AcpConnection {
         const state = this.sessions.get(params.sessionId);
         if (!state) throw acp.RequestError.invalidParams(undefined, 'unknown session');
         const root = state.root;
+        const dependency = path.isAbsolute(params.path)
+          ? resolveDependencyPath(state.dependencyRoots, params.path)
+          : undefined;
         const rel = path.isAbsolute(params.path) ? path.relative(root, params.path) : params.path;
-        const abs = resolveInside(root, rel);
+        const abs = dependency ?? resolveInside(root, rel);
         let content = readFileSync(abs, 'utf8');
-        noteReads(state, [abs]);
+        if (!dependency) noteReads(state, [abs]);
         if (params.line != null || params.limit != null) {
           const lines = content.split('\n');
           const start = Math.max(0, (params.line ?? 1) - 1);
@@ -269,6 +279,7 @@ export class AcpConnection {
     const args = [entry, 'mcp-serve', '--root', task.root, '--kind', task.kind, '--submit-file', submitFile];
     if (!task.git) args.push('--no-git');
     if (!task.readTools) args.push('--no-read-tools');
+    for (const dir of task.dependencyRoots ?? []) args.push('--dependency-root', dir);
     return { name: MCP_SERVER_NAME, command: process.execPath, args, env: [] };
   }
 
@@ -298,6 +309,7 @@ export class AcpConnection {
     }
     const state: SessionState = {
       root: task.root,
+      dependencyRoots: task.dependencyRoots ?? [],
       denied: [],
       toolCalls: 0,
       reads: new Set(),

@@ -28,6 +28,7 @@ export interface McpServeOptions {
   kind: SubmitKind;
   submitFile: string;
   readTools: boolean;
+  dependencyRoots?: string[];
 }
 
 /**
@@ -56,6 +57,7 @@ export async function runMcpServe(opts: McpServeOptions): Promise<void> {
     root: opts.root,
     git: opts.git,
     collector: new SubmissionCollector(opts.submitFile),
+    ...(opts.dependencyRoots?.length ? { dependencyRoots: opts.dependencyRoots } : {}),
   };
   const server = createMcpServer(toolsFor(opts.kind, opts.readTools), ctx);
   await server.connect(new StdioServerTransport());
