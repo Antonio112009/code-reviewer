@@ -448,7 +448,15 @@ export const DEFAULT_CONFIG: Config = {
  */
 export const DEPTH_PRESETS: Record<ReviewDepth, { review: Partial<ReviewSettings> }> = {
   essential: { review: { minSeverity: 'major', skillTokenBudget: 3_500, maxSteps: 15, contextShare: 0.1 } },
-  full: { review: { minSeverity: 'info', skillTokenBudget: 6_000, maxSteps: 25, contextShare: 0.2 } },
+  full: {
+    review: {
+      minSeverity: 'info',
+      skillTokenBudget: 6_000,
+      maxSteps: 25,
+      contextShare: 0.2,
+      minConfidence: 0.5,
+    },
+  },
 };
 
 /** Partial config as written by users (every level optional). */

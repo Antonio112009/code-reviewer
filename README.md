@@ -146,6 +146,7 @@ code-reviewer providers test claude --model sonnet
 | Severities | critical, major | all |
 | Skills | essential ones, 3.5k tokens per chunk | all, 6k tokens per chunk |
 | Fix required | yes, for every finding | when possible |
+| Self-critique | also drops real but low-impact findings; keeps confidence ≥ 0.7 | drops only claims it can refute (low impact lowers the severity); keeps confidence ≥ 0.5 |
 
 ## Configuration
 

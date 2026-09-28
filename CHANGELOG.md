@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Full-depth self-critique keeps what it cannot refute.** At `--full`, the critic rejects a finding only
+  when the code refutes its claim; a correct finding with small, unlikely or edge-case impact is confirmed at
+  a lower severity instead, and findings are kept from confidence 0.5 (was 0.7). On AACR-Bench ctx30 the old
+  critic and threshold had dropped 16 of the 26 findings that matched expert-verified references (21 of 32
+  with focused passes). Essential depth is unchanged.
+
 - **Focused review passes (`--passes local,contracts`, `review.passes`).** Each chunk can be reviewed twice:
   once for defects in the changed lines, once for the declarations the change touches and their consumers
   (with the related unchanged code and a checklist of the changed declarations). Other reviewers found that
