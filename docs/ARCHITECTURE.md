@@ -167,9 +167,10 @@ The depth also affects:
 ## Providers
 
 ### Direct APIs (`providers/ai-sdk-agent.ts`: Bedrock, Anthropic)
-- One tool loop for both: Vercel AI SDK v7 `generateText` with `tools` and
-  `stopWhen: [isStepCount(maxSteps), hasToolCall(submit)]`; the last step (or one after 80% of the time)
-  offers only the submit tool. The portable `reasoning` level maps to the provider's reasoning settings.
+- One tool loop for both: Vercel AI SDK v7 `generateText` with `tools`, capped by `isStepCount(maxSteps)`.
+  A review continues after submitting findings until the model answers without a tool call; a critique ends
+  at its first `submit_verdicts`. The last step (or one after 80% of the time) offers only the submit tool,
+  and a review's submission there ends the loop. The portable `reasoning` level maps to the provider's reasoning settings.
 - **Prompt caching.** Every step of the loop sends the whole conversation again, so the prefix is cached:
   the Anthropic API gets request-level `cache_control` (it places the breakpoint itself); Bedrock gets a
   `cachePoint` on the instructions and on the newest message of each step (moved, not piled up: at most
