@@ -521,7 +521,7 @@ const findReferencesTool = defineTool({
         pathspecs: [...(glob ? [globPathspec(glob)] : []), ...NON_CODE],
       });
     } else {
-      const escaped = name.replace(/\$/g, '\\$');
+      const escaped = name.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&');
       const out = await jsGrep(ctx, new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`), MAX_REFERENCES + 1, glob);
       lines = out.split('\n').filter((l) => /^.+?:\d+:/.test(l) && !NON_CODE_FILE.test(l));
     }
