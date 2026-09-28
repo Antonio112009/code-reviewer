@@ -476,6 +476,22 @@ export interface RefsInfo {
   notes: string[];
 }
 
+/** How the review covered one changed file (`review/coverage.ts`). */
+export interface FileCoverage {
+  path: string;
+  /** Lines the change adds or removes (files mode: the file's lines). */
+  changed: number;
+  /**
+   * `reviewed`: every part owning the file answered in full; `interrupted`: some only with an early answer;
+   * `partial`: some parts failed; `failed`: no part answered; `skipped`: never sent to a model.
+   */
+  status: 'reviewed' | 'interrupted' | 'partial' | 'failed' | 'skipped';
+  /** Why a file was skipped or not run. */
+  reason?: string;
+  /** The model opened the file with a tool, beyond the code in its prompt. */
+  opened?: boolean;
+}
+
 export interface RunRecord {
   schemaVersion: 1;
   id: string;
@@ -508,6 +524,8 @@ export interface RunRecord {
   /** Tool calls by tool name across the run. */
   toolUsage?: Record<string, number>;
   chunks: ChunkRecord[];
+  /** Which changed files the review covered, problem files first. */
+  coverage?: FileCoverage[];
   findings: Finding[];
   /**
    * Kept findings of lower confidence (below `review.advisoryConfidence`) or `info` severity: shown in the

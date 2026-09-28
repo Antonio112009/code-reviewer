@@ -336,7 +336,8 @@ matched and how to read the numbers.
 
 Each run is saved in `.code-reviewer/runs/<id>/` (add it to `.gitignore`; `init` offers to). Use
 `code-reviewer runs list | show | export | open | publish | rm` to browse runs. Reports include every finding
-with its confidence, the critic's verdict, the author and links, plus what was rejected and why.
+with its confidence, the critic's verdict, the author and links, plus what was rejected and why, and a
+coverage map: which changed files were reviewed in full, cut short, not reviewed or skipped.
 
 Report formats (`--format` or `output.formats`):
 

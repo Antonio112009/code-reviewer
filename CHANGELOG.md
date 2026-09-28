@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Coverage map.** Reports show which changed files the review really covered: reviewed in full, cut short
+  (the model gave an early answer), partly or not reviewed (failed chunks), or skipped (and why), with the
+  changed lines, whether the model opened the file with a tool, and the findings in it. The terminal summary
+  names the files that were not fully reviewed.
 - **Findings name their failure path.** `submit_findings` asks for a `failurePath` — the input or state, the
   code path it takes, the failure (`empty cart from POST /checkout → total() divides by items.length → NaN
   is charged`). The critic checks it step by step, and reports and pull request comments show it. A critical

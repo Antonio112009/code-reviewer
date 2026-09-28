@@ -3,6 +3,8 @@ import {
   cacheLabel,
   chunkModelLabel,
   costLabel,
+  coverageLabel,
+  coverageRows,
   depthLabel,
   failureAdvice,
   fallbackLabel,
@@ -203,6 +205,23 @@ function renderSkillsAndTools(run: RunRecord, out: string[]): void {
   }
 }
 
+/** Most files listed in the coverage table (problem files come first). */
+const MAX_COVERAGE_ROWS = 200;
+
+function renderCoverage(run: RunRecord, out: string[]): void {
+  const rows = coverageRows(run);
+  if (!rows.length) return;
+  out.push('## Coverage', '', `${mdLine(coverageLabel(run)!)}.`, '');
+  out.push('| File | Changed lines | Review | Opened by the model | Findings |', '|---|---|---|---|---|');
+  for (const [file, changed, status, opened, findings] of rows.slice(0, MAX_COVERAGE_ROWS)) {
+    out.push(
+      `| ${codeCell(file)} | ${changed} | ${cell(status)} | ${opened ? 'yes' : ''} | ${findings || ''} |`,
+    );
+  }
+  if (rows.length > MAX_COVERAGE_ROWS) out.push('', `… and ${rows.length - MAX_COVERAGE_ROWS} more files.`);
+  out.push('');
+}
+
 function renderChunks(run: RunRecord, out: string[]): void {
   out.push('## Chunks', '');
   out.push(
@@ -257,6 +276,8 @@ export function renderMarkdown(run: RunRecord): string {
   if (cached) out.push(`| Cache | ${cell(cached)} |`);
   const failed = run.chunks.filter((c) => c.status === 'failed');
   out.push(`| Chunks | ${run.chunks.length}${failed.length ? ` (${failed.length} failed)` : ''} |`);
+  const coverage = coverageLabel(run);
+  if (coverage) out.push(`| Coverage | ${cell(coverage)} |`);
   out.push(`| Depth | ${cell(depthLabel(run))} |`);
   out.push(`| Min confidence | ${run.options.minConfidence} |`, '');
   out.push(`**${mdLine(summaryLine(run))}**`, '');
@@ -322,6 +343,7 @@ export function renderMarkdown(run: RunRecord): string {
   if (run.fallbacks?.length) {
     out.push('## Model fallbacks', '', ...run.fallbacks.map((f) => `- ${mdLine(fallbackLabel(f))}`), '');
   }
+  renderCoverage(run, out);
   renderChunks(run, out);
   if (run.warnings.length) {
     out.push('## Warnings', '', ...run.warnings.map((w) => `- ${mdLine(w)}`), '');
