@@ -13,6 +13,15 @@ activation:
     - '\bOpenableColumns\.DISPLAY_NAME\b'
     - '\b(?:ZipInputStream|ZipFile|ZipPathValidator)\b'
     - '\b(?:DexClassLoader|PathClassLoader|InMemoryDexClassLoader)\b|\bSystem\.load\s*\('
+  examples:
+    - '<files-path name="shared" path="shared/" />'
+    - 'FileProvider.getUriForFile(context, authority, file)'
+    - 'class DocsProvider : ContentProvider() {'
+    - 'override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {'
+    - 'intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)'
+    - 'val name = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))'
+    - 'ZipInputStream(input).use { zip -> extractEntries(zip) }'
+    - 'val loader = DexClassLoader(dexPath, optimizedDir, null, parent)'
 sources:
   - https://developer.android.com/privacy-and-security/risks/file-providers
   - https://developer.android.com/privacy-and-security/risks/path-traversal

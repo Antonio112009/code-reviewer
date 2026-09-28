@@ -14,6 +14,14 @@ activation:
     - '\bChannel\s*\('
     - '\bproduce\s*[<{(]'
     - '\b(?:consumeAsFlow|receiveAsFlow|consumeEach)\s*[({]'
+  examples:
+    - 'suspendCancellableCoroutine { cont -> api.register(cont) }'
+    - 'cont.invokeOnCancellation { api.cancel() }'
+    - 'callbackFlow { trySend(value) }'
+    - 'awaitClose { api.unregister(callback) }'
+    - 'val channel: Channel<Int> = Channel(capacity = 10)'
+    - 'val producer = produce { send(1) }'
+    - 'channel.consumeAsFlow().collect { value -> println(value) }'
 sources:
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/suspend-cancellable-coroutine.html
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/callback-flow.html

@@ -7,3 +7,6 @@ detect:
     - '^import\s+com\.android\.billingclient\.'
     - '\bBillingClient\b'
     - 'com\.android\.billingclient:billing'
+  examples:
+    - 'import com.android.billingclient.api.BillingClient'
+    - 'implementation("com.android.billingclient:billing:7.1.1")'

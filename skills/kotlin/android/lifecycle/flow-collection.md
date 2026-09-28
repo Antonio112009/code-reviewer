@@ -11,6 +11,12 @@ activation:
     - '\bflowWithLifecycle\s*\('
     - '\.(?:collect|collectLatest)\s*[({]'
     - '\bSharingStarted\.(?:Eagerly|Lazily|WhileSubscribed)\b'
+  examples:
+    - 'lifecycleScope.launch { flow.collect { render(it) } }'
+    - 'lifecycleScope.launchWhenStarted { collectData() }'
+    - 'repeatOnLifecycle(Lifecycle.State.STARTED) { flow.collect { render(it) } }'
+    - 'flow.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { render(it) }'
+    - 'stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initial)'
 sources:
   - https://developer.android.com/kotlin/flow/stateflow-and-sharedflow
   - https://developer.android.com/topic/libraries/architecture/coroutines#restart

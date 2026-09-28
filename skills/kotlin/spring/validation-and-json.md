@@ -8,7 +8,12 @@ activation:
     - '@(?:NotBlank|NotNull|NotEmpty|Size|Min|Max|Email|Pattern|Positive|PositiveOrZero|Past|Future|Valid|DecimalMin|DecimalMax)\b'
     - '@field:\w+'
     - '\bObjectMapper\s*\(|\bJsonMapper\.builder\s*\(|\bJackson2ObjectMapperBuilder\w*\b'
-    - '\bannotation-default-target\b'
+    - '\bXannotation-default-target\b'
+  examples:
+    - 'data class Req(@NotBlank val name: String)'
+    - 'data class Req(@field:NotBlank val name: String)'
+    - 'val mapper = ObjectMapper()'
+    - 'freeCompilerArgs.add("-Xannotation-default-target=param-property")'
 sources:
   - https://kotlinlang.org/docs/annotations.html#annotation-use-site-targets
   - https://kotlinlang.org/docs/compatibility-guide-24.html#change-default-use-site-target-selection-for-annotations

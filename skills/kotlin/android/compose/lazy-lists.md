@@ -9,6 +9,10 @@ activation:
     - '\bitems(?:Indexed)?\s*\('
     - '\bkey\s*=\s*\{'
     - '\b(?:verticalScroll|horizontalScroll)\s*\('
+  examples:
+    - 'LazyColumn { items(users) { user -> UserRow(user) } }'
+    - 'items(users, key = { it.id }) { user -> UserRow(user) }'
+    - 'Column(Modifier.verticalScroll(rememberScrollState())) {'
 sources:
   - https://developer.android.com/develop/ui/compose/lists
   - https://developer.android.com/develop/ui/compose/performance/bestpractices#use-lazy-layout-keys

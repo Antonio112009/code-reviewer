@@ -10,6 +10,11 @@ activation:
     - '\bFetchType\.LAZY\b'
     - '\bplugin\.jpa\b|\bkotlin-jpa\b|\ballOpen\s*\{|\bnoArg\s*\{'
     - '@Transient\b'
+  examples:
+    - '@Entity class User(@Id val id: Long)'
+    - '@ManyToOne(fetch = FetchType.LAZY) lateinit var user: User'
+    - 'allOpen { annotation("jakarta.persistence.Entity") }'
+    - '@Transient val cachedTotal: BigDecimal? = null'
 sources:
   - https://kotlinlang.org/docs/no-arg-plugin.html#jpa-support
   - https://kotlinlang.org/docs/all-open-plugin.html

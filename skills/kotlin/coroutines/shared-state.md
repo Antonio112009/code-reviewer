@@ -13,6 +13,15 @@ activation:
     - '\bThreadLocal\b'
     - '\.value\s*=\s*\w+\.value\b'
     - '\.value\s*(?:\+\+|--|\+=|-=)'
+  examples:
+    - 'val mutex = Mutex()'
+    - 'mutex.withLock { counter++ }'
+    - '@Synchronized fun increment() { count++ }'
+    - 'synchronized(lock) { count++ }'
+    - 'val lock = ReentrantLock()'
+    - 'val requestId = ThreadLocal<String>()'
+    - '_state.value = _state.value.copy(count = 1)'
+    - 'counter.value++'
 sources:
   - https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.sync/-mutex/

@@ -12,6 +12,13 @@ activation:
     - '\bsetExpedited\s*\(|\bgetForegroundInfo\b|\bsetForeground(?:Async)?\s*\('
     - '\bConfiguration\.Provider\b|\bWorkManagerInitializer\b'
     - '\bResult\.retry\s*\('
+  examples:
+    - 'class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {'
+    - 'workManager.enqueueUniqueWork("sync", ExistingWorkPolicy.KEEP, request)'
+    - 'val request = OneTimeWorkRequestBuilder<SyncWorker>().build()'
+    - 'setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)'
+    - 'class App : Application(), Configuration.Provider {'
+    - 'return Result.retry()'
 sources:
   - https://developer.android.com/develop/background-work/background-tasks/persistent/getting-started/define-work
   - https://developer.android.com/develop/background-work/background-tasks/persistent/how-to/manage-work

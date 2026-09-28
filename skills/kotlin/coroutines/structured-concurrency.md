@@ -12,6 +12,12 @@ activation:
     - '\b(?:MainScope|supervisorScope|coroutineScope)\s*[({]'
     - '\.(?:launch|async)\s*[({]'
     - '\blaunchIn\s*\('
+  examples:
+    - 'GlobalScope.launch { sync() }'
+    - 'val scope = CoroutineScope(Dispatchers.IO)'
+    - 'launch(SupervisorJob()) { risky() }'
+    - 'supervisorScope { launch { risky() } }'
+    - 'flow.onEach { render(it) }.launchIn(scope)'
 sources:
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/launch.html
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-coroutine-scope/

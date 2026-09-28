@@ -11,6 +11,13 @@ activation:
     - '\bIntent\s*\(\s*(?:Intent\.)?ACTION_\w+'
     - '\bIntent\s*\(\s*"[\w.]+"\s*\)'
     - '\bFLAG_ACTIVITY_NEW_TASK\b|\bintentMatchingFlags\b'
+  examples:
+    - 'val resolved = packageManager.resolveActivity(intent, 0)'
+    - '<queries><package android:name="com.example.other" /></queries>'
+    - 'startActivity(intent)'
+    - 'val intent = Intent(Intent.ACTION_VIEW, uri)'
+    - 'val intent = Intent("com.example.app.ACTION_SYNC")'
+    - 'intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)'
 sources:
   - https://developer.android.com/training/package-visibility
   - https://developer.android.com/training/package-visibility/use-cases

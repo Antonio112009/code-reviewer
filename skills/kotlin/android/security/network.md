@@ -13,6 +13,14 @@ activation:
     - '\bCertificatePinner\b'
     - '\bsslSocketFactory\s*\('
     - '\bConnectionSpec\b|\bTlsVersion\.TLS_1_[01]\b'
+  examples:
+    - 'android:usesCleartextTraffic="true"'
+    - '<domain-config cleartextTrafficPermitted="false">'
+    - '<certificates src="user" />'
+    - 'client.hostnameVerifier { _, _ -> true }'
+    - 'val pinner = CertificatePinner.Builder().add("example.com", pin).build()'
+    - 'builder.sslSocketFactory(sslSocketFactory, trustManager)'
+    - 'ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS).tlsVersions(TlsVersion.TLS_1_0).build()'
 sources:
   - https://developer.android.com/privacy-and-security/security-config
   - https://developer.android.com/privacy-and-security/risks/unsafe-trustmanager

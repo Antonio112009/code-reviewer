@@ -12,6 +12,14 @@ activation:
     - '\b(?:asSequence|generateSequence|constrainOnce)\s*[({]'
     - '\.(?:remove|removeAt|removeAll|removeIf)\s*[({]'
     - '\bMutableList<|\bmutableListOf\s*[<(]'
+  examples:
+    - 'val byId = users.associateBy { it.id }'
+    - 'val head = items.first()'
+    - 'queue.removeFirst()'
+    - 'val sorted = items.sortedBy { it.name }'
+    - 'val seq = items.asSequence()'
+    - 'list.removeIf { it.isExpired }'
+    - 'val buffer: MutableList<String> = mutableListOf()'
 sources:
   - https://kotlinlang.org/docs/collections-overview.html
   - https://kotlinlang.org/docs/whatsnew23.html#unused-return-value-checker

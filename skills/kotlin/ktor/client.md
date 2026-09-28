@@ -11,6 +11,12 @@ activation:
     - '\.(?:get|post|put|delete|request|prepareGet|prepareRequest)\s*\('
     - '\.(?:body|bodyAsText|bodyAsChannel|bodyAsBytes)\s*[<(]'
     - '\bsanitizeHeader\s*\(|\bLogLevel\.(?:ALL|HEADERS|BODY)\b'
+  examples:
+    - 'val client = HttpClient(CIO) { expectSuccess = true }'
+    - 'install(HttpTimeout) { requestTimeoutMillis = 5000 }'
+    - 'val response = client.get("https://api.example.com/users")'
+    - 'val user = response.body<User>()'
+    - 'install(Logging) { level = LogLevel.HEADERS }'
 sources:
   - https://ktor.io/docs/client-create-and-configure.html
   - https://ktor.io/docs/client-response-validation.html

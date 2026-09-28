@@ -5,3 +5,5 @@ priority: 62
 detect:
   content:
     - '^import\s+(?:okhttp3|retrofit2)\.'
+  examples:
+    - 'import okhttp3.OkHttpClient'

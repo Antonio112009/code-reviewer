@@ -10,6 +10,11 @@ activation:
     - '\bremember(?:Saveable)?\s*[({<]'
     - '\bderivedStateOf\s*\{'
     - '\bcollectAsState(?:WithLifecycle)?\s*\('
+  examples:
+    - 'var text by remember { mutableStateOf("") }'
+    - 'val items = mutableStateListOf<Item>()'
+    - 'val filtered by remember { derivedStateOf { items.filter { it.price > limit } } }'
+    - 'val state by viewModel.uiState.collectAsStateWithLifecycle()'
 sources:
   - https://developer.android.com/develop/ui/compose/state
   - https://developer.android.com/develop/ui/compose/state-saving

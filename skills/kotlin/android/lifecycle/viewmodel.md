@@ -12,6 +12,14 @@ activation:
     - '\bSavedStateHandle\b'
     - '\.postValue\s*\('
     - '\bonCleared\s*\('
+  examples:
+    - 'class DetailViewModel : ViewModel() {'
+    - 'private val viewModel: DetailViewModel by viewModels()'
+    - 'val viewModel: DetailViewModel = hiltViewModel()'
+    - 'val viewModel = ViewModelProvider(this, factory)[DetailViewModel::class.java]'
+    - 'class DetailViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {'
+    - '_state.postValue(UiState.Loading)'
+    - 'override fun onCleared() { scope.cancel() }'
 sources:
   - https://developer.android.com/topic/libraries/architecture/viewmodel
   - https://developer.android.com/topic/libraries/architecture/viewmodel/viewmodel-savedstate

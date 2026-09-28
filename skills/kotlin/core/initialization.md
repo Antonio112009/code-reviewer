@@ -13,6 +13,14 @@ activation:
     - '^\s*(?:(?:private|internal|public)\s+)?object\s+\w+'
     - '\b(?:open|abstract)\s+(?:val|var|fun)\b'
     - '\bconst\s+val\b'
+  examples:
+    - 'private val config by lazy { loadConfig() }'
+    - 'val cache = lazy(LazyThreadSafetyMode.NONE) { buildCache() }'
+    - 'lateinit var adapter: RecyclerAdapter'
+    - 'init { require(id > 0) }'
+    - 'companion object { const val TAG = "MainActivity" }'
+    - 'internal object Config {'
+    - 'open fun onCreate() {}'
 sources:
   - https://kotlinlang.org/docs/inheritance.html#derived-class-initialization-order
   - https://kotlinlang.org/docs/properties.html#late-initialized-properties-and-variables

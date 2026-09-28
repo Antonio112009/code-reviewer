@@ -11,6 +11,13 @@ activation:
     - '\bsend(?:Ordered|Sticky)?Broadcast(?:AsUser)?\s*\('
     - '\bRECEIVER_EXPORTED\b'
     - '\b(?:getCallingActivity|getCallingPackage|callingActivity|callingPackage|checkCallingPermission|checkCallingOrSelfPermission|getCallingUid)\b'
+  examples:
+    - 'android:exported="true"'
+    - '<activity android:name=".MainActivity" android:exported="true">'
+    - '<intent-filter><action android:name="android.intent.action.VIEW" /></intent-filter>'
+    - 'sendBroadcast(intent)'
+    - 'context.registerReceiver(receiver, filter, RECEIVER_EXPORTED)'
+    - 'val caller = callingPackage'
 sources:
   - https://developer.android.com/privacy-and-security/risks/android-exported
   - https://developer.android.com/privacy-and-security/risks/access-control-to-exported-components

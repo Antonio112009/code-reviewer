@@ -12,6 +12,14 @@ activation:
     - '\bpost(?:Delayed|AtTime)?\s*\(\s*\w+\s*[,)]'
     - '\bthrow\s+(?:IO|SQL|Timeout|Interrupted|Reflective|ClassNotFound)\w*Exception\b'
     - '\bCollections\.(?:sort|shuffle|reverse|swap)\s*\('
+  examples:
+    - '@Throws(IOException::class)'
+    - '@JvmOverloads fun connect(timeout: Long = 5000) {}'
+    - 'val proxy = Proxy.newProxyInstance(cl, interfaces, handler)'
+    - 'handler.removeCallbacks(runnable)'
+    - 'handler.postDelayed(runnable, 1000)'
+    - 'throw IOException("connection reset")'
+    - 'Collections.sort(mutableList)'
 sources:
   - https://kotlinlang.org/docs/java-to-kotlin-interop.html#checked-exceptions
   - https://kotlinlang.org/docs/java-to-kotlin-interop.html#null-safety

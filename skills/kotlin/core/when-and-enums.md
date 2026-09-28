@@ -11,6 +11,13 @@ activation:
     - '\.(?:ordinal|valueOf)\b'
     - '\benumValueOf\s*<'
     - '\bvalues\(\)'
+  examples:
+    - 'else -> unknownState()'
+    - 'sealed class Result'
+    - 'enum class Status { ACTIVE, DONE }'
+    - 'val idx = status.ordinal'
+    - 'val e = enumValueOf<Status>(name)'
+    - 'val all = Status.values()'
 sources:
   - https://kotlinlang.org/docs/sealed-classes.html#use-sealed-classes-with-when-expression
   - https://kotlinlang.org/docs/enum-classes.html

@@ -13,6 +13,15 @@ activation:
     - '\bonReceivedSslError\b'
     - '\bshouldOverrideUrlLoading\b'
     - '\b(?:loadUrl|evaluateJavascript|postWebMessage|addWebMessageListener|setWebContentsDebuggingEnabled)\s*\('
+  examples:
+    - 'val webView = WebView(context)'
+    - 'webView.addJavascriptInterface(bridge, "Android")'
+    - '@JavascriptInterface fun getToken(): String = authToken'
+    - 'settings.javaScriptEnabled = true'
+    - 'webSettings.setAllowFileAccessFromFileURLs(true)'
+    - 'override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) { handler.proceed() }'
+    - 'override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {'
+    - 'webView.loadUrl(intent.data.toString())'
 sources:
   - https://developer.android.com/privacy-and-security/risks/insecure-webview-native-bridges
   - https://developer.android.com/privacy-and-security/risks/webview-unsafe-file-inclusion

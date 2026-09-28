@@ -8,6 +8,10 @@ activation:
     - '\bdata\s+class\b'
     - '\.copy\s*\('
     - '\b(?:val|var)\s*\(\s*\w+\s*,'
+  examples:
+    - 'data class User(val id: Int, val name: String)'
+    - 'val updated = user.copy(name = "New")'
+    - 'val (id, name) = user'
 sources:
   - https://kotlinlang.org/docs/data-classes.html
   - https://kotlinlang.org/docs/whatsnew2020.html#data-class-copy-function-to-have-the-same-visibility-as-constructor

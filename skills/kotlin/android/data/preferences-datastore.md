@@ -13,6 +13,15 @@ activation:
     - '\b(?:DataStoreFactory|PreferenceDataStoreFactory|MultiProcessDataStoreFactory)\b'
     - '\.(?:updateData|edit)\s*\{'
     - '\.data\.first\s*\('
+  examples:
+    - 'val tags = prefs.getStringSet("tags", emptySet())'
+    - 'editor.putString("token", token).commit()'
+    - 'prefs.edit(commit = true) { putInt("count", count) }'
+    - 'getSharedPreferences("app", Context.MODE_MULTI_PROCESS)'
+    - 'val Context.dataStore by preferencesDataStore(name = "settings")'
+    - 'val store = MultiProcessDataStoreFactory.create(serializer, produceFile = { file })'
+    - 'dataStore.edit { prefs -> prefs[COUNT] = 1 }'
+    - 'val prefs = runBlocking { dataStore.data.first() }'
 sources:
   - https://developer.android.com/reference/android/content/SharedPreferences#getStringSet(java.lang.String,%20java.util.Set%3Cjava.lang.String%3E)
   - https://developer.android.com/topic/libraries/architecture/datastore

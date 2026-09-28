@@ -10,6 +10,12 @@ activation:
     - '\bas\??\s+T\b'
     - '\?\.(?:let|run)\s*\{'
     - '\?:\s*(?:return|throw|continue|break)\b'
+  examples:
+    - 'val name = user!!.name'
+    - 'val list = response as List<String>'
+    - 'val value = raw as T'
+    - 'user?.let { updateProfile(it) }'
+    - 'val id = param ?: return'
 sources:
   - https://kotlinlang.org/docs/java-interop.html#null-safety-and-platform-types
   - https://kotlinlang.org/docs/null-safety.html

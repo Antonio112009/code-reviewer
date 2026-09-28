@@ -6,3 +6,6 @@ detect:
   content:
     - '^import\s+kotlinx\.coroutines\.flow\.'
     - '\b(?:Flow|StateFlow|SharedFlow|MutableStateFlow|MutableSharedFlow)<'
+  examples:
+    - 'import kotlinx.coroutines.flow.Flow'
+    - 'private val _state = MutableStateFlow<UiState>(UiState.Loading)'

@@ -13,6 +13,15 @@ activation:
     - '\bThread\.sleep\s*\('
     - '\bwhile\s*\(\s*true\s*\)'
     - '\bfinally\s*\{'
+  examples:
+    - 'runCatching { fetchData() }'
+    - 'catch (e: CancellationException) { logCancel(e) }'
+    - 'withTimeoutOrNull(3000) { fetchData() }'
+    - 'withContext(NonCancellable) { repo.release() }'
+    - 'while (isActive) { process() }'
+    - 'Thread.sleep(1000)'
+    - 'while (true) { poll() }'
+    - 'finally { connection.close() }'
 sources:
   - https://kotlinlang.org/docs/cancellation-and-timeouts.html
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/with-timeout.html

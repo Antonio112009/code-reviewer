@@ -8,3 +8,6 @@ detect:
   content:
     - '^import\s+org\.springframework\.'
     - '^import\s+(?:jakarta|javax)\.(?:persistence|validation)\.'
+  examples:
+    - 'import org.springframework.stereotype.Service'
+    - 'import jakarta.persistence.Entity'

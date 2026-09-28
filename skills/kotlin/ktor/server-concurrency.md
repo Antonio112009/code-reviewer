@@ -11,6 +11,13 @@ activation:
     - '\bHttpRequestLifecycle\b|\bcancelCallOnClose\b'
     - '\bmonitor\.subscribe\s*\(|\bApplicationStopp(?:ing|ed)\b'
     - '\b(?:File|Files)\.(?:readBytes|readText|writeBytes|writeText|readAllBytes)\b|\.(?:readBytes|readText)\s*\(\s*\)'
+  examples:
+    - 'transaction { User.new { name = "Ann" } }'
+    - 'application.launch { syncCache() }'
+    - 'webSocket("/chat") { incoming.consumeEach { } }'
+    - 'install(HttpRequestLifecycle) { cancelCallOnClose = true }'
+    - 'monitor.subscribe(ApplicationStopped) { dataSource.close() }'
+    - 'val bytes = File(path).readBytes()'
 sources:
   - https://ktor.io/docs/server-http-request-lifecycle.html
   - https://ktor.io/docs/server-websockets.html

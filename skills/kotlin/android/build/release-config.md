@@ -10,6 +10,12 @@ activation:
     - '\b(?:compileSdk|targetSdk)(?:Version)?\b'
     - '\b(?:isShrinkResources|shrinkResources)\b|\bgetIdentifier\s*\('
     - '\buseLegacyPackaging\b|\bndkVersion\b|\bexternalNativeBuild\b'
+  examples:
+    - 'isDebuggable = true'
+    - 'buildConfigField("String", "API_KEY", "\"abc123\"")'
+    - 'compileSdk = 36'
+    - 'isShrinkResources = true'
+    - 'ndkVersion = "27.0.12077973"'
 sources:
   - https://developer.android.com/privacy-and-security/risks/android-debuggable
   - https://developer.android.com/privacy-and-security/risks/hardcoded-cryptographic-secrets

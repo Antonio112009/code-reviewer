@@ -10,3 +10,7 @@ detect:
     - '^import\s+(?:android|androidx|com\.google\.android)\.'
     - '^import\s+(?:okhttp3|retrofit2|com\.android\.billingclient)\.'
     - 'xmlns:android='
+  examples:
+    - 'import androidx.compose.runtime.Composable'
+    - 'import retrofit2.Retrofit'
+    - '<manifest xmlns:android="http://schemas.android.com/apk/res/android">'

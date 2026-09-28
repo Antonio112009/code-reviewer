@@ -11,6 +11,13 @@ activation:
     - '\b(?:JpaRepository|CrudRepository|CoroutineCrudRepository|PagingAndSortingRepository|ListCrudRepository)\s*<'
     - '\bfun\s+(?:find|get|read|query|search)By\w*\s*\('
     - '\bTransactionalOperator\b|\bexecuteAndAwait\b'
+  examples:
+    - '@Transactional fun placeOrder(order: Order) {'
+    - 'open class OrderService(private val repo: OrderRepository) {'
+    - 'suspend fun syncInventory() {'
+    - 'interface OrderRepository : JpaRepository<Order, Long>'
+    - 'fun findByEmail(email: String): User?'
+    - 'transactionalOperator.executeAndAwait { repo.save(order) }'
 sources:
   - https://kotlinlang.org/docs/all-open-plugin.html#spring-support
   - https://docs.spring.io/spring-framework/reference/languages/kotlin/coroutines.html

@@ -14,6 +14,14 @@ activation:
     - '\bObjectMapper\s*\('
     - '\b(?:jacksonObjectMapper|registerKotlinModule|jsonMapper|KotlinModule)\b'
     - '\.readValue\s*[<(]'
+  examples:
+    - 'val gson = GsonBuilder().create()'
+    - 'val user = gson.fromJson<User>(json, User::class.java)'
+    - '@SerializedName("user_id") val userId: Int'
+    - 'val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()'
+    - '@JsonClass(generateAdapter = true) data class User(val id: Int)'
+    - 'val mapper = ObjectMapper().registerKotlinModule()'
+    - 'val user = mapper.readValue<User>(json)'
 sources:
   - https://github.com/google/gson/blob/main/Troubleshooting.md
   - https://github.com/square/moshi/blob/master/README.md

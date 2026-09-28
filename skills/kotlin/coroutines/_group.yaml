@@ -8,3 +8,7 @@ detect:
     - '^import\s+kotlinx\.coroutines\b'
     - '\bsuspend\s+fun\b'
     - '\bsuspend\s*\('
+  examples:
+    - 'import kotlinx.coroutines.launch'
+    - 'suspend fun fetchUser(id: String): User {'
+    - 'val block: suspend () -> Unit = { fetchUser(id) }'

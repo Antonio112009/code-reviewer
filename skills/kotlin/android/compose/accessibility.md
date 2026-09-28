@@ -12,6 +12,13 @@ activation:
     - '\.(?:size|height|width)\s*\(\s*\d{1,2}\.dp\s*\)'
     - '\bfontSize\s*=\s*\d+(?:\.\d+)?\.dp\b|\.toSp\(\)'
     - '\b(?:semantics|clearAndSetSemantics)\s*[({]'
+  examples:
+    - 'Icon(Icons.Default.Close, contentDescription = null)'
+    - 'Modifier.pointerInput(Unit) { detectTapGestures { onTap() } }'
+    - 'Modifier.clickable { onItemClick(item) }'
+    - 'Modifier.size(24.dp)'
+    - 'style = TextStyle(fontSize = 14.dp)'
+    - 'Modifier.semantics { contentDescription = "Close" }'
 sources:
   - https://developer.android.com/develop/ui/compose/accessibility/key-steps
   - https://developer.android.com/develop/ui/compose/accessibility/semantics

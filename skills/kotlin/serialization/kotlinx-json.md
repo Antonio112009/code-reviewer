@@ -11,6 +11,11 @@ activation:
     - '@Serializable\b'
     - '@Transient\b'
     - '\b(?:ignoreUnknownKeys|encodeDefaults|coerceInputValues|explicitNulls|classDiscriminator)\b'
+  examples:
+    - 'val json = Json { ignoreUnknownKeys = true }'
+    - 'val user = Json.decodeFromString<User>(payload)'
+    - '@Serializable data class User(val id: Int)'
+    - '@Transient val cache: Bitmap? = null'
 sources:
   - https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/json.md
   - https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/basic-serialization.md

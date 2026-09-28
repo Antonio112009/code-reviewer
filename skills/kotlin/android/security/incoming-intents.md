@@ -13,6 +13,15 @@ activation:
     - '<data\s+android:(?:scheme|host)\b'
     - '\bremoveLaunchSecurityProtection\b'
     - '\bdeepLinks?\b|\bnavDeepLink\b'
+  examples:
+    - 'val next = intent.getParcelableExtra<Intent>("next")'
+    - 'val obj = intent.getSerializableExtra("payload")'
+    - 'val target = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)'
+    - 'val id = intent.getStringExtra("id")'
+    - 'android:autoVerify="true"'
+    - '<data android:scheme="https" android:host="example.com" />'
+    - 'forwardedIntent.removeLaunchSecurityProtection()'
+    - 'composable("details/{id}", deepLinks = listOf(navDeepLink { uriPattern = "app://details/{id}" }))'
 sources:
   - https://developer.android.com/privacy-and-security/risks/intent-redirection
   - https://developer.android.com/privacy-and-security/risks/unsafe-use-of-deeplinks

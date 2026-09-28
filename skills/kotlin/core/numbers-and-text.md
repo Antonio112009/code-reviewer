@@ -13,6 +13,15 @@ activation:
     - '\.(?:split|replace)\s*\(\s*"[^"\n]{0,40}\\\\'
     - '\.split\s*\(\s*"[|.*+?^$]"'
     - '\.(?:lowercase|uppercase)\s*\(\s*Locale'
+  examples:
+    - 'val total = BigDecimal("19.99")'
+    - 'if (cachedId === newId) return'
+    - 'val id = longId.toInt()'
+    - 'val price = "%.2f".format(amount)'
+    - 'val label = String.format("%d items", count)'
+    - 'val tokens = value.split("\\s+")'
+    - 'val parts = line.split("|")'
+    - 'val key = header.lowercase(Locale.getDefault())'
 sources:
   - https://kotlinlang.org/docs/equality.html
   - https://kotlinlang.org/docs/numbers.html

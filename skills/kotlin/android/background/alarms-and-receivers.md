@@ -12,6 +12,13 @@ activation:
     - '\bRECEIVER_(?:NOT_)?EXPORTED\b'
     - '\boverride\s+fun\s+onReceive\s*\(|\bgoAsync\s*\('
     - '<receiver\b'
+  examples:
+    - 'alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)'
+    - 'if (alarmManager.canScheduleExactAlarms()) schedule()'
+    - 'if (intent.action == "android.intent.action.BOOT_COMPLETED") rescheduleAlarms()'
+    - 'ContextCompat.registerReceiver(context, receiver, filter, RECEIVER_NOT_EXPORTED)'
+    - 'override fun onReceive(context: Context, intent: Intent) {'
+    - '<receiver android:name=".BootReceiver" android:exported="false">'
 sources:
   - https://developer.android.com/develop/background-work/services/alarms/schedule
   - https://developer.android.com/develop/background-work/background-tasks/broadcasts

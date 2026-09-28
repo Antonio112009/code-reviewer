@@ -9,6 +9,11 @@ activation:
     - '\benableStrongSkippingMode\b|\bstabilityConfigurationFile\b|\bcomposeCompiler\s*\{'
     - '\bcomposeOptions\s*\{|\bkotlinCompilerExtensionVersion\b'
     - '@(?:Stable|Immutable)\b'
+  examples:
+    - '@Composable fun UserList(users: List<User>) {'
+    - 'composeCompiler { enableStrongSkippingMode = true }'
+    - 'composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }'
+    - '@Immutable data class UiState(val items: List<Item>)'
 sources:
   - https://developer.android.com/develop/ui/compose/performance/stability
   - https://developer.android.com/develop/ui/compose/performance/stability/fix
