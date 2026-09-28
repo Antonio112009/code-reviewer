@@ -147,6 +147,7 @@ code-reviewer providers test claude --model sonnet
 | Skills | essential ones, 3.5k tokens per chunk | all, 6k tokens per chunk |
 | Fix required | yes, for every finding | when possible |
 | Self-critique | also drops real but low-impact findings; keeps confidence ≥ 0.7 | drops only claims it can refute (low impact lowers the severity); keeps confidence ≥ 0.5 |
+| "Worth a look" | — | findings below confidence 0.6 and `info` findings: in the reports, not in PR comments, SARIF / Code Quality or `--fail-on` |
 
 ## Configuration
 
@@ -284,7 +285,8 @@ Report formats (`--format` or `output.formats`):
 | `sarif` | `report.sarif` | SARIF 2.1.0: GitHub code scanning and other SARIF viewers |
 | `codequality` | `report.codequality.json` | GitLab Code Quality (merge request widget) |
 
-Only reported findings are exported to SARIF and Code Quality, never rejected ones. Every finding has a stable
+Only reported findings are exported to SARIF and Code Quality, never rejected ones or those listed as "worth
+a look" (lower confidence or `info`; they are in the Markdown, HTML and JSON reports). Every finding has a stable
 fingerprint (its file, category and code, not line numbers), so code scanning and GitLab track it across runs.
 
 For debugging, every run also keeps `run.log` (every message, debug included, and the main events: plan,

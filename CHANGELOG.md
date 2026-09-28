@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **"Worth a look" findings.** At `--full`, kept findings below confidence 0.6 (`review.advisoryConfidence`)
+  and `info` findings are listed apart: in the terminal summary and the Markdown, HTML and JSON reports
+  (`advisory`), but not posted to pull requests, exported to SARIF / Code Quality or counted by `--fail-on`;
+  the PR summary says how many there are. On the eval corpus, three of the four remarks the new critic let
+  through on clean changes land there.
+
 - **Full-depth self-critique keeps what it cannot refute.** At `--full`, the critic rejects a finding only
   when the code refutes its claim; a correct finding with small, unlikely or edge-case impact is confirmed at
   a lower severity instead, and findings are kept from confidence 0.5 (was 0.7). On AACR-Bench ctx30 the old

@@ -1429,7 +1429,12 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     }
 
     final = fingerprintFindings(final, reviewRootReader(root));
-    run.findings = sortFindings(final);
+    const advisoryBelow = config.review.advisoryConfidence;
+    const isAdvisory = (f: Finding) =>
+      !f.nonRejectable && (f.confidence < advisoryBelow || f.severity === 'info');
+    run.findings = sortFindings(final.filter((f) => !isAdvisory(f)));
+    const advisory = final.filter(isAdvisory);
+    if (advisory.length) run.advisory = sortFindings(advisory);
     run.rejected = sortFindings(rejected);
     run.fallbacks = [...(preflight?.fallbacks ?? []), ...router.fallbacks];
     run.routing = { ...routes };

@@ -33,7 +33,8 @@
    8. validate    review/validate.ts   unknown files, out-of-range lines, far from changed hunks; hint claims
       dedupe      review/dedupe.ts     same file + overlapping lines + similar title / same span
    9. critique    review/critique.ts   batches per file → submit_verdicts → confirmed/uncertain/rejected
-  10. threshold   minConfidence (non-rejectable static findings bypass it)
+  10. threshold   minConfidence (non-rejectable static findings bypass it); below advisoryConfidence or
+                  info → run.advisory ("worth a look": reports only, not published, SARIF or --fail-on)
   11. authors     review/attribution   git blame → author, commit/line URLs (GitHub/GitLab)
       fingerprint review/fingerprint   stable id per kept finding (file, category, rule, normalised code)
   12. persist     runs/store.ts        run.json, run.log (every message and event), chunk artifacts (prompt,

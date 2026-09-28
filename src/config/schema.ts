@@ -86,6 +86,11 @@ export const ReviewSettingsSchema = z.object({
   depth: z.enum(REVIEW_DEPTHS),
   selfCritique: z.boolean(),
   minConfidence: z.number().min(0).max(1),
+  /**
+   * Kept findings below this confidence, and every `info` finding, are listed apart as "worth a look": in the
+   * reports, but not in pull request comments, SARIF / Code Quality or the `--fail-on` gate.
+   */
+  advisoryConfidence: z.number().min(0).max(1),
   /** Findings below this severity are dropped (static findings that cannot be rejected are kept). */
   minSeverity: z.enum(SEVERITIES),
   maxChunkTokens: z.number().int().positive(),
@@ -364,6 +369,7 @@ export const DEFAULT_CONFIG: Config = {
     depth: 'essential',
     selfCritique: true,
     minConfidence: 0.7,
+    advisoryConfidence: 0,
     minSeverity: 'major',
     maxChunkTokens: 40_000,
     maxChunks: 60,
@@ -455,6 +461,7 @@ export const DEPTH_PRESETS: Record<ReviewDepth, { review: Partial<ReviewSettings
       maxSteps: 25,
       contextShare: 0.2,
       minConfidence: 0.5,
+      advisoryConfidence: 0.6,
     },
   },
 };

@@ -476,6 +476,11 @@ export interface RunRecord {
   toolUsage?: Record<string, number>;
   chunks: ChunkRecord[];
   findings: Finding[];
+  /**
+   * Kept findings of lower confidence (below `review.advisoryConfidence`) or `info` severity: shown in the
+   * reports as "worth a look", left out of pull request comments, SARIF / Code Quality and `--fail-on`.
+   */
+  advisory?: Finding[];
   /** Findings removed by validation, critique or the confidence threshold — kept for auditing. */
   rejected: Finding[];
   usage: Usage;
