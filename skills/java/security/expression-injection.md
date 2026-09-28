@@ -11,6 +11,13 @@ activation:
     - '\.lookup\('
     - '\bClass\.forName\('
     - '\bnew\s+Template\('
+  examples:
+    - 'SpelExpressionParser parser = new SpelExpressionParser();'
+    - 'Expression expr = parser.parseExpression(userInput);'
+    - 'context.buildConstraintViolationWithTemplate(userMessage).addConstraintViolation();'
+    - 'Object obj = ctx.lookup(userSuppliedName);'
+    - 'Class<?> clazz = Class.forName(className);'
+    - 'Template tmpl = new Template("name", reader, config);'
 sources:
   - https://docs.spring.io/spring-framework/reference/core/expressions/evaluation.html
   - https://docs.hibernate.org/validator/9.0/reference/en-US/html_single/

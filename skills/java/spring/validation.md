@@ -8,6 +8,10 @@ activation:
     - '@(?:Valid|Validated|NotNull|NotBlank|NotEmpty|Size|Min|Max|Pattern|Email|Positive|PositiveOrZero|Negative|Past|Future|Digits|DecimalMin|DecimalMax|AssertTrue)\b'
     - '\bBindingResult\b'
     - '\b(?:jakarta|javax)\.validation\b'
+  examples:
+    - '@NotBlank private String name;'
+    - 'public void create(@Valid @RequestBody Order order, BindingResult result) {'
+    - 'import jakarta.validation.Valid;'
 sources:
   - https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-validation.html
   - https://docs.spring.io/spring-framework/reference/core/validation/beanvalidation.html

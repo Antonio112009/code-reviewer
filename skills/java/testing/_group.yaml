@@ -13,3 +13,7 @@ detect:
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.(?:junit|mockito|assertj|hamcrest)\.'
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.springframework\.(?:boot\.)?test\.'
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?io\.quarkus\.test\.'
+  examples:
+    - 'import org.junit.jupiter.api.Test;'
+    - 'import org.springframework.boot.test.context.SpringBootTest;'
+    - 'import io.quarkus.test.junit.QuarkusTest;'

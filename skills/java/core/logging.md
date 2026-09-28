@@ -8,6 +8,10 @@ activation:
     - '\b(?:log|logger|LOG|LOGGER|Log|Logger)\.(?:trace|debug|info|warn|error|atError|atWarn|atInfo|atDebug)\('
     - '\bMDC\.'
     - '\bThreadContext\.'
+  examples:
+    - 'log.error("Failed for {}", id, e);'
+    - 'MDC.put("requestId", requestId);'
+    - 'ThreadContext.put("traceId", traceId);'
 sources:
   - https://www.slf4j.org/faq.html
   - https://logback.qos.ch/manual/mdc.html

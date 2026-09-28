@@ -8,6 +8,10 @@ activation:
     - '@(?:Service|Component|Controller|RestController|Repository|Configuration|Bean|Scope|Lookup|RequestScope|SessionScope)\b'
     - '@(?:Value|Autowired|Inject)\b'
     - '\bObjectProvider<'
+  examples:
+    - '@Service'
+    - '@Autowired private UserRepository repository;'
+    - 'private final ObjectProvider<Client> clientProvider;'
 sources:
   - https://docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html
   - https://docs.spring.io/spring-framework/reference/core/beans/java/basic-concepts.html

@@ -10,6 +10,12 @@ activation:
     - '\bwithDefaultPasswordEncoder\(|\{noop\}'
     - '\bimplements\s+[\w, ]{0,60}\bUserDetails\b'
     - '\bMODE_INHERITABLETHREADLOCAL\b'
+  examples:
+    - 'SecurityContextHolder.getContext().setAuthentication(token);'
+    - 'PasswordEncoder encoder = new BCryptPasswordEncoder();'
+    - 'User.withDefaultPasswordEncoder().username("admin").password("pw").roles("ADMIN").build();'
+    - 'public class AppUser implements UserDetails {'
+    - 'SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);'
 sources:
   - https://docs.spring.io/spring-security/reference/servlet/authentication/persistence.html
   - https://docs.spring.io/spring-security/reference/servlet/authentication/session-management.html

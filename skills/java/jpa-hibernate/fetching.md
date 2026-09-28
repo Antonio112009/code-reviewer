@@ -10,6 +10,11 @@ activation:
     - '\b(?:join|JOIN|Join)\s+(?:fetch|FETCH|Fetch)\b'
     - '\.setMaxResults\(|\bPageable\b'
     - '\benable_lazy_load_no_trans\b'
+  examples:
+    - '@ManyToOne(fetch = FetchType.LAZY)'
+    - '@Query("select o from Order o join fetch o.items where o.id = :id")'
+    - 'Page<Order> orders = repository.findAll(Pageable.ofSize(20));'
+    - 'hibernate.enable_lazy_load_no_trans=true'
 sources:
   - https://docs.hibernate.org/orm/7.0/introduction/html_single/Hibernate_Introduction.html
   - https://docs.hibernate.org/orm/7.0/userguide/html_single/Hibernate_User_Guide.html

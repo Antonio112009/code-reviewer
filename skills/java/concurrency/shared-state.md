@@ -10,6 +10,12 @@ activation:
     - '\bstatic\s+(?:final\s+)?(?:Map|HashMap|List|ArrayList|Set|HashSet|StringBuilder)\b'
     - '\bCollections\.synchronized\w+\('
     - '\.(?:putIfAbsent|computeIfAbsent|computeIfPresent|compute|merge)\('
+  examples:
+    - 'private final AtomicLong counter = new AtomicLong();'
+    - 'private volatile boolean initialized;'
+    - 'private static final Map<String, User> CACHE = new HashMap<>();'
+    - 'List<String> names = Collections.synchronizedList(new ArrayList<>());'
+    - 'cache.computeIfAbsent(key, k -> loadValue(k));'
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/package-summary.html

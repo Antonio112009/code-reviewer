@@ -8,6 +8,9 @@ activation:
     - '\borphanRemoval\b'
     - '\bmappedBy\b'
     - '@(?:OneToMany|ManyToMany|ManyToOne|OneToOne|Enumerated|ElementCollection|JoinTable|OrderColumn)\b'
+  examples:
+    - '@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)'
+    - '@ManyToMany private List<Tag> tags;'
 sources:
   - https://docs.hibernate.org/orm/7.0/userguide/html_single/Hibernate_User_Guide.html
   - https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/enumerated

@@ -11,6 +11,13 @@ activation:
     - '\b(?:double|float|Double|Float)\s+\w*(?:[Pp]rice|[Aa]mount|[Tt]otal|[Bb]alance|[Cc]ost|[Ff]ee|[Tt]ax|[Mm]oney)\w*\b'
     - '\b\d+\s*\*\s*\d+\s*\*\s*\d+'
     - '\bhashCode\(\)\s*%'
+  examples:
+    - 'BigDecimal total = BigDecimal.ZERO;'
+    - 'int abs = Math.abs(delta);'
+    - 'int n = (int) longValue;'
+    - 'double totalPrice = quantity * unitPrice;'
+    - 'int daySeconds = 60 * 60 * 24;'
+    - 'int bucket = key.hashCode() % buckets.length;'
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/math/BigDecimal.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Math.html#abs(int)

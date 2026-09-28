@@ -29,6 +29,10 @@ activation:
     - \bparams(?:\[|\.(?:require|permit|expect|fetch)\b)
     - \b(?:ApplicationRecord|ApplicationController|ActiveRecord::|ActionController::|ApplicationJob)\b
     - \.(?:find_by|update_columns?|update_all|insert_all|upsert_all|find_each|save|update)\b|\b(?:before_action|after_commit|after_save|default_scope|enum|transaction)\b
+  examples:
+    - 'user = User.find_by(token: params[:token])'
+    - 'class OrdersController < ApplicationController'
+    - 'before_action :authenticate_user!, only: [:create]'
 ---
 - **Nil or array params**: `find_by(token: params[:token])` with the param missing queries `IS NULL` (matches tokenless users); an array param becomes `IN (...)` → reset/login bypass. Fix: require a present string.
 - **Filter coverage**: `before_action :authenticate_user!/:authorize!, only: [...]` lists that miss newly added actions → unprotected endpoints. Fix: guard by default, `except:` for public actions.

@@ -10,6 +10,11 @@ activation:
     - '\bInterruptedException\b'
     - '\.(?:wait|notify|notifyAll)\(\s*\)'
     - '\bReentrant(?:ReadWrite)?Lock\b|\bStampedLock\b'
+  examples:
+    - 'lock.lock(); try { balance -= amount; } finally { lock.unlock(); }'
+    - 'synchronized (this) { state = State.CLOSED; }'
+    - 'try { queue.wait(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }'
+    - 'private final ReentrantLock lock = new ReentrantLock();'
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/locks/Lock.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#wait(long)

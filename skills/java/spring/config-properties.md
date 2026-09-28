@@ -10,6 +10,9 @@ activation:
   content:
     - '@(?:ConfigurationProperties|EnableConfigurationProperties|ConfigurationPropertiesScan)\b'
     - '@Value\(\s*"\$\{'
+  examples:
+    - '@ConfigurationProperties(prefix = "app")'
+    - '@Value("${app.item-price}")'
 sources:
   - https://docs.spring.io/spring-boot/reference/features/external-config.html
   - https://docs.spring.io/spring-boot/reference/data/sql.html

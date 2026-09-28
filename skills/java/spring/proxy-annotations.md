@@ -7,6 +7,9 @@ activation:
   content:
     - '@(?:Transactional|Async|Cacheable|CacheEvict|CachePut|Caching|Retryable|ConcurrencyLimit|PreAuthorize|PostAuthorize|PreFilter|PostFilter|Secured|RolesAllowed|Validated)\b'
     - '@Enable(?:Async|Caching|Scheduling|MethodSecurity|GlobalMethodSecurity|Retry|ResilientMethods|TransactionManagement)\b'
+  examples:
+    - '@Transactional'
+    - '@EnableAsync'
 sources:
   - https://docs.spring.io/spring-framework/reference/core/aop/proxying.html
   - https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html

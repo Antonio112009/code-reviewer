@@ -9,6 +9,11 @@ activation:
     - '\b(?:Sort|Pageable|PageRequest|JpaSort|PagedModel|Specification|ExampleMatcher|PageImpl)\b'
     - '\bPage<'
     - '\bspring\.data\.web\.'
+  examples:
+    - '@Query("select o from Order o")'
+    - 'Pageable pageable = PageRequest.of(page, size, sort);'
+    - 'Page<Order> orders = repository.findAll(pageable);'
+    - 'spring.data.web.pageable.max-page-size=100'
 sources:
   - https://docs.spring.io/spring-data/jpa/reference/jpa/query-methods.html
   - https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html

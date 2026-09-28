@@ -10,6 +10,12 @@ activation:
     - '\bMath\.random\(|\bThreadLocalRandom\b'
     - '\bSecureRandom\b'
     - '\b(?:Mac|MessageDigest|Signature|KeyGenerator)\.getInstance\('
+  examples:
+    - 'Cipher cipher = Cipher.getInstance("AES");'
+    - 'SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");'
+    - 'double r = Math.random();'
+    - 'SecureRandom random = new SecureRandom();'
+    - 'MessageDigest digest = MessageDigest.getInstance("SHA-256");'
 sources:
   - https://docs.oracle.com/en/java/javase/25/security/java-cryptography-architecture-jca-reference-guide.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/security/MessageDigest.html

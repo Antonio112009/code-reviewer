@@ -11,6 +11,12 @@ activation:
     - '\b(?:JdbcTemplate|RestTemplate|EntityManager|JpaRepository|CrudRepository)\b'
     - '\bThread\.sleep\(|\bSecurityContextHolder\b|\bMDC\.|\bRequestContextHolder\b'
     - '@Transactional\b'
+  examples:
+    - 'Order order = mono.block();'
+    - 'Mono.fromCallable(() -> jdbc.query(sql, mapper)).subscribeOn(Schedulers.boundedElastic());'
+    - 'private final JdbcTemplate jdbc;'
+    - 'Thread.sleep(1000);'
+    - '@Transactional'
 sources:
   - https://docs.spring.io/spring-framework/reference/web/webflux/new-framework.html
   - https://projectreactor.io/docs/core/release/reference/faq.html

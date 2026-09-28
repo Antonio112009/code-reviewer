@@ -5,3 +5,5 @@ priority: 62
 detect:
   content:
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.springframework\.data\.'
+  examples:
+    - 'import org.springframework.data.jpa.repository.JpaRepository;'

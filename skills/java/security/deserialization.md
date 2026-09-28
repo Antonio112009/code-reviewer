@@ -11,6 +11,13 @@ activation:
     - '@JsonTypeInfo\b'
     - '\bnew\s+Yaml\('
     - '\bSerializationUtils\.deserialize\('
+  examples:
+    - 'ObjectInputStream in = new ObjectInputStream(socket.getInputStream());'
+    - 'Object obj = in.readObject();'
+    - 'mapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL);'
+    - '@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)'
+    - 'Yaml yaml = new Yaml();'
+    - 'Object payload = SerializationUtils.deserialize(bytes);'
 sources:
   - https://docs.oracle.com/en/java/javase/25/core/serialization-filtering1.html
   - https://cheatsheetseries.owasp.org/cheatsheets/Deserialization_Cheat_Sheet.html

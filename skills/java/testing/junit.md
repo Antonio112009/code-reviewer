@@ -8,6 +8,11 @@ activation:
     - '@(?:Test|BeforeAll|AfterAll|BeforeEach|AfterEach|Nested|ParameterizedTest|TestInstance|RepeatedTest)\b'
     - '\bassertThrows\(|\bexpected\s*='
     - '\bThread\.sleep\('
+  examples:
+    - 'import org.junit.jupiter.api.Test;'
+    - '@BeforeEach'
+    - 'assertThrows(IllegalArgumentException.class, () -> service.validate(input));'
+    - 'Thread.sleep(500);'
 sources:
   - https://docs.junit.org/6.1.3/writing-tests/test-classes-and-methods.html
   - https://docs.junit.org/5.13.4/release-notes/index.html

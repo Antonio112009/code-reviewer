@@ -10,6 +10,12 @@ activation:
     - '\.(?:find|list|stream|update|delete|count)\(\s*"'
     - '\b(?:schema-management|database\.generation)\b'
     - '\bQuarkusTransaction\b'
+  examples:
+    - 'public class Order extends PanacheEntity {'
+    - 'order.persist();'
+    - 'List<Order> orders = Order.find("name = " + input).list();'
+    - 'quarkus.hibernate-orm.database.generation=drop-and-create'
+    - 'QuarkusTransaction.run(() -> order.persist());'
 sources:
   - https://quarkus.io/guides/hibernate-orm-panache
   - https://quarkus.io/guides/hibernate-reactive-panache

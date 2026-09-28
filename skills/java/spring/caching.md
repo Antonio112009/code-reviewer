@@ -8,6 +8,10 @@ activation:
     - '@(?:Cacheable|CacheEvict|CachePut|Caching|CacheConfig|EnableCaching)\b'
     - '\b(?:CacheManager|RedisCacheConfiguration|CaffeineCacheManager)\b'
     - '\bspring\.cache\.'
+  examples:
+    - '@Cacheable("users")'
+    - 'CacheManager manager = new CaffeineCacheManager();'
+    - 'spring.cache.type=caffeine'
 sources:
   - https://docs.spring.io/spring-framework/reference/integration/cache/annotations.html
   - https://docs.spring.io/spring-boot/reference/io/caching.html

@@ -8,6 +8,10 @@ activation:
     - '\bnew(?:VirtualThreadPerTask|ThreadPerTask)Executor\('
     - '\bThread\.(?:ofVirtual|startVirtualThread)\('
     - '\b(?:StructuredTaskScope|ScopedValue)\b'
+  examples:
+    - 'ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();'
+    - 'Thread.ofVirtual().start(this::handle);'
+    - 'try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {'
   versions: { lang.java: ">=21" }
 sources:
   - https://openjdk.org/jeps/444

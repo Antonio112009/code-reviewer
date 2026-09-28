@@ -6,6 +6,8 @@ tags: [CWE-611, CWE-776, A02:2025]
 activation:
   content:
     - '\b(?:DocumentBuilderFactory|SAXParserFactory|XMLInputFactory|XMLReader|XMLReaderFactory|TransformerFactory|SchemaFactory|SAXReader|SAXBuilder|Unmarshaller|JAXBContext|XmlMapper)\b'
+  examples:
+    - 'DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();'
 sources:
   - https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.xml/module-summary.html

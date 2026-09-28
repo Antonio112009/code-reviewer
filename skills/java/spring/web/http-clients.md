@@ -9,6 +9,11 @@ activation:
     - '@(?:HttpExchange|GetExchange|PostExchange|PutExchange|DeleteExchange)\b'
     - '\bspring\.(?:http\.clients?|codec)\.'
     - '^\s*(?:connect-timeout|read-timeout|max-in-memory-size|redirects):'
+  examples:
+    - 'RestTemplate template = new RestTemplate();'
+    - '@GetExchange("/orders/{id}")'
+    - 'spring.http.client.connect-timeout=5s'
+    - '  connect-timeout: 5s'
 sources:
   - https://docs.spring.io/spring-boot/reference/io/rest-client.html
   - https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/http/client/SimpleClientHttpRequestFactory.html

@@ -9,6 +9,9 @@ activation:
     - '\bJwts\.parser'
     - '\b(?:SignedJWT|JWSVerifier|JWTClaimsSet|DecodedJWT|JwtParser|JWSObject|PlainJWT)\b'
     - '\.(?:parseClaimsJws|parseSignedClaims|parseClaimsJwt|parseUnsecuredClaims)\('
+  examples:
+    - 'DecodedJWT jwt = JWT.decode(token);'
+    - 'Jwts.parser().build().parseSignedClaims(token);'
 sources:
   - https://github.com/jwtk/jjwt
   - https://javadoc.io/static/com.auth0/java-jwt/4.4.0/com/auth0/jwt/JWT.html

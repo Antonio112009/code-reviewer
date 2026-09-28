@@ -9,6 +9,11 @@ activation:
     - '^[ \t]*import[ \t]+javax\.(?:annotation|inject)\.'
     - '\bspring\.(?:data\.mongodb|session\.(?:redis|mongodb)|dao|jackson)\.'
     - '\b(?:flyway-core|liquibase-core|spring-boot-starter-batch)\b'
+  examples:
+    - 'import com.fasterxml.jackson.databind.ObjectMapper;'
+    - 'import javax.annotation.PostConstruct;'
+    - 'spring.data.mongodb.uri=mongodb://localhost/test'
+    - "implementation 'org.flywaydb:flyway-core'"
   versions: { framework.spring: ">=4" }
 sources:
   - https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide

@@ -10,6 +10,11 @@ activation:
     - '\brecord\s+\w+\s*[(<]'
     - '\bnew\s+Tree(?:Set|Map)\b'
     - '\bComparator\.comparing'
+  examples:
+    - '@Override public boolean equals(Object o) { return id.equals(((User) o).id); }'
+    - 'public class Money implements Comparable<Money> {'
+    - 'record Point(int x, int y) {}'
+    - 'Set<User> sorted = new TreeSet<>(Comparator.comparing(User::getName));'
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Comparable.html

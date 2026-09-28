@@ -10,3 +10,8 @@ detect:
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.hibernate\.'
     - '^[ \t]*import[ \t]+org\.springframework\.data\.jpa\.'
     - '^[ \t]*import[ \t]+io\.quarkus\.hibernate\.'
+  examples:
+    - 'import jakarta.persistence.Entity;'
+    - 'import org.hibernate.Session;'
+    - 'import org.springframework.data.jpa.repository.JpaRepository;'
+    - 'import io.quarkus.hibernate.orm.panache.PanacheEntity;'

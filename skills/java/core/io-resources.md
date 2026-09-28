@@ -11,6 +11,13 @@ activation:
     - '\bnew\s+String\(\s*\w+\s*\)|\.getBytes\(\s*\)'
     - '\.(?:delete|mkdirs?|createNewFile)\(\s*\)|\.renameTo\('
     - '\.(?:getConnection|prepareStatement|createStatement|executeQuery)\('
+  examples:
+    - 'FileInputStream in = new FileInputStream(path);'
+    - 'Stream<String> lines = Files.lines(path);'
+    - 'int n = in.read(buffer, 0, buffer.length);'
+    - 'byte[] raw = payload.getBytes();'
+    - 'tempFile.delete();'
+    - 'Connection conn = dataSource.getConnection();'
 sources:
   - https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/Stream.html

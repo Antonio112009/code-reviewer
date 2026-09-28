@@ -9,6 +9,11 @@ activation:
     - '\.(?:save|saveAll|saveAndFlush|getReferenceById|getById|getOne|findAll|deleteAll|deleteAllInBatch)\('
     - '\b(?:delete|remove)By\w*\('
     - '@Modifying\b'
+  examples:
+    - 'public interface OrderRepository extends JpaRepository<Order, Long> {'
+    - 'repository.saveAll(orders);'
+    - 'void deleteByStatus(String status);'
+    - '@Modifying @Query("update Order o set o.status = :status")'
 sources:
   - https://docs.spring.io/spring-data/jpa/reference/jpa/entity-persistence.html
   - https://docs.spring.io/spring-data/jpa/reference/jpa/query-methods.html

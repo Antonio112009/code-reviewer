@@ -11,6 +11,13 @@ activation:
     - '\b(?:heapdump|threaddump|configprops|jolokia)\b'
     - '\bEndpointRequest\b'
     - '@(?:Endpoint|WebEndpoint|ReadOperation|WriteOperation|DeleteOperation)\b'
+  examples:
+    - 'management.endpoints.web.exposure.include=*'
+    - 'endpoints:'
+    - '  include: "*"'
+    - 'management.endpoint.heapdump.enabled=true'
+    - '.requestMatchers(EndpointRequest.toAnyEndpoint()).hasRole("ADMIN")'
+    - '@Endpoint(id = "custom")'
 sources:
   - https://docs.spring.io/spring-boot/reference/actuator/endpoints.html
   - https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.0-Migration-Guide

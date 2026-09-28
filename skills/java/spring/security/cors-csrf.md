@@ -11,6 +11,13 @@ activation:
     - '@CrossOrigin\b'
     - '\.(?:allowedOrigins|allowedOriginPatterns|setAllowedOrigins|setAllowedOriginPatterns|allowCredentials|setAllowCredentials|cors)\('
     - '@(?:RequestMapping|GetMapping)\b'
+  examples:
+    - 'http.csrf(csrf -> csrf.disable());'
+    - 'CookieCsrfTokenRepository repo = CookieCsrfTokenRepository.withHttpOnlyFalse();'
+    - 'CorsConfiguration config = new CorsConfiguration();'
+    - '@CrossOrigin(origins = "*")'
+    - 'config.setAllowedOriginPatterns(List.of("*"));'
+    - '@GetMapping("/api/orders")'
 sources:
   - https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html
   - https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/cors/CorsConfiguration.html

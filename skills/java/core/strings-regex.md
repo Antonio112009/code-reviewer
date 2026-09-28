@@ -12,6 +12,14 @@ activation:
     - '\bPattern\.(?:compile|matches)\(|\.matches\('
     - '\b(?:DecimalFormat|NumberFormat)\b'
     - '[!=]=\s*"'
+  examples:
+    - 'String[] parts = line.split(",");'
+    - 'String clean = input.replaceAll("\s+", " ");'
+    - 'String upper = name.toUpperCase();'
+    - 'String msg = String.format("Order %s totals %.2f", id, total);'
+    - 'Matcher m = Pattern.compile(userRegex).matcher(input);'
+    - 'NumberFormat currency = NumberFormat.getCurrencyInstance();'
+    - 'if (status == "ACTIVE") { ... }'
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/regex/Matcher.html#quoteReplacement(java.lang.String)

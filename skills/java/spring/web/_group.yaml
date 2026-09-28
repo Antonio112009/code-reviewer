@@ -7,3 +7,5 @@ detect:
     - "**/application*.{properties,yml,yaml}"
   content:
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.springframework\.(?:web|http)\.'
+  examples:
+    - 'import org.springframework.web.bind.annotation.RestController;'
