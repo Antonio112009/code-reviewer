@@ -218,7 +218,10 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
 - **Built-in.**
   - secretlint (preset-recommend);
   - regex pattern rules (`patterns/rules-*.ts`), restricted to changed ranges.
-- **External "safe" tools**, run when found on PATH: gitleaks, shellcheck, hadolint, ruff, cppcheck.
+- **External "safe" tools**, run when found on PATH: gitleaks, shellcheck, hadolint, ruff, cppcheck, and
+  ast-grep for the skills' structural checks (`analyzers/ast-grep.ts`: the loaded skills' `checks` are
+  written to one rules file in the sandbox's scratch dir and run with `scan --rule` and every ignore source
+  off; a hit's rule id is `<skill>#<check>`). The analyzers wait for the skills to load.
   - Explicit flags make them ignore repository configs and plugins.
   - They run with a sanitized environment, a timeout and a process-group kill.
 - **Project tools**, opt-in only: eslint, tsc, golangci-lint, phpstan, semgrep/opengrep, osv-scanner. They

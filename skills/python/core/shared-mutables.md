@@ -15,6 +15,28 @@ activation:
     - 'grid = [[0] * cols] * rows'
     - 'counts = dict.fromkeys(keys, [])'
     - 'clone = copy.copy(template)'
+checks:
+  - id: mutable-default-argument
+    language: Python
+    message: mutable default argument — the object is created once and shared by every call that omits the argument
+    severity: major
+    confidence: 0.7
+    rule:
+      any:
+        - kind: default_parameter
+        - kind: typed_default_parameter
+      has:
+        field: value
+        any:
+          - kind: list
+          - kind: dictionary
+          - kind: set
+          - pattern: set()
+          - pattern: list()
+          - pattern: dict()
+    examples:
+      - "def add(item, into=[]):\n    into.append(item)"
+      - "def configure(opts: dict = {}):\n    pass"
 sources:
   - https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects
   - https://docs.python.org/3/faq/programming.html#how-do-i-create-a-multidimensional-list

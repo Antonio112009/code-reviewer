@@ -14,6 +14,31 @@ activation:
     - 'const user = await loadUser(id);'
     - 'fetchData().then(data => render(data));'
     - 'const p = new Promise((resolve, reject) => { resolve(42); });'
+checks:
+  - id: async-foreach
+    language: [TypeScript, Tsx, JavaScript]
+    message: async callback passed to forEach — forEach does not await it, so the loop finishes before the work and its rejections go unhandled
+    severity: major
+    confidence: 0.6
+    rule:
+      any:
+        - pattern: $A.forEach(async ($$$P) => $$$B)
+        - pattern: $A.forEach(async $P => $$$B)
+        - pattern: $A.forEach(async function ($$$P) { $$$B })
+    examples:
+      - 'items.forEach(async (item) => { await save(item); });'
+      - 'ids.forEach(async id => remove(id));'
+  - id: async-promise-executor
+    language: [TypeScript, Tsx, JavaScript]
+    message: async Promise executor — an error thrown inside becomes a separate unhandled rejection and the outer promise never settles
+    severity: major
+    confidence: 0.7
+    rule:
+      any:
+        - pattern: new Promise(async ($$$P) => $$$B)
+        - pattern: new Promise(async function ($$$P) { $$$B })
+    examples:
+      - 'const p = new Promise(async (resolve) => { resolve(await load()); });'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function

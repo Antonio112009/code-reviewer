@@ -1,5 +1,6 @@
 import type { Category, Severity } from '../types';
 import type { ProcessRegistry } from '../util/processes';
+import type { StructuralCheck } from './ast-grep';
 
 /** A file handed to the static-analysis pre-pass (mirror of `AnalyzeFile` in `./index`). */
 export interface SourceFile {
@@ -65,6 +66,8 @@ export interface AnalyzerContext {
   /** Repository root — project analyzers only. */
   repoRoot?: string;
   registry?: ProcessRegistry;
+  /** Structural checks of the loaded skills (`ast-grep`). */
+  checks?: readonly StructuralCheck[];
   /** Writes `files` (optionally transformed) into a fresh sandbox; removed when the analyzer ends. */
   sandbox(files: SourceFile[], transform?: (file: SourceFile) => string): Promise<Sandbox>;
 }
@@ -102,8 +105,8 @@ export interface AnalyzerDef {
   description: string;
   /** True when the analyzer sends data over the network. */
   network?: boolean;
-  /** Picks the files this analyzer would look at. */
-  select(files: SourceFile[], mode: 'diff' | 'files'): SourceFile[];
+  /** Picks the files this analyzer would look at (`checks`: the skills' structural checks). */
+  select(files: SourceFile[], mode: 'diff' | 'files', checks?: readonly StructuralCheck[]): SourceFile[];
   /** External/project analyzers: finds the executable (undefined = not installed). */
   locate?(ctx: LocateContext): Promise<LocatedBinary | undefined>;
   /** Arguments of the version probe (default `--version`). */
