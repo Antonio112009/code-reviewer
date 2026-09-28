@@ -2,11 +2,12 @@ import path from 'node:path';
 import type { GitRepo } from '../git/repo';
 import type { ReviewUnit } from '../types';
 import { runManaged } from '../util/processes';
-import { dirOf, resolveImports } from './imports';
+import { changedCalls, changedSymbols, refersTo } from './expand';
+import { dirOf, resolveImports, sourceKind } from './imports';
 
 const posix = path.posix;
 
-export type EdgeReason = 'import' | 'test' | 'cochange' | 'directory' | 'package';
+export type EdgeReason = 'import' | 'call' | 'test' | 'cochange' | 'directory' | 'package';
 
 export interface FileEdge {
   a: string;
@@ -42,6 +43,7 @@ export interface FileGraphOptions {
 /** Edge weights by reason (co-change is scaled by coupling). */
 export const EDGE_WEIGHTS: Readonly<Record<EdgeReason, number>> = {
   import: 1,
+  call: 1,
   test: 1,
   cochange: 0.5,
   directory: 0.3,
@@ -79,6 +81,7 @@ export async function buildFileGraph(opts: FileGraphOptions): Promise<FileGraph>
   for (const [from, targets] of imports) {
     for (const t of targets) if (reviewedSet.has(t)) edges.add(from, t, EDGE_WEIGHTS.import, 'import');
   }
+  for (const e of callEdges(units)) edges.add(e.a, e.b, e.weight, e.reason);
   for (const [test, source] of pairTests(reviewed)) edges.add(test, source, EDGE_WEIGHTS.test, 'test');
 
   for (const e of await coChange) edges.add(e.a, e.b, e.weight, e.reason);
@@ -93,6 +96,52 @@ export async function buildFileGraph(opts: FileGraphOptions): Promise<FileGraph>
     for (const files of packages.values()) edges.link(files, EDGE_WEIGHTS.package, 'package');
   }
   return { edges: edges.list(), imports };
+}
+
+/** A name changed in more files than this, or called from more changed files, is too common to link by. */
+const MAX_DECLARING = 3;
+const MAX_CALLERS = 8;
+
+/**
+ * Caller ↔ callee edges between changed files: file B's changed lines (added or removed) call a function
+ * whose declaration file A changes (signature, body or removal), and B can refer to A (same directory, or it
+ * names A's module). The changed function and its changed call sites then land in one chunk, so a review
+ * sees both sides of a changed contract. Import edges often link them already; this also covers callers
+ * the import scanner cannot resolve (same Go package, C headers, dynamic imports).
+ */
+export function callEdges(units: readonly ReviewUnit[]): FileEdge[] {
+  const declaring = new Map<string, string[]>();
+  for (const u of units) {
+    for (const s of changedSymbols(u)) {
+      if (s.local) continue;
+      const files = declaring.get(s.name);
+      if (files) files.push(u.path);
+      else declaring.set(s.name, [u.path]);
+    }
+  }
+  if (!declaring.size) return [];
+  const callers = new Map<string, ReviewUnit[]>();
+  for (const u of units) {
+    if (!sourceKind(u.path)) continue;
+    for (const n of changedCalls(u)) {
+      if (!declaring.has(n)) continue;
+      const list = callers.get(n);
+      if (list) list.push(u);
+      else callers.set(n, [u]);
+    }
+  }
+  const edges = new EdgeCollector();
+  for (const [name, from] of callers) {
+    const files = declaring.get(name)!;
+    if (files.length > MAX_DECLARING || from.length > MAX_CALLERS) continue;
+    for (const caller of from) {
+      for (const file of files) {
+        if (file !== caller.path && refersTo(caller.path, caller.content ?? '', file))
+          edges.add(caller.path, file, EDGE_WEIGHTS.call, 'call');
+      }
+    }
+  }
+  return edges.list();
 }
 
 /** Same-directory edges only: the structural fallback when no graph was built. */
