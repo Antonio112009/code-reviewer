@@ -155,6 +155,10 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           doc: 'Drop findings below this confidence (0–1). Lower means more findings and more noise.',
           example: D.review.minConfidence,
         },
+        requireFailurePath: {
+          doc: 'Lower a critical or major finding one severity level when the model gives no failure path (input → code path → failure).',
+          example: D.review.requireFailurePath,
+        },
         concurrency: { doc: 'Review tasks running in parallel.', example: D.review.concurrency },
         dependencySources: {
           doc: 'Let the model read installed dependency sources (Go module cache, node_modules, virtualenv, Cargo), read-only.',

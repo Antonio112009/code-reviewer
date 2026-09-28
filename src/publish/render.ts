@@ -111,6 +111,7 @@ export function renderInlineComment(f: Finding, fingerprint: string): string {
     '',
     forgeText(f.description, MAX_DESCRIPTION),
   ];
+  if (f.failurePath?.trim()) lines.push('', `**Failure path:** ${forgeText(f.failurePath, MAX_SUGGESTION)}`);
   if (f.suggestion?.trim()) lines.push('', `**Suggestion:** ${forgeText(f.suggestion, MAX_SUGGESTION)}`);
   const meta = [`confidence ${confidenceOf(f)}`];
   if (f.critique?.verdict) meta.push(`critic: ${forgeLine(f.critique.verdict, 20)}`);

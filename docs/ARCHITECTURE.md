@@ -31,7 +31,8 @@
                   review/findings.ts   submit payload → fallback JSON in text → one repair retry
                   review/pipeline.ts   still failed: split the chunk (≤ 2 levels) or retry once with 2× time
                   models/pricing.ts    usage of every attempt → cost (reported, or tokens × `pricing`)
-   8. validate    review/validate.ts   unknown files, out-of-range lines, far from changed hunks; hint claims
+   8. validate    review/validate.ts   unknown files, out-of-range lines, far from changed hunks; hint claims;
+                                       critical/major without a failure path lowered a level (requireFailurePath)
       dedupe      review/dedupe.ts     same file + overlapping lines + similar title / same span
    9. critique    review/critique.ts   batches per file → submit_verdicts → confirmed/uncertain/rejected
   10. threshold   minConfidence (non-rejectable static findings bypass it); below advisoryConfidence or
@@ -74,7 +75,9 @@
     size, error, duration) to `run.log` and the chunk artifacts; ACP agents' MCP server hands the log back
     through the submission file.
 - **Structured output through a tool.** ACP has no response-schema field, so every provider gets the same
-  `submit_findings` / `submit_verdicts` tool with zod-validated input.
+  `submit_findings` / `submit_verdicts` tool with zod-validated input. A finding carries a `failurePath`
+  (input or state → code path → failure); the critic checks it step by step, and reports and inline
+  comments show it.
   - Invalid input returns an error to the model, so it can fix it.
   - If the model never calls the tool, JSON is extracted from its reply.
   - If that also fails, a cheap "repair" task converts the reply.

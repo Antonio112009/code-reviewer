@@ -122,6 +122,8 @@ function renderFinding(f: Finding, n: number): string {
     '',
     mdText(f.description.trim()),
   ];
+  if (f.failurePath) lines.push('', `**Failure path:** ${mdText(f.failurePath.trim())}`);
+  if (f.lowered) lines.push('', `*Lowered from ${f.lowered.from}: no failure path given.*`);
   if (f.evidence) lines.push('', '**Evidence**', '', fence(f.evidence));
   if (f.suggestion) lines.push('', `**Suggestion:** ${mdText(f.suggestion.trim())}`);
   if (f.critique?.reason) lines.push('', `> **Critic:** ${mdLine(f.critique.reason)}`);

@@ -119,7 +119,7 @@ import {
   reviewPromptIdentity,
 } from './prompts';
 import { taskTimeoutMs } from './timeouts';
-import { validateFindings } from './validate';
+import { requireFailurePath, validateFindings } from './validate';
 
 const PROJECT_RULES_BUDGET = 3_000;
 const DEFAULT_CONTEXT_WINDOW = 200_000;
@@ -1396,7 +1396,13 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         dropped: [...first.dropped, ...extra.dropped],
       };
     });
-    const { unique, merged } = dedupeFindings(validated.kept);
+    let checked = validated.kept;
+    if (config.review.requireFailurePath) {
+      const r = requireFailurePath(checked);
+      checked = r.findings;
+      if (r.lowered) logger.debug(`lowered ${r.lowered} finding(s) without a failure path`);
+    }
+    const { unique, merged } = dedupeFindings(checked);
     if (merged) logger.debug(`merged ${merged} duplicate finding(s)`);
     const rejected: Finding[] = [...validated.dropped, ...hintRejected];
     let final = unique;

@@ -60,6 +60,7 @@ function scanFindings(prompt: string): ReportedFinding[] {
       category: 'bug',
       title: m[3]!,
       description: `Mock finding: ${m[3]} (marker comment on line ${lineNo}).`,
+      failurePath: `marker comment on ${file}:${lineNo} → mock provider → reported`,
       confidence: 0.85,
     });
   }

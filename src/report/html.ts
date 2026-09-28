@@ -117,6 +117,8 @@ function card(f, rejected, worth) {
     el('h3', {}, el('span', { class: 'badge' }, sevOf(f.severity)), isStatic ? el('span', { class: 'badge static', title: 'reported by a static analyzer' }, 'static') : null, f.title),
     facts,
     el('div', { class: 'desc' }, f.description),
+    f.failurePath ? el('div', { class: 'desc' }, el('strong', {}, 'Failure path: '), f.failurePath) : null,
+    f.lowered ? el('div', { class: 'desc' }, el('em', {}, 'Lowered from ' + f.lowered.from + ': no failure path given.')) : null,
     f.evidence ? el('pre', {}, f.evidence) : null,
     f.suggestion ? el('div', {}, el('b', {}, 'Suggestion: '), f.suggestion) : null,
     f.critique && f.critique.reason ? el('div', { class: 'critic' }, 'Critic: ' + f.critique.reason) : null);
