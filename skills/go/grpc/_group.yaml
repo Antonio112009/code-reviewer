@@ -8,3 +8,7 @@ detect:
     - 'google\.golang\.org/(?:grpc|protobuf)'
     - 'github\.com/golang/protobuf'
     - '\bgrpc\.(?:NewServer|NewClient|Dial\w{0,10}|ClientConn|ServerStream)\b'
+  examples:
+    - 'import "google.golang.org/grpc"'
+    - 'import "github.com/golang/protobuf/proto"'
+    - 'srv := grpc.NewServer()'

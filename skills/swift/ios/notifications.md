@@ -5,6 +5,9 @@ activation:
   content:
     - '\bUN(?:UserNotificationCenter\w*|Notification\w*)\b|\bregisterForRemoteNotifications\b|\bdeviceToken\b'
     - '\bdidReceiveRemoteNotification\b|\bfetchCompletionHandler\b|\bcontentHandler\b|\bserviceExtensionTimeWillExpire\b|\bwillPresent\b'
+  examples:
+    - 'UNUserNotificationCenter.current().delegate = self'
+    - 'func application(_ app: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {'
 sources:
   - https://developer.apple.com/documentation/usernotifications/unusernotificationcenterdelegate
   - https://developer.apple.com/documentation/uikit/uiapplicationdelegate/application(_:didregisterforremotenotificationswithdevicetoken:)

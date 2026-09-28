@@ -8,6 +8,11 @@ activation:
     - "@pytest\\.mark\\.(?:asyncio|anyio|trio)\\b|@pytest_asyncio\\.fixture\\b|\\bpytest_asyncio\\b"
     - "\\bIsolatedAsyncioTestCase\\b|\\bevent_loop\\b|\\bloop_scope\\s*=|\\basyncio_(?:mode|default_\\w+_loop_scope)\\b"
     - "@pytest\\.fixture[^\\n]{0,80}\\r?\\n[ \\t]*async\\s+def\\b"
+  examples:
+    - 'async def test_fetch_user():'
+    - '@pytest.mark.asyncio'
+    - 'class MyTest(IsolatedAsyncioTestCase):'
+    - "@pytest.fixture\nasync def client():"
 sources:
   - https://docs.pytest.org/en/stable/changelog.html
   - https://pytest-asyncio.readthedocs.io/en/stable/reference/changelog.html

@@ -10,6 +10,11 @@ activation:
     - '\bdocument\.write(?:ln)?\(|\.html\(|\$\(\s*[`''"]\s*<|\bparseFromString\('
     - '(?:\bfrom|\bimport|\brequire\()\s*[''"](?:dompurify|isomorphic-dompurify|sanitize-html|xss|marked|markdown-it|showdown|micromark)[''"]'
     - '\bDOMPurify\b|\bsetHTML\(|\btrustedTypes\b'
+  examples:
+    - 'el.innerHTML = userBio;'
+    - "$('<div>' + userInput);"
+    - 'import DOMPurify from "dompurify";'
+    - 'const clean = DOMPurify.sanitize(html);'
 sources:
   - https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html
   - https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API

@@ -7,6 +7,8 @@ activation:
   content:
     - '\b(?:Mono|Flux)\b'
     - '\.(?:subscribe|flatMap|flatMapMany|switchIfEmpty|defaultIfEmpty|zip|zipWith|zipWhen|onErrorResume|onErrorReturn|onErrorContinue|retry|retryWhen|cache)\('
+  examples:
+    - 'Flux<Order> orders = repository.findAll().flatMap(this::enrich);'
 sources:
   - https://projectreactor.io/docs/core/release/reference/faq.html
   - https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html

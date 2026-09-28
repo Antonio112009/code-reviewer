@@ -8,6 +8,10 @@ activation:
     - '\$_(?:GET|POST|REQUEST|COOKIE)\b|\bwp_unslash\s*\(|\bsanitize_\w+\s*\(|\babsint\s*\('
     - '\b(?:maybe_unserialize|unserialize|extract)\s*\('
     - '\bwp_(?:safe_)?remote_(?:get|post|request|head)\s*\(|\bwp_remote_retrieve_\w+\s*\(|\bwp_(?:safe_)?redirect\s*\('
+  examples:
+    - '$name = sanitize_text_field(wp_unslash($_POST[''name'']));'
+    - '$options = maybe_unserialize($meta_value);'
+    - '$response = wp_safe_remote_get($url);'
 sources:
   - https://developer.wordpress.org/apis/security/sanitizing/
   - https://developer.wordpress.org/reference/functions/wp_unslash/

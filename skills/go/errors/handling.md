@@ -7,6 +7,9 @@ activation:
   content:
     - '\berr\b'
     - '\b_\s*=\s*[A-Za-z_][\w.]{0,60}\('
+  examples:
+    - 'if err != nil { return err }'
+    - '_ = w.Flush()'
 sources:
   - https://go.dev/doc/go1.25
   - https://go.dev/doc/effective_go#errors

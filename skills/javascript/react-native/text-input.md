@@ -7,6 +7,9 @@ activation:
     - '<TextInput\b|\bsecureTextEntry\b|\btextContentType\b'
     - '\bkeyboardShouldPersistTaps\b|\bKeyboardAvoidingView\b|\bkeyboardType\b'
     - '\bonChangeText\b|\bonEndEditing\b'
+  examples:
+    - '<TextInput secureTextEntry onChangeText={setPassword} />'
+    - '<KeyboardAvoidingView behavior="padding">{children}</KeyboardAvoidingView>'
 sources:
   - https://reactnative.dev/docs/textinput
   - https://reactnative.dev/docs/scrollview

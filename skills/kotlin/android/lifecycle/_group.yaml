@@ -7,3 +7,7 @@ detect:
     - '^import\s+androidx\.(?:lifecycle|fragment|activity|appcompat)\.'
     - '^import\s+android\.app\.(?:Activity|Fragment)\b'
     - '\b(?:AppCompatActivity|ComponentActivity|FragmentActivity|Fragment|DialogFragment|ViewModel|AndroidViewModel)\s*\('
+  examples:
+    - 'import androidx.lifecycle.ViewModel'
+    - 'import android.app.Activity'
+    - 'class MainActivity : AppCompatActivity() {'

@@ -9,6 +9,10 @@ activation:
     - '\bStdio::(?:piped|inherit|null)\b'
     - '\.(?:status|output|spawn|wait_with_output|kill_on_drop|env_clear)\('
     - '\bprocess::exit\('
+  examples:
+    - 'let output = Command::new("git").arg("status").output()?;'
+    - 'let child = cmd.stdout(Stdio::piped()).spawn()?;'
+    - 'std::process::exit(1);'
 sources:
   - https://doc.rust-lang.org/std/process/struct.Command.html
   - https://doc.rust-lang.org/std/process/struct.Child.html

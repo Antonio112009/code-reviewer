@@ -11,6 +11,13 @@ activation:
     - '\bCORS_\w+\s*='
     - '\b(?:redirect|HttpResponseRedirect)\([^)\n]{0,60}\b(?:GET|POST|next|return_to|redirect_to)\b'
     - '\.objects\.create\([^)\n]{0,120}\bpassword\s*='
+  examples:
+    - 'user = authenticate(request, username=username, password=password)'
+    - 'class DashboardView(LoginRequiredMixin, TemplateView):'
+    - '@csrf_exempt'
+    - 'CORS_ALLOW_ALL_ORIGINS = True'
+    - 'return redirect(request.GET["next"])'
+    - 'User.objects.create(username=username, password=raw_password)'
 sources:
   - https://docs.djangoproject.com/en/stable/topics/auth/default/
   - https://docs.djangoproject.com/en/stable/ref/csrf/

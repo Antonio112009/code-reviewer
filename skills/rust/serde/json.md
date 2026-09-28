@@ -8,6 +8,10 @@ activation:
     - '\bserde_json\b|\bjson!\s*\('
     - '\bOption<Option<'
     - '\bdisable_recursion_limit\b|\bunbounded_depth\b|\barbitrary_precision\b'
+  examples:
+    - 'let value = serde_json::to_string(&event)?;'
+    - 'pub email: Option<Option<String>>,'
+    - 'let de = serde_json::Deserializer::from_str(&body).disable_recursion_limit();'
 sources:
   - https://docs.rs/serde_json/latest/serde_json/fn.to_string.html
   - https://docs.rs/serde_json/latest/serde_json/struct.Deserializer.html#method.disable_recursion_limit

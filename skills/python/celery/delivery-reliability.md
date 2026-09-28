@@ -9,6 +9,11 @@ activation:
     - '\b(?:visibility_timeout|broker_transport_options|worker_prefetch_multiplier|worker_soft_shutdown_timeout|worker_enable_soft_shutdown_on_idle)\b'
     - '\bCELERY_(?:TASK_ACKS_LATE|WORKER_PREFETCH_MULTIPLIER|BROKER_TRANSPORT_OPTIONS)\b'
     - '\b(?:worker_max_tasks_per_child|worker_max_memory_per_child|max_tasks_per_child)\b'
+  examples:
+    - '@shared_task(acks_late=True)'
+    - 'broker_transport_options = {"visibility_timeout": 3600}'
+    - 'CELERY_TASK_ACKS_LATE = True'
+    - 'worker_max_tasks_per_child = 100'
 sources:
   - https://docs.celeryq.dev/en/stable/userguide/tasks.html
   - https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/redis.html#visibility-timeout

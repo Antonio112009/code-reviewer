@@ -9,6 +9,10 @@ activation:
     - "\\bNextResponse\\.(?:next|rewrite|redirect)\\s*\\("
     - "\\bmatcher\\s*:"
     - "\\bexport\\s+(?:default\\s+)?(?:async\\s+)?function\\s+(?:middleware|proxy)\\b"
+  examples:
+    - "export function middleware(request) {"
+    - "return NextResponse.redirect(new URL('/login', request.url));"
+    - "export const config = { matcher: ['/dashboard/:path*'] };"
 sources:
   - https://nextjs.org/docs/app/api-reference/file-conventions/proxy
   - https://github.com/vercel/next.js/security/advisories/GHSA-f82v-jwr5-mffw

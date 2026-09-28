@@ -8,6 +8,10 @@ activation:
     - '\bSafeAreaView\b|\buseSafeAreaInsets\b|\bSafeAreaProvider\b|react-native-safe-area-context'
     - '<StatusBar\b|\bStatusBar\.(?:currentHeight|set\w+)'
     - '\b(?:edgeToEdge\w*|statusBarTranslucent|navigationBarTranslucent)\b'
+  examples:
+    - "import { useSafeAreaInsets } from 'react-native-safe-area-context';"
+    - 'const top = StatusBar.currentHeight;'
+    - 'edgeToEdgeEnabled: true,'
 sources:
   - https://reactnative.dev/blog/2025/08/12/react-native-0.81
   - https://reactnative.dev/blog/2026/08/11/react-native-0.87

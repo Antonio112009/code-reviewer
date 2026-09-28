@@ -8,6 +8,11 @@ activation:
     - "\\buseSelector\\s*\\("
     - "\\buse\\w*Store\\s*\\("
     - "\\buseShallow\\b"
+  examples:
+    - "const value = useSyncExternalStore(subscribe, getSnapshot);"
+    - "const user = useSelector(state => state.user);"
+    - "const count = useStore(state => state.count);"
+    - "const [a, b] = useStore(useShallow(state => [state.a, state.b]));"
 sources:
   - https://react.dev/reference/react/useSyncExternalStore
   - https://react-redux.js.org/api/hooks

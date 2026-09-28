@@ -9,6 +9,11 @@ activation:
     - '\bboolean\s+equals\s*\(|\bint\s+hashCode\s*\('
     - '\boverride\s+fun\s+(?:equals|hashCode)\('
     - '\bgetClass\(\)\s*!='
+  examples:
+    - '@Data'
+    - 'public boolean equals(Object o) { return id.equals(((User) o).id); }'
+    - 'override fun equals(other: Any?): Boolean {'
+    - 'if (getClass() != o.getClass()) return false;'
 sources:
   - https://docs.hibernate.org/orm/7.0/introduction/html_single/Hibernate_Introduction.html
   - https://docs.hibernate.org/orm/7.0/userguide/html_single/Hibernate_User_Guide.html

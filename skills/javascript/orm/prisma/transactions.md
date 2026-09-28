@@ -8,6 +8,9 @@ activation:
     - "\\$transaction\\s*\\("
     - "\\bisolationLevel\\b|\\bmaxWait\\b|\\bTransactionIsolationLevel\\b"
     - "\\.upsert\\s*\\(|\\bP20(?:02|25|28|34)\\b|\\b(?:increment|decrement)\\s*:"
+  examples:
+    - 'await tx.account.update({ where: { id }, data: { balance: { increment: amount } } })'
+    - 'await prisma.$transaction(ops, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 5000 })'
 sources:
   - https://www.prisma.io/docs/orm/v7/prisma-client/queries/transactions
   - https://www.prisma.io/docs/orm/v7/reference/error-reference

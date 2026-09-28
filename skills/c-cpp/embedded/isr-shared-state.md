@@ -8,6 +8,10 @@ activation:
     - '\bISR\s*\(|\b\w+_IRQHandler\s*\(|__attribute__\s*\(\(\s*(?:interrupt|isr|signal)\b|\bIRAM_ATTR\b|\battachInterrupt\s*\('
     - '\b(?:__disable_irq|__enable_irq|__get_PRIMASK|__set_PRIMASK|cli|sei|noInterrupts|interrupts|irq_lock|irq_unlock)\s*\('
     - '\bATOMIC_BLOCK\s*\(|\bvolatile\s+(?:u?int(?:8|16|32|64)_t|bool|unsigned|int|long)\s+\w+'
+  examples:
+    - 'ISR(TIMER1_COMPA_vect) {'
+    - 'cli();'
+    - 'volatile uint8_t flag = 0;'
 sources:
   - https://avrdudes.github.io/avr-libc/avr-libc-user-manual/group__util__atomic.html
   - https://arm-software.github.io/CMSIS_6/latest/Core/group__Core__Register__gr.html

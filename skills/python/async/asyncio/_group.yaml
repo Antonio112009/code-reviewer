@@ -7,3 +7,6 @@ detect:
   content:
     - "^[ \\t]*(?:import|from)\\s+asyncio\\b"
     - "\\basyncio\\.\\w"
+  examples:
+    - "import asyncio"
+    - "asyncio.run(main())"

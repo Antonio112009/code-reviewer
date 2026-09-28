@@ -7,6 +7,10 @@ activation:
     - '\.wait\(\)|\bEventLoop(?:Future|Promise|Group)?\b|\bmakePromise\(|\bthreadPool\b|\bNIOThreadPool\b|\brunIfActive\('
     - '\bThread\.sleep\b|\busleep\(|\bsleep\(\d|\bDispatchSemaphore\b|\bData\(contentsOf:|\bString\(contentsOf(?:File)?:|\bFileManager\.default\.contents\('
     - '\bBcrypt\.(?:hash|verify)\(|\breq\.password\b|\bapp\.storage\b'
+  examples:
+    - 'let result = try future.wait()'
+    - 'let data = try Data(contentsOf: fileURL)'
+    - 'let hash = try Bcrypt.hash(password)'
 sources:
   - https://docs.vapor.codes/basics/async/
   - https://docs.vapor.codes/security/passwords/

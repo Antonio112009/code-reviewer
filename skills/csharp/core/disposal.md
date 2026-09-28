@@ -8,6 +8,10 @@ activation:
     - '\busing\s*\(|\busing\s+var\b|\bawait\s+using\b|\bI(?:Async)?Disposable\b|\bDispose(?:Async)?\('
     - '\bnew\s+(?:FileStream|StreamReader|StreamWriter|BinaryReader|BinaryWriter|CancellationTokenSource|Process|HttpResponseMessage|X509Certificate2)\b'
     - '\bFile\.(?:Open|OpenRead|OpenWrite|Create)\(|\.OnChange\(|\.Register\(|~[A-Z]\w*\(\)'
+  examples:
+    - 'using var reader = new StreamReader(path);'
+    - 'var cts = new CancellationTokenSource();'
+    - 'var stream = File.OpenRead(path);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/using-objects
   - https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/implementing-disposeasync

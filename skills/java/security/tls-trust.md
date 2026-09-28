@@ -9,6 +9,11 @@ activation:
     - '\bSSLContext\.(?:getInstance|setDefault)\('
     - '\bsetDefault(?:SSLSocketFactory|HostnameVerifier)\('
     - '\.(?:setEnabledProtocols|hostnameVerifier|sslSocketFactory|trustManager)\('
+  examples:
+    - 'TrustManager[] trustAll = { new X509TrustManager() { } };'
+    - 'SSLContext ctx = SSLContext.getInstance("TLS");'
+    - 'HttpsURLConnection.setDefaultHostnameVerifier((h, s) -> true);'
+    - 'clientBuilder.sslSocketFactory(sslSocketFactory, trustManager);'
 sources:
   - https://docs.oracle.com/en/java/javase/25/security/java-secure-socket-extension-jsse-reference-guide.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/net/ssl/SSLParameters.html

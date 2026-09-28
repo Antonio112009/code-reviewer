@@ -39,6 +39,14 @@ activation:
     - \bnew (?:HttpClient|PrismaClient|Pool|Redis|S3Client|\w+Client)\(|\bboto3\.(?:client|resource)\(|\bhttpx\.(?:Async)?Client\(|\bredis\.(?:Strict)?Redis\(|\bsql\.Open\(|\bcreate(?:Pool|Client|Connection)\(|\bnew RegExp\(|\bre\.compile\(|\bPattern\.compile\(|\bregexp\.MustCompile\(
     - "@(?:lru_cache|cache|cached|Cacheable|memoize)\\b|\\bfunctools\\.(?:lru_cache|cache)\\b|\\b(?:memoize|memoizee|IMemoryCache|MemoryCache|Caffeine|CacheBuilder|NodeCache|LRUCache|singleflight)\\b|\\b(?:cache|memo|_cache|CACHE)\\w*\\s*(?::[^=\\n]{1,60})?=\\s*(?:new (?:Map|WeakMap)\\(|\\{\\}|dict\\(\\)|make\\(map)|\\.labels\\(|\\bWithLabelValues\\("
     - \b(?:requests|httpx)\.(?:get|post|put|patch|delete|head|request)\(|\bhttp\.(?:Get|Post|Head|DefaultClient)\b|&http\.Client\{|\burlopen\(
+  examples:
+    - 'for (const id of ids) { await db.query("select * from users where id = ?", [id]); }'
+    - 'const missing = items.filter(item => selected.includes(item.id));'
+    - 'const allUsers = await User.findAll();'
+    - 'const data = fs.readFileSync(path, "utf8");'
+    - 'const client = new PrismaClient();'
+    - 'const cache = new Map();'
+    - 'const response = requests.get(url);'
 ---
 - **Per-item remote calls**: queries, HTTP/RPC, cache or storage calls issued once per item inside loops, `map` or serializers → latency and cost grow with data, rate limits hit. Fix: batch APIs, `IN` queries, DataLoader.
 - **Serial awaits**: independent awaits run one after another → latency is the sum, not the max. Fix: bounded `Promise.all`/`gather`/errgroup, or one batch call.

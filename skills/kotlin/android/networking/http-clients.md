@@ -13,6 +13,15 @@ activation:
     - '\b(?:addInterceptor|addNetworkInterceptor|authenticator)\s*[({]'
     - '\bretryOnConnectionFailure\b'
     - '@(?:GET|POST|PUT|PATCH|DELETE|Url)\b'
+  examples:
+    - 'val client = OkHttpClient.Builder().build()'
+    - 'val retrofit = Retrofit.Builder().baseUrl(BASE_URL).build()'
+    - 'val response = call.execute()'
+    - 'val text = response.body?.string()'
+    - 'val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }'
+    - 'client.newBuilder().addInterceptor(authInterceptor).build()'
+    - 'OkHttpClient.Builder().retryOnConnectionFailure(false)'
+    - '@GET("users/{id}") suspend fun getUser(@Path("id") id: String): User'
 sources:
   - https://github.com/square/okhttp/blob/master/okhttp/src/commonJvmAndroid/kotlin/okhttp3/OkHttpClient.kt
   - https://github.com/square/okhttp/blob/master/okhttp/src/commonJvmAndroid/kotlin/okhttp3/Authenticator.kt

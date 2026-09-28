@@ -8,6 +8,10 @@ activation:
     - '\bUse(?:DeveloperExceptionPage|ExceptionHandler|StatusCodePages\w*)\('
     - '\bIExceptionHandler\b|\bAddExceptionHandler\b|\bTryHandleAsync\(|\bIExceptionHandler(?:Path)?Feature\b'
     - '\bAddProblemDetails\(|\bProblemDetails\b|\bEnableDetailedErrors\b|\bIncludeExceptionDetails\b'
+  examples:
+    - 'app.UseExceptionHandler("/error");'
+    - 'public ValueTask<bool> TryHandleAsync(HttpContext context, Exception exception, CancellationToken ct)'
+    - 'builder.Services.AddProblemDetails();'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling
   - https://learn.microsoft.com/en-us/aspnet/core/breaking-changes/10/exception-handler-diagnostics-suppressed

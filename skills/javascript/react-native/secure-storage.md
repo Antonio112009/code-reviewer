@@ -9,6 +9,10 @@ activation:
     - '\b(?:MMKV|createMMKV|persistReducer|persistStore|createJSONStorage)\b'
     - 'react-native-(?:keychain|config|mmkv|biometrics)|expo-(?:secure-store|local-authentication)'
     - '\b(?:setItem|setItemAsync|setGenericPassword)\('
+  examples:
+    - "await AsyncStorage.setItem('token', authToken);"
+    - 'const storage = new MMKV();'
+    - "import * as SecureStore from 'expo-secure-store';"
 sources:
   - https://reactnative.dev/docs/security
   - https://docs.expo.dev/versions/latest/sdk/securestore/

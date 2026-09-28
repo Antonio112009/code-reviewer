@@ -9,6 +9,11 @@ activation:
     - '\bRfc2898DeriveBytes\b|\bPbkdf2\b|\bPasswordHasher(?:Options)?\b|\bCompatibilityMode\b'
     - '\b(?:MD5|SHA1|SHA256|SHA512|HMACSHA\d+)\.(?:Create|HashData)\(|\bSequenceEqual\(|\bFixedTimeEquals\b'
     - '\bAes(?:Gcm|Ccm|Managed|Cng)?\b|\bCipherMode\.|\bRSAEncryptionPadding\b|\.(?:Encrypt|Decrypt)\('
+  examples:
+    - 'var token = new Random().Next().ToString();'
+    - 'var hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, 600_000, HashAlgorithmName.SHA256, 32);'
+    - 'var hash = SHA256.HashData(Encoding.UTF8.GetBytes(password));'
+    - 'using var aes = new AesGcm(key, tagSizeInBytes: 16);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.randomnumbergenerator
   - https://learn.microsoft.com/en-us/dotnet/fundamentals/syslib-diagnostics/syslib0060

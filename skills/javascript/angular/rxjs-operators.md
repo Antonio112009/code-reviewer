@@ -8,6 +8,11 @@ activation:
     - "\\b(?:catchError|retry|retryWhen)\\s*\\("
     - "\\b(?:forkJoin|combineLatest|withLatestFrom|zip)\\s*\\("
     - "\\b(?:first|single|last)\\s*\\(\\s*\\)"
+  examples:
+    - 'this.search$.pipe(switchMap(q => this.api.search(q))).subscribe();'
+    - 'this.save$.pipe(catchError(err => of(null))).subscribe();'
+    - 'forkJoin([this.a$, this.b$]).subscribe(([a, b]) => this.merge(a, b));'
+    - 'this.data$.pipe(first()).subscribe(v => this.use(v));'
 sources:
   - https://rxjs.dev/api/operators/switchMap
   - https://rxjs.dev/api/operators/catchError

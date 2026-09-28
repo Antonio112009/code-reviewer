@@ -9,6 +9,10 @@ activation:
     - "['\"]next/(?:legacy/)?image['\"]"
     - "<Image\\b"
     - "\\b(?:remotePatterns|localPatterns|dangerouslyAllowSVG|dangerouslyAllowLocalIP|minimumCacheTTL)\\b"
+  examples:
+    - "import Image from 'next/image';"
+    - "<Image src={photo.url} alt={photo.alt} width={800} height={600} />"
+    - "remotePatterns: [{ hostname: '**' }],"
 sources:
   - https://nextjs.org/docs/app/api-reference/components/image
   - https://nextjs.org/docs/app/guides/upgrading/version-16

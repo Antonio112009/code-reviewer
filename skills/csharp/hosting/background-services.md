@@ -8,6 +8,10 @@ activation:
     - '\bBackgroundService\b|\bIHostedService\b|\bIHostedLifecycleService\b|\bAddHostedService\b'
     - '\bExecuteAsync\s*\(\s*CancellationToken\b|\bstoppingToken\b|\bIHostApplicationLifetime\b'
     - '\bBackgroundServiceExceptionBehavior\b|\bShutdownTimeout\b'
+  examples:
+    - 'public class EmailWorker : BackgroundService'
+    - 'protected override async Task ExecuteAsync(CancellationToken stoppingToken)'
+    - 'services.Configure<HostOptions>(o => o.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/6.0/hosting-exception-handling
   - https://learn.microsoft.com/en-us/dotnet/core/compatibility/extensions/10.0/backgroundservice-executeasync-task

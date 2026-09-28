@@ -9,6 +9,11 @@ activation:
     - '\b(?:ThreadPoolTaskExecutor|ThreadPoolTaskScheduler|SimpleAsyncTaskExecutor|TaskDecorator|AsyncConfigurer|SchedulingConfigurer)\b'
     - '\bspring\.(?:task|threads|main\.keep-alive)\b'
     - '^\s*(?:task|threads|virtual|keep-alive|scheduling|execution):'
+  examples:
+    - '@Async'
+    - 'ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();'
+    - 'spring.task.execution.pool.max-size=50'
+    - 'task:'
 sources:
   - https://docs.spring.io/spring-boot/reference/features/task-execution-and-scheduling.html
   - https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/scheduling/annotation/EnableAsync.html

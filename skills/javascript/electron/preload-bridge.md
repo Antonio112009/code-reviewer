@@ -6,6 +6,8 @@ tags: [CWE-749, CWE-94]
 activation:
   content:
     - '\b(?:contextBridge|exposeInMainWorld|exposeInIsolatedWorld|ipcRenderer|webUtils)\b'
+  examples:
+    - "contextBridge.exposeInMainWorld('api', { send: (ch, ...a) => ipcRenderer.send(ch, ...a) });"
   files: ['**/preload*.{js,cjs,mjs,ts,mts,cts}', '**/preload/**']
 sources:
   - https://www.electronjs.org/docs/latest/api/context-bridge

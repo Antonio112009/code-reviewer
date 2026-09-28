@@ -7,6 +7,10 @@ activation:
     - "\\.merge\\s*\\(|\\bpd\\.merge\\s*\\(|\\.join\\s*\\([^)\\n]{0,80}\\b(?:on|how)\\s*="
     - "\\.groupby\\s*\\(|\\.pivot(?:_table)?\\s*\\(|\\.value_counts\\s*\\("
     - "\\bpd\\.concat\\s*\\(|\\.drop_duplicates\\s*\\(|\\.reset_index\\s*\\("
+  examples:
+    - 'merged = left.merge(right, on="id", how="left")'
+    - 'counts = df.groupby("category").size()'
+    - 'combined = pd.concat([df1, df2], ignore_index=True)'
 sources:
   - https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.merge.html
   - https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.groupby.html

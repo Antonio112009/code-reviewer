@@ -8,6 +8,10 @@ activation:
     - '\b(?:request|get)\w*PermissionsAsync\(|\buse\w*Permissions\('
     - '\b(?:POST_NOTIFICATIONS|READ_MEDIA_\w+|READ_EXTERNAL_STORAGE|ACCESS_BACKGROUND_LOCATION)\b'
     - '\bNS\w+UsageDescription\b'
+  examples:
+    - 'const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES);'
+    - 'const { status } = await requestCameraPermissionsAsync();'
+    - "NSCameraUsageDescription: 'Used to scan documents',"
 sources:
   - https://reactnative.dev/docs/permissionsandroid
   - https://developer.android.com/about/versions/13/behavior-changes-13

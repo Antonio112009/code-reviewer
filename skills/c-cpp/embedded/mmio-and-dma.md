@@ -8,6 +8,10 @@ activation:
     - '\bvolatile\b|\b__IO\b|\b__[IO]M?\s+uint(?:8|16|32)_t'
     - '->\s*[A-Z][A-Z0-9_]*\s*[|&^]?=[^=]'
     - '\b(?:SCB_(?:Clean|Invalidate|CleanInvalidate)DCache\w*|__DSB|__DMB|__ISB|HAL_\w*DMA\w*|dma_\w+)\s*\('
+  examples:
+    - 'volatile uint32_t status;'
+    - 'GPIOA->ODR |= (1 << 5);'
+    - '__DSB();'
 sources:
   - https://gcc.gnu.org/onlinedocs/gcc/Volatiles.html
   - https://dannas.name/2023/04/27/write-one-to-clear

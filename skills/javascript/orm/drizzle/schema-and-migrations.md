@@ -9,6 +9,11 @@ activation:
     - "\\.\\$(?:defaultFn|default|onUpdate|onUpdateFn|type)\\s*[(<]"
     - "\\bdefineConfig\\s*\\(|\\bschemaFilter\\b|\\btablesFilter\\b|\\bcasing\\s*:|\\bdefineRelations\\s*\\(|\\bdb\\._query\\b"
     - "\\bdrizzle-kit\\s+(?:push|migrate|generate)\\b"
+  examples:
+    - 'amount: numeric("amount", { precision: 10, scale: 2 }),'
+    - 'createdAt: timestamp("created_at").$defaultFn(() => new Date()),'
+    - 'export default defineConfig({ schemaFilter: ["public"], casing: "snake_case" });'
+    - 'npx drizzle-kit push --force'
 sources:
   - https://orm.drizzle.team/docs/column-types/pg
   - https://orm.drizzle.team/docs/v0-v1-changes

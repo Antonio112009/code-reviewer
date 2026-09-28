@@ -9,6 +9,11 @@ activation:
     - '\bclose\s*\('
     - '\bselect\s*\{'
     - '<-\s*[A-Za-z_]'
+  examples:
+    - 'ch := make(chan int)'
+    - 'close(done)'
+    - 'select {'
+    - 'msg := <-ch'
 sources:
   - https://go.dev/ref/spec#Close
   - https://go.dev/ref/spec#Select_statements

@@ -10,6 +10,12 @@ activation:
     - '\bhttp\.(?:CrossOriginProtection|NewCrossOriginProtection|NewResponseController|ErrAbortHandler|Flusher|Hijacker)\b'
     - '^[ \t]*http\.ResponseWriter[ \t]*$'
     - '\bUnwrap\(\)\s*http\.ResponseWriter\b'
+  examples:
+    - 'next.ServeHTTP(w, r)'
+    - 'type Middleware func(next http.Handler) http.Handler'
+    - 'rc := http.NewResponseController(w)'
+    - 'http.ResponseWriter'
+    - 'func (w *statusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }'
 sources:
   - https://pkg.go.dev/net/http#NewResponseController
   - https://pkg.go.dev/net/http#CrossOriginProtection

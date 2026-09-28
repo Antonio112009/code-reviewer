@@ -7,6 +7,9 @@ activation:
   content:
     - '@preconcurrency\b|@concurrent\b|\bnonisolated\b|@MainActor\b|\bMainActor\.assumeIsolated\b|\bTask\.immediate\b|\bisolated\s+deinit\b'
     - '\b(?:NonisolatedNonsendingByDefault|InferIsolatedConformances)\b|\bSWIFT_(?:APPROACHABLE_CONCURRENCY|DEFAULT_ACTOR_ISOLATION|STRICT_CONCURRENCY|VERSION)\b|\.(?:defaultIsolation|swiftLanguageMode)\('
+  examples:
+    - '@concurrent func parseLargeFile(at url: URL) async throws -> Document {'
+    - 'SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor'
 sources:
   - https://github.com/swiftlang/swift-evolution/blob/main/proposals/0423-dynamic-actor-isolation.md
   - https://github.com/swiftlang/swift-evolution/blob/main/proposals/0461-async-function-isolation.md

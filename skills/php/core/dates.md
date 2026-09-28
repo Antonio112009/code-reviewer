@@ -9,6 +9,11 @@ activation:
     - '\b(?:strtotime|mktime|date_create|date_default_timezone_set)\s*\('
     - '->(?:modify|add|sub|setDate|diffIn\w+|addMonths?|subMonths?)\s*\('
     - '\bdate\s*\(\s*[''"][^''"\n]{0,40}W'
+  examples:
+    - '$due = new DateTimeImmutable(''2025-01-31'');'
+    - '$ts = strtotime($input);'
+    - '$end = $start->modify(''+1 month'');'
+    - 'echo date(''Y-W'', $timestamp);'
 sources:
   - https://www.php.net/manual/en/datetimeimmutable.createfromformat.php
   - https://www.php.net/manual/en/datetime.examples-arithmetic.php

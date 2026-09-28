@@ -11,6 +11,14 @@ activation:
     - '\bIterator\.(?:from|concat)\s*\('
     - '\.(?:values|entries|keys)\(\)\.(?:map|filter|take|drop|flatMap|reduce|toArray|forEach|some|every|find)\('
     - '\.matchAll\s*\('
+  examples:
+    - 'for await (const chunk of stream) { process(chunk); }'
+    - 'function* range(n) { yield n; }'
+    - 'const iter = obj[Symbol.asyncIterator]();'
+    - 'const rows = await Array.fromAsync(ids, fetchRow);'
+    - 'const merged = Iterator.concat(a, b);'
+    - 'const doubled = map.values().map(x => x * 2).toArray();'
+    - 'const matches = Array.from(text.matchAll(/\d+/g));'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for-await...of
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fromAsync

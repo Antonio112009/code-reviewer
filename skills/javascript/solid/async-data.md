@@ -8,6 +8,11 @@ activation:
     - "(?<![.\\w$])(?:query|cache)\\s*\\(\\s*async\\b"
     - "\\b(?:useTransition|startTransition|refetch|revalidate)\\s*\\("
     - "<(?:Suspense|ErrorBoundary)\\b"
+  examples:
+    - "const [user] = createResource(userId, fetchUser);"
+    - "const getUser = query(async (id) => db.user.findUnique({ where: { id } }), 'getUser');"
+    - "refetch();"
+    - "<Suspense fallback={<Spinner />}>{children}</Suspense>"
   versions: { framework.solid: "<2" }
 sources:
   - https://docs.solidjs.com/reference/basic-reactivity/create-resource

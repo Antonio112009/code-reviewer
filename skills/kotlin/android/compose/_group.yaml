@@ -7,3 +7,6 @@ detect:
   content:
     - '^import\s+androidx\.compose\.'
     - '@Composable\b'
+  examples:
+    - 'import androidx.compose.runtime.Composable'
+    - '@Composable fun Greeting(name: String) {'

@@ -8,6 +8,9 @@ activation:
   content:
     - '#\[ORM\\(?:Column|Id|GeneratedValue|UniqueConstraint|Index)\b|\bUniqueEntity\b|\benumType\b'
     - '->addSql\s*\(|\bfunction\s+(?:up|down|isTransactional)\s*\(|doctrine:schema:update'
+  examples:
+    - '#[ORM\Column(type: ''decimal'', precision: 10, scale: 2)]'
+    - 'public function up(Schema $schema): void { $this->addSql(''ALTER TABLE users ADD status VARCHAR(20) NOT NULL''); }'
 sources:
   - https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/basic-mapping.html
   - https://www.doctrine-project.org/projects/doctrine-migrations/en/current/explanation/implicit-commits.html

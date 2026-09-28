@@ -8,6 +8,9 @@ activation:
   content:
     - "\\bexport\\s+(?:async\\s+)?function\\s+(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\\b"
     - "\\bexport\\s+const\\s+(?:GET|POST|PUT|PATCH|DELETE)\\s*="
+  examples:
+    - "export async function POST(request) {"
+    - "export const GET = async (request) => { return Response.json(data); };"
 sources:
   - https://nextjs.org/docs/app/api-reference/file-conventions/route
   - https://nextjs.org/docs/app/guides/data-security

@@ -8,6 +8,10 @@ activation:
     - '\b(?:FetchContent_Declare|FetchContent_MakeAvailable|ExternalProject_Add|CPMAddPackage|find_package|find_library|pkg_check_modules)\s*\('
     - '\b(?:GIT_TAG|GIT_REPOSITORY|URL_HASH|URL_MD5|FIND_PACKAGE_ARGS|DOWNLOAD_EXTRACT_TIMESTAMP)\b'
     - '\btarget_link_libraries\s*\('
+  examples:
+    - 'FetchContent_Declare(fmt GIT_REPOSITORY https://github.com/fmtlib/fmt.git GIT_TAG e69e5f977d458f2650bb346dadf2ad30c5320281)'
+    - 'find_package(OpenSSL 3.0 REQUIRED)'
+    - 'target_link_libraries(app PRIVATE OpenSSL::SSL)'
 sources:
   - https://cmake.org/cmake/help/latest/module/FetchContent.html
   - https://cmake.org/cmake/help/latest/policy/CMP0135.html

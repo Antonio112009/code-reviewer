@@ -17,6 +17,11 @@ activation:
     - \b(?:UPDATE\s+[\w."`\[\]]+\s+SET|DELETE\s+FROM|INSERT\s+INTO|MERGE\s+INTO)\b
     - \b(?:LEFT|RIGHT|FULL|INNER|CROSS)\s+(?:OUTER\s+)?JOIN\b
     - "[\"'`]\\s*(?:select\\s+(?:\\*|distinct\\b|[\\w.\"]+(?:\\s*[,(]|\\s+(?:from|as)\\b))|update\\s+[\\w.\"`]+\\s+set\\b|delete\\s+from\\b|insert\\s+into\\b)"
+  examples:
+    - 'SELECT id, email FROM users WHERE active = true;'
+    - 'DELETE FROM sessions WHERE expires_at < now();'
+    - 'SELECT o.id FROM orders o LEFT JOIN customers c ON o.customer_id = c.id;'
+    - 'const q = "select * from users where active = true";'
 ---
 - **NULL comparisons**: `= NULL` never matches; `col <> 'x'` drops NULL rows; `NOT IN` a subquery containing a NULL returns nothing → missing rows. Fix: `IS NULL`, `IS DISTINCT FROM`, `NOT EXISTS`.
 - **NULL propagation**: `SUM` of no rows is NULL; a NULL operand makes `+` or `||` NULL; `COUNT(*)` over a `LEFT JOIN` counts childless rows as 1 → blank totals, wrong counts. Fix: `COALESCE`, `COUNT(child.id)`.

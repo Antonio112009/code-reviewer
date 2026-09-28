@@ -8,6 +8,11 @@ activation:
     - "\\bdataclasses\\.\\w+|\\b(?:asdict|astuple|replace)\\s*\\("
     - "\\bfield\\s*\\(\\s*(?:default|init|compare|hash|kw_only|repr)"
     - "\\b__post_init__\\b|\\bInitVar\\b|\\bKW_ONLY\\b"
+  examples:
+    - '@dataclass(frozen=True)'
+    - 'return dataclasses.replace(user, name="Bo")'
+    - 'retries: int = field(default=3)'
+    - 'def __post_init__(self):'
 sources:
   - https://docs.python.org/3/library/dataclasses.html#mutable-default-values
   - https://docs.python.org/3/library/dataclasses.html#dataclasses.replace

@@ -7,3 +7,6 @@ detect:
   content:
     - "(?:from|require\\()\\s*['\"]@nestjs/[\\w-]+(?:/[\\w/-]+)?['\"]"
     - "(?:from|require\\()\\s*['\"]class-(?:validator|transformer)['\"]"
+  examples:
+    - 'import { Injectable } from "@nestjs/common"'
+    - 'import { IsString } from "class-validator"'

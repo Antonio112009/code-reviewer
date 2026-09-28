@@ -7,6 +7,10 @@ activation:
     - '\b(?:const\s+)?enum\s+[A-Z]'
     - '\bObject\.(?:values|keys|entries)\s*\(\s*[A-Z][\w$]*\s*\)'
     - '\bas\s+[A-Z][\w$]*(?:Enum|Type|Status|Role|Kind)\b'
+  examples:
+    - 'const enum Color { Red, Green, Blue }'
+    - 'const options = Object.values(Status);'
+    - 'const role = value as UserRole;'
 sources:
   - https://www.typescriptlang.org/docs/handbook/enums.html#reverse-mappings
   - https://www.typescriptlang.org/docs/handbook/enums.html#const-enum-pitfalls

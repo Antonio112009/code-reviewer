@@ -8,6 +8,11 @@ activation:
     - "\\b(?:valueChanges|statusChanges|getRawValue|patchValue|updateValueAndValidity)\\b"
     - "\\bformControlName\\b|\\[formGroup\\]"
     - "from ['\"]@angular/forms['\"]"
+  examples:
+    - 'form = new FormGroup({ name: new FormControl('''') });'
+    - 'this.form.valueChanges.subscribe(v => this.save(v));'
+    - '<form [formGroup]="form" (ngSubmit)="submit()">'
+    - 'import { FormBuilder } from ''@angular/forms'';'
 sources:
   - https://angular.dev/guide/forms/typed-forms
   - https://angular.dev/guide/forms/reactive-forms

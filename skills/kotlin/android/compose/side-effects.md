@@ -12,6 +12,14 @@ activation:
     - '\brememberCoroutineScope\s*\('
     - '\bproduceState\s*[<(]'
     - '\b(?:navigate|popBackStack)\s*\('
+  examples:
+    - 'LaunchedEffect(userId) { viewModel.load(userId) }'
+    - 'DisposableEffect(lifecycleOwner) { onDispose { observer.remove() } }'
+    - 'SideEffect { analytics.logScreen(name) }'
+    - 'val current by rememberUpdatedState(onTimeout)'
+    - 'val scope = rememberCoroutineScope()'
+    - 'val elapsed by produceState(initialValue = 0) { value = tick() }'
+    - 'navController.navigate("details/$id")'
 sources:
   - https://developer.android.com/develop/ui/compose/side-effects
   - https://developer.android.com/develop/ui/compose/performance/bestpractices#avoid-backwards

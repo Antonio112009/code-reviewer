@@ -7,6 +7,10 @@ activation:
     - '\.(?:test|exec|match|matchAll|replace|replaceAll|search)\s*\('
     - '\.lastIndex\b'
     - '\bnew\s+RegExp\s*\('
+  examples:
+    - 'const isValid = pattern.test(input);'
+    - 're.lastIndex = 0;'
+    - 'const dynamic = new RegExp(escaped, ''g'');'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/test#using_test_on_a_regex_with_the_global_flag
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#specifying_a_string_as_the_replacement

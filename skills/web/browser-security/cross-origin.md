@@ -9,6 +9,11 @@ activation:
     - '\bcross[oO]rigin\b|\bintegrity\s*=|<script\b[^>\n]{0,200}\bsrc\s*=\s*[''"](?:https?:)?//'
     - 'Access-Control-Allow-|Cross-Origin-(?:Opener|Embedder|Resource)-Policy|\btargetAddressSpace\b'
     - '[''"`]https?://(?:localhost|127\.0\.0\.1|192\.168\.|10\.\d)'
+  examples:
+    - "fetch(url, { credentials: 'include' });"
+    - '<script src="https://cdn.example.com/lib.js" integrity="sha384-abc" crossorigin="anonymous"></script>'
+    - "res.setHeader('Access-Control-Allow-Origin', origin);"
+    - "fetch('http://192.168.1.5/status');"
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS
   - https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity

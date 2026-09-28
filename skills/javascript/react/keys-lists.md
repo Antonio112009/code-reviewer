@@ -4,6 +4,8 @@ description: List and component-identity bugs — index or generated keys, dupli
 priority: 62
 activation:
   content: ["\\.map\\s*\\(", "\\bkey=\\{"]
+  examples:
+    - "items.map(item => <Row key={item.id} {...item} />)"
 sources:
   - https://react.dev/learn/rendering-lists
   - https://react.dev/learn/preserving-and-resetting-state

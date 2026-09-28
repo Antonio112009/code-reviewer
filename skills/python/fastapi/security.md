@@ -10,6 +10,11 @@ activation:
     - '\binclude_router\(|\bAPIRouter\(|\.mount\('
     - '\b(?:docs_url|redoc_url|openapi_url)\s*='
     - '@\w+\.(?:get|post|put|patch|delete)\(\s*["''][^"''\n]{0,80}\{'
+  examples:
+    - 'oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)'
+    - 'app.include_router(admin_router, dependencies=[Depends(get_admin)])'
+    - 'app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)'
+    - '@app.get("/users/{user_id}")'
 sources:
   - https://fastapi.tiangolo.com/tutorial/security/first-steps/
   - https://fastapi.tiangolo.com/advanced/security/oauth2-scopes/

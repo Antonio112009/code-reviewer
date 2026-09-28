@@ -8,6 +8,14 @@ activation:
     - '\bIJS(?:Runtime|ObjectReference|InProcessRuntime|InProcessObjectReference|StreamReference)\b|\bJS\.Invoke\w*\('
     - '\[JSInvokable\b|\bDotNetObjectReference\b|\bJSDisconnectedException\b|\bDotNetStreamReference\b'
     - '\bInvoke(?:Void)?Async\s*(?:<[^>\n]{1,60}>)?\(\s*"'
+  examples:
+    - 'public MyComponent(IJSRuntime js) { _js = js; }'
+    - 'IJSObjectReference module = await _js.InvokeAsync<IJSObjectReference>("import", "./chart.js");'
+    - 'await JS.InvokeVoidAsync("app.focus", elementRef);'
+    - '[JSInvokable] public static Task<int> GetCount() => Task.FromResult(_count);'
+    - 'var dotNetRef = DotNetObjectReference.Create(this);'
+    - 'catch (JSDisconnectedException) { }'
+    - 'return new DotNetStreamReference(stream);'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/javascript-interoperability/
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/javascript-interoperability/call-dotnet-from-javascript

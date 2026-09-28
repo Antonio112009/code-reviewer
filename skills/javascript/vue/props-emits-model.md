@@ -9,6 +9,11 @@ activation:
     - "\\$emit\\s*\\("
     - "^\\s*(?:props|emits)\\s*:\\s*[\\[{]"
     - "\\bmodelValue\\b"
+  examples:
+    - 'const props = defineProps<{ id: number }>();'
+    - 'const props = withDefaults(defineProps<Props>(), { size: ''md'' });'
+    - 'this.$emit(''save'', payload);'
+    - '  props: [''modelValue''],'
   versions: { framework.vue: ">=3" }
 sources:
   - https://vuejs.org/guide/components/props.html

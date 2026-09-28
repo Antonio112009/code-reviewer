@@ -13,6 +13,15 @@ activation:
     - '\b(?:requireContext|requireActivity|requireView)\s*\(\s*\)'
     - '\b(?:postDelayed|registerListener|requestLocationUpdates|addCallback)\s*\('
     - '\bclass\s+\w+\s*\([^)\n]{1,120}\)\s*:\s*(?:\w+)?Fragment\s*\('
+  examples:
+    - '_binding = FragmentDetailBinding.inflate(inflater, container, false)'
+    - 'viewModel.user.observe(this) { updateUi(it) }'
+    - 'override fun onDestroyView() { _binding = null }'
+    - 'supportFragmentManager.beginTransaction().add(fragment, "tag").commit()'
+    - 'val launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { }'
+    - 'val ctx = requireContext()'
+    - 'handler.postDelayed({ refresh() }, 1000)'
+    - 'class DetailFragment(val id: Long) : Fragment() {'
 sources:
   - https://developer.android.com/guide/fragments/lifecycle
   - https://developer.android.com/topic/libraries/view-binding#fragments

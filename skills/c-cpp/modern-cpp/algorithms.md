@@ -7,6 +7,9 @@ activation:
   content:
     - '\bstd::(?:ranges::)?(?:sort|stable_sort|partial_sort|nth_element|remove|remove_if|unique|accumulate|reduce|copy|copy_if|copy_n|transform|fill_n|lower_bound|upper_bound|binary_search|equal_range|merge|set_\w+|includes|max_element|min_element|for_each)\s*\('
     - '\bstd::execution::(?:par|par_unseq|unseq)\b'
+  examples:
+    - 'std::accumulate(v.begin(), v.end(), 0);'
+    - 'std::for_each(std::execution::par, v.begin(), v.end(), f);'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/rules/containers-ctr/ctr57-cpp/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/rules/containers-ctr/ctr52-cpp/

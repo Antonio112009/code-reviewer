@@ -10,6 +10,12 @@ activation:
     - '\bprocess\.nextTick\s*\(|\bsetImmediate\s*\('
     - '\bUV_THREADPOOL_SIZE\b|\bdns\.lookup\b'
     - '\bwhile\s*\(\s*(?:true|1)\s*\)'
+  examples:
+    - 'const data = readFileSync(path, "utf8");'
+    - 'const hash = crypto.pbkdf2(password, salt, 100000, 64, "sha512", callback);'
+    - 'setImmediate(() => processQueue());'
+    - 'dns.lookup(hostname, (err, address) => {});'
+    - 'while (true) { pollQueue(); }'
 sources:
   - https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop
   - https://nodejs.org/api/cli.html#uv_threadpool_sizesize

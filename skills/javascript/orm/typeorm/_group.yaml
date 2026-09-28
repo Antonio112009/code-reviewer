@@ -8,3 +8,7 @@ detect:
   content:
     - "(?:from|require\\()\\s*['\"](?:typeorm|@nestjs/typeorm)(?:/[\\w/-]+)?['\"]"
     - "@InjectRepository\\s*\\(|\\bgetRepository\\s*\\(|\\bcreateQueryBuilder\\s*\\("
+  examples:
+    - 'import { Repository } from "typeorm"'
+    - '@InjectRepository(User) private readonly users: Repository<User>'
+    - 'const qb = dataSource.createQueryBuilder(User, "user")'

@@ -14,3 +14,8 @@ detect:
     - '\b(?:document|window|navigator|localStorage|sessionStorage|caches)\.[a-zA-Z]|\bself\.addEventListener\('
     - '(?:\bfrom|\bimport)\s*[''"](?:react-dom|next/|@angular/|vue|nuxt|svelte|@sveltejs/|solid-js|preact|lit|@remix-run/react|react-router|astro|workbox-)'
     - 'Content-Security-Policy|X[-_]Frame[-_]Options|frame-ancestors|Set-Cookie|[Ss]ame[Ss]ite|Access-Control-Allow-|Cross-Origin-(?:Opener|Embedder|Resource)-Policy'
+  examples:
+    - '<button type="submit">Save</button>'
+    - 'document.getElementById("app").focus();'
+    - "import { createApp } from 'vue';"
+    - "res.setHeader(\"Content-Security-Policy\", \"default-src 'self'\");"

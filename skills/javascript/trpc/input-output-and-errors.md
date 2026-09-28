@@ -9,6 +9,11 @@ activation:
     - "\\bTRPCError\\b|\\berrorFormatter\\b|\\bonError\\s*[:(]|\\bisDev\\b"
     - "\\btransformer\\s*:|\\bsuperjson\\b"
     - "\\.(?:query|mutation)\\s*\\(\\s*(?:async\\s*)?\\(\\s*\\{"
+  examples:
+    - '.input(z.object({ id: z.string() }))'
+    - 'throw new TRPCError({ code: ''BAD_REQUEST'' });'
+    - 'transformer: superjson,'
+    - '.query(async ({ ctx }) => ctx.user);'
 sources:
   - https://trpc.io/docs/server/validators
   - https://trpc.io/docs/server/error-handling

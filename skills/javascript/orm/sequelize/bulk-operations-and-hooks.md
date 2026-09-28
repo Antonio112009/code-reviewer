@@ -8,6 +8,9 @@ activation:
     - "\\.(?:bulkCreate|update|destroy|findAndCountAll|findOrCreate|upsert|increment|decrement|findAll)\\s*\\("
     - "\\bindividualHooks\\b|\\braw\\s*:\\s*true\\b|\\bparanoid\\b|\\bdistinct\\s*:|\\bvalidate\\s*:\\s*(?:true|false)\\b|\\btruncate\\s*:"
     - "\\b(?:before|after)(?:Create|Update|Destroy|Save|BulkCreate|BulkUpdate|BulkDestroy|Validate)\\b"
+  examples:
+    - 'await User.bulkCreate(rows, { validate: true, individualHooks: true })'
+    - 'User.beforeBulkCreate((users, options) => { options.individualHooks = true })'
 sources:
   - https://sequelize.org/docs/v6/other-topics/hooks/
   - https://sequelize.org/api/v6/class/src/model.js~model

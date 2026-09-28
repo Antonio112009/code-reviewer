@@ -7,6 +7,9 @@ activation:
   content:
     - '@(?:RestController|Controller|RequestMapping|GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping|RequestBody|ModelAttribute|PathVariable|RequestParam|RequestHeader|ExceptionHandler|ControllerAdvice|RestControllerAdvice|ResponseStatus|InitBinder)\b'
     - '"redirect:'
+  examples:
+    - '@PostMapping("/orders")'
+    - 'return "redirect:" + target;'
 sources:
   - https://docs.spring.io/spring-framework/reference/core/validation/data-binding.html
   - https://github.com/spring-projects/spring-framework/wiki/Spring-Framework-6.1-Release-Notes

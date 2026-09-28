@@ -13,6 +13,15 @@ activation:
     - '\ballowMainThreadQueries\s*\('
     - '@(?:Dao|Insert|Update|Delete|Upsert|Query|RawQuery|Transaction)\b'
     - '\bSimpleSQLiteQuery\s*\('
+  examples:
+    - '@Database(entities = [User::class], version = 2)'
+    - 'Room.databaseBuilder(context, AppDatabase::class.java, "app.db").build()'
+    - '.fallbackToDestructiveMigration(dropAllTables = true)'
+    - 'val migration1to2 = Migration(1, 2) { db -> db.execSQL("ALTER TABLE users ADD COLUMN age INTEGER") }'
+    - '@Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(user: User)'
+    - '.allowMainThreadQueries().build()'
+    - '@Dao interface UserDao {'
+    - 'val query = SimpleSQLiteQuery("SELECT * FROM users WHERE name = ''$name''")'
 sources:
   - https://developer.android.com/training/data-storage/room/migrating-db-versions
   - https://developer.android.com/training/data-storage/room/accessing-data

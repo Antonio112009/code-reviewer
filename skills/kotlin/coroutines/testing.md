@@ -11,6 +11,12 @@ activation:
     - '\bDispatchers\.(?:setMain|resetMain)\b'
     - '\b(?:runBlockingTest|TestCoroutineDispatcher|TestCoroutineScope)\b'
     - '\b(?:advanceUntilIdle|advanceTimeBy|runCurrent|backgroundScope)\b'
+  examples:
+    - 'fun test() = runTest { viewModel.load() }'
+    - 'val dispatcher = StandardTestDispatcher(testScheduler)'
+    - 'Dispatchers.setMain(testDispatcher)'
+    - 'val scope = TestCoroutineScope()'
+    - 'advanceUntilIdle()'
 sources:
   - https://github.com/Kotlin/kotlinx.coroutines/blob/master/kotlinx-coroutines-test/README.md
   - https://developer.android.com/kotlin/coroutines/test

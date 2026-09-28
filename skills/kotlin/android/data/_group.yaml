@@ -8,3 +8,7 @@ detect:
     - '\bSharedPreferences\b'
     - '\bgetSharedPreferences\s*\('
     - '@(?:Dao|Database)\b'
+  examples:
+    - 'import androidx.room.Room'
+    - 'val prefs: SharedPreferences = context.getSharedPreferences("app", Context.MODE_PRIVATE)'
+    - '@Dao interface UserDao {'

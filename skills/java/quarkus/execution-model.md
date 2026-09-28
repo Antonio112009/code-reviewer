@@ -9,6 +9,11 @@ activation:
     - '@(?:Blocking|NonBlocking|RunOnVirtualThread|WithTransaction|WithSession|WithSessionOnDemand)\b'
     - '\.await\(\)'
     - '@RegisterRestClient\b'
+  examples:
+    - 'public Uni<Response> get() { return service.fetch(); }'
+    - '@Blocking'
+    - 'Order result = uni.await().indefinitely();'
+    - '@RegisterRestClient(configKey = "orders-api")'
 sources:
   - https://quarkus.io/guides/rest
   - https://quarkus.io/guides/virtual-threads

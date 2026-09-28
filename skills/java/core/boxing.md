@@ -6,6 +6,8 @@ tags: [CWE-595, CWE-476]
 activation:
   content:
     - '\b(?:Integer|Long|Short|Byte|Character|Boolean|Double|Float)\b'
+  examples:
+    - 'Integer count = map.get(key);'
 sources:
   - https://docs.oracle.com/javase/specs/jls/se25/html/jls-5.html#jls-5.1.7
   - https://docs.oracle.com/javase/specs/jls/se25/html/jls-15.html#jls-15.25

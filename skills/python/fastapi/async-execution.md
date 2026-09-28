@@ -8,6 +8,10 @@ activation:
     - '@\w+\.(?:get|post|put|patch|delete|api_route|websocket)\('
     - '\basync\s+def\s+\w+\([^)\n]{0,200}\bDepends\('
     - '\b(?:run_in_threadpool|to_thread\.run_sync|asyncio\.to_thread|current_default_thread_limiter)\b'
+  examples:
+    - '@app.get("/items/{item_id}")'
+    - 'async def get_item(item_id: int, db=Depends(get_db)):'
+    - 'result = await run_in_threadpool(hash_password, raw_password)'
 sources:
   - https://fastapi.tiangolo.com/async/
   - https://anyio.readthedocs.io/en/stable/threads.html

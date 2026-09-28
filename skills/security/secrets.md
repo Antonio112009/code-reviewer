@@ -35,6 +35,12 @@ activation:
     - (?:[Ss]ecret|SECRET|[Pp]assword|PASSWORD|passwd|[Aa]pi_?[Kk]ey|API_?KEY|[Pp]rivate_?[Kk]ey|PRIVATE_?KEY)\w{0,40}['"]?[ \t]{0,4}(?:=|:|=>)[ \t]{0,4}['"][^'"\s]{8,200}['"]
     - (?:\bprocess\.env\.|\bgetenv\(\s*['"]|\benviron\.get\(\s*['"]|\$\{)[\w.-]{0,60}(?:SECRET|[Ss]ecret|TOKEN|[Tt]oken|KEY\b|_KEY|[Kk]ey\b|PASSWORD|[Pp]assword|SALT)[\w.-]{0,60}(?:\s*(?:\|\||\?\?)\s*['"]|['"]\s*,\s*['"]|:[^}\n]{1,100}\})
     - \bexpress\.static\(\s*(?:__dirname\s*\)|process\.cwd\(\)\s*\)|['"]\.{1,2}/?['"])|\bphpinfo\(|"expvar"|"net/http/pprof"|\bsshpass\b|\bcurl\s[^\n]{0,80}\s-u\s
+  examples:
+    - 'const openaiKey = "sk-proj-xxxxxxxxxxxxxxxxxxxxxxxx";'
+    - 'DB_PASSWORD = "changeme-local-only"'
+    - 'const key = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;'
+    - 'const secret = process.env.JWT_SECRET || "dev-secret";'
+    - 'app.use(express.static(__dirname));'
 ---
 - **Committed credentials**: live keys, tokens, passwords or private keys in code, tests, fixtures or compose files → compromise, kept in git history. Fix: rotate, secret store. Publishable keys (Stripe `pk_`, Firebase web config) are fine.
 - **Insecure fallbacks**: `process.env.JWT_SECRET || 'dev'`, `getenv("KEY", "changeme")`, `${jwt.secret:secret}`, or verification skipped when the secret is unset → known key or no auth in production. Fix: fail startup when unset.

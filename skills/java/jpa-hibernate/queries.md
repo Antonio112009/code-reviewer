@@ -10,6 +10,12 @@ activation:
     - '@(?:Query|NamedQuery|NamedNativeQuery)\b'
     - '\bCriteriaBuilder\b'
     - '\b(?:LIKE|like)\s'
+  examples:
+    - 'Query q = em.createQuery("select o from Order o");'
+    - 'List<Order> orders = query.getResultList();'
+    - '@Query("select o from Order o where o.status = :status")'
+    - 'CriteriaBuilder cb = em.getCriteriaBuilder();'
+    - 'String jpql = "select u from User u where u.name LIKE :pattern";'
 sources:
   - https://docs.hibernate.org/orm/7.0/querylanguage/html_single/Hibernate_Query_Language.html
   - https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html

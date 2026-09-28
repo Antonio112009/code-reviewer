@@ -8,6 +8,10 @@ activation:
     - '@electron/fuses|\bFuseV1Options\b|\bflipFuses\b|\bFusesPlugin\b'
     - '\bELECTRON_RUN_AS_NODE\b|\bchild_process\.fork\b|\bopenDevTools\('
     - '\basar(?:Unpack)?\s*:|\bcookieEncryption\b'
+  examples:
+    - "import { flipFuses, FuseV1Options } from '@electron/fuses';"
+    - 'mainWindow.webContents.openDevTools();'
+    - "asarUnpack: ['**/*.node'],"
   files: ['**/forge.config.{js,cjs,mjs,ts}', '**/electron-builder.config.{js,cjs,mjs,ts}']
 sources:
   - https://www.electronjs.org/docs/latest/tutorial/fuses

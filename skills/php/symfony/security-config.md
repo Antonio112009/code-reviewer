@@ -9,6 +9,10 @@ activation:
     - '\b(?:access_control|firewalls|remember_me|login_throttling|role_hierarchy|switch_user|trusted_proxies|expose_security_errors|hide_user_not_found)\b'
     - '\bAPP_(?:SECRET|DEBUG|ENV)\b|\bfunction\s+(?:eraseCredentials|__serialize)\s*\('
     - '(?:\bpath:\s*|[''"]path[''"]\s*=>\s*)[''"]?\^/'
+  examples:
+    - 'access_control:'
+    - '  - { path: ^/admin, roles: ROLE_ADMIN }'
+    - 'APP_SECRET=3e256be5f0618a0d0f9b0c1a2d3e4f5a'
 sources:
   - https://symfony.com/doc/current/security.html
   - https://symfony.com/doc/current/reference/configuration/security.html

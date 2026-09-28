@@ -7,6 +7,9 @@ activation:
   content:
     - '\bcondition_variable(?:_any)?\b|\bpthread_cond_\w+\s*\(|\bcnd_(?:wait|timedwait|signal|broadcast)\s*\('
     - '\.(?:wait|wait_for|wait_until|notify_one|notify_all)\s*\('
+  examples:
+    - 'std::condition_variable cv;'
+    - 'cv.wait(lock, [] { return ready; });'
 sources:
   - https://en.cppreference.com/w/cpp/thread/condition_variable
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rconc-wait

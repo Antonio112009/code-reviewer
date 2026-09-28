@@ -13,6 +13,13 @@ activation:
     - '\b(?:anyHost|allowCredentials)\b'
     - '\bAuthenticationStrategy\.Optional\b|\boptional\s*=\s*true\b'
     - '\bdevelopment\s*[:=]\s*true\b|\bio\.ktor\.development\b|\bshutdown\.url\b'
+  examples:
+    - 'jwt("auth-jwt") { verifier(jwkProvider) }'
+    - 'cookie<UserSession>("session")'
+    - 'cookie.secure = true'
+    - 'install(CORS) { anyHost() }'
+    - 'authenticate("jwt", optional = true) { get("/me") { } }'
+    - 'development = true'
 sources:
   - https://ktor.io/docs/server-jwt.html
   - https://ktor.io/docs/server-sessions.html

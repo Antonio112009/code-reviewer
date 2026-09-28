@@ -6,3 +6,4 @@ detect:
   stack: [framework.symfony]
   files: ["**/src/**/*.php", "**/config/**/*.{yaml,yml,php,xml}", "**/.env", "**/.env.*"]
   content: ["\\buse (?:Symfony|ApiPlatform)\\\\", "#\\[(?:Route|AsController|AsMessageHandler|IsGranted|MapEntity|MapRequestPayload|MapQueryString|ApiResource)\\b"]
+  examples: ["use Symfony\\Component\\HttpFoundation\\Response;", "#[Route('/api/posts', methods: ['GET'])]"]

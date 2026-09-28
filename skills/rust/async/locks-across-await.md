@@ -10,6 +10,12 @@ activation:
     - '\bRefCell\b|\.borrow(?:_mut)?\(\)'
     - '\bwatch::|\.borrow_and_update\(\)'
     - '\bparking_lot\b|\bspawn_local\b|\bLocalSet\b|current_thread'
+  examples:
+    - 'let guard = state.lock().await;'
+    - 'let map: DashMap<String, User> = DashMap::new();'
+    - 'let cache: RefCell<HashMap<u32, User>> = RefCell::new(HashMap::new());'
+    - 'let value = *rx.borrow_and_update();'
+    - 'use parking_lot::Mutex;'
 sources:
   - https://tokio.rs/tokio/tutorial/shared-state
   - https://docs.rs/tokio/latest/tokio/sync/struct.RwLock.html

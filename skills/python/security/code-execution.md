@@ -10,6 +10,12 @@ activation:
     - "\\b(?:sympify|parse_expr|numexpr\\.evaluate)\\s*\\(|\\bliteral_eval\\s*\\("
     - "\\b(?:import_module|__import__)\\s*\\(|\\bgetattr\\s*\\(\\s*\\w+\\s*,\\s*(?!['\"])[^)\\n]{1,60}\\)\\s*\\(|\\bglobals\\s*\\(\\s*\\)\\s*\\["
     - "\\brunpy\\.run_\\w+\\s*\\(|\\bexec\\s*\\(\\s*open\\s*\\("
+  examples:
+    - 'result = eval(user_formula)'
+    - 'df.query(user_filter)'
+    - 'expr = sympify(user_input)'
+    - 'module = import_module(name)'
+    - 'exec(open(plugin_path).read())'
 sources:
   - https://docs.python.org/3/library/functions.html#eval
   - https://docs.python.org/3/library/ast.html#ast.literal_eval

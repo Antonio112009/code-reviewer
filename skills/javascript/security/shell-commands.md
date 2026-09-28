@@ -9,6 +9,11 @@ activation:
     - '(?<![.\w$])(?:exec|execSync|execFile|execFileSync|spawn|spawnSync)\s*\('
     - '\bshell\s*:\s*(?:true|[''"])'
     - '\.(?:bat|cmd)[''"`]'
+  examples:
+    - 'const { exec } = require(''child_process'');'
+    - 'exec(`rm -rf ${dir}`);'
+    - 'spawn(cmd, { shell: true });'
+    - 'spawn(''deploy.bat'');'
 sources:
   - https://nodejs.org/api/child_process.html#child_processexeccommand-options-callback
   - https://nodejs.org/api/deprecations.html#dep0190-passing-args-to-nodechild_process-execfilespawn-with-shell-option

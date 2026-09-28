@@ -10,6 +10,13 @@ activation:
     - "\\bprovideHttpClient\\s*\\("
     - "\\bHttpContextToken\\b"
     - "\\breq\\.clone\\s*\\("
+  examples:
+    - 'export const authInterceptor: HttpInterceptorFn = (req, next) => next(req);'
+    - 'provideHttpClient(withInterceptors([authInterceptor]));'
+    - '{ provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }'
+    - 'provideHttpClient(withInterceptorsFromDi());'
+    - 'export const SKIP_AUTH = new HttpContextToken(() => false);'
+    - 'return next(req.clone({ setHeaders: { Authorization: token } }));'
 sources:
   - https://angular.dev/guide/http/interceptors
   - https://angular.dev/guide/http/setup

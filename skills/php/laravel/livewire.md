@@ -8,6 +8,9 @@ activation:
   content:
     - '\bLivewire\\|\bextends\s+Component\b|#\[(?:Locked|Computed|Url|Validate|On)\b'
     - '\bwire:(?:model|click|submit)\b|\bWithFileUploads\b|->temporaryUrl\s*\('
+  examples:
+    - 'class TodoList extends Component { #[Locked] public int $listId; }'
+    - '<input wire:model="title" type="text">'
 sources:
   - https://livewire.laravel.com/docs/4.x/security
   - https://livewire.laravel.com/docs/4.x/computed-properties

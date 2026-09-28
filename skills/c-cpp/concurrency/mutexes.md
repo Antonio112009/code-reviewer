@@ -8,6 +8,10 @@ activation:
     - '\b(?:std::)?(?:mutex|recursive_mutex|timed_mutex|shared_mutex|shared_timed_mutex|lock_guard|unique_lock|scoped_lock|shared_lock)\b'
     - '\bpthread_(?:mutex|rwlock|spin)_\w+\s*\(|\bmtx_(?:lock|unlock|trylock|timedlock|init|destroy)\s*\('
     - '\.(?:lock|unlock|try_lock|lock_shared|unlock_shared)\s*\(\s*\)'
+  examples:
+    - 'std::lock_guard<std::mutex> lock(mtx);'
+    - 'pthread_mutex_lock(&mtx);'
+    - 'mtx.unlock();'
 sources:
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rconc-raii
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rconc-lock

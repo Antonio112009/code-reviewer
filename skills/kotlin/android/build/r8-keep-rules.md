@@ -12,6 +12,13 @@ activation:
     - '@Keep\b'
     - '\bClass\.forName\s*\(|\bgetDeclared(?:Constructor|Method|Field)\s*\('
     - '\bTypeToken\s*<'
+  examples:
+    - '-keep class com.example.model.User { *; }'
+    - 'isMinifyEnabled = true'
+    - 'android.r8.strictFullModeForKeepRules=true'
+    - '@Keep class UserResponse(val id: Int)'
+    - 'val clazz = Class.forName(className)'
+    - 'val type = object : TypeToken<List<User>>() {}.type'
 sources:
   - https://developer.android.com/topic/performance/app-optimization/full-mode
   - https://developer.android.com/topic/performance/app-optimization/add-keep-rules

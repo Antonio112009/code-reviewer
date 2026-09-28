@@ -9,6 +9,11 @@ activation:
     - '\bFILTER_VALIDATE_URL\b|\bparse_url\s*\(|\bUri\\(?:Rfc3986|WhatWg)\\'
     - '\bGuzzleHttp\\|\ballow_redirects\b|[''"]verify[''"]\s*=>\s*false'
     - '\b(?:file_get_contents|get_headers|simplexml_load_file)\s*\(\s*\$'
+  examples:
+    - '$ch = curl_init($url); curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);'
+    - '$host = parse_url($url, PHP_URL_HOST);'
+    - 'new GuzzleHttp\Client([''allow_redirects'' => true]);'
+    - '$html = file_get_contents($url);'
 sources:
   - https://www.php.net/manual/en/filter.constants.php
   - https://www.php.net/manual/en/function.parse-url.php

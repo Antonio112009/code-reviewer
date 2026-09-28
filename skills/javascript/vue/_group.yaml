@@ -10,3 +10,8 @@ detect:
     - "require\\(['\"](?:vue|pinia|vue-router)['\"]\\)"
     - "\\b(?:defineComponent|defineStore|createApp|createSSRApp)\\s*\\("
     - "(?<![.\\w$])(?:ref|reactive|computed|watch|watchEffect|shallowRef|toRef|toRefs)\\s*(?:<[^>\\n]{0,80}>)?\\("
+  examples:
+    - 'import { ref } from ''vue'';'
+    - 'const { createApp } = require(''vue'');'
+    - 'export default defineComponent({ setup() {} });'
+    - 'const count = ref(0);'

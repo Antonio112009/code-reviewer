@@ -8,6 +8,10 @@ activation:
     - '\bSSL_(?:CTX_)?set_verify\w*\s*\(|\bSSL_VERIFY_\w+'
     - '\bSSL_(?:set1_host|add1_host|set1_dnsname|set1_ipaddr|set_tlsext_host_name|get_verify_result|get1?_peer_certificate|get0_peer_certificate|connect|get_error|CTX_new)\s*\('
     - '\bX509_(?:VERIFY_PARAM_set1_host|check_host|verify_cert)\s*\(|\bSSL_OP_IGNORE_UNEXPECTED_EOF\b'
+  examples:
+    - 'SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);'
+    - 'SSL_set1_host(ssl, "example.com");'
+    - 'if (X509_check_host(cert, host, 0, 0, NULL) != 1) goto err;'
 sources:
   - https://docs.openssl.org/3.5/man3/SSL_CTX_set_verify/
   - https://docs.openssl.org/3.5/man3/SSL_get_verify_result/

@@ -9,6 +9,11 @@ activation:
     - '\bATOMIC_REQUESTS\b'
     - '\bIntegrityError\b'
     - '\.\w+\s*[-+]=\s*[^\n]{1,80}\n[^\n]{0,80}\.save\('
+  examples:
+    - 'with transaction.atomic():'
+    - 'ATOMIC_REQUESTS = True'
+    - 'except IntegrityError:'
+    - "order.stock -= 1\norder.save()"
 sources:
   - https://docs.djangoproject.com/en/stable/topics/db/transactions/
   - https://docs.djangoproject.com/en/stable/ref/models/querysets/#select-for-update

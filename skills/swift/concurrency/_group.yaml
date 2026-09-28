@@ -9,3 +9,9 @@ detect:
     - '^[ \t]*import[ \t]+Combine\b|\b(?:AnyCancellable|PassthroughSubject|CurrentValueSubject)\b|@Published\b'
     - '\bcompletion(?:Handler)?\s*[:(]'
     - '\bSWIFT_(?:STRICT_CONCURRENCY|DEFAULT_ACTOR_ISOLATION|APPROACHABLE_CONCURRENCY|UPCOMING_FEATURE_\w+|VERSION)\b|\.(?:defaultIsolation|enableUpcomingFeature|swiftLanguageMode)\b'
+  examples:
+    - 'func fetchUser() async throws -> User {'
+    - 'let user = try await withCheckedThrowingContinuation { continuation in'
+    - 'import Combine'
+    - 'func loadUser(completion: @escaping (Result<User, Error>) -> Void) {'
+    - 'SWIFT_STRICT_CONCURRENCY = complete'

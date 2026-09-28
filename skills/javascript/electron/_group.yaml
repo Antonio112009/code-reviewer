@@ -13,3 +13,7 @@ detect:
     - '(?:\bfrom|\bimport)\s*[''"](?:electron|@electron/|electron-updater|update-electron-app)'
     - '\brequire\(\s*[''"](?:electron|@electron/|electron-updater)'
     - '\bwindow\.electron\w*\.'
+  examples:
+    - "import { app, BrowserWindow } from 'electron';"
+    - "const { app } = require('electron');"
+    - "window.electronAPI.send('ready');"

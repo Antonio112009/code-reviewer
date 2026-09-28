@@ -10,6 +10,12 @@ activation:
     - "\\bres\\.headersSent\\b"
     - "\\.catch\\(\\s*next\\s*\\)"
     - "\\bstatus(?:Code)?\\s*\\(\\s*(?:err|error|e)\\.(?:status|statusCode)\\b"
+  examples:
+    - 'app.use((err, req, res, next) => {'
+    - 'return next(err);'
+    - 'if (res.headersSent) return next(err);'
+    - 'fetchUser(id).catch(next);'
+    - 'res.status(err.status || 500).json({ message: ''Server error'' });'
 sources:
   - https://expressjs.com/en/guide/error-handling.html
   - https://expressjs.com/en/5x/api/response/

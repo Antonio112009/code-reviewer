@@ -5,10 +5,13 @@ priority: 70
 tags: [CWE-532, CWE-209, CWE-200, CWE-316]
 activation:
   content:
-    - '#\[derive\([^)\n]{0,200}\b(?:Debug|Serialize)\b'
     - '#\[(?:tracing::)?instrument\b'
     - '\bSecret(?:String|Box|Slice)?\b|\bExposeSecret\b|\b[Zz]eroize\b'
     - '(?:[Pp]assword|[Ss]ecret|api_?key|API_?KEY|private_key|[Cc]redential)'
+  examples:
+    - '#[instrument(skip(password))]'
+    - 'let config: SecretString = SecretString::new(value);'
+    - 'let api_key = std::env::var("API_KEY")?;'
 sources:
   - https://docs.rs/tracing/latest/tracing/attr.instrument.html
   - https://docs.rs/secrecy/latest/secrecy/

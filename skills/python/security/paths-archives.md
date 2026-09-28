@@ -9,6 +9,11 @@ activation:
     - "\\b(?:extractall|extract|unpack_archive)\\s*\\(|\\btarfile\\.open\\s*\\(|\\bZipFile\\s*\\(|\\binfolist\\s*\\(\\s*\\)"
     - "\\b(?:gzip|bz2|lzma|zlib)\\.(?:decompress|open)\\s*\\("
     - "\\btempfile\\.mktemp\\s*\\(|[\"']/tmp/[^\"'\\n]{1,80}[\"']|\\bos\\.chmod\\s*\\([^)\\n]{1,80}0o?7[0-7]{2}"
+  examples:
+    - 'path = os.path.join(base_dir, user_filename)'
+    - 'tar.extractall(dest)'
+    - 'data = gzip.decompress(payload)'
+    - 'path = tempfile.mktemp()'
 sources:
   - https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.is_relative_to
   - https://docs.python.org/3/library/tarfile.html#tarfile-extraction-filter

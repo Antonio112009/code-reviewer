@@ -41,6 +41,12 @@ activation:
     - \b(?:pull_request_target|workflow_run)\b
     - \$\{?CI_(?:COMMIT|MERGE_REQUEST|JOB|PROJECT|PIPELINE|REGISTRY)_[A-Z_]+
     - ^[ \t]*(?:pipeline|stages|steps|post)[ \t]*\{|^[ \t]*stage[ \t]*\([ \t]*['"]|\bwithCredentials[ \t]*\(
+  examples:
+    - 'run: echo "${{ github.event.pull_request.title }}"'
+    - '  runs-on: ubuntu-latest'
+    - 'on: pull_request_target'
+    - 'echo $CI_COMMIT_SHA'
+    - 'pipeline {'
 ---
 - **Untrusted PR code**: `pull_request_target`, `workflow_run` or `issue_comment` jobs running PR-head code or trusting its artifacts with secrets or a write token → secret theft, repo takeover.
 - **Expression injection**: `${{ }}` with PR titles, bodies, branch names, comments or commit messages in `run:` or `github-script`, Azure `$(Build.SourceBranchName)` macros → command injection. Fix: pass via `env:`.

@@ -6,3 +6,7 @@ detect:
   stack: [orm.sqlx]
   languages: [rust]
   content: ['\bsqlx::', '\bquery(?:_as|_scalar|_file(?:_as)?)?!\s*\(', '\b(?:PgPool|MySqlPool|SqlitePool|AnyPool)\b', 'derive\([^)\n]{0,120}\bFromRow\b']
+  examples:
+    - 'let pool: PgPool = sqlx::PgPool::connect(&url).await?;'
+    - 'let row = query_as!(User, "SELECT * FROM users WHERE id = $1", id).fetch_one(&pool).await?;'
+    - '#[derive(sqlx::FromRow)]'

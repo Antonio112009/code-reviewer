@@ -9,6 +9,11 @@ activation:
     - "\\breq\\.(?:query|body|params)\\.\\w+\\s*(?:===|!==|\\.(?:trim|toLowerCase|toUpperCase|split|replace|startsWith|endsWith|includes|length)\\b)"
     - "\\bconstructEvent\\s*\\(|[xX]-[hH]ub-[sS]ignature|[sS]tripe-[sS]ignature|\\bverify\\s*:\\s*\\(|\\brawBody\\b"
     - "\\bmulter\\s*\\(|\\bupload\\.(?:single|array|fields|any|none)\\s*\\(|\\b(?:file|files)\\.originalname\\b|\\breq\\.files?\\b"
+  examples:
+    - 'app.use(express.json());'
+    - 'if (req.query.id.trim() === '''') {'
+    - 'const event = stripe.webhooks.constructEvent(req.body, sig, secret);'
+    - 'app.post(''/upload'', upload.single(''file''), handler);'
 sources:
   - https://expressjs.com/en/5x/api/express/
   - https://expressjs.com/en/guide/migrating-5.html

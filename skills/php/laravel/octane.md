@@ -8,6 +8,9 @@ activation:
   content:
     - '\bLaravel\\Octane\\|\bOctane::'
     - '\bOCTANE_\w+|\boctane:(?:start|reload)\b'
+  examples:
+    - 'use Laravel\Octane\Facades\Octane;'
+    - '// Restart workers after deploy: php artisan octane:reload'
 sources:
   - https://laravel.com/docs/13.x/octane#dependency-injection-and-octane
   - https://laravel.com/docs/13.x/octane#managing-memory-leaks

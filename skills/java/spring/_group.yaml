@@ -15,3 +15,6 @@ detect:
   content:
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.springframework\.'
     - '^[ \t]*import[ \t]+(?:jakarta|javax)\.validation\.'
+  examples:
+    - 'import org.springframework.stereotype.Service;'
+    - 'import jakarta.validation.constraints.NotNull;'

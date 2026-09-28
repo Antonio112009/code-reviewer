@@ -29,6 +29,10 @@ activation:
     - ^[ \t]*(?:resource|data|ephemeral)[ \t]+"[\w-]+"[ \t]+"[\w-]+"[ \t]*\{
     - ^[ \t]*(?:module|provider|variable|output|check)[ \t]+"[\w-]+"[ \t]*\{
     - ^[ \t]*(?:terraform|moved|removed)[ \t]*\{
+  examples:
+    - 'resource "aws_security_group" "web" {'
+    - 'module "vpc" {'
+    - 'moved {'
 ---
 - **Forced replacement**: edits to replace-forcing attributes (names, `engine`, `availability_zone`, subnet or KMS ids) or renamed resources and modules without `moved` → destroy and recreate, data loss.
 - **Key shifts**: `count` over a list (a removed item shifts later indexes) or changed `for_each` keys → unrelated resources destroyed and recreated. Fix: stable keys, `moved`.

@@ -9,6 +9,11 @@ activation:
     - "from ['\"]pinia['\"]"
     - "\\buse[A-Z]\\w{0,60}Store\\s*\\("
     - "\\$(?:patch|reset|subscribe|onAction)\\s*\\("
+  examples:
+    - 'export const useCartStore = defineStore(''cart'', () => ({ items: ref([]) }));'
+    - 'const { items, total } = storeToRefs(useCartStore());'
+    - 'import { defineStore } from ''pinia'';'
+    - 'store.$patch({ count: 1 });'
 sources:
   - https://pinia.vuejs.org/core-concepts/
   - https://pinia.vuejs.org/core-concepts/outside-component-usage.html

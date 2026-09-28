@@ -7,6 +7,10 @@ activation:
     - '\b(?:AsyncSession|async_sessionmaker|create_async_engine|async_scoped_session|AsyncEngine|AsyncAttrs|awaitable_attrs)\b'
     - '\bMissingGreenlet\b|\bgreenlet_spawn\b|\brun_sync\('
     - '\+asyncpg://|\bprepared_statement_cache_size\b|\bstatement_cache_size\b'
+  examples:
+    - 'engine = create_async_engine("postgresql+asyncpg://user:pass@host/db")'
+    - 'except MissingGreenlet:'
+    - 'await obj.awaitable_attrs.children'
 sources:
   - https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html
   - https://docs.sqlalchemy.org/en/20/dialects/postgresql.html#prepared-statement-cache

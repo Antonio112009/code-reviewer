@@ -6,6 +6,8 @@ tags: [CWE-190, CWE-131, CWE-401, CWE-690]
 activation:
   content:
     - '\b(?:malloc|calloc|realloc|reallocarray|aligned_alloc|posix_memalign|strn?dup)\s*\('
+  examples:
+    - 'int *p = malloc(n * sizeof *p);'
 sources:
   - https://man7.org/linux/man-pages/man3/malloc.3.html
   - https://en.cppreference.com/w/c/memory/realloc

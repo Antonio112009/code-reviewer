@@ -9,6 +9,11 @@ activation:
     - '\b(?:sort|rsort|usort|uasort|uksort|ksort|asort|shuffle)\s*\('
     - '\bforeach\s*\([^)\n]{1,200}as\s*(?:\$\w+\s*=>\s*)?&\$'
     - '\blist\s*\(|^[ \t]*\[[ \t]*(?:''\w+''[ \t]*=>[ \t]*)?\$\w+[ \t]*,'
+  examples:
+    - '$merged = array_merge($defaults, $options);'
+    - 'usort($items, fn($a, $b) => $a->price <=> $b->price);'
+    - 'foreach ($rows as $key => &$value) {'
+    - '[$user, $host] = explode(''@'', $email);'
 sources:
   - https://www.php.net/manual/en/language.types.array.php
   - https://www.php.net/manual/en/function.array-merge.php

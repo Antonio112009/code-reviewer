@@ -8,6 +8,10 @@ activation:
     - '^\s*(?:replace|exclude|retract)\b'
     - '^\s*(?:require\b|use\b)'
     - '^\s*[\w.-]{1,60}\.[a-z]{2,6}/[\w./-]{1,120}\s+v\d'
+  examples:
+    - 'replace github.com/pkg/errors => github.com/pkg/errors v0.9.1'
+    - 'require github.com/gin-gonic/gin v1.9.1'
+    - 'github.com/pkg/errors v0.9.1'
 sources:
   - https://go.dev/ref/mod#go-mod-file-replace
   - https://go.dev/ref/mod#major-version-suffixes

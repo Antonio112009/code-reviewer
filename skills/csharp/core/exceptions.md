@@ -8,6 +8,9 @@ activation:
     - '\bcatch\b'
     - '\bthrow\s+\w+\s*;'
     - '\bstatic\s+[A-Z]\w*\s*\(\s*\)'
+  examples:
+    - 'catch (Exception ex) { throw ex; }'
+    - 'static Config() { LoadFromDisk(); }'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/standard/exceptions/best-practices-for-exceptions
   - https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2200

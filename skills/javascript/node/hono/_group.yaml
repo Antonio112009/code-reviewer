@@ -6,3 +6,5 @@ detect:
   stack: [framework.hono]
   content:
     - "(?:from|require\\()\\s*['\"](?:hono|@hono/[\\w-]+)(?:/[\\w/-]+)?['\"]"
+  examples:
+    - 'import { Hono } from "hono"'

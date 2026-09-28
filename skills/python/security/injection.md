@@ -9,6 +9,11 @@ activation:
     - "\\bsubprocess\\.\\w+\\s*\\(\\s*\\[[^\\]\\n]{0,160}\\b(?:git|curl|wget|tar|ssh|scp|rsync|ffmpeg|convert|zip|find)\\b"
     - "\\.execute(?:many|script)?\\s*\\(\\s*(?:f[\"']|[\"'][^\"'\\n]{0,200}[\"']\\s*(?:%|\\.format\\b|\\+))"
     - "\\.execute(?:many)?\\s*\\([^\\n]{0,200}\\+\\s*\\w|\\bexecutescript\\s*\\(|\\bsql\\.(?:SQL|Identifier)\\s*\\("
+  examples:
+    - 'subprocess.run(f"convert {name}", shell=True)'
+    - 'subprocess.run(["git", "clone", url])'
+    - 'cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")'
+    - 'cursor.execute("SELECT * FROM users WHERE name = " + name)'
 sources:
   - https://docs.python.org/3/library/subprocess.html#security-considerations
   - https://docs.python.org/3/library/shlex.html#shlex.quote

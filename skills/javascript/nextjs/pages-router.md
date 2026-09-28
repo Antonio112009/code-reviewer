@@ -9,6 +9,10 @@ activation:
     - "\\b(?:getServerSideProps|getStaticProps|getStaticPaths|getInitialProps)\\b"
     - "\\bNextApi(?:Request|Response|Handler)\\b"
     - "['\"]next/router['\"]"
+  examples:
+    - "export async function getServerSideProps(context) {"
+    - "export default function handler(req: NextApiRequest, res: NextApiResponse) {"
+    - "import { useRouter } from 'next/router';"
 sources:
   - https://nextjs.org/docs/pages/building-your-application/data-fetching/get-server-side-props
   - https://nextjs.org/docs/pages/api-reference/functions/get-static-paths

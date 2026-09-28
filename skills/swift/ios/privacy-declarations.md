@@ -7,6 +7,10 @@ activation:
     - '\b(?:AVCaptureDevice|AVAudioSession|AVAudioApplication|PHPhotoLibrary|CLLocationManager|CNContactStore|EKEventStore|CBCentralManager|CBPeripheralManager|HKHealthStore|CMMotionActivityManager|SFSpeechRecognizer|LAContext|ATTrackingManager|ASIdentifierManager)\b'
     - '\b(?:UserDefaults|systemUptime|mach_absolute_time|creationDate|modificationDate|volumeAvailableCapacity\w*|activeInputModes)\b'
     - '<key>(?:NS\w+UsageDescription|NSPrivacy\w+)</key>'
+  examples:
+    - 'let manager = CLLocationManager()'
+    - 'let defaults = UserDefaults.standard'
+    - '<key>NSCameraUsageDescription</key>'
 sources:
   - https://developer.apple.com/documentation/avfoundation/requesting-authorization-to-capture-and-save-media
   - https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api

@@ -8,6 +8,10 @@ activation:
     - '@font-face|\bfont-display\b|\bas\s*=\s*[''"]font[''"]'
     - 'fonts\.googleapis\.com|fonts\.gstatic\.com|use\.typekit\.net|@import\s+url\('
     - '\.woff2?\b|\.[ot]tf\b|next/font|@fontsource'
+  examples:
+    - '@font-face { font-family: "Inter"; font-display: swap; }'
+    - '<link rel="preconnect" href="https://fonts.googleapis.com">'
+    - 'src: url("./inter.woff2") format("woff2");'
 sources:
   - https://web.dev/articles/font-best-practices
   - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/preload

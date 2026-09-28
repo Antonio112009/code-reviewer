@@ -5,6 +5,9 @@ priority: 58
 activation:
   content:
     - '<(?:InvariantGlobalization|PublishTrimmed|PublishAot|TrimMode|IsAotCompatible|EnableUnsafeBinaryFormatterSerialization|RuntimeHostConfigurationOption|ServerGarbageCollection|ConcurrentGarbageCollection|UseSystemResourceKeys)\b'
+  examples:
+    - '<InvariantGlobalization>true</InvariantGlobalization>'
+    - '<PublishTrimmed>true</PublishTrimmed>'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/core/compatibility/globalization/6.0/culture-creation-invariant-mode
   - https://learn.microsoft.com/en-us/dotnet/core/compatibility/serialization/8.0/publishtrimmed

@@ -8,6 +8,11 @@ activation:
     - '^[ \t]*yield\b'
     - '\bdependencies\s*=\s*\['
     - '\buse_cache\s*=|\bscope\s*=\s*["''](?:function|request)["'']'
+  examples:
+    - 'def get_db(db: Session = Depends(get_session)):'
+    - '    yield db'
+    - 'router = APIRouter(dependencies=[Depends(verify_admin)])'
+    - 'Depends(get_current_user, use_cache=False)'
 sources:
   - https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/
   - https://fastapi.tiangolo.com/advanced/advanced-dependencies/

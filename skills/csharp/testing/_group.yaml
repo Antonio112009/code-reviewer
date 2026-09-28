@@ -9,3 +9,6 @@ detect:
   content:
     - '\busing\s+(?:Xunit|NUnit\.Framework|Microsoft\.VisualStudio\.TestTools\.UnitTesting|Moq|NSubstitute|FluentAssertions|AwesomeAssertions|Shouldly)\b'
     - '\[(?:Fact|Theory|Test|TestCase|TestMethod|TestClass|TestFixture|DataRow|InlineData)\b'
+  examples:
+    - 'using Xunit;'
+    - '[Fact(DisplayName = "Adds two numbers")]'

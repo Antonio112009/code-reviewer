@@ -4,6 +4,8 @@ description: Promise.all / allSettled / any / race semantics - failures that can
 priority: 60
 activation:
   content: ['\bPromise\.(?:all|allSettled|any|race)\s*\(']
+  examples:
+    - 'const results = await Promise.allSettled(jobs);'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled

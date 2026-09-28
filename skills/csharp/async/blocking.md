@@ -8,6 +8,17 @@ activation:
     - '\.Result\b|\.Wait\(\)|\.GetAwaiter\(\)\.GetResult\(\)|\bTask\.(?:WaitAll|WaitAny)\('
     - '\bThread\.Sleep\(|\bConfigureAwait\(|\bAllowSynchronousIO\b|\bTask\.Run\('
     - '\.(?:ReadToEnd|ReadAllText|ReadAllBytes|ReadAllLines|WriteAllText|WriteAllBytes)\(|\bRequest\.Form\b'
+  examples:
+    - 'var user = GetUserAsync(id).Result;'
+    - 'task.Wait();'
+    - 'var data = FetchAsync().GetAwaiter().GetResult();'
+    - 'Task.WaitAll(task1, task2);'
+    - 'Thread.Sleep(500);'
+    - 'await stream.ReadAsync(buffer, ct).ConfigureAwait(false);'
+    - 'options.AllowSynchronousIO = true;'
+    - 'await Task.Run(() => ComputeHash(data));'
+    - 'var text = File.ReadAllText(path);'
+    - 'var name = Request.Form["name"];'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/best-practices
   - https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios

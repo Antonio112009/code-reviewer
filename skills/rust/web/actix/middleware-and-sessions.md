@@ -9,6 +9,11 @@ activation:
     - '\bfrom_fn\(|\bTransform\b|\bServiceRequest\b'
     - '\bCors::'
     - '\bSession\b|\.renew\(\)|\.purge\(\)|\b(?:Cookie|Redis)SessionStore\b|\bIdentity\b'
+  examples:
+    - 'App::new().wrap(Logger::default()).wrap(auth_middleware)'
+    - 'async fn auth(req: ServiceRequest, next: Next<impl MessageBody>) -> Result<ServiceResponse, Error> {'
+    - 'let cors = Cors::permissive();'
+    - 'session.renew();'
 sources:
   - https://actix.rs/docs/middleware
   - https://github.com/actix/actix-web/issues/3756

@@ -8,6 +8,10 @@ activation:
     - '\bnew\s+\\?(?:PDO|mysqli)\s*\(|\bPDO::(?:ATTR_|FETCH_|PARAM_|MYSQL_)'
     - '->(?:bindParam|bindValue|rowCount|lastInsertId|fetchColumn|beginTransaction|inTransaction)\s*\('
     - '\bmysqli_(?:query|prepare|report|fetch_\w+|connect)\s*\('
+  examples:
+    - '$pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);'
+    - '$stmt->bindValue('':id'', $id, PDO::PARAM_INT);'
+    - '$result = mysqli_query($conn, $sql);'
 sources:
   - https://www.php.net/manual/en/pdostatement.bindparam.php
   - https://www.php.net/manual/en/migration81.incompatible.php

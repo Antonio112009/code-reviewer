@@ -12,6 +12,8 @@ export interface SkillActivation {
   content?: string[];
   /** Gate: tech id → version range (`framework.nextjs: ">=13"`); passes when the version is unknown. */
   versions?: Record<string, string>;
+  /** Code the `content` regexes must fire on (library test only; never used for matching). */
+  examples?: string[];
 }
 
 /** Matchers compiled once per skill. */

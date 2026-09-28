@@ -8,6 +8,11 @@ activation:
     - '<\?=|\b(?:echo|print)\s+[^;\n]{0,80}\$'
     - '\b(?:htmlspecialchars|htmlentities|strip_tags)\s*\('
     - '<script\b[^>\n]{0,80}>[^<\n]{0,200}json_encode|\$_SERVER\[\s*[''"](?:PHP_SELF|REQUEST_URI|QUERY_STRING)'
+  examples:
+    - 'echo $comment;'
+    - '$safe = htmlspecialchars($comment, ENT_QUOTES, ''UTF-8'');'
+    - 'echo "<script>var data = " . json_encode($data) . ";</script>";'
+    - '$action = $_SERVER[''PHP_SELF''];'
 sources:
   - https://www.php.net/manual/en/function.htmlspecialchars.php
   - https://www.php.net/manual/en/migration81.incompatible.php

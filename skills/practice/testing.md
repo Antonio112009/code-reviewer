@@ -21,6 +21,11 @@ activation:
     - \bdef\s+test_\w*\(|@pytest\.(?:fixture|mark)\b|\bunittest\.TestCase\b
     - "@(?:Test|ParameterizedTest|Disabled|Ignore)\\b|\\[(?:Fact|Theory|Test|TestMethod|Ignore)\\b|\\bfunc\\s+Test\\w*\\(\\s*t\\s+\\*testing\\.T\\)|#\\[(?:tokio::)?test\\b"
     - \bNODE_ENV\s*[!=]==?\s*['"]test['"]|\bprocess\.env\.(?:VITEST|JEST_WORKER_ID)\b|\bsettings\.TESTING\b|\[['"]TESTING['"]\]|\bIS_TEST(?:ING)?\b|\btesting\.Testing\(\)|\bRails\.env\.test\?
+  examples:
+    - 'it("returns 404 when missing", async () => {'
+    - 'def test_login_rejects_bad_password():'
+    - 'func TestCreateUser(t *testing.T) {'
+    - 'if (process.env.VITEST) { seedDatabase(); }'
 ---
 - **Cannot fail**: no assertion; assertions in callbacks, `.then` or goroutines never awaited; `expect(x)` without a matcher; `assert (cond, "msg")`; assertions only in `catch` → passes vacuously. Fix: `expect.assertions(n)`, await.
 - **Unawaited assertions**: `expect(p).rejects`/`resolves`, Playwright `expect(locator)` matchers, `act`, user-event or `waitFor` without `await` → the test ends before the check runs. Fix: await each one.

@@ -8,6 +8,10 @@ activation:
     - '\bHttpServer::new\b|\.app_data\(|\bweb::(?:Data|ThinData)\b|\bData::new\('
     - '\bKey::generate\(|\bSessionMiddleware\b'
     - '\bweb::block\(|\.workers\('
+  examples:
+    - 'HttpServer::new(move || App::new().app_data(web::Data::new(pool.clone())))'
+    - 'let session_mw = SessionMiddleware::new(store, Key::generate());'
+    - 'HttpServer::new(app).workers(4)'
   versions: { framework.actix: '>=4' }
 sources:
   - https://actix.rs/docs/application#shared-mutable-state

@@ -11,6 +11,14 @@ activation:
     - '\bscheduleAtFixedRate\s*\('
     - '\bgetDeclaredField\s*\(|\bFIELD_MODIFIERS\b'
     - '\bRemoteViews\b|\bSMS_RECEIVED\b|\bwindowSoftInputMode\b'
+  examples:
+    - 'targetSdk = 36'
+    - 'enableEdgeToEdge()'
+    - 'override fun onBackPressed() { showExitDialog() }'
+    - 'android:screenOrientation="portrait"'
+    - 'timer.scheduleAtFixedRate(task, 0, 1000)'
+    - 'val field = MyClass::class.java.getDeclaredField("count")'
+    - 'val views = RemoteViews(packageName, R.layout.widget)'
 sources:
   - https://developer.android.com/about/versions/15/behavior-changes-15
   - https://developer.android.com/about/versions/16/behavior-changes-16

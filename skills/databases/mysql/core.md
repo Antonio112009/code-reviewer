@@ -36,6 +36,11 @@ activation:
     - \bAUTO_INCREMENT\b|\bENGINE\s*=\s*InnoDB\b|\b(?:ON\s+DUPLICATE\s+KEY|on\s+duplicate\s+key)\b|\butf8mb[34]\b|\b(?:CHARSET|charset|CHARACTER[ \t]+SET)[ \t]*(?:[=:][ \t]*)?['"]?utf8\b|\bCOLLATE\b|\b(?:INSERT|UPDATE)\s+IGNORE\b|\bREPLACE\s+INTO\b|\bLAST_INSERT_ID\(|\binsertId\b|\bALGORITHM\s*=\s*(?:INSTANT|INPLACE|COPY)\b|\b(?:multipleStatements|stringifyObjects)\b|['"`]START\s+TRANSACTION\b
     - \b(?:SELECT|UPDATE|DELETE)\b[\s\S]{0,200}?\b(?:FROM|SET|WHERE)\b|\bINSERT\s+INTO\b|\b(?:ALTER|CREATE)\s+(?:TABLE|(?:UNIQUE\s+)?INDEX)\b|['"`](?:BEGIN|COMMIT|ROLLBACK)\b
     - "['\"`]\\s*(?:select\\s+(?:\\*|distinct\\b|count\\(|[\\w.`]+\\s*(?:,|\\bfrom\\b|\\bas\\b))|update\\s+[\\w.`]+\\s+set\\b|delete\\s+from\\b|insert\\s+(?:ignore\\s+)?into\\b|replace\\s+into\\b)"
+  examples:
+    - 'import mysql from "mysql2/promise";'
+    - 'import pymysql'
+    - 'CREATE TABLE t (id INT AUTO_INCREMENT PRIMARY KEY) ENGINE=InnoDB;'
+    - 'const rows = await conn.query("select * from users where id = ?", [id]);'
 ---
 - **Pooled transactions**: `START TRANSACTION` via mysql2 `pool.query()` (or pool calls after `getConnection()`) hits other connections → no atomicity; unreleased connections exhaust the pool. Fix: one connection per transaction, `release()` in `finally`.
 - **Placeholder expansion**: mysql/mysql2 `query()` expands objects to `` `key` = value `` (`password = ?` with `{"password":1}` is always true) → auth bypass; `multipleStatements: true` allows stacked injection. Fix: type-check inputs, `stringifyObjects: true`.

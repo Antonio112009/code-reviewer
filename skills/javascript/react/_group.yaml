@@ -10,3 +10,8 @@ detect:
     - "require\\(\\s*['\"]react(?:-dom)?(?:/[\\w/-]+)?['\"]\\s*\\)"
     - "from\\s*['\"](?:@tanstack/react-[\\w-]+|react-redux|@reduxjs/toolkit(?:/[\\w/-]+)?|zustand(?:/[\\w/-]+)?|jotai(?:/[\\w/-]+)?|swr(?:/[\\w/-]+)?|@apollo/client(?:/[\\w/-]+)?|react-hook-form)['\"]"
     - "^\\s*['\"]use (?:client|server)['\"]"
+  examples:
+    - "import { useState } from 'react';"
+    - "const React = require('react');"
+    - "import { useQuery } from '@tanstack/react-query';"
+    - "'use client';"

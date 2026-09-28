@@ -8,6 +8,10 @@ activation:
     - '\bstd::(?:thread|jthread|async|packaged_task|promise|future|shared_future|stop_token)\b'
     - '\bpthread_(?:create|join|detach|exit|cancel)\s*\(|\bthrd_(?:create|join|detach)\s*\('
     - '\.(?:detach|join)\s*\(\s*\)'
+  examples:
+    - 'std::future<int> result = std::async(std::launch::async, compute);'
+    - 'pthread_create(&tid, nullptr, worker, &arg);'
+    - 'worker_thread.detach();'
 sources:
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rconc-detached_thread
   - https://en.cppreference.com/w/cpp/thread/async

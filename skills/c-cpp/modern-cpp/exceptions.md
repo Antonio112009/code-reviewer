@@ -6,6 +6,8 @@ tags: [CWE-248, CWE-401, CWE-755]
 activation:
   content:
     - '\b(?:throw|try|catch|noexcept|exception_ptr|rethrow_exception|current_exception)\b'
+  examples:
+    - 'try { risky(); } catch (const std::exception& e) { log(e.what()); }'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/rules/declarations-and-initialization-dcl/dcl57-cpp/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/rules/exceptions-and-error-handling-err/err59-cpp/

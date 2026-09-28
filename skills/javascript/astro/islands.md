@@ -8,6 +8,11 @@ activation:
     - "\\bserver:defer\\b"
     - "<[A-Z][\\w.]{0,60}\\s[^>\\n]{0,200}\\bon[A-Z][a-zA-Z]{0,40}=\\{"
     - "from ['\"][^'\"\\n]{1,120}\\.(?:jsx|tsx|vue|svelte)['\"]"
+  examples:
+    - '<Counter client:visible />'
+    - '<Avatar server:defer />'
+    - '<Button onClick={() => save()} client:load />'
+    - 'import Counter from ''../components/Counter.tsx'';'
 sources:
   - https://docs.astro.build/en/guides/framework-components/
   - https://docs.astro.build/en/reference/directives-reference/

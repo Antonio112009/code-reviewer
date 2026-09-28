@@ -8,6 +8,10 @@ activation:
     - "\\bre\\.(?:match|search|fullmatch|sub|subn|split|findall|finditer|compile)\\s*\\("
     - "\\bregex\\.\\w+\\s*\\("
     - "\\.(?:fullmatch|finditer)\\s*\\("
+  examples:
+    - 'if re.match(pattern, value):'
+    - 'm = regex.search(pattern, text, timeout=1)'
+    - 'm = pattern.fullmatch(value)'
 sources:
   - https://docs.python.org/3/library/re.html#re.fullmatch
   - https://docs.python.org/3/library/re.html#re.sub

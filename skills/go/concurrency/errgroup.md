@@ -9,6 +9,11 @@ activation:
     - '\.(?:Go|TryGo|SetLimit)\('
     - '\bsemaphore\.NewWeighted\b'
     - '\.Acquire\(\s*ctx'
+  examples:
+    - 'g, ctx := errgroup.WithContext(ctx)'
+    - 'g.SetLimit(10)'
+    - 'sem := semaphore.NewWeighted(4)'
+    - 'if err := sem.Acquire(ctx, 1); err != nil {'
 sources:
   - https://pkg.go.dev/golang.org/x/sync/errgroup
   - https://github.com/golang/go/issues/53757

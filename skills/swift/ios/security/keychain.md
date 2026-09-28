@@ -4,6 +4,9 @@ description: Keychain Services mistakes — SecItemAdd duplicates and ignored OS
 tags: [CWE-522, CWE-311]
 activation:
   content: ['\bSecItem(?:Add|CopyMatching|Update|Delete)\b|\bkSec(?:Attr|Class|Value|Return|Match|Use)\w*|\bSecAccessControl\w*|\berrSec\w+']
+  examples:
+    - 'let status = SecItemAdd(query as CFDictionary, nil)'
+    - 'query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock'
 sources:
   - https://developer.apple.com/documentation/security/updating-and-deleting-keychain-items
   - https://developer.apple.com/documentation/security/restricting-keychain-item-accessibility

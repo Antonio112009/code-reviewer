@@ -7,6 +7,9 @@ activation:
   content:
     - '\bipcMain\b|\bsenderFrame\b|\bMessageChannelMain\b'
     - '\bwebContents\.send\(|\.webContents\.send\(|\bevent\.reply\(|\bsendSync\(|\breturnValue\b'
+  examples:
+    - "ipcMain.handle('read-file', async (event, path) => readFile(path));"
+    - "mainWindow.webContents.send('update-available', info);"
 sources:
   - https://www.electronjs.org/docs/latest/tutorial/security
   - https://www.electronjs.org/docs/latest/breaking-changes

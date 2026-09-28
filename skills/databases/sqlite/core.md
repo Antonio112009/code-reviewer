@@ -38,6 +38,12 @@ activation:
     - \bPRAGMA\s+\w+|\bpragma\s+(?:foreign_keys|journal_mode|busy_timeout|synchronous|user_version|table_info)\b|\bsqlite_(?:master|schema|sequence)\b|\bWITHOUT\s+ROWID\b|\bAUTOINCREMENT\b|\b(?:INSERT|insert)\s+(?:OR|or)\s+(?:REPLACE|IGNORE|replace|ignore)\b|\bdatetime\(\s*'now'|\bwith(?:Exclusive)?TransactionAsync\b
     - \b(?:SELECT|UPDATE|DELETE)\b[\s\S]{0,200}?\b(?:FROM|SET|WHERE)\b|\bINSERT\s+INTO\b|\b(?:ALTER|CREATE)\s+(?:TABLE|(?:UNIQUE\s+)?INDEX)\b|['"`](?:BEGIN|COMMIT|ROLLBACK)\b
     - "['\"`]\\s*(?:select\\s+(?:\\*|distinct\\b|count\\(|[\\w.\"]+\\s*(?:,|\\bfrom\\b|\\bas\\b))|update\\s+[\\w.\"]+\\s+set\\b|delete\\s+from\\b|insert\\s+(?:or\\s+\\w+\\s+)?into\\b|replace\\s+into\\b)"
+  examples:
+    - 'import Database from "better-sqlite3";'
+    - 'import sqlite3'
+    - 'db.exec("PRAGMA foreign_keys = ON;");'
+    - 'SELECT * FROM users WHERE id = ?;'
+    - 'const row = db.prepare("select * from users where id = ?").get(id);'
 ---
 - **Foreign keys off**: `PRAGMA foreign_keys` is per connection, off by default in Python `sqlite3`, Go drivers and node-sqlite3, and a no-op inside transactions → FKs and cascades silently unenforced. Fix: enable on every new connection.
 - **SQLITE_BUSY**: deferred `BEGIN` transactions that read then write fail at once if another connection wrote meanwhile; `node:sqlite` defaults to no busy timeout → sporadic "database is locked". Fix: `BEGIN IMMEDIATE`, WAL, `busy_timeout`.

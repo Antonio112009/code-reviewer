@@ -10,6 +10,11 @@ activation:
     - '\.(?:submit|invokeAll|invokeAny|shutdown|shutdownNow)\('
     - '\.schedule(?:AtFixedRate|WithFixedDelay)?\('
     - '\bThreadLocal\b'
+  examples:
+    - 'ExecutorService pool = Executors.newFixedThreadPool(8);'
+    - 'pool.submit(() -> process(item));'
+    - 'scheduler.scheduleAtFixedRate(this::poll, 0, 5, TimeUnit.SECONDS);'
+    - 'private static final ThreadLocal<SimpleDateFormat> FORMAT = ThreadLocal.withInitial(SimpleDateFormat::new);'
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/Executors.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/ScheduledExecutorService.html

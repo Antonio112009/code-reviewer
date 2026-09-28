@@ -13,3 +13,7 @@ detect:
     - '(?:\bfrom|\bimport)\s*[''"](?:expo|@expo/)'
     - '\brequire\(\s*[''"](?:expo|@expo/)'
     - '\bEXPO_PUBLIC_\w'
+  examples:
+    - "import { Stack } from 'expo-router';"
+    - "const Constants = require('expo-constants');"
+    - 'const key = process.env.EXPO_PUBLIC_API_URL;'

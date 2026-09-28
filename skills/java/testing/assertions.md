@@ -8,6 +8,11 @@ activation:
     - '\bSoftAssertions\b|\bassertSoftly\('
     - '\bassert(?:Equals|NotEquals|True|False|Same|ArrayEquals)\('
     - '\.(?:as|describedAs|withFailMessage|overridingErrorMessage|usingComparator|usingRecursiveComparison)\('
+  examples:
+    - 'assertThat(result.isValid()).isTrue();'
+    - 'SoftAssertions softly = new SoftAssertions();'
+    - 'assertEquals(expected, actual);'
+    - 'assertThat(actual).as("order total").isEqualTo(expected);'
 sources:
   - https://assertj.github.io/doc/
   - https://docs.junit.org/current/api/org.junit.jupiter.api/org/junit/jupiter/api/Assertions.html

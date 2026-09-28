@@ -9,6 +9,11 @@ activation:
     - '\bTypeNameHandling\b|\bI?SerializationBinder\b|\bJavaScriptSerializer\b|\bSimpleTypeResolver\b'
     - '\.ReadXml(?:Schema)?\(|\bAllowArbitraryDataSetTypeInstantiation\b'
     - '\bTypeless\w*|\bMessagePackSecurity\b|"\$type"'
+  examples:
+    - 'var formatter = new BinaryFormatter(); var obj = formatter.Deserialize(stream);'
+    - 'var settings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };'
+    - 'dataSet.ReadXml(userStream, XmlReadMode.Auto);'
+    - 'var data = MessagePackSerializer.Deserialize<object>(bytes, TypelessContractlessStandardResolver.Options);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/standard/serialization/binaryformatter-security-guide
   - https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca2326

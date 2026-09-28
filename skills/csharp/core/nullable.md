@@ -10,6 +10,12 @@ activation:
     - '\b(?:FirstOrDefault|SingleOrDefault|LastOrDefault|ElementAtOrDefault)(?:Async)?\('
     - '\[(?:NotNullWhen|MaybeNullWhen|NotNull|MaybeNull|AllowNull|DisallowNull|MemberNotNull|MemberNotNullWhen)\b'
     - '\bImmutableArray<|\.HasValue\b|\bGetValueOrDefault\(|#nullable\b'
+  examples:
+    - 'var name = user!.Name;'
+    - 'string id = null!;'
+    - 'var first = items.FirstOrDefault();'
+    - 'public bool TryFind(string key, [MaybeNullWhen(false)] out User user)'
+    - 'if (count.HasValue) total += count.GetValueOrDefault();'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/csharp/nullable-references
   - https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/attributes/nullable-analysis

@@ -5,10 +5,18 @@ priority: 60
 tags: [CWE-476, CWE-754]
 activation:
   content:
-    - '\bnil\b'
+    - '\bvar\s+\w{1,40}\s+(?:\*[\w.]{1,60}|map\[)'
+    - '^[ \t]*\w{1,40}\s+(?:map\[|func\s*\()'
     - '\.\(\s*(?:\*?[A-Za-z_][\w.]{0,60}|\[\]|map\[)\s*\)'
     - '\bcomparable\b'
     - '\bmap\[(?:any|interface\{\})\]'
+  examples:
+    - 'var cause *ValidationError'
+    - '	cache map[string]*Entry'
+    - '	onClose func()'
+    - 'name := payload["name"].(string)'
+    - 'func Keys[K comparable, V any](m map[K]V) []K {'
+    - 'seen := map[any]bool{}'
 sources:
   - https://go.dev/doc/faq#nil_error
   - https://go.dev/ref/spec#Comparison_operators

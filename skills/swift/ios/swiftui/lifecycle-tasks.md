@@ -5,6 +5,9 @@ activation:
   content:
     - '\.onAppear\b|\.onDisappear\b|\.task\s*(?:\(|\{)|\.onChange\(|\.onReceive\('
     - '\bTimer\.publish\(|\.autoconnect\(\)|\b(?:Date|Number|ISO8601Date)Formatter\(\)'
+  examples:
+    - '.task { await viewModel.load() }'
+    - 'let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()'
 sources:
   - https://developer.apple.com/documentation/swiftui/view/task(id:name:priority:file:line:_:)
   - https://developer.apple.com/documentation/swiftui/view/task(name:priority:file:line:_:)

@@ -10,6 +10,12 @@ activation:
     - '\):\s*[\w$]+\s+is\s+[\w$]|\basserts\s+[\w$]+\s+is\b'
     - '\bJSON\.parse\s*\(|\.json\s*(?:<[^>\n]{1,80}>)?\s*\(\s*\)'
     - '@ts-(?:ignore|nocheck|expect-error)\b|:\s*any\b'
+  examples:
+    - 'const user = req.body as CreateUser;'
+    - 'const name = map.get(id)!.name;'
+    - 'function isUser(x: unknown): x is User {'
+    - 'const config = JSON.parse(raw) as Config;'
+    - 'let payload: any;'
 sources:
   - https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-assertions
   - https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates

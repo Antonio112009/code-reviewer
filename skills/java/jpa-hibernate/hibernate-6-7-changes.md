@@ -9,6 +9,12 @@ activation:
     - '@(?:MapsId|GeneratedValue|SequenceGenerator|Type|JdbcTypeCode)\b'
     - '\bhibernate_sequence\b|\bnew_generator_mappings\b'
     - '\b(?:Timestamp|Instant|Duration|UUID)\b'
+  examples:
+    - 'em.merge(order);'
+    - 'Query q = em.createNativeQuery("select * from orders");'
+    - '@GeneratedValue(strategy = GenerationType.SEQUENCE)'
+    - 'hibernate.id.new_generator_mappings=false'
+    - 'private Instant createdAt;'
   versions: { orm.hibernate: ">=6" }
 sources:
   - https://docs.hibernate.org/orm/6.0/migration-guide/migration-guide.html

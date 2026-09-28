@@ -8,6 +8,10 @@ activation:
     - '\bfrom\s*[''"]vitest(?:/config)?[''"]'
     - '\b(?:environment|pool|poolOptions|isolate|maxWorkers|singleFork|singleThread|fileParallelism|clearMocks|workspace|projects|testNamePattern)\s*:'
     - '@vitest-environment\b'
+  examples:
+    - 'import { defineConfig } from ''vitest/config'';'
+    - 'environment: ''jsdom'','
+    - '// @vitest-environment jsdom'
 sources:
   - https://vitest.dev/guide/migration.html
   - https://v4.vitest.dev/guide/migration

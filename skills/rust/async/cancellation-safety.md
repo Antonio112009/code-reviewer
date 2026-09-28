@@ -9,6 +9,11 @@ activation:
     - '\.(?:read_exact|read_to_end|read_to_string|read_line|write_all)\('
     - '\b(?:State|Extension|Json|Form|Path|Query)\((?:mut\s+)?\w+\)\s*:'
     - '\bweb::(?:Data|Json|Path|Query|Form)<'
+  examples:
+    - 'tokio::select! { _ = shutdown.recv() => return, }'
+    - 'stream.read_exact(&mut buf).await?;'
+    - 'async fn handler(State(pool): State<PgPool>) -> impl IntoResponse {'
+    - 'async fn update(id: web::Path<Uuid>, data: web::Json<UpdateUser>) -> impl Responder {'
 sources:
   - https://docs.rs/tokio/latest/tokio/macro.select.html#cancellation-safety
   - https://docs.rs/tokio/latest/tokio/sync/mpsc/struct.Sender.html#cancel-safety

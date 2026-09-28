@@ -9,6 +9,11 @@ activation:
     - "\\bwhere\\s*:\\s*[\\[{]|\\binvalidWhereValuesBehavior\\b"
     - "\\b(?:IsNull|Not|In|Raw|Like|ILike|MoreThan|LessThan|Between)\\s*\\("
     - "\\brelations\\s*:|\\beager\\s*:\\s*true\\b"
+  examples:
+    - 'const user = await userRepo.findOneBy({ id: input.id })'
+    - 'const users = await userRepo.find({ where: { tenantId: undefined } })'
+    - 'const rows = await userRepo.findBy({ deletedAt: IsNull() })'
+    - 'const posts = await postRepo.find({ relations: { comments: true } })'
 sources:
   - https://typeorm.io/docs/data-source/null-and-undefined-handling/
   - https://github.com/typeorm/typeorm/issues/12712

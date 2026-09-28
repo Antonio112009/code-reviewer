@@ -6,6 +6,8 @@ tags: [CWE-415, CWE-416, CWE-401]
 activation:
   content:
     - '\b(?:unique_ptr|shared_ptr|weak_ptr|make_unique|make_shared|enable_shared_from_this|shared_from_this|weak_from_this)\b'
+  examples:
+    - 'auto p = std::make_unique<Widget>();'
 sources:
   - https://en.cppreference.com/w/cpp/memory/shared_ptr
   - https://en.cppreference.com/w/cpp/memory/enable_shared_from_this/shared_from_this

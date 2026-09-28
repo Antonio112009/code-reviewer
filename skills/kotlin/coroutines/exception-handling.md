@@ -12,6 +12,14 @@ activation:
     - '\b(?:launch|async)\s*\{'
     - '\.await(?:All)?\s*\('
     - '\binvokeOnCompletion\s*\{'
+  examples:
+    - 'val handler = CoroutineExceptionHandler { _, e -> log(e) }'
+    - 'supervisorScope { launch { risky() } }'
+    - 'val scope = CoroutineScope(SupervisorJob())'
+    - 'viewModelScope.launch { fetchUser() }'
+    - 'launch { fetchUser() }'
+    - 'val result = deferred.await()'
+    - 'job.invokeOnCompletion { cause -> log(cause) }'
 sources:
   - https://kotlinlang.org/docs/exception-handling.html
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/async.html

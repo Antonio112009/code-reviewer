@@ -7,6 +7,9 @@ activation:
   content:
     - '\bco_(?:await|yield|return)\b'
     - '\b(?:coroutine_handle|promise_type|suspend_always|suspend_never)\b'
+  examples:
+    - 'co_await async_read(socket, buffer);'
+    - 'struct promise_type { auto initial_suspend() { return std::suspend_always{}; } };'
 sources:
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rcoro-capture
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rcoro-locks

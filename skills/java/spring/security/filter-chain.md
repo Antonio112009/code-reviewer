@@ -7,6 +7,9 @@ activation:
   content:
     - '\b(?:SecurityFilterChain|HttpSecurity|WebSecurityCustomizer|WebSecurityConfigurerAdapter|OncePerRequestFilter|HttpFirewall|StrictHttpFirewall)\b'
     - '\.(?:authorizeHttpRequests|authorizeRequests|authorizeExchange|requestMatchers|antMatchers|mvcMatchers|securityMatcher|anyRequest|permitAll|ignoring)\('
+  examples:
+    - 'SecurityFilterChain filterChain(HttpSecurity http) throws Exception {'
+    - 'http.authorizeHttpRequests(auth -> auth.requestMatchers("/admin/**").hasRole("ADMIN"));'
 sources:
   - https://docs.spring.io/spring-security/reference/servlet/authorization/authorize-http-requests.html
   - https://github.com/spring-projects/spring-security/issues/11958

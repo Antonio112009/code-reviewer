@@ -8,6 +8,12 @@ activation:
     - '\basync\s+void\b'
     - '\.ForEach\(\s*async\b|\bParallel\.(?:For|ForEach|Invoke)\([^\n]{0,200}\basync\b'
     - '\bnew\s+(?:Thread|Timer|System\.Threading\.Timer)\(\s*async\b|\+=\s*async\b'
+  examples:
+    - 'public async void OnClick(object sender, EventArgs e) => await SaveAsync();'
+    - 'orders.ForEach(async order => await ProcessAsync(order));'
+    - 'Parallel.ForEach(items, async item => await ProcessAsync(item));'
+    - 'var timer = new Timer(async _ => await PollAsync(), null, 0, 1000);'
+    - 'button.Click += async (s, e) => await SaveAsync();'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios
   - https://github.com/davidfowl/AspNetCoreDiagnosticScenarios/blob/master/AsyncGuidance.md

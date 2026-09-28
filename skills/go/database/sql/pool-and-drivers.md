@@ -11,6 +11,13 @@ activation:
     - '\.Prepare(?:Context|x|Named)?\('
     - '\b(?:LastInsertId|RowsAffected)\(\)'
     - '\b(?:parseTime|clientFoundRows|_busy_timeout|busy_timeout)\b|:memory:'
+  examples:
+    - 'db, err := sql.Open("postgres", dsn)'
+    - 'db := sqlx.MustConnect("mysql", dsn)'
+    - 'db.SetMaxOpenConns(25)'
+    - 'stmt, err := db.PrepareContext(ctx, query)'
+    - 'n, err := res.RowsAffected()'
+    - 'dsn := "user:pass@tcp(host)/db?parseTime=true"'
 sources:
   - https://pkg.go.dev/database/sql#DB
   - https://go.dev/doc/database/manage-connections

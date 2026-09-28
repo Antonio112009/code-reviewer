@@ -12,6 +12,15 @@ activation:
     - '\bTemporal\.|\bFloat16Array\b|\bSymbol\.(?:asyncDispose|dispose)\b'
     - '(?:^|[;{]\s*)(?:await\s+)?using\s+[A-Za-z_$][\w$]*\s*='
     - '\(\?-?[ims]{1,3}(?:-[ims]{1,3})?:'
+  examples:
+    - 'const sorted = items.toSorted((a, b) => a - b);'
+    - 'const groups = Object.groupBy(orders, o => o.status);'
+    - 'const merged = setA.union(setB);'
+    - 'const doubled = list.values().map(x => x * 2);'
+    - 'const encoded = bytes.toBase64();'
+    - 'const now = Temporal.Now.instant();'
+    - 'using conn = openConnection();'
+    - 'const re = /(?i:foo)/;'
 sources:
   - https://github.com/mdn/browser-compat-data
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/using#browser_compatibility

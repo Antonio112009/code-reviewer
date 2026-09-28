@@ -5,6 +5,9 @@ activation:
   content:
     - '\bUI(?:Table|Collection)View\b|\bDiffableDataSource\b|\bNSDiffableDataSourceSnapshot\b|\bdequeueReusable\w+\('
     - '\.(?:performBatchUpdates|insertRows|deleteRows|insertItems|deleteItems|reloadItems|reconfigureItems|moveRow|moveItem|apply)\(|\bprepareForReuse\b|\bcellFor(?:Row|Item)\b'
+  examples:
+    - 'let cell = tableView.dequeueReusableCell(withIdentifier: "Row", for: indexPath)'
+    - 'dataSource.apply(snapshot, animatingDifferences: true)'
 sources:
   - https://developer.apple.com/documentation/uikit/uitableview/performbatchupdates(_:completion:)
   - https://developer.apple.com/documentation/uikit/uicollectionviewdiffabledatasource-9tqpa/apply(_:animatingdifferences:completion:)

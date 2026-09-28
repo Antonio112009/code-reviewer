@@ -9,6 +9,11 @@ activation:
     - '\b(?:expire_on_commit|pool_size|max_overflow|pool_pre_ping|pool_recycle|pool_timeout|poolclass|NullPool|QueuePool)\b'
     - '\bsession\.(?:commit|rollback|close|remove|merge|expunge)\('
     - '\b(?:PendingRollbackError|DetachedInstanceError)\b|\.dispose\('
+  examples:
+    - 'engine = create_engine("postgresql://user:pass@host/db")'
+    - 'engine = create_engine(url, pool_size=5, max_overflow=10)'
+    - 'session.commit()'
+    - 'except DetachedInstanceError:'
 sources:
   - https://docs.sqlalchemy.org/en/20/orm/session_basics.html
   - https://docs.sqlalchemy.org/en/20/core/pooling.html

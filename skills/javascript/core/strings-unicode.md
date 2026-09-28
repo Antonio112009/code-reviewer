@@ -8,6 +8,11 @@ activation:
     - '\b(?:btoa|atob|encodeURIComponent|decodeURIComponent)\s*\('
     - '\bnew\s+Text(?:En|De)coder\b|\bIntl\.Segmenter\b'
     - '\.length\s*(?:>|<|>=|<=)\s*\d'
+  examples:
+    - 'const preview = text.slice(0, 280);'
+    - 'const encoded = encodeURIComponent(query);'
+    - 'const encoder = new TextEncoder();'
+    - 'if (username.length > 20) return false;'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String#utf-16_characters_unicode_code_points_and_grapheme_clusters
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize

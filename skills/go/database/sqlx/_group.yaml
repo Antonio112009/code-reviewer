@@ -6,3 +6,6 @@ detect:
   content:
     - 'github\.com/jmoiron/sqlx'
     - '\bsqlx\.(?:DB|Tx|In|Named|Connect|Open|MustConnect)\b'
+  examples:
+    - 'import "github.com/jmoiron/sqlx"'
+    - 'func New(db *sqlx.DB) *Repo {'

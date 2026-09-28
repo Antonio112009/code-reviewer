@@ -6,6 +6,8 @@ tags: [CWE-190, CWE-20, CWE-754]
 activation:
   content:
     - '\b(?:ato(?:i|l|ll|f)|strto(?:l|ll|ul|ull|d|f|ld|imax|umax)|sto(?:i|l|ll|ul|ull|f|d|ld)|from_chars|v?f?scanf|sscanf)\s*\('
+  examples:
+    - 'long v = strtol(s, &endptr, 10);'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/error-handling-err/err34-c/
   - https://man7.org/linux/man-pages/man3/strtoul.3.html

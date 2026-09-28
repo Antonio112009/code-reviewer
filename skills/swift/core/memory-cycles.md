@@ -7,6 +7,11 @@ activation:
     - '\[(?:weak|unowned)(?:\(\w+\))?\s+self\]|@escaping\b|\blazy\s+var\b|\bdeinit\b'
     - '\b(?:weak|unowned)\s+(?:var|let)\b|\bvar\s+delegate\b|\bdelegate\s*='
     - '\bTimer\s*\(|\bTimer\.scheduledTimer\b|\bCADisplayLink\b|\baddObserver\(|\.observe\(\\|\bNSKeyValueObservation\b'
+  examples:
+    - 'networkClient.fetch { [weak self] result in self?.handle(result) }'
+    - 'weak var delegate: SessionDelegate?'
+    - 'Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(tick), userInfo: nil, repeats: true)'
+    - 'let token = progress.observe(\.fractionCompleted) { p, _ in }'
 sources:
   - https://docs.swift.org/swift-book/documentation/the-swift-programming-language/automaticreferencecounting/
   - https://developer.apple.com/documentation/foundation/timer/init(timeinterval:target:selector:userinfo:repeats:)

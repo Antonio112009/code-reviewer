@@ -9,6 +9,11 @@ activation:
     - '\brows\.(?:Next|Scan|Close|Err)\('
     - '\bsql\.(?:Null\w{0,12}|RawBytes|ErrNoRows)\b'
     - '\bIN\s*\(\s*(?:\?|\$\d|%s)'
+  examples:
+    - 'rows, err := db.QueryContext(ctx, query)'
+    - 'for rows.Next() {'
+    - 'var name sql.NullString'
+    - 'query := "SELECT * FROM users WHERE id IN (?, ?, ?)"'
 sources:
   - https://pkg.go.dev/database/sql#Rows
   - https://go.dev/doc/database/querying

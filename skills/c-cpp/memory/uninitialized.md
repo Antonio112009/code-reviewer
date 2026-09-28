@@ -8,6 +8,10 @@ activation:
     - '^[ \t]*(?:(?:unsigned|signed|const|static)[ \t]+)?(?:u?int(?:8|16|32|64)_t|size_t|ssize_t|char|int|long|short|float|double|bool|_Bool|struct[ \t]+\w+)[ \t]+\*?\w+(?:\[\w*\])?;'
     - '\b(?:malloc|make_unique_for_overwrite|sscanf|recv|read)\s*\('
     - '\bnew\s+[\w:]+\s*(?:\[[^\]\n]{0,40}\])?\s*;'
+  examples:
+    - '    int result;'
+    - 'char *buf = malloc(len);'
+    - 'Widget *w = new Widget;'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/expressions-exp/exp33-c/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/declarations-and-initialization-dcl/dcl39-c/

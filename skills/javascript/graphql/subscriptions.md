@@ -8,6 +8,10 @@ activation:
     - "\\bgraphql-ws\\b|\\buseServer\\s*\\(|\\bmakeServer\\s*\\(|\\bonConnect\\s*[:(]|\\bonSubscribe\\s*[:(]|\\bconnectionParams\\b"
     - "\\bPubSub\\b|\\bwithFilter\\s*\\(|\\bpubsub\\.(?:publish|subscribe|asyncIterator|asyncIterableIterator)\\s*\\(|\\bSubscription\\s*:\\s*\\{"
     - "\\bsubscriptions-transport-ws\\b|\\bSubscriptionServer\\b|@Subscription\\s*\\("
+  examples:
+    - 'useServer({ onConnect: verifyToken }, wsServer);'
+    - 'pubsub.publish(''ORDER_UPDATED'', { order });'
+    - '@Subscription(() => Order)'
 sources:
   - https://the-guild.dev/graphql/ws/docs/server/interfaces/ServerOptions
   - https://github.com/enisdenjo/graphql-ws/blob/master/src/server.ts

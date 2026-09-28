@@ -8,6 +8,11 @@ activation:
     - "\\brun_until_complete\\s*\\(|\\basyncio\\.run\\s*\\(|\\bRunner\\s*\\(|\\bloop_factory\\b"
     - "\\brun_coroutine_threadsafe\\s*\\(|\\bcall_soon(?:_threadsafe)?\\s*\\(|\\brun_in_executor\\s*\\("
     - "\\basyncio\\.(?:Lock|Event|Queue|Semaphore|Condition|Barrier)\\s*\\(|\\badd_signal_handler\\s*\\("
+  examples:
+    - 'loop = asyncio.get_event_loop()'
+    - 'asyncio.run(main())'
+    - 'asyncio.run_coroutine_threadsafe(coro, loop)'
+    - 'lock = asyncio.Lock()'
 sources:
   - https://docs.python.org/3/whatsnew/3.14.html#asyncio
   - https://docs.python.org/3/library/asyncio-dev.html#concurrency-and-multithreading

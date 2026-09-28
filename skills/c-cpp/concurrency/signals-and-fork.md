@@ -8,6 +8,10 @@ activation:
     - '\b(?:signal|sigaction|sigprocmask|pthread_sigmask|sigwait|signalfd)\s*\(|\bsig_atomic_t\b|\bSIG(?:INT|TERM|HUP|CHLD|PIPE|ALRM|USR1|USR2)\b'
     - '\b(?:fork|vfork|execv\w*|execl\w*|posix_spawnp?|daemon)\s*\('
     - '\b(?:O_CLOEXEC|SOCK_CLOEXEC|FD_CLOEXEC|MSG_NOSIGNAL)\b'
+  examples:
+    - 'sigaction(SIGTERM, &sa, nullptr);'
+    - 'pid_t pid = fork();'
+    - 'int fd = open(path, O_RDWR | O_CLOEXEC);'
 sources:
   - https://man7.org/linux/man-pages/man7/signal-safety.7.html
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/signals-sig/sig30-c/

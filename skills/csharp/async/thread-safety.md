@@ -10,6 +10,20 @@ activation:
     - '\bParallel\.(?:For|ForEach|ForEachAsync|Invoke)\(|\bTask\.WhenAll\('
     - '\[ThreadStatic\]|\bThreadLocal<|\bAsyncLocal<|\bLazy<'
     - '\bstatic\s+(?:Dictionary|List|HashSet|Random|int|long|bool|string)\b|\bAddSingleton\b'
+  examples:
+    - 'private readonly ConcurrentDictionary<string, int> _counts = new();'
+    - '_counts.AddOrUpdate(key, 1, (_, v) => v + 1);'
+    - 'var rng = new Random();'
+    - 'var n = Random.Shared.Next(100);'
+    - 'Interlocked.Increment(ref _count);'
+    - 'Parallel.ForEach(items, item => Process(item));'
+    - 'await Task.WhenAll(tasks);'
+    - '[ThreadStatic] private static int _requestId;'
+    - 'private static readonly ThreadLocal<StringBuilder> _sb = new(() => new StringBuilder());'
+    - 'private static readonly AsyncLocal<string> _tenant = new();'
+    - 'private static readonly Lazy<Cache> _cache = new(() => new Cache());'
+    - 'private static int _counter;'
+    - 'services.AddSingleton<ICache, MemoryCache>();'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/
   - https://learn.microsoft.com/en-us/dotnet/api/system.collections.concurrent.concurrentdictionary-2.getoradd

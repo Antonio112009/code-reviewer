@@ -8,6 +8,11 @@ activation:
     - "\\bnp\\.(?:u?int(?:8|16|32)|float(?:16|32))\\b|\\.astype\\s*\\(|\\bcopy\\s*=\\s*False\\b"
     - "\\bnp\\.(?:append|random\\.\\w+)\\b|\\bdefault_rng\\s*\\("
     - "\\bnp\\.(?:array|asarray|where)\\s*\\("
+  examples:
+    - 'x = np.float_(3.14)'
+    - 'img = img.astype(np.uint8)'
+    - 'np.random.seed(42)'
+    - 'arr = np.array([1, 2, 3])'
 sources:
   - https://numpy.org/doc/stable/numpy_2_0_migration_guide.html
   - https://numpy.org/doc/stable/user/basics.copies.html

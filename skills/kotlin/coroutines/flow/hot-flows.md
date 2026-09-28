@@ -11,6 +11,12 @@ activation:
     - '\bSharingStarted\.'
     - '\.value\s*='
     - '\bStateFlow<|\bSharedFlow<'
+  examples:
+    - 'private val _state = MutableStateFlow(UiState.Loading)'
+    - 'val items = repo.observe().stateIn(scope, SharingStarted.WhileSubscribed(5000), emptyList())'
+    - '_events.tryEmit(NavigateBack)'
+    - '_state.value = UiState.Loaded(data)'
+    - 'val state: StateFlow<UiState> = _state.asStateFlow()'
 sources:
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-state-flow/
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-shared-flow/

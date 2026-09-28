@@ -10,6 +10,12 @@ activation:
     - '\b(?:deepMerge|deepmerge|mergeDeep|deepExtend|setPath|setIn|setDeep|assignDeep|dset|dot-prop|set-value|merge-deep|lodash\.merge|lodash\.set)\b'
     - '\bObject\.assign\s*\([^)\n]{0,80}\b(?:req|body|query|params|input|payload|data|JSON\.parse)\b'
     - '\[\s*(?:key|k|prop|field|name|segment|part|path\[\w+\])\s*\]\s*=[^=]'
+  examples:
+    - 'obj.__proto__.isAdmin = true;'
+    - '_.merge(target, req.body);'
+    - 'deepMerge(config, req.body);'
+    - 'Object.assign(target, JSON.parse(raw));'
+    - 'obj[key] = value;'
 sources:
   - https://cheatsheetseries.owasp.org/cheatsheets/Prototype_Pollution_Prevention_Cheat_Sheet.html
   - https://nodejs.org/en/learn/getting-started/security-best-practices#prototype-pollution-attacks-cwe-1321

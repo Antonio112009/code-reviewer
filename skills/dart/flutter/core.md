@@ -19,6 +19,9 @@ activation:
   content:
     - package:(?:flutter|flutter_riverpod|hooks_riverpod|riverpod|provider|flutter_bloc|go_router|webview_flutter|shared_preferences|dio)/
     - \b(?:StatefulWidget|StatelessWidget|BuildContext|setState|initState|FutureBuilder|StreamBuilder|ChangeNotifier)\b
+  examples:
+    - "import 'package:flutter/material.dart';"
+    - 'class HomePage extends StatefulWidget {'
 ---
 - **Async gap**: `setState`, `Navigator.of(context)` or `context.read` after `await` or in timer/stream callbacks without a `mounted` check → errors on disposed widgets. Fix: check after each await.
 - **Undisposed controllers**: `AnimationController`, `TextEditingController`, `ScrollController`, `FocusNode` or own `ChangeNotifier`s never disposed, listeners never removed → leaks, Ticker errors. Fix: release in `dispose()`.

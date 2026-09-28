@@ -10,6 +10,11 @@ activation:
     - '\.order_by\([^)\n]{0,80}\b(?:request|GET|query_params|sort|order)\b'
     - '\b(?:raw|extra|RawSQL)\('
     - '\bFilteredRelation\('
+  examples:
+    - 'Order.objects.filter(**request.GET.dict())'
+    - 'Order.objects.order_by(request.GET["sort"])'
+    - 'Order.objects.raw(f"SELECT * FROM orders WHERE id = {order_id}")'
+    - 'Order.objects.annotate(recent=FilteredRelation("items", condition=Q(items__created__gte=cutoff)))'
 sources:
   - https://docs.djangoproject.com/en/stable/topics/db/sql/
   - https://docs.djangoproject.com/en/stable/releases/security/

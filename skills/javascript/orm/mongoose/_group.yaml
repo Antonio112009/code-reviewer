@@ -8,3 +8,7 @@ detect:
     - "(?:from|require\\()\\s*['\"](?:mongoose|@nestjs/mongoose|@typegoose/typegoose)['\"]"
     - "\\bnew\\s+(?:mongoose\\.)?Schema\\s*[(<]|@InjectModel\\s*\\("
     - "\\.(?:findById\\w*|findOneAnd(?:Update|Delete|Replace)|populate|lean)\\s*\\("
+  examples:
+    - 'import mongoose from "mongoose";'
+    - 'const userSchema = new mongoose.Schema({ name: String });'
+    - 'const user = await User.findById(id).lean();'

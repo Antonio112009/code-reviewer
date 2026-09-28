@@ -8,6 +8,9 @@ activation:
     - '->(?:createQuery|createQueryBuilder)\s*\('
     - '->(?:andWhere|orWhere|setMaxResults|setFirstResult|getSingleResult|getOneOrNullResult|getSingleScalarResult|toIterable|addOrderBy)\s*\('
     - '\b(?:Offset|Cursor)?Paginator\b'
+  examples:
+    - '$qb = $em->createQueryBuilder()->andWhere(''u.active = :active'')->setParameter(''active'', true);'
+    - '$paginator = new Paginator($qb->setMaxResults(20), fetchJoinCollection: true);'
 sources:
   - https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/dql-doctrine-query-language.html
   - https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/query-builder.html

@@ -9,6 +9,11 @@ activation:
     - '\b(?:Pg|MySql|Sqlite)?PoolOptions\b|\bPool::connect|\bconnect_lazy\b'
     - '\.acquire\(\)|\bPoolConnection\b'
     - '&mut\s+\*\s*\w*tx\b'
+  examples:
+    - 'let mut tx = pool.begin().await?;'
+    - 'let pool = PgPoolOptions::new().max_connections(10).connect(&url).await?;'
+    - 'let mut conn: PoolConnection<Postgres> = pool.acquire().await?;'
+    - 'sqlx::query("UPDATE users SET active = true").execute(&mut *tx).await?;'
 sources:
   - https://docs.rs/sqlx/latest/sqlx/struct.Transaction.html
   - https://docs.rs/sqlx/latest/sqlx/pool/struct.PoolOptions.html

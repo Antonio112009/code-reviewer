@@ -15,3 +15,6 @@ detect:
   content:
     - "from ['\"](?:astro(?::[a-z:/]+|/[a-z/-]+)?|@astrojs/[a-z-]+(?:/[a-z-]+)?)['\"]"
     - "\\bAstro\\.(?:request|cookies|locals|session|redirect|rewrite|url|params|props|cache|callAction|getActionResult)\\b"
+  examples:
+    - 'import { z, defineCollection } from ''astro:content'';'
+    - 'const user = Astro.locals.user;'

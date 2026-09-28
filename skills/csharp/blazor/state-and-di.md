@@ -8,6 +8,16 @@ activation:
     - '\bAdd(?:Singleton|Scoped|Transient)\b|\bIDbContextFactory<|\bOwningComponentBase\b'
     - '\bIHttpContextAccessor\b|\bHttpContext\b|\bAuthenticationStateProvider\b|\bCircuitHandler\b'
     - '\bProtected(?:Session|Local)Storage\b|\bstatic\s+(?!readonly\b)[\w<>,?\[\]]+\s+_?\w+\s*[=;]'
+  examples:
+    - 'builder.Services.AddScoped<ICartService, CartService>();'
+    - 'private readonly IDbContextFactory<AppDbContext> _dbFactory;'
+    - 'public class ReportViewer : OwningComponentBase<IReportService>'
+    - '[Inject] private IHttpContextAccessor HttpContextAccessor { get; set; } = default!;'
+    - 'var user = HttpContext.User;'
+    - 'var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();'
+    - 'public class CircuitTracker : CircuitHandler'
+    - 'await ProtectedLocalStorage.SetAsync("theme", value);'
+    - 'private static int _activeCircuits;'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/dependency-injection
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/components/httpcontext

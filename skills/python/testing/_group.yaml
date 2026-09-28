@@ -13,3 +13,5 @@ detect:
     - "**/conftest.py"
   content:
     - "^[ \\t]*(?:import|from)\\s+(?:pytest|pytest_asyncio|unittest)\\b"
+  examples:
+    - "import pytest"

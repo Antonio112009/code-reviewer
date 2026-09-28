@@ -7,6 +7,10 @@ activation:
     - '@keyframes|\btransition(?:-property)?\s*:|\.animate\('
     - '\b(?:prepend|insertBefore)\(|\binsertAdjacent(?:HTML|Element)\(\s*[''"](?:beforebegin|afterbegin)'
     - '<(?:iframe|embed|object)\b|\b(?:adsbygoogle|googletag|ad-?slot|[Bb]anner|[Ss]keleton)\b'
+  examples:
+    - '.card { transition: all 0.3s ease; }'
+    - 'banner.insertAdjacentHTML("afterbegin", html);'
+    - '<iframe src={adUrl} className="ad-slot"></iframe>'
 sources:
   - https://web.dev/articles/optimize-cls
   - https://web.dev/articles/cls

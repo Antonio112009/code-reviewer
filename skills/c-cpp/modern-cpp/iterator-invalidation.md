@@ -7,6 +7,9 @@ activation:
   content:
     - '\.(?:push_back|emplace_back|emplace|insert|insert_or_assign|try_emplace|erase|resize|reserve|shrink_to_fit|clear|rehash|push_front|emplace_front|append|assign)\s*\('
     - '\bstd::(?:erase|erase_if)\s*\('
+  examples:
+    - 'container.push_back(value);'
+    - 'std::erase_if(container, pred);'
 sources:
   - https://en.cppreference.com/w/cpp/container
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/rules/containers-ctr/ctr51-cpp/

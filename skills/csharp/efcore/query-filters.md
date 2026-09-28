@@ -7,6 +7,10 @@ activation:
   content:
     - '\bHasQueryFilter\(|\bIgnoreQueryFilters\('
     - '\bTenantId\b|\bIsDeleted\b|\bOnModelCreating\('
+  examples:
+    - 'modelBuilder.Entity<Order>().HasQueryFilter(o => !o.IsDeleted && o.TenantId == _tenantId);'
+    - 'var all = await context.Orders.IgnoreQueryFilters().ToListAsync();'
+    - 'protected override void OnModelCreating(ModelBuilder modelBuilder) { }'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/querying/filters
   - https://learn.microsoft.com/en-us/ef/core/miscellaneous/multitenancy

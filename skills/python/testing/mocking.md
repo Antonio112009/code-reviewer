@@ -7,6 +7,10 @@ activation:
     - "\\bmock\\.patch\\b|@patch\\b|(?<![\\w.])patch(?:\\.object|\\.dict)?\\s*\\(|\\bmocker\\.patch\\b|\\bmonkeypatch\\.setattr\\s*\\("
     - "\\b(?:Magic|Async|NonCallableMagic)?Mock\\s*\\(|\\bcreate_autospec\\s*\\("
     - "\\.(?:called_once_with|called_with|has_calls|not_called)\\s*\\(|\\bassert_\\w+\\s*\\("
+  examples:
+    - '@patch("pkg.utils.send")'
+    - 'mock_client = MagicMock()'
+    - 'mock.assert_called_once_with(user_id)'
 sources:
   - https://docs.python.org/3/library/unittest.mock.html#where-to-patch
   - https://docs.python.org/3/library/unittest.mock.html#autospeccing

@@ -7,6 +7,10 @@ activation:
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.mockito\.'
     - '@(?:Mock|Spy|InjectMocks|Captor|MockitoBean|MockitoSpyBean)\b'
     - '\b(?:when|verify|doReturn|mockStatic|mockConstruction|spy)\('
+  examples:
+    - 'import org.mockito.Mockito;'
+    - '@Mock private UserRepository repository;'
+    - 'when(repository.findById(id)).thenReturn(Optional.of(user));'
 sources:
   - https://site.mockito.org/javadoc/current/org/mockito/Mockito.html
   - https://openjdk.org/jeps/451

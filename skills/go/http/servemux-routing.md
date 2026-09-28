@@ -9,6 +9,10 @@ activation:
     - '"(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+/'
     - '\bPathValue\('
     - '\bhttp\.(?:NewServeMux|Handle|HandleFunc|StripPrefix)\b'
+  examples:
+    - 'mux.HandleFunc("GET /items/{id}", getItem)'
+    - 'id := r.PathValue("id")'
+    - 'mux := http.NewServeMux()'
 sources:
   - https://go.dev/doc/go1.22
   - https://go.dev/blog/routing-enhancements

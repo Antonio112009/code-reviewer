@@ -8,6 +8,11 @@ activation:
     - '\b(?:sync_to_async|async_to_sync|SynchronousOnlyOperation|DJANGO_ALLOW_ASYNC_UNSAFE)\b'
     - '\bawait\s+\w+(?:\.\w+)*\.a(?:get|create|save|delete|update|count|exists|first|last|filter)\w*\('
     - '\brequest\.auser\(|\bStreamingHttpResponse\(|\bCONN_MAX_AGE\b'
+  examples:
+    - 'async def get(self, request):'
+    - 'result = await sync_to_async(compute)()'
+    - 'order = await Order.objects.aget(pk=pk)'
+    - 'user = await request.auser()'
 sources:
   - https://docs.djangoproject.com/en/stable/topics/async/
   - https://docs.djangoproject.com/en/stable/ref/request-response/#streaminghttpresponse-objects

@@ -9,6 +9,10 @@ activation:
     - '^[ \t]*for\s[^\n{]{0,160}:='
     - '\bgo\s+func\s*\('
     - '\bt\.Parallel\(\)'
+  examples:
+    - 'for i, v := range items {'
+    - 'go func(id int) { process(id) }()'
+    - 't.Run(tc.name, func(t *testing.T) { t.Parallel() })'
 sources:
   - https://go.dev/blog/loopvar-preview
   - https://go.dev/wiki/LoopvarExperiment

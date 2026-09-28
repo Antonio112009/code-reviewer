@@ -8,6 +8,11 @@ activation:
     - "\\bimportlib\\.reload\\s*\\(|\\bsys\\.(?:path|modules)\\b"
     - "^[ \\t]+(?:from\\s+[\\w.]+\\s+)?import\\s+\\w"
     - "^[A-Za-z_]\\w*\\s*=\\s*[\\w.]*(?:connect|create_engine|Client|client|Redis|MongoClient|Session|ClientSession|AsyncClient|Pool|resource|from_url)\\s*\\("
+  examples:
+    - 'lazy import numpy'
+    - 'importlib.reload(config)'
+    - '    import os'
+    - 'engine = create_engine(DATABASE_URL)'
   files:
     - "**/{random,email,logging,json,typing,types,string,socket,select,signal,queue,test,code,copy,secrets,calendar,inspect,token,abc,asyncio,http,html,xml,csv,io,re,time,datetime,uuid,decimal,enum,numbers,operator,platform,ssl,struct,warnings,requests}.py"
 sources:

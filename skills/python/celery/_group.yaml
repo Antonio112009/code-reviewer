@@ -14,3 +14,9 @@ detect:
     - '\.(?:delay|apply_async|delay_on_commit|apply_async_on_commit)\('
     - '\bCELERY_\w+\s*='
     - '\b(?:broker_url|result_backend|beat_schedule|task_acks_late|worker_prefetch_multiplier)\b'
+  examples:
+    - 'from celery import shared_task'
+    - '@shared_task'
+    - 'send_email.delay(user.id)'
+    - 'CELERY_TASK_ALWAYS_EAGER = True'
+    - 'broker_url = "redis://localhost:6379/0"'

@@ -9,6 +9,11 @@ activation:
     - '\bpgx\.(?:Conn|Connect|CollectRows|CollectOneRow|RowTo\w{1,20}|ErrNoRows|BeginFunc|Tx|Rows)\b'
     - '\.(?:QueryRow|Query|Acquire|Release|Begin|BeginTx|Exec)\(\s*ctx\b'
     - '\bpgconn\.PgError\b'
+  examples:
+    - 'pool, err := pgxpool.New(ctx, dsn)'
+    - 'rows, err := pool.Query(ctx, "SELECT id FROM users")'
+    - 'err = pgx.BeginFunc(ctx, pool, func(tx pgx.Tx) error {'
+    - 'var pgErr *pgconn.PgError'
 sources:
   - https://pkg.go.dev/github.com/jackc/pgx/v5
   - https://pkg.go.dev/github.com/jackc/pgx/v5/pgxpool

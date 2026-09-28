@@ -5,6 +5,9 @@ priority: 58
 activation:
   content:
     - '<(?:TargetFrameworks?|Nullable|NoWarn|WarningsNotAsErrors|TreatWarningsAsErrors)\b'
+  examples:
+    - '<TargetFramework>net8.0</TargetFramework>'
+    - '<NoWarn>CS8602;CS8618</NoWarn>'
 sources:
   - https://devblogs.microsoft.com/dotnet/dotnet-8-9-end-of-support/
   - https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core

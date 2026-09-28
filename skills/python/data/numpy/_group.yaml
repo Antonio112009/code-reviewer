@@ -6,3 +6,5 @@ detect:
   languages: [python]
   content:
     - "^[ \\t]*(?:import|from)\\s+numpy\\b"
+  examples:
+    - 'import numpy as np'

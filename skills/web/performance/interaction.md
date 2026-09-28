@@ -7,6 +7,10 @@ activation:
     - '\baddEventListener\(\s*[''"](?:scroll|resize|input|keydown|keyup|wheel|touchstart|touchmove|mousemove|pointermove)[''"]'
     - '\b(?:offset(?:Width|Height|Top|Left)|getBoundingClientRect|getComputedStyle|scrollHeight|clientHeight|scrollTop)\b'
     - '\bscheduler\.(?:yield|postTask)\b|\brequestAnimationFrame\(|\bcontent-visibility\b'
+  examples:
+    - 'window.addEventListener("scroll", handleScroll);'
+    - 'const height = el.offsetHeight;'
+    - 'requestAnimationFrame(() => updatePosition());'
 sources:
   - https://web.dev/articles/optimize-inp
   - https://web.dev/articles/optimize-long-tasks

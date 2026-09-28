@@ -8,6 +8,10 @@ activation:
     - '\[ResponseCache\b|\bResponseCacheLocation\b|\bUseResponseCaching\(|Cache-Control'
     - '\[OutputCache\b|\b(?:AddOutputCache|UseOutputCache|CacheOutput)\(|\bIOutputCachePolicy\b|\bSetVaryBy\w+\('
     - '\bIMemoryCache\b|\bMemoryCacheOptions\b|\bGetOrCreate(?:Async)?\b|\bSizeLimit\b|\bHybridCache\b|\bIDistributedCache\b'
+  examples:
+    - '[ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]'
+    - '[OutputCache(PolicyName = "Expire60")]'
+    - 'var value = await _cache.GetOrCreateAsync(key, entry => LoadAsync(entry));'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/performance/caching/output
   - https://learn.microsoft.com/en-us/aspnet/core/performance/caching/memory

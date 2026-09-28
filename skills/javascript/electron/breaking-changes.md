@@ -8,6 +8,11 @@ activation:
     - '\bBrowserView\b|\bsetBrowserView\b|\b(?:set|get)Preloads\('
     - '\b(?:webContents|contents)\.(?:canGoBack|goBack|canGoForward|goForward|goToIndex|goToOffset|clearHistory)\('
     - '(?<![\w.])clipboard\.\w+\(|\belectron\.clipboard\b|\butilityProcess\b'
+  examples:
+    - 'const path = webUtils.getPathForFile(file);'
+    - 'win.setBrowserView(view);'
+    - 'if (webContents.canGoBack()) webContents.goBack();'
+    - 'const text = clipboard.readText();'
   versions: { framework.electron: '>=30' }
 sources:
   - https://www.electronjs.org/docs/latest/breaking-changes

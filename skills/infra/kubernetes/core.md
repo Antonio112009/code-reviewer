@@ -30,6 +30,10 @@ activation:
     - ^kind:[ \t]*(?:Deployment|StatefulSet|DaemonSet|Job|CronJob|Pod|Service|Ingress|ConfigMap|Secret|Role|ClusterRole|RoleBinding|ClusterRoleBinding|NetworkPolicy|HorizontalPodAutoscaler|PodDisruptionBudget|ServiceAccount|PersistentVolumeClaim)\b
     - \{\{-?[ \t]*(?:\.Values\b|include[ \t]|toYaml[ \t]|tpl[ \t]|required[ \t]|lookup[ \t])
     - "^[ \\t]*(?:-[ \\t]+)?(?:livenessProbe|readinessProbe|startupProbe|securityContext|serviceAccountName|automountServiceAccountToken|terminationGracePeriodSeconds|preStop|containerPort|targetPort|imagePullPolicy|matchLabels|podSelector|namespaceSelector|policyTypes|concurrencyPolicy|minAvailable|maxUnavailable|apiGroups|volumeClaimTemplates|hostPath|hostNetwork|allowPrivilegeEscalation|runAsNonRoot):"
+  examples:
+    - 'kind: Deployment'
+    - 'replicas: {{ .Values.replicaCount }}'
+    - '      livenessProbe:'
 ---
 - **Heap vs limit**: no memory limit, or a heap near or over it (`-Xmx`, `--max-old-space-size`, Go without `GOMEMLIMIT`) → OOMKilled loops. Fix: derive heap from the limit.
 - **Probe cascades**: liveness probes checking databases or downstream services, the 1 s default `timeoutSeconds`, slow starts without `startupProbe` → restart storms under load or dependency blips.

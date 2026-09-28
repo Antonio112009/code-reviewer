@@ -8,6 +8,9 @@ activation:
   content:
     - '\b(?:ModelAdmin|TabularInline|StackedInline|admin\.register|admin\.site\.register|admin\.action)\b'
     - '\b(?:list_display|list_select_related|search_fields|list_filter|list_editable|raw_id_fields|autocomplete_fields|show_full_result_count)\b'
+  examples:
+    - 'class OrderAdmin(admin.ModelAdmin):'
+    - '    list_display = ("id", "customer", "total")'
 sources:
   - https://docs.djangoproject.com/en/stable/ref/contrib/admin/
   - https://docs.djangoproject.com/en/stable/ref/contrib/admin/actions/#setting-permissions-for-actions

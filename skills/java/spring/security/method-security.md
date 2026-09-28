@@ -6,6 +6,8 @@ tags: [CWE-862, CWE-285, A01:2025]
 activation:
   content:
     - '@(?:PreAuthorize|PostAuthorize|PreFilter|PostFilter|Secured|RolesAllowed|EnableMethodSecurity|EnableGlobalMethodSecurity)\b'
+  examples:
+    - '@PreAuthorize("#id == authentication.name")'
 sources:
   - https://docs.spring.io/spring-security/reference/servlet/authorization/method-security.html
   - https://github.com/spring-projects/spring-framework/wiki/Spring-Framework-6.1-Release-Notes

@@ -9,6 +9,12 @@ activation:
     - '\bwaitFor(?:ElementToBeRemoved)?\s*\('
     - '\buserEvent\.\w+\s*\(|\buser\.(?:click|dblClick|type|keyboard|hover|selectOptions|upload|clear|tab|paste)\s*\('
     - '\bfireEvent\.\w+\s*\('
+  examples:
+    - 'import { screen } from ''@testing-library/react'';'
+    - 'screen.getByRole(''button'');'
+    - 'await waitFor(() => expect(x).toBe(1));'
+    - 'await user.click(button);'
+    - 'fireEvent.change(input, { target: { value: ''a'' } });'
 sources:
   - https://testing-library.com/docs/dom-testing-library/api-async
   - https://testing-library.com/docs/queries/about#types-of-queries

@@ -4,6 +4,9 @@ description: useMemo / useCallback / memo defects — memoization defeated by un
 priority: 58
 activation:
   content: ["\\buse(?:Memo|Callback)\\s*\\(", "\\bmemo\\s*\\("]
+  examples:
+    - "const total = useMemo(() => computeTotal(items), [items]);"
+    - "export default memo(UserCard);"
 sources:
   - https://react.dev/reference/react/memo
   - https://react.dev/reference/react/useMemo

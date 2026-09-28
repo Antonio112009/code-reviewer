@@ -9,6 +9,11 @@ activation:
     - "\\bexport\\s+(?:async\\s+)?function\\s+GET\\b"
     - "\\b(?:revalidatePath|revalidateTag|cookies|headers)\\s*\\("
     - "\\brouter\\.refresh\\s*\\("
+  examples:
+    - "const res = await fetch(url, { cache: 'no-store' });"
+    - "export async function GET(request) {"
+    - "revalidatePath('/posts');"
+    - "router.refresh();"
   versions: { framework.nextjs: "<15" }
 sources:
   - https://nextjs.org/docs/14/app/building-your-application/caching

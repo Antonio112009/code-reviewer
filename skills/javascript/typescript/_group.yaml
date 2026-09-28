@@ -10,3 +10,5 @@ detect:
     - '**/tsconfig.*.json'
   content:
     - '<script\b[^>\n]{0,120}\blang=["''](?:ts|tsx|typescript)["'']'
+  examples:
+    - '<script lang="ts">'

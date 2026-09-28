@@ -8,6 +8,10 @@ activation:
     - "\\bxml\\.(?:etree|dom|sax)\\b|\\b(?:ElementTree|minidom|pulldom|expatbuilder)\\b|\\bxmlrpc\\b|\\bdefusedxml\\b"
     - "\\blxml\\b|\\betree\\.(?:parse|fromstring|XML|XMLParser|iterparse|XSLT)\\s*\\(|\\b(?:resolve_entities|load_dtd|no_network|huge_tree)\\s*="
     - "\\b(?:Cleaner|clean_html)\\s*\\(|\\blxml_html_clean\\b"
+  examples:
+    - 'tree = xml.etree.ElementTree.parse(upload)'
+    - 'parser = etree.XMLParser(resolve_entities=True)'
+    - 'clean = Cleaner().clean_html(user_html)'
 sources:
   - https://docs.python.org/3/library/xml.html#xml-security
   - https://github.com/lxml/lxml/blob/master/CHANGES.txt

@@ -9,6 +9,11 @@ activation:
     - '\bproto(?:json|text)\.'
     - '\bprotocmp\b|\bfieldmaskpb\b'
     - '\b\w{1,30}pb\.[A-Z]\w{0,60}\{'
+  examples:
+    - 'if !proto.Equal(want, got) { t.Fatalf("mismatch") }'
+    - 'b, err := protojson.Marshal(msg)'
+    - 'diff := cmp.Diff(a, b, protocmp.Transform())'
+    - 'req := userpb.CreateUserRequest{Name: name}'
 sources:
   - https://protobuf.dev/reference/go/faq/
   - https://pkg.go.dev/google.golang.org/protobuf/proto#Equal

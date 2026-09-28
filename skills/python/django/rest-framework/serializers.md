@@ -10,6 +10,12 @@ activation:
     - '\bfields\s*=\s*["'']__all__["'']|\bexclude\s*=\s*[\[(]'
     - '\bdef\s+(?:validate\w*|create|update|to_internal_value)\s*\('
     - '\bmany\s*=\s*True\b|\bLIST_SERIALIZER_ERRORS_AS_DICT\b'
+  examples:
+    - 'class OrderSerializer(serializers.ModelSerializer):'
+    - 'read_only_fields = ["id", "created"]'
+    - '        fields = "__all__"'
+    - '    def validate_email(self, value):'
+    - 'serializer = OrderSerializer(data=request.data, many=True)'
 sources:
   - https://www.django-rest-framework.org/api-guide/serializers/
   - https://www.django-rest-framework.org/api-guide/validators/

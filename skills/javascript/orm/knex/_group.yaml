@@ -9,3 +9,7 @@ detect:
     - "(?:from|require\\()\\s*['\"](?:knex|objection)['\"]"
     - "\\b(?:knex|trx)\\.(?:raw|transaction|schema|fn|ref|destroy)\\b|\\bknex\\s*\\(\\s*['\"][\\w.]+['\"]\\s*\\)"
     - "\\.(?:whereRaw|orWhereRaw|orderByRaw|havingRaw|joinRaw|onConflict|transacting|forUpdate)\\s*\\("
+  examples:
+    - 'import knex from "knex";'
+    - 'const rows = await knex("users").select("*");'
+    - 'await trx("users").whereRaw("id = ?", [id]).forUpdate();'

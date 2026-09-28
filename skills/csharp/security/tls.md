@@ -9,6 +9,11 @@ activation:
     - '\bSslPolicyErrors\b|\bX509(?:Chain|ChainPolicy|RevocationMode)\b|\bSslProtocols\.|\bSecurityProtocolType\.'
     - '[Tt]rust[Ss]erver[Cc]ertificate\s*=\s*(?:[Tt]rue|[Yy]es)|\b[Ee]ncrypt\s*=\s*(?:[Ff]alse|[Nn]o|[Oo]ptional)\b'
     - '\bAllowedCertificateTypes\b|\bAddCertificate\('
+  examples:
+    - 'handler.ServerCertificateCustomValidationCallback = (msg, cert, chain, errors) => true;'
+    - 'if (errors != SslPolicyErrors.None) return false;'
+    - 'var conn = "Server=db;Database=App;TrustServerCertificate=True;";'
+    - 'options.AllowedCertificateTypes = CertificateTypes.All;'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/api/system.net.http.httpclienthandler.servercertificatecustomvalidationcallback
   - https://learn.microsoft.com/en-us/ef/core/what-is-new/ef-core-7.0/breaking-changes

@@ -7,6 +7,10 @@ activation:
     - "(?<![.\\w$])(?:resource|rxResource|httpResource)\\s*(?:<[^>\\n]{0,80}>)?\\("
     - "\\bhttpResource\\.(?:text|blob|arrayBuffer)\\s*\\("
     - "\\.hasValue\\s*\\(\\s*\\)"
+  examples:
+    - 'readonly user = resource({ params: () => id(), loader: fetchUser });'
+    - 'const file = httpResource.blob(() => url());'
+    - 'if (this.user.hasValue()) { return this.user.value().name; }'
   versions: { framework.angular: ">=19" }
 sources:
   - https://angular.dev/guide/signals/resource

@@ -8,6 +8,10 @@ activation:
     - "\\buse\\s*\\("
     - "\\blazy\\s*\\("
     - "\\bbrowser\\s*\\(\\s*\\)"
+  examples:
+    - "<Suspense fallback={<Spinner />}>{children}</Suspense>"
+    - "const Chart = lazy(() => import('./Chart'));"
+    - "const win = use(browser());"
 sources:
   - https://react.dev/reference/react/use
   - https://react.dev/reference/react/Suspense

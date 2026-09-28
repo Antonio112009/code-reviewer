@@ -8,6 +8,11 @@ activation:
     - "\\b(?:babel-plugin-react-compiler|react-compiler-runtime)\\b"
     - "\\breactCompiler\\s*:"
     - "\\b(?:useReactTable|watch)\\s*\\("
+  examples:
+    - "'use no memo';"
+    - "plugins: ['babel-plugin-react-compiler']"
+    - "reactCompiler: true,"
+    - "const table = useReactTable({ data, columns });"
 sources:
   - https://react.dev/learn/react-compiler/debugging
   - https://react.dev/reference/react-compiler/directives/use-no-memo

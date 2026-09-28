@@ -8,6 +8,10 @@ activation:
     - '\b(?:free|g_free|kfree|OPENSSL_free|CRYPTO_free)\s*\('
     - '\bdelete\s*(?:\[\s*\]\s*)?[\w(*]'
     - '\breturn\s+&\s*\w'
+  examples:
+    - 'free(ptr);'
+    - 'delete obj;'
+    - 'return &local_buf[0];'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/memory-management-mem/mem30-c/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/memory-management-mem/mem34-c/

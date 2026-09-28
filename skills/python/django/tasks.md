@@ -8,6 +8,10 @@ activation:
     - '^[ \t]*from[ \t]+django\.tasks\b'
     - '\.a?enqueue\(|\.a?get_result\(|\bdefault_task_backend\b'
     - '\bTASKS\s*=|\b(?:ImmediateBackend|DummyBackend)\b'
+  examples:
+    - 'from django.tasks import task'
+    - 'result = send_email.enqueue(order.id)'
+    - 'TASKS = {"default": {"BACKEND": "django.tasks.backends.immediate.ImmediateBackend"}}'
 sources:
   - https://docs.djangoproject.com/en/dev/topics/tasks/
   - https://docs.djangoproject.com/en/dev/ref/tasks/

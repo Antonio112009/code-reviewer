@@ -7,6 +7,16 @@ activation:
     - '\bCancellationToken(?:Source)?\b|\bCreateLinkedTokenSource\b|\bCancelAfter\('
     - '\bThrowIfCancellationRequested\(|\bIsCancellationRequested\b|\bRequestAborted\b'
     - '\b(?:Operation|Task)CanceledException\b|\bTask\.WhenAny\(|\.Register\('
+  examples:
+    - 'public async Task ProcessAsync(CancellationToken ct)'
+    - 'using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);'
+    - 'cts.CancelAfter(TimeSpan.FromSeconds(30));'
+    - 'ct.ThrowIfCancellationRequested();'
+    - 'while (!ct.IsCancellationRequested) { await Task.Delay(100, ct); }'
+    - 'var ct = HttpContext.RequestAborted;'
+    - 'catch (OperationCanceledException) when (ct.IsCancellationRequested) { }'
+    - 'await Task.WhenAny(work, Task.Delay(timeout));'
+    - 'registration = ct.Register(() => cts.Cancel());'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads
   - https://github.com/davidfowl/AspNetCoreDiagnosticScenarios/blob/master/AsyncGuidance.md

@@ -14,6 +14,16 @@ activation:
     - '\b(?:setPrimaryClip|ClipData\.newPlainText)\s*\('
     - '\bFLAG_SECURE\b|\bsetContentCaptureEnabled\s*\('
     - '\bputString\s*\(\s*(?:"[^"\n]{0,30}|\w{0,30})(?:[Tt]oken|TOKEN|[Ss]ecret|SECRET|[Pp]assword|PASSWORD)'
+  examples:
+    - 'val prefs = EncryptedSharedPreferences.create(context, "secret", masterKey, scheme, scheme)'
+    - 'val keyStore = KeyStore.getInstance("AndroidKeyStore")'
+    - 'val prompt = BiometricPrompt(this, executor, callback)'
+    - 'android:allowBackup="true" android:dataExtractionRules="@xml/data_extraction_rules"'
+    - '<data-extraction-rules><cloud-backup disableIfNoEncryptionCapability="true" /></data-extraction-rules>'
+    - 'val dir = context.getExternalFilesDir(null)'
+    - 'clipboardManager.setPrimaryClip(ClipData.newPlainText("otp", code))'
+    - 'window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)'
+    - 'prefs.edit().putString("auth_token", token).apply()'
 sources:
   - https://developer.android.com/privacy-and-security/security-tips
   - https://developer.android.com/jetpack/androidx/releases/security

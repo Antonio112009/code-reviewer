@@ -6,3 +6,6 @@ detect:
   content:
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?reactor\.(?:core|util)\.'
     - '^[ \t]*import[ \t]+org\.springframework\.web\.reactive\.'
+  examples:
+    - 'import reactor.core.publisher.Mono;'
+    - 'import org.springframework.web.reactive.function.client.WebClient;'

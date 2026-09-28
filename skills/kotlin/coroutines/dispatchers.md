@@ -12,6 +12,13 @@ activation:
     - '\basCoroutineDispatcher\s*\('
     - '\bwithContext\s*\('
     - '\bThread\.sleep\s*\('
+  examples:
+    - 'runBlocking { fetchUser(id) }'
+    - 'withContext(Dispatchers.IO) { db.query(sql) }'
+    - 'val dbDispatcher = Dispatchers.IO.limitedParallelism(4)'
+    - 'val context = newSingleThreadContext("db-writer")'
+    - 'val dispatcher = executor.asCoroutineDispatcher()'
+    - 'Thread.sleep(500)'
 sources:
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/run-blocking.html
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-dispatchers/-i-o.html

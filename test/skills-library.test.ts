@@ -158,7 +158,34 @@ function checkActivationBlock(a: Record<string, unknown> | undefined, where: str
     expect(() => compileRange(r), `${where}: versions.${t} "${r}"`).not.toThrow();
   }
   checkRegexes((a.content as string[] | undefined) ?? [], where);
+  checkExamples((a.content as string[] | undefined) ?? [], (a.examples as string[] | undefined) ?? [], where);
   if ((a.files as string[] | undefined)?.length) checkGlobs(a.files as string[], where);
+}
+
+/**
+ * Every content regex fires on at least one of the block's `examples` (realistic changed code), and every
+ * example is there for some regex: a regex broken by escaping (`\\b` in YAML) or too narrow to ever fire
+ * fails here instead of silently never selecting its skill.
+ */
+function checkExamples(content: string[], examples: string[], where: string): void {
+  if (content.length === 0) {
+    expect(examples, `${where}: examples without content regexes`).toEqual([]);
+    return;
+  }
+  expect(examples.length, `${where}: content regexes need examples (activation.examples)`).toBeGreaterThan(0);
+  const regexes = content.map((source) => new RegExp(source, 'm'));
+  for (const re of regexes) {
+    expect(
+      examples.some((e) => re.test(signalText(e))),
+      `${where}: no example matches /${re.source}/`,
+    ).toBe(true);
+  }
+  for (const e of examples) {
+    expect(
+      regexes.some((re) => re.test(signalText(e))),
+      `${where}: example matches no content regex: ${e.slice(0, 80)}`,
+    ).toBe(true);
+  }
 }
 
 describe(`skills library${SUBTREE ? ` (${SUBTREE})` : ''}`, () => {

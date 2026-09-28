@@ -11,6 +11,13 @@ activation:
     - '\brequestLegacyExternalStorage\b'
     - '<uses-permission\b'
     - '\b(?:NotificationManagerCompat|NotificationChannel)\b|\.notify\s*\('
+  examples:
+    - 'if (checkSelfPermission(Manifest.permission.CAMERA) != PERMISSION_GRANTED) request()'
+    - 'val launcher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> }'
+    - 'requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)'
+    - 'android:requestLegacyExternalStorage="true"'
+    - '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />'
+    - 'NotificationManagerCompat.from(context).notify(id, notification)'
 sources:
   - https://developer.android.com/training/permissions/requesting
   - https://developer.android.com/develop/sensors-and-location/location/permissions

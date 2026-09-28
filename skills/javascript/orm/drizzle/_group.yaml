@@ -7,3 +7,5 @@ detect:
   files: ["**/drizzle.config.{ts,js,mjs,cjs,mts}"]
   content:
     - "(?:from|require\\()\\s*['\"](?:drizzle-orm|drizzle-kit)(?:/[\\w/-]+)?['\"]"
+  examples:
+    - 'import { drizzle } from "drizzle-orm/node-postgres";'

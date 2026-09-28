@@ -9,6 +9,11 @@ activation:
     - "\\byaml\\.(?:load|load_all|unsafe_load|full_load)\\s*\\(|\\bLoader\\s*=\\s*(?:yaml\\.)?(?:Loader|UnsafeLoader|FullLoader)\\b"
     - "\\btorch\\.load\\s*\\(|\\bweights_only\\s*=\\s*False\\b|\\ballow_pickle\\s*=\\s*True\\b|\\btrust_remote_code\\s*=\\s*True\\b"
     - "\\bmultiprocessing\\.connection\\b|\\b(?:Listener|Client)\\s*\\([^)\\n]{0,120}\\bauthkey\\b"
+  examples:
+    - 'obj = pickle.loads(data)'
+    - 'config = yaml.load(stream, Loader=yaml.Loader)'
+    - 'model = torch.load(path, weights_only=False)'
+    - 'listener = Listener(address, authkey=key)'
 sources:
   - https://docs.python.org/3/library/pickle.html
   - https://github.com/yaml/pyyaml/blob/main/CHANGES

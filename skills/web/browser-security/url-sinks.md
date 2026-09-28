@@ -10,6 +10,11 @@ activation:
     - '\.(?:href|src|action|formAction)\s*=[^=]|\bsetAttribute\(\s*[''"](?:href|src|action|formaction|xlink:href)'
     - '\bsearchParams\.get\(\s*[''"](?:next|redirect\w*|return\w*|callback\w*|continue|url|to)[''"]|\bnew URL\('
     - '\blocation\.(?:hash|search)\b'
+  examples:
+    - 'window.location = redirectUrl;'
+    - 'link.href = userProvidedUrl;'
+    - 'const next = searchParams.get("redirectTo");'
+    - 'const token = location.hash.slice(1);'
 sources:
   - https://cheatsheetseries.owasp.org/cheatsheets/DOM_based_XSS_Prevention_Cheat_Sheet.html
   - https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html

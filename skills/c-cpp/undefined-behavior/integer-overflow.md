@@ -11,6 +11,13 @@ activation:
     - '\b(?:1|0x[0-9a-fA-F]+)[uUlL]{0,3}\s*<<|(?:<<|>>)=|<<\s*(?:\d{2}|sizeof)'
     - '\b(\w+)\s*[-+]\s*\w+\s*[<>]=?\s*\1\b'
     - '\b(?:l?l?abs|imaxabs)\s*\('
+  examples:
+    - 'if (x > INT_MAX - y) overflow();'
+    - 'auto max = std::numeric_limits<int>::max();'
+    - 'if (__builtin_add_overflow(a, b, &result)) return -1;'
+    - 'uint64_t mask = 1ULL << shift;'
+    - 'if (a + b < a) return -1;'
+    - 'int m = abs(x);'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/integers-int/int32-c/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/integers-int/int34-c/

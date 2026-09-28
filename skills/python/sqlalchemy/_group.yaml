@@ -12,3 +12,5 @@ detect:
     - "**/pyproject.toml"
   content:
     - '^[ \t]*(?:from|import)[ \t]+(?:sqlalchemy|sqlmodel|flask_sqlalchemy|alembic)\b'
+  examples:
+    - 'from sqlalchemy import create_engine'

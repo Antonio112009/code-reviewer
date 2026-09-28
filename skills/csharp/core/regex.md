@@ -6,6 +6,10 @@ tags: [CWE-1333, CWE-625, CWE-185]
 activation:
   content:
     - '\bRegex\b|\[GeneratedRegex\b|\[RegularExpression\('
+  examples:
+    - 'var isValid = Regex.IsMatch(input, @"^[a-z0-9]+$");'
+    - '[GeneratedRegex(@"^\d{3}-\d{4}$")] private static partial Regex PhonePattern();'
+    - '[RegularExpression(@"^[A-Za-z]+$")] public string Name { get; set; }'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/standard/base-types/best-practices-regex
   - https://learn.microsoft.com/en-us/dotnet/standard/base-types/anchors-in-regular-expressions

@@ -7,3 +7,7 @@ detect:
     - 'github\.com/gin-gonic/gin'
     - '\*gin\.(?:Context|Engine|RouterGroup)\b'
     - '\bgin\.(?:Default|New|H|HandlerFunc)\b'
+  examples:
+    - 'github.com/gin-gonic/gin'
+    - 'func handler(c *gin.Context) {'
+    - 'r := gin.Default()'

@@ -10,3 +10,9 @@ detect:
     - '^import\s+com\.squareup\.moshi\.'
     - '^import\s+(?:com\.fasterxml\.jackson|tools\.jackson)\.'
     - '@(?:Serializable|SerializedName|JsonClass)\b'
+  examples:
+    - 'import kotlinx.serialization.Serializable'
+    - 'import com.google.gson.Gson'
+    - 'import com.squareup.moshi.Moshi'
+    - 'import com.fasterxml.jackson.databind.ObjectMapper'
+    - '@Serializable data class User(val id: Int)'

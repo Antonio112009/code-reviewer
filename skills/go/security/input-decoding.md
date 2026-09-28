@@ -11,6 +11,13 @@ activation:
     - '\bu?int(?:8|16|32)\('
     - '\b(?:xml|yaml)\.(?:Unmarshal|NewDecoder)\b'
     - 'json:"(?:-,|omitempty)'
+  examples:
+    - 'json.Unmarshal(body, &user)'
+    - 'if err := c.ShouldBindJSON(&req); err != nil {'
+    - 'n, err := strconv.Atoi(r.FormValue("id"))'
+    - 'id := uint32(n)'
+    - 'xml.Unmarshal(data, &v)'
+    - 'Password string `json:"-,"`'
 sources:
   - https://blog.trailofbits.com/2025/06/17/unexpected-security-footguns-in-gos-parsers/
   - https://pkg.go.dev/encoding/json#Unmarshal

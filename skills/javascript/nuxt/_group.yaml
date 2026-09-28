@@ -12,3 +12,6 @@ detect:
   content:
     - "from ['\"](?:#app|#imports|#build|nuxt/app|nuxt/server|h3|nitropack(?:/runtime)?)['\"]"
     - "\\b(?:defineNuxt(?:Config|Plugin|RouteMiddleware|Component)|definePageMeta|use(?:Lazy)?(?:Fetch|AsyncData)|useRuntimeConfig|useNuxtApp|useState|navigateTo|define(?:Cached)?EventHandler)\\b"
+  examples:
+    - 'import { defineEventHandler } from ''h3'';'
+    - 'definePageMeta({ middleware: ''auth'' });'

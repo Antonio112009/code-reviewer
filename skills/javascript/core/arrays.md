@@ -8,6 +8,11 @@ activation:
     - '\bnew\s+Array\s*\(|\bArray\s*\(\s*\w'
     - '\bdelete\s+[\w$.]+\['
     - '\.length\s*=[^=]'
+  examples:
+    - 'list.splice(list.indexOf(x), 1);'
+    - 'const rows = new Array(count);'
+    - 'delete cache[key];'
+    - 'arr.length = 0;'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/toSorted

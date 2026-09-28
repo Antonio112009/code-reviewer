@@ -12,6 +12,14 @@ activation:
     - "\\bdef\\s+__del__\\s*\\(|\\bweakref\\.finalize\\b"
     - "\\.acquire\\s*\\(|\\bflock\\s*\\("
     - "=\\s*(?:socket\\.socket|socket\\.create_connection|zipfile\\.ZipFile|tarfile\\.open)\\s*\\("
+  examples:
+    - 'f = open(path, "r")'
+    - '@contextlib.contextmanager'
+    - 'conn = sqlite3.connect(db_path)'
+    - 'fd, path = tempfile.mkstemp()'
+    - 'def __del__(self):'
+    - 'lock.acquire()'
+    - 'sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)'
 sources:
   - https://docs.python.org/3/library/contextlib.html#contextlib.contextmanager
   - https://docs.python.org/3/library/sqlite3.html#sqlite3-connection-context-manager

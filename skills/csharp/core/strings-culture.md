@@ -10,6 +10,12 @@ activation:
     - '\b(?:[Ss]tring\.Compare|CompareTo)\('
     - '\b(?:double|decimal|float|DateTime|DateTimeOffset|DateOnly)\.(?:Try)?Parse(?:Exact)?\(|\bConvert\.To(?:Double|Decimal|Single|DateTime)\('
     - '\bCultureInfo\b|\bStringComparison\.|\bStringComparer\.'
+  examples:
+    - 'var key = role.ToUpper();'
+    - 'if (path.StartsWith("/admin"))'
+    - 'var cmp = string.Compare(a, b);'
+    - 'var price = double.Parse(rawValue);'
+    - 'var sorted = names.OrderBy(n => n, StringComparer.Ordinal);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/standard/base-types/best-practices-strings
   - https://learn.microsoft.com/en-us/dotnet/core/compatibility/globalization/5.0/icu-globalization-api

@@ -12,6 +12,14 @@ activation:
     - '\b(?:startConnection|enableAutoServiceReconnection|enablePendingPurchases)\s*\('
     - '\blaunchBillingFlow\s*\('
     - 'com\.android\.billingclient:billing'
+  examples:
+    - 'billingClient.acknowledgePurchase(params, listener)'
+    - 'if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) grant()'
+    - 'override fun onPurchasesUpdated(result: BillingResult, purchases: List<Purchase>?) {'
+    - 'billingClient.queryPurchasesAsync(params, listener)'
+    - 'BillingClient.newBuilder(context).enablePendingPurchases(params).build()'
+    - 'billingClient.launchBillingFlow(activity, billingFlowParams)'
+    - 'implementation("com.android.billingclient:billing:7.1.1")'
 sources:
   - https://developer.android.com/google/play/billing/integrate
   - https://developer.android.com/google/play/billing/security

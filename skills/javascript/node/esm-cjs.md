@@ -8,6 +8,11 @@ activation:
     - '\brequire\s*\(|\bmodule\.exports\b|\bexports\.[\w$]+\s*='
     - '\b__(?:dirname|filename)\b|\bimport\.meta\.(?:url|dirname|filename)\b|\bcreateRequire\s*\('
     - '\bwith\s*\{\s*type\s*:|\bassert\s*\{\s*type\s*:'
+  examples:
+    - '"type": "module",'
+    - 'module.exports = { handler };'
+    - 'const require = createRequire(import.meta.url);'
+    - 'import data from "./data.json" with { type: "json" };'
 sources:
   - https://nodejs.org/api/modules.html#loading-ecmascript-modules-using-require
   - https://nodejs.org/api/esm.html#interoperability-with-commonjs

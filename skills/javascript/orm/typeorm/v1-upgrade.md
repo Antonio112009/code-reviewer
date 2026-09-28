@@ -9,6 +9,11 @@ activation:
     - "\\bsoft(?:Delete|Remove)\\s*\\(|\\brelations\\s*:\\s*\\[|\\bselect\\s*:\\s*\\["
     - "\\b(?:getRepository|getConnection|getManager|createConnection|findByIds|getCustomRepository)\\s*\\(|@EntityRepository\\b"
     - "['\"](?:mysql|sqlite3)['\"]"
+  examples:
+    - '@Column({ select: false }) password: string'
+    - 'const users = await userRepo.find({ relations: ["profile"] })'
+    - 'const userRepo = getRepository(User)'
+    - 'const dataSourceOptions = { type: "mysql", host: "localhost" }'
 sources:
   - https://typeorm.io/docs/releases/1.0/release-notes/
   - https://typeorm.io/blog/typeorm-1-0/

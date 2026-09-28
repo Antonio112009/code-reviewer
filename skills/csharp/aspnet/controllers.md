@@ -8,6 +8,10 @@ activation:
     - '\bControllerBase\b|:\s*Controller\b|\bPageModel\b'
     - '\[(?:ApiController|NonAction|Http(?:Get|Post|Put|Patch|Delete)|Route|FromBody)\b'
     - '\bIActionResult\b|\bActionResult<|\bModelState\b'
+  examples:
+    - 'public class OrdersController : ControllerBase'
+    - '[HttpPost]'
+    - 'public IActionResult Create([FromBody] OrderDto dto) => Ok();'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/web-api/
   - https://learn.microsoft.com/en-us/aspnet/core/mvc/models/validation

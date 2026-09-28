@@ -7,6 +7,10 @@ activation:
     - '\brecord\s+(?:class\s+|struct\s+)?[A-Z]\w*'
     - '\bwith\s*\{'
     - '\b(?:readonly\s+)?(?:record\s+)?struct\s+[A-Z]\w*'
+  examples:
+    - 'public record Money(decimal Amount, string Currency);'
+    - 'var updated = order with { Status = OrderStatus.Shipped };'
+    - 'public readonly record struct Point(double X, double Y);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/record
   - https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/struct

@@ -8,6 +8,10 @@ activation:
     - '\[\s*(?:&|=|this|\*this)\s*[\],]'
     - '\[\s*&\s*\w+\s*[\],]'
     - ',\s*&\s*\w+\s*\]\s*(?:\(|\{|mutable\b)'
+  examples:
+    - 'auto cb = [this] { process(); };'
+    - 'auto cb = [&counter] { counter++; };'
+    - 'auto cb = [a, &b]() { b++; };'
 sources:
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rf-value-capture
   - https://en.cppreference.com/w/cpp/language/lambda

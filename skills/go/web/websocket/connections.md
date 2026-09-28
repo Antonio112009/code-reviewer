@@ -8,6 +8,9 @@ activation:
     - '\b(?:CheckOrigin|OriginPatterns|InsecureSkipVerify)\b'
     - '\bwebsocket\.(?:Upgrader|Accept|Dial|Conn|AcceptOptions)\b'
     - '\.(?:WriteMessage|WriteJSON|ReadMessage|ReadJSON|NextReader|NextWriter|SetReadLimit|SetPongHandler|CloseRead)\('
+  examples:
+    - 'upgrader := websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}'
+    - 'conn.SetReadLimit(maxMessageSize)'
 sources:
   - https://pkg.go.dev/github.com/gorilla/websocket
   - https://pkg.go.dev/github.com/coder/websocket

@@ -8,6 +8,10 @@ activation:
     - '<(?:input|select|textarea|label|fieldset|legend)\b'
     - '\bhtmlFor\b|\bplaceholder\s*='
     - '\baria-(?:invalid|describedby|errormessage|required)\b'
+  examples:
+    - '<input id="email" name="email" />'
+    - '<label htmlFor="email">Email</label>'
+    - '<input aria-invalid="true" aria-describedby="email-error" />'
 sources:
   - https://www.w3.org/WAI/tutorials/forms/
   - https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html

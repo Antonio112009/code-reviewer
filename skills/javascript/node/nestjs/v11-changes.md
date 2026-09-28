@@ -10,6 +10,11 @@ activation:
     - "\\bConfigModule\\.forRoot\\s*\\(|\\bskipProcessEnv\\b|\\bregisterAs\\s*\\(|\\bload\\s*:\\s*\\["
     - "\\bCacheModule\\.register(?:Async)?\\s*\\(|\\bcreateKeyv\\s*\\(|@keyv/|\\bredisStore\\b|\\bstores?\\s*:"
     - "\\.(?:forRoot|forRootAsync|register|registerAsync)\\s*\\("
+  examples:
+    - '@Get("/files/*")'
+    - 'onModuleDestroy() {'
+    - 'ConfigModule.forRoot({ load: [appConfig] })'
+    - 'CacheModule.register({ stores: [createKeyv(redisUrl)] })'
 sources:
   - https://trilon.io/blog/announcing-nestjs-11-whats-new
   - https://docs.nestjs.com/techniques/configuration

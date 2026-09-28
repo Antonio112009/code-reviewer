@@ -10,6 +10,13 @@ activation:
     - '\bsuper\s*[.(]'
     - '\bstatic\s+[A-Za-z_$#]'
     - '\binstanceof\b'
+  examples:
+    - 'class Timer extends Base {'
+    - 'setTimeout(this.tick, 1000);'
+    - 'const bound = this.handleClick.bind(this);'
+    - 'super.render();'
+    - 'static #cache = new Map();'
+    - 'if (value instanceof Error) { throw value; }'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this#callbacks
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Public_class_fields

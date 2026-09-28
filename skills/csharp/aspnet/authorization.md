@@ -8,6 +8,10 @@ activation:
     - '\[(?:Authorize|AllowAnonymous)\b|\bRequireAuthorization\(|\bAllowAnonymous\('
     - '\b(?:FallbackPolicy|DefaultPolicy|SetFallbackPolicy|AddAuthorization(?:Builder)?|AddPolicy)\b'
     - '\bIAuthorizationService\b|\bAuthorizationHandler<|\bIAuthorizationRequirement\b|\bIsInRole\('
+  examples:
+    - '[Authorize(Roles = "Admin,Manager")]'
+    - 'options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();'
+    - 'private readonly IAuthorizationService _authorizationService;'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/security/authorization/policies
   - https://learn.microsoft.com/en-us/aspnet/core/razor-pages/security/authorization/simple

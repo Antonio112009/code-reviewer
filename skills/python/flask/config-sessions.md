@@ -9,6 +9,11 @@ activation:
     - '\bsession\[|\bsession\.(?:get|permanent|clear|pop)\b'
     - '\.run\([^)\n]{0,80}\bdebug\s*=|\buse_debugger\b|\bProxyFix\('
     - '\burl_for\([^)\n]{0,120}_external\s*=\s*True'
+  examples:
+    - 'app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]'
+    - 'session["user_id"] = user.id'
+    - 'app.run(debug=True)'
+    - 'reset_link = url_for("reset_password", token=token, _external=True)'
 sources:
   - https://flask.palletsprojects.com/en/stable/config/
   - https://flask.palletsprojects.com/en/stable/web-security/

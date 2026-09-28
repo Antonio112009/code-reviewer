@@ -7,6 +7,10 @@ activation:
     - '\b(?:AppState|BackHandler|Keyboard|Dimensions|Appearance|AccessibilityInfo|Linking)\.(?:addEventListener|removeEventListener|addListener|removeListener)\b'
     - '\b(?:NativeEventEmitter|DeviceEventEmitter)\b'
     - '\bhardwareBackPress\b|\bkeyboard(?:Will|Did)(?:Show|Hide)\b'
+  examples:
+    - "const sub = AppState.addEventListener('change', handleChange);"
+    - 'const emitter = new NativeEventEmitter(NativeModule);'
+    - "Keyboard.addListener('keyboardDidShow', onShow);"
 sources:
   - https://reactnative.dev/docs/appstate
   - https://reactnative.dev/docs/backhandler

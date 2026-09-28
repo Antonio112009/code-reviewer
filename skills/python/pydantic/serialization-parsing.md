@@ -9,6 +9,11 @@ activation:
     - '\b(?:by_alias|serialize_by_alias|model_copy|model_construct|construct|hide_input_in_errors|ValidationError)\b'
     - '\b(?:SecretStr|SecretBytes|Secret\[|get_secret_value)\b'
     - '\b(?:from_attributes|orm_mode|model_validate|from_orm|TypeAdapter)\b'
+  examples:
+    - 'payload = model.model_dump(mode="json")'
+    - 'updated = model.model_copy(update={"name": "x"})'
+    - 'token: SecretStr = Field(...)'
+    - 'user = User.model_validate(orm_obj, from_attributes=True)'
 sources:
   - https://docs.pydantic.dev/latest/concepts/serialization/
   - https://docs.pydantic.dev/latest/concepts/models/

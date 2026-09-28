@@ -8,6 +8,10 @@ activation:
     - '\bno[vV]alidate\b|:(?:user-)?invalid\b|\brequired\b'
     - 'type\s*=\s*[''"](?:number|email|date|datetime-local|time|url|tel)[''"]'
     - '\bvalueAs(?:Number|Date)\b'
+  examples:
+    - '<input pattern="[0-9]{5}" required />'
+    - '<input type="email" />'
+    - 'const value = input.valueAsNumber;'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/setCustomValidity
   - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/pattern

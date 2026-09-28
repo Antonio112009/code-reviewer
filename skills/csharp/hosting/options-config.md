@@ -7,6 +7,10 @@ activation:
     - '\bIOptions(?:Monitor|Snapshot)?<|\b(?:AddOptions|BindConfiguration|ValidateOnStart|ValidateDataAnnotations|AddOptionsWithValidateOnStart)\b'
     - '\bGet(?:Required)?Section\(|\bGetValue<|\bGetConnectionString\(|\.Bind\(|\bConfiguration\['
     - '^\s*"[A-Z][\w.:]*"\s*:'
+  examples:
+    - 'public MyService(IOptionsSnapshot<MySettings> options)'
+    - 'var section = configuration.GetRequiredSection("Smtp");'
+    - '"ConnectionStrings": "Server=.;Database=App;"'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/core/extensions/options
   - https://learn.microsoft.com/en-us/dotnet/core/extensions/configuration-providers

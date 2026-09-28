@@ -10,6 +10,11 @@ activation:
     - '\b(?:ReadHeader|Read|Write|Idle)Timeout\b'
     - '\b(?:ParseMultipartForm|MaxMultipartMemory)\b'
     - '\bsignal\.Notify(?:Context)?\('
+  examples:
+    - 'srv := &http.Server{Addr: addr, ReadHeaderTimeout: 5 * time.Second}'
+    - 'if err := srv.Shutdown(ctx); err != nil { log.Print(err) }'
+    - 'r.ParseMultipartForm(32 << 20)'
+    - 'ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)'
 sources:
   - https://pkg.go.dev/net/http#Server
   - https://pkg.go.dev/net/http#Server.Shutdown

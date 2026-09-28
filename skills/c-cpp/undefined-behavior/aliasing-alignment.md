@@ -9,6 +9,11 @@ activation:
     - '\(\s*(?:const\s+)?(?:u?int(?:16|32|64)_t|float|double|(?:unsigned\s+)?(?:int|long|short)|struct\s+\w+)\s*\*\s*\)(?!\s*(?:malloc|calloc|realloc)\b)'
     - '\b(?:bit_cast|start_lifetime_as|launder)\b|\bunion\s+\w*\s*\{'
     - '\bmemcmp\s*\(\s*&'
+  examples:
+    - 'uint32_t val = *reinterpret_cast<uint32_t*>(buf + off);'
+    - 'uint32_t val = *(uint32_t *)(buf + off);'
+    - 'int32_t bits = std::bit_cast<int32_t>(f);'
+    - 'if (memcmp(&a, &b, sizeof(a)) == 0) return true;'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/expressions-exp/exp39-c/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/expressions-exp/exp36-c/

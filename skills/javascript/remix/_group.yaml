@@ -13,3 +13,6 @@ detect:
   content:
     - "from\\s*['\"](?:@remix-run/[\\w/-]+|react-router(?:-dom)?(?:/[\\w/-]+)?|@react-router/[\\w/-]+)['\"]"
     - "\\bexport\\s+(?:async\\s+)?function\\s+(?:loader|action|clientLoader|clientAction)\\b"
+  examples:
+    - "import { useLoaderData } from 'react-router';"
+    - "export async function loader({ request }) {"

@@ -5,6 +5,9 @@ activation:
   content:
     - '\b(?:Codable|Decodable|Encodable|JSONDecoder|JSONEncoder|PropertyList(?:De|En)coder|CodingKeys?|JSONSerialization|DecodingError)\b'
     - '\b(?:date|key|data|nonConformingFloat)(?:De|En)codingStrategy\b|\binit\(from\s+decoder\b|\bfunc\s+encode\(to\b|\bdecodeIfPresent\('
+  examples:
+    - 'struct User: Codable { let id: UUID; let name: String }'
+    - 'decoder.dateDecodingStrategy = .iso8601'
 sources:
   - https://developer.apple.com/documentation/foundation/jsondecoder
   - https://developer.apple.com/documentation/foundation/jsondecoder/keydecodingstrategy-swift.enum/convertfromsnakecase

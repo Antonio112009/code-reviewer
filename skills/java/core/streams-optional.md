@@ -10,6 +10,12 @@ activation:
     - '\bOptional\b'
     - '\.parallel(?:Stream)?\(\)'
     - '\.(?:peek|orElse|orElseThrow|findAny)\('
+  examples:
+    - 'List<String> names = users.stream().map(User::getName).toList();'
+    - 'Stream<Integer> nums = Stream.of(1, 2, 3);'
+    - 'Optional<User> user = repository.findById(id);'
+    - 'items.parallelStream().forEach(this::process);'
+    - 'User user = repository.findById(id).orElseThrow(NotFoundException::new);'
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/Stream.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/package-summary.html

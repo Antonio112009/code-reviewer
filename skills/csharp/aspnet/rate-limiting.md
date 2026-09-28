@@ -7,6 +7,9 @@ activation:
   content:
     - '\b(?:AddRateLimiter|UseRateLimiter|RequireRateLimiting)\(|\[(?:EnableRateLimiting|DisableRateLimiting)\b'
     - '\bRateLimitPartition\b|\bPartitionedRateLimiter\b|\bRejectionStatusCode\b|\bQueueLimit\b|\bOnRejected\b'
+  examples:
+    - 'app.UseRateLimiter();'
+    - 'options.AddPolicy("perUser", ctx => RateLimitPartition.GetFixedWindowLimiter(ctx.User.Identity!.Name!, _ => new FixedWindowRateLimiterOptions { QueueLimit = 0 }));'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit
   - https://learn.microsoft.com/en-us/aspnet/core/breaking-changes/8/addratelimiter-requirement

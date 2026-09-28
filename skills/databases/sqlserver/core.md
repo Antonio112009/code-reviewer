@@ -33,6 +33,12 @@ activation:
     - \b(?:NVARCHAR|nvarchar|UNIQUEIDENTIFIER|uniqueidentifier)\b|\bSCOPE_IDENTITY\(|@@(?:IDENTITY|ROWCOUNT|TRANCOUNT|ERROR)\b|\bWITH\s*\(\s*NOLOCK\s*\)|\bsp_executesql\b|\bXACT_ABORT\b|\bOUTPUT\s+(?:INSERTED|DELETED)\.|\bMERGE\s+(?:INTO\s+)?[\w\[\].]+\s+(?:AS\s+)?\w+\s+USING\b|^[ \t]*GO[ \t]*$|\bTOP\s*\(\s*[@\d]|\bBEGIN\s+TRAN(?:SACTION)?\b
     - \b(?:SELECT|UPDATE|DELETE)\b[\s\S]{0,200}?\b(?:FROM|SET|WHERE)\b|\bINSERT\s+INTO\b|\b(?:ALTER|CREATE)\s+(?:TABLE|(?:UNIQUE\s+)?(?:(?:NON)?CLUSTERED\s+)?INDEX|PROCEDURE|PROC|TRIGGER)\b
     - "['\"`]\\s*(?:select\\s+(?:\\*|top\\b|distinct\\b|count\\(|[\\w.\\[\\]]+\\s*(?:,|\\bfrom\\b|\\bas\\b))|update\\s+[\\w.\\[\\]]+\\s+set\\b|delete\\s+from\\b|insert\\s+into\\b|merge\\s+(?:into\\s+)?[\\w.\\[\\]]+)"
+  examples:
+    - 'import sql from "mssql";'
+    - 'using System.Data.SqlClient;'
+    - 'SELECT SCOPE_IDENTITY() AS Id;'
+    - 'SELECT * FROM Users WHERE Id = @id;'
+    - 'var cmd = new SqlCommand("select * from Users where Id = @id", conn);'
 ---
 - **Transaction scope**: node `mssql` `pool.request()` inside a transaction runs on another connection → non-atomic writes, blocking on its own locks; .NET `new TransactionScope()` defaults to Serializable → range locks, deadlocks. Fix: `transaction.request()`, explicit `ReadCommitted`.
 - **XACT_ABORT off**: by default many errors abort only the statement, and client timeouts leave the transaction open on the pooled connection → partial commits, held locks. Fix: `SET XACT_ABORT ON`, `TRY…CATCH` with rollback.

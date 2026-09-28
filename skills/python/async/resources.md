@@ -8,6 +8,11 @@ activation:
     - "@(?:contextlib\\.)?asynccontextmanager\\b"
     - "\\bopen_connection\\s*\\(|\\bStreamWriter\\b|\\.drain\\s*\\(|\\bwait_closed\\s*\\("
     - "^[ \\t]*yield\\b"
+  examples:
+    - 'async for chunk in gen():'
+    - '@asynccontextmanager'
+    - 'await writer.drain()'
+    - '    yield chunk'
 sources:
   - https://docs.python.org/3/library/contextlib.html#contextlib.aclosing
   - https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.drain

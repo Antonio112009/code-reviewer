@@ -8,6 +8,10 @@ activation:
     - "\\bres\\.(?:send|redirect|location|sendFile|sendfile|download|render|attachment)\\s*\\("
     - "\\bexpress\\.static\\s*\\(|\\bserve-static\\b|\\bserveStatic\\s*\\("
     - "\\bres\\.status\\s*\\(\\s*4\\d\\d\\s*\\)|\\bres\\.sendStatus\\s*\\(\\s*4\\d\\d\\s*\\)"
+  examples:
+    - 'res.send(`Unknown command: ${req.query.q}`);'
+    - 'app.use(express.static(path.join(__dirname, ''public'')));'
+    - 'res.status(403).json({ error: ''Forbidden'' });'
 sources:
   - https://expressjs.com/en/5x/api/response/
   - https://expressjs.com/en/4x/api/express/

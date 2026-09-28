@@ -11,6 +11,13 @@ activation:
     - "<(?:ClientRouter|ViewTransitions)\\b"
     - "\\bastro:(?:page-load|after-swap|before-swap|before-preparation)\\b"
     - "\\bdata-astro-rerun\\b|\\btransition:persist\\b"
+  examples:
+    - '<div set:html={comment.body} />'
+    - '<script define:vars={{ id }}>console.log(id);</script>'
+    - '<script is:inline>gtag(''event'', ''page_view'');</script>'
+    - '<ClientRouter />'
+    - 'document.addEventListener(''astro:page-load'', init);'
+    - '<video data-astro-rerun transition:persist></video>'
 sources:
   - https://docs.astro.build/en/reference/directives-reference/
   - https://docs.astro.build/en/guides/view-transitions/

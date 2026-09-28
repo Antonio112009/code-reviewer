@@ -8,6 +8,10 @@ activation:
     - '\bnew\s+RegExp\s*\(|\bRegExp\s*\(\s*[^/''"`]'
     - '[+*}]\)[*+{]'
     - '\((?:\\[wsd.]|\.|\[[^\]\n]{1,40}\])[*+]\)[*+]'
+  examples:
+    - 'const re = new RegExp(pattern);'
+    - 'const re = /(a+)+$/;'
+    - 'const validator = /(\w+)*$/;'
 sources:
   - https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS
   - https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop#blocking-the-event-loop-redos

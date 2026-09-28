@@ -9,6 +9,12 @@ activation:
     - "\\[\\s*\\[[^\\[\\]\\n]{0,60}\\](?:\\s*\\*\\s*\\w+)?\\s*\\]\\s*\\*"
     - "\\bfromkeys\\s*\\([^)\\n]{1,80},\\s*(?:\\[|\\{|(?:set|list|dict)\\s*\\()"
     - "\\bcopy\\.copy\\s*\\("
+  examples:
+    - 'def add_item(cart, items=[]):'
+    - '    cache: dict = {}'
+    - 'grid = [[0] * cols] * rows'
+    - 'counts = dict.fromkeys(keys, [])'
+    - 'clone = copy.copy(template)'
 sources:
   - https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects
   - https://docs.python.org/3/faq/programming.html#how-do-i-create-a-multidimensional-list

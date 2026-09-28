@@ -8,6 +8,10 @@ activation:
     - 'github\.com/(?:golang-jwt|dgrijalva)/jwt'
     - '\bjwt\.(?:Parse\w{0,15}|NewParser|MapClaims|RegisteredClaims|StandardClaims|With\w{2,25}|SigningMethod\w{0,10}|Keyfunc)\b'
     - '\bParseUnverified\b'
+  examples:
+    - 'import "github.com/golang-jwt/jwt/v5"'
+    - 'token, err := jwt.Parse(tokenStr, keyFunc, jwt.WithValidMethods([]string{"RS256"}))'
+    - 'claims, _, err := new(jwt.Parser).ParseUnverified(tokenStr, jwt.MapClaims{})'
 sources:
   - https://pkg.go.dev/github.com/golang-jwt/jwt/v5
   - https://github.com/advisories/GHSA-mh63-6h87-95cp

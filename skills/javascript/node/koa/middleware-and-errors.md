@@ -9,6 +9,11 @@ activation:
     - "\\bctx\\.(?:throw|assert|status|body|respond)\\b"
     - "\\bapp\\.on\\s*\\(\\s*['\"]error['\"]|\\bexpose\\s*[:=]"
     - "\\bctx\\.redirect\\s*\\(\\s*['\"]back['\"]|\\bkoa-convert\\b|\\bfunction\\s*\\*"
+  examples:
+    - 'await next()'
+    - 'ctx.throw(404, "Not found")'
+    - 'app.on("error", (err) => log(err))'
+    - 'ctx.redirect("back")'
 sources:
   - https://github.com/koajs/koa/blob/master/docs/api/index.md
   - https://github.com/koajs/koa/blob/master/docs/error-handling.md

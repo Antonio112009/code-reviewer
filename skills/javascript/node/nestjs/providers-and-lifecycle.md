@@ -9,6 +9,11 @@ activation:
     - "\\bConfigModule\\.forRoot\\s*\\(|\\bconfigService\\.get\\w*\\b|\\bprocess\\.env\\.\\w+"
     - "\\benableShutdownHooks\\s*\\(|\\bon(?:ModuleInit|ModuleDestroy|ApplicationBootstrap|ApplicationShutdown)\\s*\\(|\\bbeforeApplicationShutdown\\s*\\("
     - "@(?:Cron|Interval|Timeout)\\s*\\("
+  examples:
+    - '@Injectable({ scope: Scope.REQUEST })'
+    - 'const port = configService.get<number>("PORT")'
+    - 'app.enableShutdownHooks()'
+    - '@Cron("0 0 * * *")'
 sources:
   - https://docs.nestjs.com/fundamentals/injection-scopes
   - https://docs.nestjs.com/fundamentals/lifecycle-events

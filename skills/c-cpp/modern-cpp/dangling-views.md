@@ -9,6 +9,11 @@ activation:
     - '\b(?:views|ranges)::'
     - '\bstd::(?:min|max|clamp)\s*\('
     - '\bfor\s*\([^;:\n]{1,80}:\s*[\w:]+\([^()\n]{0,40}\)\s*(?:\.|->)'
+  examples:
+    - 'std::string_view sv = obj.name();'
+    - 'auto evens = std::views::filter(nums, is_even);'
+    - 'const auto& m = std::max(a, b + 1);'
+    - 'for (auto& x : make().items()) { process(x); }'
 sources:
   - https://en.cppreference.com/w/cpp/string/basic_string_view
   - https://en.cppreference.com/w/cpp/language/range-for

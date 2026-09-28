@@ -8,6 +8,10 @@ activation:
     - '\bskipWaiting\(|\bclients\.claim\(|\bcontrollerchange\b'
     - '\bserviceWorker\.register\(|\bregistration\.(?:update|waiting|installing)\b|\bupdateViaCache\b'
     - '\bimportScripts\(|Service-Worker-Allowed|\bunregister\('
+  examples:
+    - 'self.skipWaiting();'
+    - "navigator.serviceWorker.register('/sw.js', { scope: '/' });"
+    - "importScripts('/workbox-sw.js');"
 sources:
   - https://web.dev/articles/service-worker-lifecycle
   - https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register

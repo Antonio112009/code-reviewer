@@ -8,6 +8,10 @@ activation:
     - '\b(?:bincode|postcard|rmp_serde|ciborium|rkyv|bitcode)::'
     - '\bwith_(?:no_)?limit\b|\bconfig::(?:standard|legacy)\(\)'
     - '\b(?:archived_root|access_unchecked|from_bytes_unchecked)\b'
+  examples:
+    - 'let bytes = bincode::serialize(&event)?;'
+    - 'let config = bincode::config::standard().with_limit::<1024>();'
+    - 'let archived = unsafe { rkyv::access_unchecked::<ArchivedEvent>(&bytes) };'
 sources:
   - https://docs.rs/bincode/2.0.1/bincode/serde/index.html
   - https://docs.rs/bincode/2.0.1/bincode/config/index.html

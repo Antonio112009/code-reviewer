@@ -5,3 +5,8 @@ priority: 55
 detect:
   languages: [rust]
   content: ['derive\([^)\n]{0,200}\b(?:Serialize|Deserialize)\b', '#\[serde\(', '\bserde(?:_json|_with|_repr)?::', '\b(?:bincode|postcard|rmp_serde|ciborium|rkyv)::']
+  examples:
+    - '#[derive(Debug, Serialize, Deserialize)]'
+    - '#[serde(rename_all = "camelCase")]'
+    - 'let value: User = serde_json::from_str(&body)?;'
+    - 'let bytes = bincode::serialize(&event)?;'

@@ -8,6 +8,10 @@ activation:
     - '\b(?:pagination_class|DEFAULT_PAGINATION_CLASS|PAGE_SIZE|page_size_query_param|max_page_size|max_limit|default_limit)\b'
     - '\b(?:PageNumberPagination|LimitOffsetPagination|CursorPagination)\b'
     - '\b(?:filter_backends|DEFAULT_FILTER_BACKENDS|ordering_fields|search_fields|filterset_fields|filterset_class|OrderingFilter|SearchFilter|DjangoFilterBackend)\b'
+  examples:
+    - 'page_size_query_param = "page_size"'
+    - 'class ResultsPagination(PageNumberPagination):'
+    - 'filter_backends = [DjangoFilterBackend, OrderingFilter]'
 sources:
   - https://www.django-rest-framework.org/api-guide/pagination/
   - https://www.django-rest-framework.org/api-guide/filtering/

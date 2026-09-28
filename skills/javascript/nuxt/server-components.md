@@ -11,6 +11,11 @@ activation:
     - "\\bcomponentIslands\\b"
     - "\\bresolveDynamicComponent\\s*\\("
     - "<component\\s[^>\\n]{0,80}:is="
+  examples:
+    - '<NuxtIsland name="UserCard" :props="{ userId }" />'
+    - 'experimental: { componentIslands: true },'
+    - 'const comp = resolveDynamicComponent(tag);'
+    - '<component :is="widget" />'
 sources:
   - https://nuxt.com/docs/4.x/guide/directory-structure/app/components
   - https://github.com/nuxt/nuxt/security/advisories/GHSA-9473-5f9j-94wq

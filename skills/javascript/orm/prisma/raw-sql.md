@@ -7,6 +7,9 @@ activation:
   content:
     - "\\$(?:queryRaw|executeRaw)(?:Unsafe|Typed)?\\b"
     - "\\bPrisma\\.(?:sql|raw|join|empty)\\b"
+  examples:
+    - 'const rows = await prisma.$queryRawUnsafe(`SELECT * FROM users WHERE id = ${id}`)'
+    - 'const clause = Prisma.sql`AND status = ${status}`'
 sources:
   - https://www.prisma.io/docs/orm/v7/prisma-client/using-raw-sql/raw-queries
   - https://www.prisma.io/docs/orm/prisma-client/using-raw-sql/raw-queries

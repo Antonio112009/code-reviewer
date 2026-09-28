@@ -7,6 +7,10 @@ activation:
     - "\\bmeta\\s*[:=(]"
     - "\\brequest\\.url\\b"
     - "_root\\.data|\\.data['\"`]"
+  examples:
+    - "export function meta({ data }) {"
+    - "const url = new URL(request.url);"
+    - "const res = await fetch(`${path}.data`);"
   versions: { framework.remix: ">=8" }
 sources:
   - https://reactrouter.com/changelog

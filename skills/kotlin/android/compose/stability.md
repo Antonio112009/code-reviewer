@@ -11,6 +11,12 @@ activation:
     - '\.(?:sortedBy|sortedWith|filter|groupBy)\s*[({]'
     - '\bderivedStateOf\s*\{'
     - '\bModifier\.(?:offset|graphicsLayer|drawBehind)\s*\('
+  examples:
+    - '@Stable class UiState(val count: Int)'
+    - 'composeCompiler { stabilityConfigurationFile = file("stability.conf") }'
+    - 'val showButton by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }'
+    - 'val sorted = items.sortedBy { it.name }'
+    - 'Modifier.offset(y = scrollOffset.dp)'
 sources:
   - https://developer.android.com/develop/ui/compose/performance/stability/strongskipping
   - https://developer.android.com/develop/ui/compose/performance/bestpractices

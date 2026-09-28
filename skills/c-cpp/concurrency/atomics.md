@@ -8,6 +8,10 @@ activation:
     - '\b(?:std::)?atomic(?:_ref|_flag)?\s*<|\batomic_flag\b|\b_Atomic\b'
     - '\bmemory_order(?:_|::)\w+|\.(?:fetch_add|fetch_sub|fetch_or|fetch_and|compare_exchange_(?:weak|strong))\s*\('
     - '\batomic_(?:load|store|exchange|fetch_\w+|compare_exchange_\w+)\s*\(|\b__(?:atomic|sync)_\w+\s*\('
+  examples:
+    - 'std::atomic<int> counter{0};'
+    - 'counter.fetch_add(1, std::memory_order_relaxed);'
+    - 'atomic_store(&flag, 1);'
 sources:
   - https://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange
   - https://en.cppreference.com/w/cpp/atomic/atomic/atomic

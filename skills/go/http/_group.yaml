@@ -7,3 +7,6 @@ detect:
   content:
     - '"net/http(?:/httputil|/httptest)?"'
     - '\bhttp\.(?:Handler|HandlerFunc|ResponseWriter|Request|Client|Server|Transport|ServeMux)\b'
+  examples:
+    - 'import "net/http"'
+    - 'func handler(w http.ResponseWriter, r *http.Request) {}'

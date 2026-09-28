@@ -7,6 +7,10 @@ activation:
     - '\.query\(on:|\.with\(\\\.\$|\$\w+\.(?:get|load|query)\(on:|@(?:Parent|OptionalParent|Children|Siblings)\b'
     - '\.transaction\s*\{|\.(?:delete|update|save|create)\(on:|\.set\(\\\.\$|\bAsyncMigration\b|\bautoMigrate\('
     - '\bSQLDatabase\b|\.raw\("|\\\((?:raw|unsafeRaw):'
+  examples:
+    - 'let posts = try await Post.query(on: req.db).with(\.$author).all()'
+    - 'try await req.db.transaction { db in try await user.save(on: db) }'
+    - 'let db = req.db as! SQLDatabase'
 sources:
   - https://docs.vapor.codes/fluent/relations/
   - https://docs.vapor.codes/fluent/transaction/

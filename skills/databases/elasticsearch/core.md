@@ -33,6 +33,10 @@ activation:
     - \b(?:import|from)\s+(?:elasticsearch|elasticsearch_dsl|elasticsearch8|opensearchpy|opensearch_dsl)\b|github\.com/(?:elastic/go-elasticsearch|olivere/elastic|opensearch-project/opensearch-go)|\bco\.elastic\.clients\b|\b(?:ElasticsearchClient|RestHighLevelClient|ElasticsearchOperations|ElasticsearchRepository|OpenSearchClient|ElasticClient)\b|\bElastic\.Clients\.Elasticsearch\b|\busing\s+Nest\s*;|\b(?:Searchkick|searchkick|Chewy)\b|\bElasticsearch\\Client
     - \b(?:match_phrase|multi_match|query_string|simple_query_string|search_after|track_total_hits|function_score|if_seq_no|retry_on_conflict|max_result_window|point_in_time|update_by_query|delete_by_query)\b|['"]_source['"]|/_(?:search|bulk|doc|update_by_query|delete_by_query|reindex|mapping|msearch|count)\b
     - '\b(?:client|es|esClient|elastic\w*|opensearch\w*|search[Cc]lient)\.(?:search|bulk|msearch|updateByQuery|update_by_query|deleteByQuery|delete_by_query|reindex|scroll|openPointInTime|open_point_in_time)\(|\.indices\.(?:create|put_?[Mm]apping|put_?[Ss]ettings|update_?[Aa]liases|put_?[Ii]ndex_?[Tt]emplate)\(|"mappings"\s*:\s*\{[\s\S]{0,400}?"properties"\s*:'
+  examples:
+    - 'import { Client } from "@elastic/elasticsearch";'
+    - 'from elasticsearch import Elasticsearch'
+    - 'const res = await client.search({ index: "users", body: { query: { query_string: { query: q } } } });'
 ---
 - **Query injection**: user text in `query_string` → queries on any field (`password:*`), leading wildcards, regexes, 400s on bad syntax; values spliced into Painless `source` are injectable. Fix: `simple_query_string` with fixed `fields`, script `params`.
 - **text vs keyword**: `term`, sorts or aggs on analyzed `text` fail; `match` on ids or tenant fields matches partial tokens → cross-tenant hits; dynamic `.keyword` ignores values over 256 chars. Fix: `keyword` fields, `term` filters.

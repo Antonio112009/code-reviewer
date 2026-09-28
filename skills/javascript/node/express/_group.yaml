@@ -8,3 +8,7 @@ detect:
     - "(?:from|require\\()\\s*['\"](?:express|express-session|cookie-session|cookie-parser|body-parser|express-rate-limit|multer|serve-static|@as-integrations/express[45])['\"]"
     - "\\bexpress(?:\\.Router)?\\(\\s*[{)]"
     - "\\(\\s*req\\b[^()\\n]{0,60},\\s*res\\b"
+  examples:
+    - 'import express from ''express'';'
+    - 'const app = express();'
+    - 'app.get(''/health'', (req, res) => res.sendStatus(200));'

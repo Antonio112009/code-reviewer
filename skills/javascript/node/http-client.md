@@ -9,6 +9,11 @@ activation:
     - '(?<![.\w$])(?:http|https)\.(?:request|get)\s*\('
     - '\baxios\b|\bundici\b|\bgot\s*\('
     - '\b(?:globalAgent|keepAlive|maxSockets|maxContentLength|maxBodyLength|maxRedirects|baseURL|allowAbsoluteUrls)\b'
+  examples:
+    - 'const res = await fetch(url);'
+    - 'https.get(url, (res) => {});'
+    - 'import axios from "axios";'
+    - 'axios.create({ baseURL: "https://api.example.com", maxRedirects: 5 });'
 sources:
   - https://undici.nodejs.org/#/?id=garbage-collection
   - https://nodejs.org/api/http.html#event-timeout

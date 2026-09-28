@@ -10,6 +10,11 @@ activation:
     - '\bNotify\b|\.notify_(?:one|waiters)\('
     - '\.try_send\(|\bRecvError::Lagged\b'
     - '\b(?:flume|crossbeam_channel|async_channel)::'
+  examples:
+    - 'let (tx, rx) = mpsc::channel(100);'
+    - 'notify.notify_one();'
+    - 'if let Err(TrySendError::Full(_)) = tx.try_send(msg) {'
+    - 'use flume::{Sender, Receiver};'
 sources:
   - https://docs.rs/tokio/latest/tokio/sync/mpsc/index.html
   - https://docs.rs/tokio/latest/tokio/sync/broadcast/index.html

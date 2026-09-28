@@ -12,6 +12,13 @@ activation:
     - '\.retry(?:When)?\s*[({]'
     - '\.collect(?:Latest)?\s*[({]'
     - '\.(?:combine|zip|flatMapLatest|flatMapMerge|onEach)\s*[({]'
+  examples:
+    - 'val ticker = flow { emit(1) }'
+    - 'source.flowOn(Dispatchers.IO)'
+    - 'source.catch { e -> emit(fallback) }'
+    - 'source.retryWhen { cause, attempt -> attempt < 3 }'
+    - 'source.collectLatest { value -> render(value) }'
+    - 'flowA.combine(flowB) { a, b -> a + b }'
 sources:
   - https://kotlinlang.org/docs/flow.html
   - https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/flow.html

@@ -8,6 +8,10 @@ activation:
     - '\b(?:HttpClient|HttpRequest|HttpResponse|HttpURLConnection|HttpsURLConnection)\b'
     - '\.(?:openConnection|openStream)\('
     - '\bBodyHandlers\.'
+  examples:
+    - 'HttpClient client = HttpClient.newHttpClient();'
+    - 'InputStream in = url.openStream();'
+    - 'HttpResponse<String> resp = client.send(request, BodyHandlers.ofString());'
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.net.http/java/net/http/HttpClient.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.net.http/java/net/http/HttpRequest.Builder.html#timeout(java.time.Duration)

@@ -9,6 +9,11 @@ activation:
     - '\bpub\s+fn\b[^\n{]{0,160}\*(?:const|mut)\s'
     - '\.size_hint\(\)|\bExactSizeIterator\b'
     - '\bManuallyDrop\b|\bmem::forget\b|\bmay_dangle\b'
+  examples:
+    - 'unsafe { buf.set_len(len) };'
+    - 'pub fn as_ptr(&self) -> *const u8 {'
+    - 'let (lower, _) = iter.size_hint();'
+    - 'let guard = ManuallyDrop::new(value);'
 sources:
   - https://doc.rust-lang.org/nomicon/working-with-unsafe.html
   - https://doc.rust-lang.org/nomicon/exception-safety.html

@@ -8,6 +8,10 @@ activation:
     - 'X[-_]Frame[-_]Options|\bframe-ancestors\b|\bframeguard\b|\bxFrameOptions\b|\bframeOptions\b'
     - '<iframe\b|\bsandbox\s*=|\ballow\s*=\s*[''"{][^''"}\n]{0,120}(?:camera|microphone|geolocation|payment)'
     - '\bdocument\.domain\b|Origin-Agent-Cluster|\b(?:top|window\.top)\s*!==?\s*(?:self|window)\b'
+  examples:
+    - 'res.setHeader("X-Frame-Options", "DENY");'
+    - '<iframe src={url} sandbox="allow-scripts allow-same-origin"></iframe>'
+    - 'if (window.top !== window.self) { window.top.location = window.self.location; }'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Frame-Options
   - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/frame-ancestors

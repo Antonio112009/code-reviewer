@@ -7,6 +7,10 @@ activation:
   content:
     - '\b(?:system|popen|_popen|exec[lv]p?e?|execvpe|posix_spawnp?|ShellExecute\w*|CreateProcess\w*)\s*\('
     - '\b(?:setuid|setgid|seteuid|setegid|setresuid|setresgid|setreuid|setregid|setgroups|initgroups|getenv|secure_getenv)\s*\('
+  examples:
+    - 'system(cmd);'
+    - 'execvp(argv[0], argv);'
+    - 'if (setuid(0) != 0) { perror("setuid"); exit(1); }'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/environment-env/env33-c/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/posix-pos/pos36-c/

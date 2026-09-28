@@ -5,6 +5,9 @@ activation:
   content:
     - '@(?:State|StateObject|ObservedObject|EnvironmentObject|Bindable|Binding)\b|@Environment\(\s*\w+\.self'
     - '\b_\w+\s*=\s*(?:State|StateObject|Binding)\(|\.environment(?:Object)?\(|\bBinding\((?:get|projectedValue):|\.constant\('
+  examples:
+    - '@StateObject private var viewModel = ProfileViewModel()'
+    - '_viewModel = StateObject(wrappedValue: ProfileViewModel(id: id))'
 sources:
   - https://developer.apple.com/documentation/swiftui/stateobject
   - https://developer.apple.com/documentation/swiftui/state

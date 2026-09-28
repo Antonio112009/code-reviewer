@@ -5,6 +5,9 @@ activation:
   content:
     - '\bForEach\s*\(|\bList\s*\(|\.id\(|\bIdentifiable\b|\bid:\s*\\\.\w+'
     - '\.onDelete\b|\.onMove\b|\.enumerated\(\)|\.indices\b|\bAnyView\('
+  examples:
+    - 'ForEach(items, id: \.id) { item in Text(item.name) }'
+    - '.onDelete { indexSet in items.remove(atOffsets: indexSet) }'
 sources:
   - https://developer.apple.com/documentation/swiftui/foreach/init(_:id:content:)
   - https://developer.apple.com/documentation/swiftui/foreach

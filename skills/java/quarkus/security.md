@@ -8,6 +8,10 @@ activation:
     - '@(?:RolesAllowed|PermitAll|DenyAll|Authenticated|PermissionsAllowed)\b'
     - '\bquarkus\.(?:http\.(?:auth|cors)|security)\b'
     - '\bdeny-unannotated'
+  examples:
+    - '@RolesAllowed("admin")'
+    - 'quarkus.http.cors.origins=/.*/'
+    - 'quarkus.security.jaxrs.deny-unannotated-endpoints=true'
 sources:
   - https://quarkus.io/guides/security-authorize-web-endpoints-reference
   - https://quarkus.io/guides/security-cors

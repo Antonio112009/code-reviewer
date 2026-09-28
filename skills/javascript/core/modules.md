@@ -9,6 +9,12 @@ activation:
     - '\bimport\s*\('
     - '^await\s|^(?:const|let|var)\s[^=\n]{1,80}=\s*await\s'
     - '\bdotenv\b'
+  examples:
+    - 'import { db } from ''./db.js'';'
+    - 'export let counter = 0;'
+    - 'const mod = await import(''./plugin.js'');'
+    - 'import ''dotenv/config'';'
+    - 'await initializeCache();'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import

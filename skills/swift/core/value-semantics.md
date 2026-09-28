@@ -6,6 +6,10 @@ activation:
     - '\b(?:if|guard|for|while)\s+var\b|\bvar\s+\w+\s*=\s*\w+(?:\.\w+)?\[[^\]\n]{1,40}\]\s*$'
     - '\bstatic\s+func\s*==|\bfunc\s+hash\(into|\boverride\s+(?:func\s+isEqual|var\s+hash)\b|\b(?:Hashable|Equatable)\b'
     - '\bisKnownUniquelyReferenced\b|:\s*NSObject\b'
+  examples:
+    - 'if var config = loadConfig() {'
+    - 'struct Point: Hashable { let x: Int; let y: Int }'
+    - 'guard isKnownUniquelyReferenced(&storage) else { copy() }'
 sources:
   - https://developer.apple.com/documentation/swift/hashable
   - https://developer.apple.com/documentation/objectivec/nsobjectprotocol/isequal(_:)

@@ -8,6 +8,10 @@ activation:
     - "\\bapp\\.(?:proxy|maxIpsCount|proxyIpHeader|keys)\\b|\\bproxy\\s*:\\s*true\\b"
     - "\\bctx\\.(?:ip|ips|protocol|host|hostname|redirect|back|cookies)\\b"
     - "@koa/(?:cors|bodyparser|multer)|\\bkoa-(?:session|body|bodyparser|static|send|mount)\\b"
+  examples:
+    - 'app.proxy = true'
+    - 'const ip = ctx.ip'
+    - 'import session from "koa-session"'
 sources:
   - https://github.com/koajs/koa/blob/master/docs/api/index.md
   - https://github.com/koajs/koa/security/advisories/GHSA-g8mr-fgfg-5qpc

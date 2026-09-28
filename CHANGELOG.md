@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Skill signals are tested.** Every `content` regex of a skill or group now comes with `examples` of code it
+  must match, and every example must match one of them (`test/skills-library.test.ts`); project skills may
+  declare them too. Signals that fired on most code were narrowed: Go nil values (on 78% of Go samples from
+  AACR-Bench, now 10%), C/C++ integer conversions (30% → 6%), Go `defer`, Go parallel tests and Rust
+  secrets in `Debug`.
 - **Changed functions and their changed callers share a chunk.** When one changed file calls a function
   whose declaration another changed file modifies, the two are grouped like importing files (`calls` in the
   plan), also where imports do not resolve: files of one Go package, C/C++ headers, dynamic imports.

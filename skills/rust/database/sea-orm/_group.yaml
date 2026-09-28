@@ -5,3 +5,9 @@ priority: 62
 detect:
   languages: [rust]
   content: ['\bsea_orm::', '\bDeriveEntityModel\b', '\bActiveModel(?:Trait|Behavior)?\b', '\bDatabaseConnection\b', '\bEntity::(?:find|insert|update|delete)']
+  examples:
+    - 'use sea_orm::entity::prelude::*;'
+    - '#[derive(DeriveEntityModel)]'
+    - 'let mut active_user: ActiveModel = user.into();'
+    - 'async fn seed(db: &DatabaseConnection) -> Result<(), DbErr> {'
+    - 'let user = Entity::find_by_id(id).one(db).await?;'

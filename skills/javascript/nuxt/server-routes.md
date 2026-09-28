@@ -10,6 +10,9 @@ activation:
     - "\\bdefine(?:Cached)?EventHandler\\b"
     - "\\b(?:readBody|readRawBody|readFormData|readMultipartFormData|getQuery|getRouterParams?|getCookie)\\s*[(<]"
     - "\\bcreateError\\s*\\("
+  examples:
+    - 'export default defineEventHandler(async (event) => { const body = await readBody(event); return body; });'
+    - 'throw createError({ statusCode: 404, statusMessage: ''Not found'' });'
 sources:
   - https://nuxt.com/docs/4.x/guide/directory-structure/server
   - https://h3.dev/utils/request

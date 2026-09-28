@@ -12,6 +12,13 @@ activation:
     - "\\bv-bind\\s*=\\s*\""
     - "\\btemplate\\s*:\\s*[`'\"]"
     - "\\bcompile\\s*\\("
+  examples:
+    - '<div v-html="comment.body"></div>'
+    - '<a :href="user.website">Visit</a>'
+    - '<div :onclick="handler"></div>'
+    - '<a v-bind="attrs">Link</a>'
+    - 'template: ''<div>{{ userInput }}</div>'','
+    - 'const render = compile(userTemplate);'
 sources:
   - https://vuejs.org/guide/best-practices/security.html
   - https://vuejs.org/api/built-in-directives.html#v-pre

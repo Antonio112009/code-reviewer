@@ -8,6 +8,10 @@ activation:
     - "\\bsequelize\\.transaction\\s*\\(|\\btransaction\\s*:\\s*\\w+|\\b(?:t|tx|trx|transaction)\\.(?:commit|rollback|afterCommit|LOCK)\\b"
     - "\\buseCLS\\s*\\(|\\block\\s*:|\\bskipLocked\\b"
     - "\\.sync\\s*\\(\\s*\\{|\\bsequelize\\.sync\\s*\\("
+  examples:
+    - 'const t = await sequelize.transaction()'
+    - 'const rows = await Task.findAll({ lock: true, skipLocked: true })'
+    - 'await sequelize.sync({ alter: true })'
 sources:
   - https://sequelize.org/docs/v6/other-topics/transactions/
   - https://sequelize.org/docs/v6/core-concepts/model-basics/

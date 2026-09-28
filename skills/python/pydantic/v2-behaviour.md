@@ -9,6 +9,12 @@ activation:
     - '\b(?:AnyUrl|HttpUrl|AnyHttpUrl|PostgresDsn|RedisDsn|url_preserve_empty_path)\b'
     - '\bpattern\s*=|\bregex_engine\b|\bpydantic\.v1\b|\bfrom\s+pydantic\.v1\b'
     - '@validator\(|@root_validator\b|\bclass\s+Config\s*:|\.dict\(\)|\.parse_obj\('
+  examples:
+    - 'age: Optional[int]'
+    - 'value: Union[int, str] = Field(union_mode="left_to_right")'
+    - 'redirect_uri: HttpUrl'
+    - 'code: str = Field(pattern=r"^[A-Z]{3}$")'
+    - '@validator("name")'
 sources:
   - https://docs.pydantic.dev/latest/migration/
   - https://docs.pydantic.dev/latest/concepts/unions/

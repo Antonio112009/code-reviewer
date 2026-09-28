@@ -11,6 +11,11 @@ activation:
     - "\\bruntimeConfig\\s*:"
     - "\\bNUXT_[A-Z0-9_]+"
     - "\\b(?:defineAppConfig|useAppConfig|updateAppConfig)\\s*\\("
+  examples:
+    - 'const config = useRuntimeConfig();'
+    - 'runtimeConfig: { apiSecret: '''', public: { apiBase: '''' } },'
+    - 'const secret = process.env.NUXT_API_SECRET;'
+    - 'export default defineAppConfig({ theme: ''dark'' });'
 sources:
   - https://nuxt.com/docs/4.x/guide/going-further/runtime-config
   - https://nuxt.com/docs/4.x/guide/directory-structure/app/app-config

@@ -8,6 +8,10 @@ activation:
     - '\b(?:round|floor|ceil|intdiv|fmod|number_format|intval|floatval|is_numeric)\s*\('
     - '\bbc(?:add|sub|mul|div|mod|pow|scale)\s*\(|\bBcMath\\Number\b'
     - '\((?:int|integer|float|double)\)\s*[$(]|\bPHP_INT_MAX\b'
+  examples:
+    - '$cents = intval($price * 100);'
+    - '$total = bcadd($a, $b, 2);'
+    - '$amount = (int) $rawCents;'
 sources:
   - https://www.php.net/manual/en/language.types.float.php
   - https://www.php.net/manual/en/bc.configuration.php

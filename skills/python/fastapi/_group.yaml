@@ -10,3 +10,5 @@ detect:
     - "**/{dependencies,deps}.py"
   content:
     - '^[ \t]*(?:from|import)[ \t]+(?:fastapi|starlette)\b'
+  examples:
+    - 'from fastapi import FastAPI, APIRouter'

@@ -11,6 +11,13 @@ activation:
     - "\\bnew Vue\\s*\\("
     - "\\.(?:sync|native)\\b"
     - "^\\s*filters\\s*:\\s*\\{"
+  examples:
+    - 'Vue.set(this.items, index, value);'
+    - 'this.$set(this.obj, ''key'', value);'
+    - 'beforeDestroy() { clearInterval(this.timer); },'
+    - 'new Vue({ el: ''#app'', data: { count: 0 } });'
+    - '<child-component :value.sync="value" @click.native="onClick" />'
+    - '  filters: {'
 sources:
   - https://v2.vuejs.org/v2/guide/reactivity.html
   - https://v3-migration.vuejs.org/breaking-changes/

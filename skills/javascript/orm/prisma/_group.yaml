@@ -10,3 +10,8 @@ detect:
     - "\\bnew\\s+PrismaClient\\b|\\bPrisma\\.(?:sql|raw|join|skip|TransactionIsolationLevel|PrismaClientKnownRequestError|DbNull|JsonNull)\\b"
     - "\\b(?:prisma|tx|db)\\.\\$(?:transaction|queryRaw\\w*|executeRaw\\w*|extends|connect|disconnect)\\b"
     - "\\b(?:prisma|tx|db)\\.\\w+\\.(?:findMany|findFirst\\w*|findUnique\\w*|create\\w*|update\\w*|upsert|delete\\w*|count|aggregate|groupBy)\\s*\\("
+  examples:
+    - 'import { PrismaClient } from "@prisma/client"'
+    - 'const prisma = new PrismaClient()'
+    - 'await prisma.$transaction(async (tx) => tx.user.update({ where: { id }, data }))'
+    - 'const users = await prisma.user.findMany({ where: { active: true } })'

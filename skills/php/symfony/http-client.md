@@ -8,6 +8,10 @@ activation:
     - '\bHttpClientInterface\b|\bHttpClient::create\s*\(|\b(?:NoPrivateNetwork|Retryable|Scoping)HttpClient\b'
     - '->request\s*\(\s*[''"](?:GET|POST|PUT|PATCH|DELETE|HEAD)[''"]'
     - '[''"](?:max_redirects|max_duration|verify_peer|verify_host)[''"]\s*=>'
+  examples:
+    - '$client = HttpClient::create();'
+    - '$response = $client->request(''GET'', $url);'
+    - '$options = [''verify_peer'' => false];'
 sources:
   - https://symfony.com/doc/current/http_client.html#handling-exceptions
   - https://symfony.com/doc/current/http_client.html#dealing-with-network-timeouts

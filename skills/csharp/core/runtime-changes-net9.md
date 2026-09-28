@@ -8,6 +8,10 @@ activation:
     - '\bJsonDocument\b'
     - '\bSetEnvironmentVariable\(|\.Environment\[|\bGetEnvironmentVariable\('
     - '\bZipArchive\b|\bentryNameEncoding\b|\bBinaryReader\b'
+  examples:
+    - 'using var doc = JsonDocument.Parse(payload);'
+    - 'Environment.SetEnvironmentVariable("API_KEY", "");'
+    - 'using var archive = new ZipArchive(stream, ZipArchiveMode.Read);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/core/compatibility/serialization/9.0/jsondocument-props
   - https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/9.0/empty-env-variable

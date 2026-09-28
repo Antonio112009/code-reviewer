@@ -8,6 +8,10 @@ activation:
     - "\\.findMany\\s*\\(|\\.findFirst\\w*\\s*\\("
     - "\\b(?:select|include|omit|orderBy)\\s*:\\s*(?:\\{|req\\b|input\\b|query\\b|args\\b|body\\b|params\\b)"
     - "\\b(?:take|skip|cursor)\\s*:|\\brelationLoadStrategy\\b|\\bomit\\s*:"
+  examples:
+    - 'const posts = await prisma.post.findMany({ select: { id: true, title: true } })'
+    - 'const posts = await prisma.post.findMany({ include: req.query.include })'
+    - 'const page = await prisma.post.findMany({ take: 20, skip: offset })'
 sources:
   - https://www.prisma.io/docs/orm/prisma-client/queries/query-optimization-performance
   - https://github.com/prisma/prisma/releases/tag/6.2.0

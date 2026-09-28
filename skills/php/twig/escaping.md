@@ -8,6 +8,11 @@ activation:
   content:
     - '\|\s*raw\b|\{%-?\s*autoescape\s+false|\|\s*e(?:scape)?\s*\(\s*[''"](?:js|css|url|html_attr)'
     - '->createTemplate\s*\(|\btemplate_from_string\s*\(|\bSandboxExtension\b|\bSecurityPolicy\b'
+  examples:
+    - '{{ comment.body|raw }}'
+    - '{% autoescape false %}'
+    - '<script>var d = {{ data|e(''js'') }};</script>'
+    - '$tpl = $twig->createTemplate($userInput);'
 sources:
   - https://twig.symfony.com/doc/3.x/filters/escape.html
   - https://twig.symfony.com/doc/3.x/functions/template_from_string.html

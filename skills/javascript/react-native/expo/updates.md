@@ -6,6 +6,9 @@ activation:
   content:
     - 'expo-updates|\bUpdates\.(?:checkForUpdateAsync|fetchUpdateAsync|reloadAsync)\b|\buseUpdates\b'
     - '\b(?:runtimeVersion|fallbackToCacheTimeout|checkAutomatically|codeSigning(?:Certificate|Metadata))\b'
+  examples:
+    - 'await Updates.fetchUpdateAsync();'
+    - "runtimeVersion: { policy: 'appVersion' },"
 sources:
   - https://docs.expo.dev/eas-update/runtime-versions/
   - https://docs.expo.dev/versions/latest/sdk/updates/

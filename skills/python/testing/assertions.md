@@ -8,6 +8,11 @@ activation:
     - "\\bassert(?:True|False|Equal|NotEqual|Raises|RaisesRegex|AlmostEqual|Is|In|IsNone)\\s*\\("
     - "^[ \\t]*assert\\s*\\("
     - "^[ \\t]*assert\\s[^\\n]{0,120}==\\s*-?\\d+\\.\\d"
+  examples:
+    - 'with pytest.raises(ValueError):'
+    - 'self.assertTrue(result, expected)'
+    - 'assert (x == 1, "msg")'
+    - 'assert total == 19.99'
 sources:
   - https://docs.pytest.org/en/stable/reference/reference.html#pytest.raises
   - https://docs.pytest.org/en/stable/how-to/assert.html

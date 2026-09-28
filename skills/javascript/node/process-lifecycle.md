@@ -10,6 +10,11 @@ activation:
     - '\.on\s*\(\s*[''"]error[''"]|\bcaptureRejections\b'
     - '\bnew\s+EventEmitter\b|\bextends\s+EventEmitter\b'
     - '\bprocess\.env\.\w+\s*=[^=]'
+  examples:
+    - 'process.on("uncaughtException", handleFatal);'
+    - 'socket.on("error", (err) => logger.error(err));'
+    - 'class Pipeline extends EventEmitter {}'
+    - 'process.env.NODE_ENV = "production";'
 sources:
   - https://nodejs.org/api/process.html#warning-using-uncaughtexception-correctly
   - https://nodejs.org/api/process.html#processexitcode

@@ -11,6 +11,12 @@ activation:
     - '\bcall\.receive\s*<'
     - '\bRequestValidationException\b|\bValidationResult\.'
     - '\bBadRequestException\b|\bNotFoundException\b'
+  examples:
+    - 'install(StatusPages) { exception<Throwable> { call, cause -> respondError(cause) } }'
+    - 'call.respondText(cause.message ?: "error")'
+    - 'val dto = call.receive<CreateUserRequest>()'
+    - 'is ValidationResult.Invalid -> reasons.joinToString()'
+    - 'throw NotFoundException("user not found")'
 sources:
   - https://ktor.io/docs/server-status-pages.html
   - https://ktor.io/docs/server-serialization.html

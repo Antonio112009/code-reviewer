@@ -9,6 +9,11 @@ activation:
     - '\bmake\s*\(\s*(?:<-\s*)?chan\b'
     - '<-\s*[A-Za-z_]'
     - '\.Go\(\s*func\b'
+  examples:
+    - 'go worker(results)'
+    - 'done := make(chan struct{})'
+    - 'v := <-resultCh'
+    - 'g.Go(func() error {'
 sources:
   - https://go.dev/doc/go1.27
   - https://go.dev/blog/pipelines

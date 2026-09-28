@@ -8,6 +8,10 @@ activation:
     - '\baria-(?:live|atomic|relevant|busy)\b'
     - '\brole\s*=\s*[{''"]*(?:alert|status|log|progressbar|timer)\b'
     - '\b(?:toast|snackbar|[Tt]oaster|[Nn]otistack|sonner)\b'
+  examples:
+    - '<div aria-live="polite" aria-atomic="true">{message}</div>'
+    - '<div role="status">Saved</div>'
+    - 'toast.success("Item added to cart");'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Live_regions
   - https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html

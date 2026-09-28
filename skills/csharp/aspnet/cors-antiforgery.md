@@ -8,6 +8,10 @@ activation:
     - '\b(?:AddCors|UseCors|WithOrigins|AllowAnyOrigin|AllowCredentials|SetIsOriginAllowed\w*)\(|\[(?:EnableCors|DisableCors)\b'
     - '\bAntiforgery\w*\b|\[(?:ValidateAntiForgeryToken|IgnoreAntiforgeryToken|AutoValidateAntiforgeryToken)\b|\bDisableAntiforgery\('
     - '\[Consumes\(|\bOrigin\b'
+  examples:
+    - 'policy.WithOrigins("https://app.example.com").AllowCredentials();'
+    - '[ValidateAntiForgeryToken]'
+    - '[Consumes("application/json")]'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/security/cors
   - https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery

@@ -7,6 +7,10 @@ activation:
     - "\\b(?:create_task_group|open_nursery)\\s*\\(|\\bstart_soon\\s*\\(|\\btask_status\\b"
     - "\\bCancelScope\\b|\\b(?:move_on_after|fail_after|move_on_at|fail_at)\\s*\\(|\\bget_cancelled_exc_class\\b|\\btrio\\.Cancelled\\b"
     - "\\bto_thread\\.run_sync\\s*\\(|\\bfrom_thread\\.\\w+|\\bCapacityLimiter\\b|\\bstrict_exception_groups\\b"
+  examples:
+    - 'async with anyio.create_task_group() as tg:'
+    - 'with move_on_after(5):'
+    - 'result = await anyio.to_thread.run_sync(blocking_call)'
 sources:
   - https://anyio.readthedocs.io/en/stable/migration.html
   - https://anyio.readthedocs.io/en/stable/cancellation.html

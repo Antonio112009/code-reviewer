@@ -7,6 +7,9 @@ activation:
   content:
     - '\bfs(?:Promises)?\.\w+\s*\(|[''"](?:node:)?fs(?:/promises)?[''"]'
     - '\b(?:readFile|writeFile|appendFile|existsSync|access|lstat|mkdir|rename|unlink|opendir|copyFile)(?:Sync)?\s*\('
+  examples:
+    - 'import fs from "node:fs/promises";'
+    - 'const exists = fs.existsSync(configPath);'
 sources:
   - https://nodejs.org/api/fs.html#fsaccesspath-mode-callback
   - https://nodejs.org/api/fs.html#fspromiseswritefilefile-data-options

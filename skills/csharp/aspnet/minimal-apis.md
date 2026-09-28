@@ -8,6 +8,10 @@ activation:
     - '\.Map(?:Get|Post|Put|Patch|Delete|Methods|Group)\('
     - '\bRouteGroupBuilder\b|\bIEndpointRouteBuilder\b|\[AsParameters\]|\bAddEndpointFilter\b'
     - '\b(?:Typed)?Results\.\w+\(|\b(?:Disable|Add)Validation\(|\bDisableAntiforgery\('
+  examples:
+    - 'app.MapGet("/orders/{id}", GetOrder);'
+    - 'app.MapGroup("/orders").RequireAuthorization().AddEndpointFilter<ValidationFilter>();'
+    - 'return TypedResults.NotFound();'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/parameter-binding
   - https://learn.microsoft.com/en-us/aspnet/core/release-notes/aspnetcore-10.0

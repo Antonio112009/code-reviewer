@@ -7,6 +7,10 @@ activation:
     - "\\b(?:datetime|zoneinfo|ZoneInfo|pytz|dateutil|tzinfo|timedelta)\\b"
     - "\\b(?:strptime|fromisoformat|fromtimestamp|utcfromtimestamp|utcnow|astimezone|localize)\\s*\\("
     - "\\btime\\.time\\s*\\("
+  examples:
+    - 'created = datetime.utcnow()'
+    - 'tz = pytz.timezone("Europe/Berlin")'
+    - 'start = time.time()'
 sources:
   - https://docs.python.org/3/library/datetime.html#aware-and-naive-objects
   - https://docs.python.org/3/library/datetime.html#datetime.datetime.strptime

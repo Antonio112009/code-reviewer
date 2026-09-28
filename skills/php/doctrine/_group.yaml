@@ -6,3 +6,4 @@ detect:
   stack: [orm.doctrine]
   files: ["**/*.orm.xml", "**/Entity/**/*.php", "**/Repository/**/*.php", "**/migrations/**/*.php", "**/Migrations/**/*.php"]
   content: ["\\buse Doctrine\\\\", "#\\[ORM\\\\", "\\bDoctrine\\\\(?:ORM|DBAL|Migrations|Persistence)\\\\", "\\bEntityManager(?:Interface)?\\b|\\bManagerRegistry\\b", "->(?:getRepository|createQueryBuilder|persist|flush)\\s*\\("]
+  examples: ["use Doctrine\\ORM\\Mapping as ORM;", "#[ORM\\Entity(repositoryClass: UserRepository::class)]", "public function __construct(private EntityManagerInterface $em) {}", "$em->getRepository(User::class)->createQueryBuilder('u')->getQuery();"]

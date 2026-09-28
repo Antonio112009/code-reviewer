@@ -8,6 +8,9 @@ activation:
     - '@receiver\('
     - '\b(?:pre_save|post_save|pre_delete|post_delete|m2m_changed|request_finished|user_logged_in)\b'
     - '\.connect\(|\bSignal\(|\.send(?:_robust)?\(|\.asend(?:_robust)?\('
+  examples:
+    - '@receiver(post_save, sender=Order)'
+    - 'order_shipped.connect(notify_customer)'
 sources:
   - https://docs.djangoproject.com/en/stable/topics/signals/
   - https://docs.djangoproject.com/en/stable/ref/signals/

@@ -7,6 +7,13 @@ activation:
   content:
     - '\bSystem\.(?:Threading|Timers)\.Timer\b|\bnew\s+Timer\(|\bTimerCallback\b'
     - '\bPeriodicTimer\b|\.Elapsed\s*\+=|\bCreateTimer\('
+  examples:
+    - 'private readonly System.Threading.Timer _timer;'
+    - 'private readonly Timer _timer = new Timer(Callback, null, 0, 1000);'
+    - 'TimerCallback callback = OnTick;'
+    - 'private readonly PeriodicTimer _timer = new(TimeSpan.FromSeconds(1));'
+    - 'timer.Elapsed += OnElapsed;'
+    - 'var timer = factory.CreateTimer(OnTick, null, dueTime, period);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/api/system.threading.timer
   - https://learn.microsoft.com/en-us/dotnet/api/system.timers.timer

@@ -11,6 +11,13 @@ activation:
     - "\\bAstro\\.url\\.searchParams\\b"
     - "\\bcontext\\.cache\\b|\\brouteRules\\b"
     - "\\bexport\\s+(?:const|async\\s+function|function)\\s+(?:GET|POST|PUT|PATCH|DELETE|ALL)\\b"
+  examples:
+    - 'export const prerender = false;'
+    - 'output: ''server'','
+    - 'const token = Astro.cookies.get(''session'')?.value;'
+    - 'const page = Astro.url.searchParams.get(''page'');'
+    - 'context.cache.set(false);'
+    - 'export async function POST({ request }) { return new Response(''ok''); }'
 sources:
   - https://docs.astro.build/en/guides/on-demand-rendering/
   - https://docs.astro.build/en/guides/endpoints/

@@ -9,6 +9,11 @@ activation:
     - "\\bsession\\??\\.user\\b"
     - "\\bisAdmin\\b"
     - "['\"]server-only['\"]"
+  examples:
+    - "const session = await auth();"
+    - "const userId = session?.user.id;"
+    - "const isAdmin = searchParams.get('isAdmin') === 'true';"
+    - "import 'server-only';"
 sources:
   - https://nextjs.org/docs/app/guides/authentication
   - https://nextjs.org/docs/app/guides/data-security

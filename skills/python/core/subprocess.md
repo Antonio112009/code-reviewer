@@ -8,6 +8,11 @@ activation:
     - "(?<![\\w.])(?:Popen|check_output|check_call)\\s*\\("
     - "\\bos\\.(?:system|popen|spawn\\w*|exec\\w+)\\s*\\("
     - "\\bcreate_subprocess_(?:exec|shell)\\s*\\("
+  examples:
+    - 'result = subprocess.run(["ls", "-la"])'
+    - 'proc = Popen(["cat", path])'
+    - 'os.system(f"rm {path}")'
+    - 'proc = await asyncio.create_subprocess_exec("ls")'
 sources:
   - https://docs.python.org/3/library/subprocess.html#subprocess.run
   - https://docs.python.org/3/library/subprocess.html#subprocess.Popen.communicate

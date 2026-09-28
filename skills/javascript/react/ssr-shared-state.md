@@ -12,6 +12,13 @@ activation:
     - "\\bcreate<[^>\\n]{1,80}>\\s*\\(\\s*\\)\\s*\\("
     - "\\baxios\\.defaults\\.headers\\b"
     - "\\bi18n(?:ext)?\\.changeLanguage\\s*\\("
+  examples:
+    - "const queryClient = new QueryClient();"
+    - "const store = configureStore({ reducer });"
+    - "const useStore = create<State>((set) => ({ count: 0 }));"
+    - "const useStore = create<State>()((set) => ({ count: 0 }));"
+    - "axios.defaults.headers.common.Authorization = `Bearer ${token}`;"
+    - "i18n.changeLanguage(locale);"
 sources:
   - https://tanstack.com/query/latest/docs/framework/react/guides/ssr
   - https://redux.js.org/usage/nextjs

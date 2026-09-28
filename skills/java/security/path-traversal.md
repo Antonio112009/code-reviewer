@@ -11,6 +11,13 @@ activation:
     - '\b(?:ZipInputStream|ZipFile|ZipEntry|JarFile|JarInputStream|TarArchiveInputStream|ArchiveEntry)\b'
     - '\b(?:getOriginalFilename|getSubmittedFileName)\('
     - '\bcreateTemp(?:File|Directory)\('
+  examples:
+    - 'File target = new File(uploadDir, fileName);'
+    - 'Path path = Paths.get(baseDir, userInput);'
+    - 'Path resolved = base.resolve(userInput);'
+    - 'ZipEntry entry = zipInputStream.getNextEntry();'
+    - 'String name = file.getOriginalFilename();'
+    - 'File tmp = File.createTempFile("upload", ".tmp");'
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/Path.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/Files.html

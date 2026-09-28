@@ -8,6 +8,10 @@ activation:
     - '<html\b|<title\b|\bdocument\.title\b|\blang\s*='
     - '<(?:main|nav|header|footer|h[1-6]|table|th|caption)\b|\brole\s*=\s*[{''"]*(?:main|navigation|heading|table|grid)\b'
     - '<Head\b|<svelte:head>|\bTitle\.setTitle\(|\buseHead\(|\bgenerateMetadata\b'
+  examples:
+    - '<html lang="en">'
+    - '<main role="main">'
+    - '<Head><title>Dashboard</title></Head>'
 sources:
   - https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html
   - https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html

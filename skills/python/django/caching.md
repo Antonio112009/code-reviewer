@@ -9,6 +9,11 @@ activation:
     - '\{%-?\s*cache\s'
     - '\bcache(?:s\[[^\]\n]{1,40}\])?\.(?:get|set|add|get_or_set|set_many|get_many|delete|incr|decr|touch)\('
     - '\bLocMemCache\b|\bCACHES\s*='
+  examples:
+    - '@cache_page(60 * 15)'
+    - '{% cache 600 sidebar %}'
+    - 'cache.get_or_set(key, compute_value)'
+    - 'CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}'
 sources:
   - https://docs.djangoproject.com/en/stable/topics/cache/
   - https://docs.djangoproject.com/en/stable/releases/6.0.6/

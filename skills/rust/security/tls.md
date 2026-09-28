@@ -9,6 +9,11 @@ activation:
     - '\bCryptoProvider\b|\binstall_default\(|\b(?:Client|Server)Config::builder\('
     - '\bsslmode=|\bssl_mode\(|\bPgSslMode::|\bMySqlSslMode::'
     - '\brustls::|\bnative_tls::|\bopenssl::ssl::|\bTlsConnector\b'
+  examples:
+    - 'let client = Client::builder().danger_accept_invalid_certs(true).build()?;'
+    - 'CryptoProvider::install_default(provider)?;'
+    - 'let opts = PgConnectOptions::new().ssl_mode(PgSslMode::VerifyFull);'
+    - 'let connector = TlsConnector::from(rustls_config);'
 sources:
   - https://docs.rs/reqwest/latest/reqwest/struct.ClientBuilder.html#method.danger_accept_invalid_certs
   - https://docs.rs/rustls/latest/rustls/crypto/struct.CryptoProvider.html

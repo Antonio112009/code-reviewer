@@ -6,3 +6,4 @@ detect:
   stack: [framework.laravel]
   files: ["**/app/**/*.php", "**/routes/**/*.php", "**/config/**/*.php", "**/database/**/*.php", "**/bootstrap/app.php", "**/*.blade.php", "**/.env", "**/.env.*", "**/composer.json"]
   content: ["\\buse Illuminate\\\\", "\\buse Livewire\\\\", "\\bIlluminate\\\\Support\\\\Facades\\\\"]
+  examples: ["use Illuminate\\Support\\Facades\\Route;", "use Livewire\\Component;"]

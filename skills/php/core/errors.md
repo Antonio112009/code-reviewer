@@ -9,6 +9,11 @@ activation:
     - '\bset_(?:error|exception)_handler\s*\(|\berror_reporting\s*\('
     - '[=(,!\s]@\\?[a-z_]\w*\s*\(|\bfinally\s*\{'
     - '\b(?:file_get_contents|file_put_contents|fopen|mkdir|rename|unlink|copy)\s*\('
+  examples:
+    - '} catch (Exception $e) {'
+    - 'set_error_handler(function ($errno, $errstr) {'
+    - '$data = @file_get_contents($path);'
+    - '} finally {'
 sources:
   - https://www.php.net/manual/en/language.errors.php7.php
   - https://www.php.net/manual/en/migration80.incompatible.php

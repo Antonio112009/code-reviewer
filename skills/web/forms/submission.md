@@ -7,6 +7,10 @@ activation:
     - '<form\b|<button\b'
     - '\bonSubmit\b|@submit\b|\(ngSubmit\)|\(submit\)|\bon:submit\b|\bonsubmit\b'
     - '\.submit\(\)|\brequestSubmit\(|\bnew FormData\('
+  examples:
+    - '<form onSubmit={handleSubmit}>'
+    - '<button>Add row</button>'
+    - 'form.submit();'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button
   - https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/submit

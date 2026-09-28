@@ -10,3 +10,7 @@ detect:
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?io\.(?:quarkus|smallrye|vertx)\.'
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?(?:jakarta|javax)\.(?:ws\.rs|enterprise|inject|transaction|annotation\.security)\.'
     - '^[ \t]*import[ \t]+org\.eclipse\.microprofile\.'
+  examples:
+    - 'import io.quarkus.runtime.StartupEvent;'
+    - 'import jakarta.ws.rs.GET;'
+    - 'import org.eclipse.microprofile.config.inject.ConfigProperty;'

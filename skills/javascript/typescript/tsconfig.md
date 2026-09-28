@@ -6,6 +6,8 @@ activation:
   files: ['**/tsconfig.json', '**/tsconfig.*.json']
   content:
     - '"(?:strict|strictNullChecks|noImplicitAny|skipLibCheck|module|moduleResolution|paths|baseUrl|esModuleInterop|allowSyntheticDefaultImports|verbatimModuleSyntax|isolatedModules)"\s*:'
+  examples:
+    - '"moduleResolution": "bundler",'
 sources:
   - https://www.typescriptlang.org/docs/handbook/modules/reference.html#the-moduleresolution-compiler-option
   - https://www.typescriptlang.org/tsconfig/#paths

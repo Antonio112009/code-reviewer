@@ -7,6 +7,10 @@ activation:
     - '\bWebApplicationFactory<|\bConfigure(?:Test)?Services\(|\bUseEnvironment\(|\bUseInMemoryDatabase\('
     - '\bTestcontainers\b|\b(?:PostgreSql|MsSql|MySql|Redis)Container\b|\bRespawner\b'
     - '\bFakeTimeProvider\b|\bThread\.Sleep\(|\bTask\.Delay\(|\bDateTime\.(?:Now|UtcNow)\b'
+  examples:
+    - 'public class ApiFactory : WebApplicationFactory<Program> { }'
+    - 'await using var db = new PostgreSqlContainer().WithImage("postgres:16").Build();'
+    - 'var createdAt = DateTime.UtcNow;'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/testing/choosing-a-testing-strategy
   - https://learn.microsoft.com/en-us/ef/core/providers/in-memory/

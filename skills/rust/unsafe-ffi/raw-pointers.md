@@ -9,6 +9,11 @@ activation:
     - '\.(?:add|sub|offset|byte_add)\(|\bget_unchecked(?:_mut)?\('
     - '\bptr::(?:read|write|copy|copy_nonoverlapping|swap)\b|\.read_unaligned\('
     - '\bas\s+\*(?:const|mut)\b|&mut\s+\*\w'
+  examples:
+    - 'let slice = unsafe { slice::from_raw_parts(ptr, len) };'
+    - 'let next = unsafe { ptr.add(1) };'
+    - 'unsafe { ptr::copy_nonoverlapping(src, dst, len) };'
+    - 'let raw = &value as *const u32;'
 sources:
   - https://doc.rust-lang.org/std/slice/fn.from_raw_parts.html
   - https://doc.rust-lang.org/std/vec/struct.Vec.html#method.from_raw_parts

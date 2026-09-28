@@ -9,6 +9,11 @@ activation:
     - '\binterval(?:_at)?\(|\bMissedTickBehavior\b'
     - '\bsleep(?:_until)?\('
     - '\bpin!\('
+  examples:
+    - 'tokio::select! { _ = &mut timeout => break, }'
+    - 'let mut ticker = tokio::time::interval(Duration::from_secs(5));'
+    - 'tokio::time::sleep(Duration::from_millis(200)).await;'
+    - 'tokio::pin!(fut);'
 sources:
   - https://docs.rs/tokio/latest/tokio/macro.select.html
   - https://docs.rs/tokio/latest/tokio/time/fn.interval.html

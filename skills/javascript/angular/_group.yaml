@@ -13,3 +13,6 @@ detect:
   content:
     - "from ['\"]@angular/[a-z-]+(?:/[a-z-]+)?['\"]"
     - "@(?:Component|Directive|Injectable|Pipe|NgModule|Service)\\s*\\("
+  examples:
+    - 'import { Component } from ''@angular/core'';'
+    - '@Component({'

@@ -9,6 +9,11 @@ activation:
     - '\b(?:s?rand|random|drand48|lrand48|getrandom|getentropy|arc4random\w*|RAND_bytes|RAND_priv_bytes|BCryptGenRandom)\s*\('
     - '\b(?:mt19937(?:_64)?|default_random_engine|minstd_rand0?|random_device)\b'
     - '\b(?:memset|bzero|memcmp|strcmp|strncmp)\s*\([^;\n]{0,40}(?:[Kk]ey|[Ss]ecret|[Pp]ass|[Tt]oken|[Nn]once|[Mm]ac\b|MAC|[Hh]mac|HMAC|[Dd]igest|[Ss]ignature|[Ss]alt)'
+  examples:
+    - 'explicit_bzero(key, sizeof(key));'
+    - 'if (RAND_bytes(iv, sizeof(iv)) != 1) return -1;'
+    - 'std::mt19937 rng(seed);'
+    - 'if (memcmp(mac, expected_mac, sizeof(mac)) != 0) return -1;'
 sources:
   - https://en.cppreference.com/w/c/string/byte/memset
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/miscellaneous-msc/msc30-c/

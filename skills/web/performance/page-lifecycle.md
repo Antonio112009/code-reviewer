@@ -7,6 +7,10 @@ activation:
     - '[''"](?:unload|beforeunload|pagehide|pageshow|visibilitychange|freeze)[''"]'
     - '\bon(?:unload|beforeunload)\b|\bsendBeacon\(|\bkeepalive\s*:'
     - '\bCache-Control\b[^\n]{0,60}\bno-store\b'
+  examples:
+    - "window.addEventListener('pagehide', saveDraft);"
+    - "window.onbeforeunload = () => 'You have unsaved changes';"
+    - "res.setHeader('Cache-Control', 'no-store');"
 sources:
   - https://web.dev/articles/bfcache
   - https://developer.chrome.com/docs/web-platform/deprecating-unload

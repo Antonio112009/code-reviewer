@@ -7,6 +7,9 @@ activation:
   content:
     - '\bLockFactory\b|->createLock\s*\(|\b(?:Flock|Semaphore)Store\b|->(?:acquire|refresh)\s*\('
     - '\b(?:TagAware)?CacheInterface\b|->expiresAfter\s*\(|->invalidateTags\s*\(|\bItemInterface\b'
+  examples:
+    - '$lock = $this->lockFactory->createLock(''job'');'
+    - '$cache->get($key, function (ItemInterface $item) { $item->expiresAfter(3600); });'
 sources:
   - https://symfony.com/doc/current/components/lock.html
   - https://symfony.com/doc/current/cache.html

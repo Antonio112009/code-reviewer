@@ -10,6 +10,12 @@ activation:
     - "\\braise\\s+NotImplemented\\b(?!Error)"
     - "\\bfrom\\s+None\\b"
     - "^[ \\t]*assert\\b[^\\n]{0,80}\\b(?:auth\\w*|perm\\w*|admin|allowed|owner|role|token|is_staff|is_superuser|can_\\w+|has_\\w+|user)\\b"
+  examples:
+    - '    except:'
+    - '    finally:'
+    - 'raise NotImplemented'
+    - 'raise ValueError(msg) from None'
+    - 'assert request.user.is_staff'
 sources:
   - https://docs.python.org/3/library/exceptions.html#exception-hierarchy
   - https://docs.python.org/3/whatsnew/3.14.html#pep-765-control-flow-in-finally-blocks

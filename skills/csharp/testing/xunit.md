@@ -7,6 +7,10 @@ activation:
     - '\[(?:Fact|Theory|InlineData|MemberData|ClassData|Collection|CollectionDefinition)\b'
     - '\bI(?:Class|Collection)Fixture<|\bIAsyncLifetime\b|\bTestContext\.Current\b|\busing\s+Xunit\b'
     - '\basync\s+void\b'
+  examples:
+    - '[InlineData(1, 2, 3)]'
+    - 'public class OrderTests : IClassFixture<DatabaseFixture>'
+    - 'public async void OnClick_Should_SaveOrder()'
 sources:
   - https://xunit.net/docs/getting-started/v3/migration
   - https://xunit.net/docs/running-tests-in-parallel

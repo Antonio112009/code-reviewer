@@ -11,6 +11,13 @@ activation:
     - '[\w)\]]\s*<<=?\s*[\w(]'
     - '\.(?:pow|abs|checked_\w+|wrapping_\w+|saturating_\w+|overflowing_\w+|strict_\w+)\('
     - '\.(?:sum|product)::<'
+  examples:
+    - 'let n = value as u32;'
+    - 'let last = items.len() - 1;'
+    - 'retries -= 1;'
+    - 'let mask = flags << 2;'
+    - 'let doubled = n.checked_mul(2).unwrap_or(u32::MAX);'
+    - 'let total: u64 = amounts.iter().sum::<u64>();'
 sources:
   - https://doc.rust-lang.org/reference/expressions/operator-expr.html#overflow
   - https://doc.rust-lang.org/reference/expressions/operator-expr.html#numeric-cast

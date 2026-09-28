@@ -4,6 +4,9 @@ description: <Activity> defects (React 19.2+) — media and iframes running whil
 priority: 58
 activation:
   content: ["<Activity\\b", "\\bActivity\\s*[,}]"]
+  examples:
+    - '<Activity mode={isHidden ? "hidden" : "visible"}>{children}</Activity>'
+    - "import { Activity } from 'react';"
   versions: { framework.react: ">=19.2" }
 sources:
   - https://react.dev/reference/react/Activity

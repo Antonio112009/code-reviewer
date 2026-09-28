@@ -8,6 +8,10 @@ activation:
     - '\bProcess\.Start\(|\bProcessStartInfo\b'
     - '\b(?:UseShellExecute|ArgumentList|RedirectStandard(?:Output|Error|Input)|WaitForExit(?:Async)?)\b'
     - '"(?:cmd(?:\.exe)?|/bin/(?:ba)?sh|bash|sh|powershell(?:\.exe)?|pwsh)"'
+  examples:
+    - 'Process.Start("cmd.exe", "/c " + userInput);'
+    - 'var info = new ProcessStartInfo { FileName = tool, ArgumentList = { arg1, arg2 } };'
+    - 'await process.WaitForExitAsync(cancellationToken);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.argumentlist
   - https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.useshellexecute

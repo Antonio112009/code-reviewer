@@ -8,6 +8,11 @@ activation:
     - '\bCDI\.current\(\)|\bArc\.container\(\)|\bInstance<'
     - '@Inject\b'
     - '\bquarkus\.arc\.'
+  examples:
+    - '@ApplicationScoped'
+    - 'MyService service = CDI.current().select(MyService.class).get();'
+    - '@Inject MyService service;'
+    - 'quarkus.arc.remove-unused-beans=none'
 sources:
   - https://quarkus.io/guides/cdi-reference
   - https://quarkus.io/guides/cdi

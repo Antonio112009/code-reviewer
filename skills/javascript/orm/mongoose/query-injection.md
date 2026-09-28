@@ -9,6 +9,11 @@ activation:
     - "['\"]?\\$(?:where|regex|expr|function|accumulator|nor)\\b"
     - "\\bsanitizeFilter\\b|\\bmongoose\\.trusted\\s*\\(|\\bstrictQuery\\b|\\bnew\\s+RegExp\\s*\\("
     - "\\bpopulate\\s*\\(\\s*\\{|\\bmatch\\s*:"
+  examples:
+    - 'const user = await User.findOne({ email, password: req.body.password });'
+    - 'const users = await User.find({ $where: "this.credits > this.debits" });'
+    - 'const re = new RegExp(req.query.q);'
+    - 'await Order.find({ userId }).populate({ path: "items", match: { active: true } });'
 sources:
   - https://mongoosejs.com/docs/tutorials/query_casting.html
   - https://mongoosejs.com/docs/migrating_to_6.html

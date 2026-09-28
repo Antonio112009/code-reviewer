@@ -12,6 +12,14 @@ activation:
     - '\bCollections\.(?:unmodifiable\w*|emptyList|emptyMap|emptySet)\('
     - '\.(?:subList|remove)\('
     - '\bnew\s+(?:HashMap|HashSet)\b'
+  examples:
+    - 'List<String> names = Arrays.asList("a", "b", "c");'
+    - 'Map<String, Integer> counts = Map.of("a", 1, "b", 2);'
+    - 'List<String> ids = users.stream().map(User::getId).toList();'
+    - 'Map<Long, User> byId = users.stream().collect(Collectors.toMap(User::getId, u -> u));'
+    - 'List<String> readOnly = Collections.unmodifiableList(names);'
+    - 'List<String> page = names.subList(0, 10);'
+    - 'Map<String, Integer> cache = new HashMap<>();'
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html#unmodifiable
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/Collectors.html

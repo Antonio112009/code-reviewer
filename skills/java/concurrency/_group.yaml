@@ -9,3 +9,9 @@ detect:
     - '\b(?:synchronized|volatile)\b'
     - '\b(?:Thread|ThreadLocal|ScopedValue|Runnable|Callable|Executors?|ExecutorService|CompletableFuture|ForkJoinPool)\b'
     - '\.parallel(?:Stream)?\(\)'
+  examples:
+    - 'import java.util.concurrent.ExecutorService;'
+    - 'private volatile boolean running = true;'
+    - 'synchronized void increment() { count++; }'
+    - 'ExecutorService pool = Executors.newFixedThreadPool(4);'
+    - 'items.parallelStream().forEach(this::process);'

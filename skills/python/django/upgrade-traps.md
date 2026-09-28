@@ -8,6 +8,11 @@ activation:
     - '\b(?:get_signed_cookie|set_signed_cookie|LogoutView|logout_then_login)\b'
     - '\.order_by\(\s*\)\s*\.(?:first|last|afirst|alast)\('
     - '\b[Dd]jango\b\s*(?:\[[^\]\n]{0,40}\]\s*)?(?:==|>=|~=|<=|<|>|=\s*["''^~])'
+  examples:
+    - 'STORAGES = {"default": {"BACKEND": "storages.backends.s3.S3Storage"}}'
+    - 'return LogoutView.as_view()'
+    - 'latest = Order.objects.order_by().first()'
+    - 'django = "^5.0"'
 sources:
   - https://docs.djangoproject.com/en/dev/releases/5.0/
   - https://docs.djangoproject.com/en/dev/releases/5.1/

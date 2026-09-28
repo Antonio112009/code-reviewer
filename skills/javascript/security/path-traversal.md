@@ -8,6 +8,10 @@ activation:
     - '\bpath\.(?:join|resolve|normalize|relative)\s*\('
     - '\bcreate(?:Read|Write)Stream\s*\(|\b(?:readFile|writeFile|appendFile|unlink|rm|mkdir|copyFile|rename)\w*\s*\([^)\n]{0,120}\b(?:req|request|params|query|body|input|name|file(?:name)?)\b'
     - '\b(?:adm-zip|unzipper|yauzl|extract-zip|decompress|tar-fs)\b|\.extractAllTo\s*\(|\bentry\.(?:path|fileName|entryName)\b'
+  examples:
+    - 'const target = path.join(base, req.params.file);'
+    - 'fs.createReadStream(req.query.file);'
+    - 'zip.extractAllTo(dest, true);'
 sources:
   - https://nodejs.org/api/path.html#pathresolvepaths
   - https://nodejs.org/en/blog/vulnerability/july-2025-security-releases

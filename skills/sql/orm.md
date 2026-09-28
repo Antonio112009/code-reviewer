@@ -50,6 +50,12 @@ activation:
     - "@(?:Entity|OneToMany|ManyToOne|ManyToMany|OneToOne|Version|EntityGraph)\\b|\\b(?:jakarta|javax)\\.persistence\\b|\\borg\\.hibernate\\b|\\b(?:EntityManager|FetchType|CascadeType)\\b|\\bDoctrine\\\\(?:ORM|DBAL)|#\\[ORM\\\\|->(?:persist|flush)\\(\\)"
     - \bDbContext\b|\bDbSet<|\bSaveChanges(?:Async)?\(|\b(?:AsNoTracking|IgnoreQueryFilters|OnDelete)\b|gorm\.io/gorm|\bgorm\.(?:Model|DB|Expr)\b|\.(?:Preload|FirstOrCreate|Updates|UpdateColumns?|Unscoped|AutoMigrate)\(
     - \bsynchronize\s*:\s*true\b|\.sync\(\s*\{\s*(?:alter|force)\b|\bddl-auto\b|\bhbm2ddl\b|\bprisma\s+db\s+push\b|\bcascade\s*:\s*(?:true|\[)|\bonDelete\s*:\s*['"]?(?:Cascade|CASCADE)\b|\bon_delete\s*=\s*(?:models\.)?CASCADE\b|\bdependent:\s*:(?:destroy|delete_all)\b|->cascadeOnDelete\(|\borphanRemoval\b
+  examples:
+    - 'await prisma.$transaction(async (tx) => { await tx.user.update({ where: { id }, data }) })'
+    - 'session.query(User).filter(User.id == user_id).first()'
+    - '@OneToMany(mappedBy = "user", cascade = CascadeType.ALL) private List<Order> orders;'
+    - 'db.Preload("Orders").Where("active = ?", true).Find(&users)'
+    - 'new DataSource({ type: ''postgres'', synchronize: true })'
 ---
 - **Escaped transactions**: inside Prisma `$transaction`, TypeORM `manager.transaction`, Drizzle or Knex callbacks, calls on the global client or repositories (or Sequelize calls without `transaction: t`) run outside it → partial writes. Fix: use `tx` everywhere.
 - **Vanishing filters**: `undefined` where-values are dropped by Prisma (no `strictUndefinedChecks`) and TypeORM 0.3 → lookups return another user's row, `deleteMany` hits every row; GORM skips zero-valued struct conditions and `Updates` fields. Fix: validate inputs.

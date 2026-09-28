@@ -8,6 +8,11 @@ activation:
     - '\bcreateElement\(\s*[''"]script[''"]|\bdocument\.write\('
     - '\b(?:googletagmanager|gtag|dataLayer|fbq|hotjar|intercom|hubspot|optimizely|segment)\b|next/script|<Script\b'
     - 'rel\s*=\s*[''"](?:preconnect|dns-prefetch)|<iframe\b[^>\n]{0,200}(?:youtube|vimeo|maps\.google)'
+  examples:
+    - '<script src="https://widget.example.com/chat.js"></script>'
+    - "const s = document.createElement('script');"
+    - 'window.dataLayer = window.dataLayer || [];'
+    - '<link rel="preconnect" href="https://fonts.gstatic.com" />'
 sources:
   - https://web.dev/articles/efficiently-load-third-party-javascript
   - https://developer.chrome.com/docs/lighthouse/performance/third-party-facades

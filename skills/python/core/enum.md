@@ -6,6 +6,9 @@ activation:
   content:
     - "\\b(?:Str|Int)?Enum\\b|\\b(?:Int)?Flag\\b|\\bReprEnum\\b"
     - "\\benum\\.\\w|\\bauto\\s*\\(\\s*\\)"
+  examples:
+    - 'class Status(StrEnum):'
+    - 'ACTIVE = auto()'
 sources:
   - https://docs.python.org/3/library/enum.html
   - https://docs.python.org/3/whatsnew/3.11.html#enum

@@ -9,6 +9,11 @@ activation:
     - '\bgorm\.(?:G|Session|DeletedAt)\b'
     - '\b(?:Before|After)(?:Save|Create|Update|Delete|Find)\('
     - '\b\w{1,30}\s*:?=\s*(?:db|tx|DB|r\.db|s\.db)\.(?:Where|Model|Table|Joins|Scopes)\('
+  examples:
+    - 'db.Transaction(func(tx *gorm.DB) error {'
+    - 'DeletedAt gorm.DeletedAt `gorm:"index"`'
+    - 'func (u *User) BeforeSave(tx *gorm.DB) error {'
+    - 'q := db.Where("active = ?", true)'
 sources:
   - https://gorm.io/docs/method_chaining.html
   - https://gorm.io/docs/transactions.html

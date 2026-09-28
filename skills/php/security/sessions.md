@@ -8,6 +8,10 @@ activation:
     - '\bsession_(?:start|regenerate_id|destroy|set_cookie_params|write_close|id)\s*\('
     - '\$_SESSION\b|\bset(?:raw)?cookie\s*\('
     - '\bsession\.(?:use_strict_mode|cookie_\w+|gc_maxlifetime)\b'
+  examples:
+    - 'session_regenerate_id(true);'
+    - '$_SESSION[''user_id''] = $user->id;'
+    - 'ini_set(''session.cookie_secure'', ''1'');'
 sources:
   - https://www.php.net/manual/en/session.configuration.php
   - https://www.php.net/manual/en/function.session-regenerate-id.php

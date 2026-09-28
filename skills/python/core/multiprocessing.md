@@ -7,6 +7,10 @@ activation:
     - "\\bmultiprocessing\\b|\\bProcessPoolExecutor\\b|\\bmp_context\\s*="
     - "(?<![\\w.])(?:Pool|Process)\\s*\\("
     - "\\b(?:set_start_method|get_context|set_forkserver_preload)\\s*\\("
+  examples:
+    - 'with ProcessPoolExecutor() as pool:'
+    - 'p = Process(target=worker)'
+    - 'multiprocessing.set_start_method("spawn")'
 sources:
   - https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
   - https://docs.python.org/3/library/multiprocessing.html#multiprocessing-programming

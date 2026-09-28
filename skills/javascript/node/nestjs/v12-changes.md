@@ -10,6 +10,12 @@ activation:
     - "\\bHealthCheckError\\b|\\bHealthIndicator(?:Service)?\\b|\\bindicator\\.(?:up|down)\\s*\\("
     - "\\bsubscriptions-transport-ws\\b|['\"]graphql-ws['\"]|\\bTransport\\.NATS\\b|\\b(?:StringCodec|JSONCodec)\\b|@nats-io/"
     - "\\bjest\\.config\\b|\\bts-jest\\b|\\brequire\\s*\\(\\s*['\"]@nestjs/"
+  examples:
+    - '@Body({ schema: CreateUserSchema }) body: CreateUserDto'
+    - 'constructor(@Optional() private readonly cache?: CacheService) {}'
+    - 'return indicator.down("disk", { message: "low space" })'
+    - 'import { connect } from "@nats-io/transport-node"'
+    - 'import config from "./jest.config.js"'
 sources:
   - https://docs.nestjs.com/migration-guide
   - https://trilon.io/blog/nestjs-12-is-now-available

@@ -8,6 +8,9 @@ activation:
   content:
     - '_FORTIFY_SOURCE|-fstack-(?:protector|clash-protection)|-fcf-protection|-fhardened|-Wl,-z,|-f(?:PIE|pie)\b|-pie\b'
     - '_GLIBCXX_ASSERTIONS|_LIBCPP_HARDENING_MODE|-fsanitize|-ftrivial-auto-var-init|-Werror\b'
+  examples:
+    - 'add_compile_options(-D_FORTIFY_SOURCE=3 -fstack-protector-strong -Wl,-z,relro,-z,now)'
+    - 'target_compile_options(app PRIVATE -fsanitize=address -D_GLIBCXX_ASSERTIONS)'
 sources:
   - https://best.openssf.org/Compiler-Hardening-Guides/Compiler-Options-Hardening-Guide-for-C-and-C++.html
   - https://gcc.gnu.org/gcc-14/changes.html

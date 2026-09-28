@@ -10,6 +10,11 @@ activation:
     - "\\bappMiddleware\\b"
     - "\\bmiddleware\\s*:\\s*[\\['\"]"
     - "\\brunWithContext\\s*\\("
+  examples:
+    - 'export default defineNuxtRouteMiddleware((to, from) => { return navigateTo(''/login''); });'
+    - 'routeRules: { ''/admin/**'': { appMiddleware: ''auth'' } },'
+    - 'definePageMeta({ middleware: [''auth''] });'
+    - 'nuxtApp.runWithContext(() => useState(''x''));'
 sources:
   - https://nuxt.com/docs/4.x/guide/directory-structure/app/middleware
   - https://nuxt.com/docs/4.x/guide/going-further/nuxt-app

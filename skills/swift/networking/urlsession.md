@@ -6,6 +6,10 @@ activation:
     - '\bURLSession\w*\b|\.(?:dataTask|downloadTask|uploadTask)\(|\.resume\(\)|\bHTTPURLResponse\b|\.statusCode\b'
     - '\bURL\(string:|\bURLComponents\b|\b(?:percentEncoded)?[qQ]ueryItems?\b|\baddingPercentEncoding\('
     - '\btimeoutInterval\w*|\bwaitsForConnectivity\b|\burlCache\b|\bURLCache\b|\.(?:finishTasksAndInvalidate|invalidateAndCancel)\('
+  examples:
+    - 'URLSession.shared.dataTask(with: request) { data, response, error in }.resume()'
+    - 'var components = URLComponents(string: "https://api.example.com/search")!'
+    - 'config.timeoutIntervalForResource = 30'
 sources:
   - https://developer.apple.com/documentation/foundation/url/init(string:)
   - https://developer.apple.com/documentation/foundation/urlsession/init(configuration:delegate:delegatequeue:)

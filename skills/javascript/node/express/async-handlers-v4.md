@@ -11,6 +11,12 @@ activation:
     - "\\.then\\s*\\([^\\n]{0,120}\\bres\\.(?:json|send|status|render|redirect)\\b"
     - "\\b(?:express-async-errors|express-async-handler|asyncHandler|catchAsync|wrapAsync)\\b"
     - "\\.param\\s*\\(\\s*['\"]\\w+['\"]\\s*,\\s*async\\b"
+  examples:
+    - 'router.get(''/users'', async (req, res) => {'
+    - 'app.use(async (err, req, res, next) => { await logError(err); next(err); });'
+    - 'fetchUser(id).then((user) => res.json(user)).catch(next);'
+    - 'const asyncHandler = require(''express-async-handler'');'
+    - 'router.param(''id'', async (req, res, next, id) => {'
 sources:
   - https://expressjs.com/en/guide/error-handling.html
   - https://expressjs.com/en/guide/migrating-5.html

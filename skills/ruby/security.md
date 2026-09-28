@@ -24,6 +24,11 @@ activation:
     - \b(?:Marshal|YAML|Psych|Oj|JSON)\.(?:load|unsafe_load|restore)\b|\b(?:cookies_serializer|use_yaml_unsafe_load|permitted_classes)\b|\bNokogiri::XML\b|\b(?:noent|dtdload|NOENT|DTDLOAD)\b
     - \b(?:system|exec|spawn)\s*\(?\s*["']|%x[({\[|]|`[^`\n]{0,200}#\{|\b(?:Open3|IO\.popen|URI\.open|Kernel\.open)\b|\bIO\.(?:read|readlines|write|binread)\(
     - \bFile\.(?:join|expand_path)\(|\bPathname\b|\bsend_file\b|\bescape_html\b|\bSinatra\b|\bRoda\b|(?:=~|\.match\??\()\s*/\^|/\^[^/\n]{0,200}\$/
+  examples:
+    - 'klass = params[:type].constantize'
+    - 'data = Marshal.load(cookie_value)'
+    - 'system("convert #{filename} out.png")'
+    - 'path = File.join(base_dir, params[:name])'
 ---
 - **Dynamic dispatch**: `send` (reaches private `system`, `eval`), `public_send`, `instance_variable_set`, `constantize` or `const_get` with request data → arbitrary calls or class instantiation. Fix: allowlist hash.
 - **String evaluation**: `eval`, string `instance_eval`/`class_eval`, or `ERB.new(user_text).result` → RCE. Fix: never evaluate input; Liquid for user templates.

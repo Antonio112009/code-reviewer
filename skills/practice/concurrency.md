@@ -44,6 +44,16 @@ activation:
     - "@MainActor\\b|\\bDispatchQueue\\b|\\bTask\\.detached\\b|\\bTask\\s*\\{|\\bactor\\s+[A-Z]\\w*|@Sendable\\b|\\bnonisolated\\b"
     - \b(?:get_or_create|update_or_create|findOrCreate|firstOrCreate|updateOrCreate|FirstOrCreate|select_for_update|lockForUpdate|with_lock|SKIP LOCKED|FOR UPDATE|FOR SHARE|SERIALIZABLE|OptimisticLock\w*|PESSIMISTIC_WRITE)\b|\bfor update\b(?=\s*(?:of\b|nowait\b|skip\b|["'`;)]|$))|@Version\b
     - "@Scheduled\\b|\\bcron\\.schedule\\(|\\bnew CronJob\\(|\\bschedule\\.every\\(|\\b(?:Background|AsyncIO)Scheduler\\b|\\bsetInterval\\([^\\n]{0,80}\\b(?:db|query|fetch|send|sync|process)\\w*"
+  examples:
+    - 'await Promise.all(items.map(process));'
+    - 'await asyncio.gather(*tasks)'
+    - 'var mu sync.Mutex'
+    - 'synchronized (this) { balance -= amount; }'
+    - 'go func() { process(item) }()'
+    - 'tokio::spawn(async move { handle(conn).await });'
+    - 'Task { await self.refresh() }'
+    - 'User.objects.select_for_update().get(id=user_id)'
+    - "cron.schedule('*/5 * * * *', syncInventory);"
 ---
 - **Check-then-act**: exists-then-insert, get-or-create, read-modify-write of counters, or lazy init (`if (!x) x = await make()`) without unique key, atomic update or once-guard → duplicates, lost updates. Fix: upsert, atomic increments, cache the promise.
 - **Write skew**: invariant across rows ("one active plan", "no overlapping bookings") checked then written under READ COMMITTED or snapshot isolation → both transactions pass. Fix: `SERIALIZABLE` + retry, exclusion constraint, lock a parent row.

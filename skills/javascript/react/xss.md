@@ -8,6 +8,10 @@ activation:
     - "\\bdangerouslySetInnerHTML\\b"
     - "\\b(?:href|src|action|formAction|srcDoc)=\\{"
     - "javascript:"
+  examples:
+    - "<div dangerouslySetInnerHTML={{ __html: sanitize(html) }} />"
+    - "<a href={userProvidedUrl}>Visit</a>"
+    - "const url = 'javascript:alert(1)';"
 sources:
   - https://react.dev/reference/react-dom/components/common
   - https://github.com/facebook/react/blob/main/CHANGELOG.md

@@ -5,6 +5,10 @@ priority: 58
 tags: [CWE-362, CWE-367]
 activation:
   content: ['\bactor\s+[A-Z]\w*|@MainActor\b|\bawait\b']
+  examples:
+    - 'actor TokenStore {'
+    - '@MainActor final class ProfileViewModel: ObservableObject {'
+    - 'let profile = await fetchProfile()'
 sources:
   - https://github.com/swiftlang/swift-evolution/blob/main/proposals/0306-actors.md
   - https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency/

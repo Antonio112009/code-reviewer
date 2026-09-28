@@ -10,6 +10,12 @@ activation:
     - '\.(?:get|set)(?:UTC)?(?:FullYear|Month|Date|Day|Hours|Minutes|Seconds|Time)\s*\('
     - '\.to(?:ISO|Locale|LocaleDate|LocaleTime|UTC)String\s*\('
     - '\bTemporal\.'
+  examples:
+    - 'const created = new Date(''2024-03-10'');'
+    - 'const ms = Date.UTC(2024, 2, 10);'
+    - 'start.setDate(start.getDate() + 1);'
+    - 'const iso = created.toISOString();'
+    - 'const now = Temporal.Now.zonedDateTimeISO();'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date#date_time_string_format
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/parse

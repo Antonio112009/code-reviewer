@@ -8,6 +8,11 @@ activation:
     - '\b(?:echo|print|printf)\b[^;\n]{0,120}\$|<\?=\s*\$'
     - '\b_[ex]\s*\(|\b__\s*\(|\besc_(?:html|attr|url|js|textarea)\w*\s*\(|\bwp_kses\w*\s*\('
     - '\b(?:the_title|get_the_title|get_the_excerpt|add_query_arg|wp_localize_script)\s*\('
+  examples:
+    - 'echo $user_bio;'
+    - 'echo esc_html($title);'
+    - 'printf(__(''Hi %s''), $name);'
+    - 'wp_localize_script(''my-script'', ''myPluginData'', $data);'
 sources:
   - https://developer.wordpress.org/apis/security/escaping/
   - https://developer.wordpress.org/reference/functions/add_query_arg/

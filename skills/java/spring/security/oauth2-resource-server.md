@@ -9,6 +9,11 @@ activation:
     - '\.oauth2ResourceServer\('
     - '\bresourceserver\b'
     - '^\s*(?:issuer-uri|jwk-set-uri|audiences|public-key-location|jws-algorithms?):'
+  examples:
+    - 'JwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();'
+    - 'http.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));'
+    - 'spring.security.oauth2.resourceserver.jwt.issuer-uri=https://idp.example.com'
+    - '  issuer-uri: https://idp.example.com'
 sources:
   - https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html
   - https://docs.spring.io/spring-boot/reference/web/spring-security.html

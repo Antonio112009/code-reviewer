@@ -5,3 +5,10 @@ priority: 65
 detect:
   languages: [rust]
   content: ['\bunsafe\b', '\bextern\s+"C', '#\[repr\(C', '\*(?:const|mut)\s+[\w(\[]', '\b(?:libc|std::ffi|core::ffi|std::os::raw)::', 'no_mangle']
+  examples:
+    - 'unsafe { buf.set_len(len) };'
+    - 'extern "C" fn callback(ptr: *mut c_void) {'
+    - '#[repr(C)]'
+    - 'let raw: *const u8 = data.as_ptr();'
+    - 'let path = unsafe { libc::getcwd(buf, size) };'
+    - '#[no_mangle]'

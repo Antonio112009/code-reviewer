@@ -8,3 +8,7 @@ detect:
     - "(?:from|require\\()\\s*['\"](?:koa|koa-[\\w-]+|@koa/[\\w-]+)['\"]"
     - "\\basync\\s*\\(\\s*ctx\\s*(?:,\\s*next\\s*)?\\)"
     - "\\bctx\\.(?:body|throw|assert|redirect|cookies|state)\\b"
+  examples:
+    - 'import Koa from "koa"'
+    - 'app.use(async (ctx, next) => { await next() })'
+    - 'ctx.body = { ok: true }'

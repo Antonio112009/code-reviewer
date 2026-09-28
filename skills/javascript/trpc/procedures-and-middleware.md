@@ -10,6 +10,12 @@ activation:
     - "\\bopts\\.next\\s*\\(|\\bnext\\s*\\(\\s*\\{\\s*ctx\\b|\\bgetRawInput\\s*\\(|\\brawInput\\b"
     - "\\bcreate(?:\\w+)?Context\\s*[=(:]|\\bcreateCallerFactory\\s*\\(|\\bcreateCaller\\s*\\("
     - "\\binput\\.(?:userId|ownerId|tenantId|orgId|accountId|authorId)\\b"
+  examples:
+    - 'export const getUser = protectedProcedure.query(({ ctx }) => ctx.user);'
+    - 'const isAuthed = t.middleware(async ({ ctx, next }) => next());'
+    - 'return next({ ctx: { user } });'
+    - 'const caller = createCaller(ctx);'
+    - 'const owner = await db.user.findFirst({ id: input.ownerId });'
 sources:
   - https://trpc.io/docs/server/middlewares
   - https://trpc.io/docs/server/context

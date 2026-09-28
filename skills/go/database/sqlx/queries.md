@@ -8,6 +8,10 @@ activation:
     - '\.(?:Get|Select)(?:Context)?\(\s*(?:ctx\s*,\s*)?&'
     - '\bsqlx\.(?:In|Named|MustConnect|Connect|Select|Get)\b'
     - '\.(?:NamedExec|NamedQuery|MustExec|MustBegin|Rebind|Unsafe|StructScan|Queryx)\w{0,7}\('
+  examples:
+    - 'err := db.GetContext(ctx, &user, query, id)'
+    - 'query, args, err := sqlx.In("SELECT * FROM t WHERE id IN (?)", ids)'
+    - 'err = tx.NamedExec(query, params)'
 sources:
   - https://jmoiron.github.io/sqlx/
   - https://pkg.go.dev/github.com/jmoiron/sqlx

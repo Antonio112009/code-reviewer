@@ -7,6 +7,10 @@ activation:
     - "\\buse(?:Lazy)?(?:Fetch|AsyncData)\\s*[(<]"
     - "\\$fetch\\s*[(<.]"
     - "\\b(?:refreshNuxtData|clearNuxtData|useRequestFetch|useNuxtData)\\s*\\("
+  examples:
+    - 'const { data } = await useFetch(''/api/users'');'
+    - 'const user = await $fetch(''/api/user'');'
+    - 'await refreshNuxtData(''users'');'
 sources:
   - https://nuxt.com/docs/4.x/getting-started/data-fetching
   - https://nuxt.com/docs/4.x/api/composables/use-async-data

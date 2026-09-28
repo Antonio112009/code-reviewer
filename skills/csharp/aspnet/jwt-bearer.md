@@ -8,6 +8,10 @@ activation:
     - '\bTokenValidationParameters\b|\bAddJwtBearer\(|\bJwtBearerOptions\b|\bJwtBearerEvents\b'
     - '\bJwtSecurityToken\w*|\bJsonWebToken\w*|\bSymmetricSecurityKey\b'
     - '\b(?:Validate(?:Issuer|Audience|Lifetime|IssuerSigningKey)|RequireHttpsMetadata|MapInboundClaims|ClockSkew|SignatureValidator|RequireSignedTokens|RequireExpirationTime)\b'
+  examples:
+    - '.AddJwtBearer(options => { options.TokenValidationParameters = new TokenValidationParameters(); });'
+    - 'var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));'
+    - 'options.TokenValidationParameters.ValidateIssuer = false;'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/security/authentication/configure-jwt-bearer-authentication
   - https://learn.microsoft.com/en-us/aspnet/core/breaking-changes/8/securitytoken-events

@@ -7,6 +7,10 @@ activation:
     - "\\$effect(?:\\.pre|\\.root)?\\s*\\("
     - "\\$derived(?:\\.by)?\\s*(?:<[^>\\n]{0,80}>)?\\("
     - "\\b(?:onMount|onDestroy|untrack|tick)\\s*\\("
+  examples:
+    - '$effect(() => { console.log(count); });'
+    - 'let total = $derived(a + b);'
+    - 'onMount(() => { const id = setInterval(poll, 1000); return () => clearInterval(id); });'
 sources:
   - https://svelte.dev/docs/svelte/$effect
   - https://svelte.dev/docs/svelte/$derived

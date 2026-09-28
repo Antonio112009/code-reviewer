@@ -7,3 +7,6 @@ detect:
   content:
     - '#\s*include\s*[<"]openssl/'
     - '\b(?:SSL_CTX_new|SSL_new|EVP_(?:CIPHER|MD|PKEY)_CTX_new|X509_STORE_CTX_new)\s*\('
+  examples:
+    - '#include <openssl/ssl.h>'
+    - 'SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());'

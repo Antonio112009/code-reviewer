@@ -7,6 +7,9 @@ activation:
   content:
     - '\baria-[a-z]+'
     - '\brole\s*=\s*[{''"]*[a-z]'
+  examples:
+    - '<span aria-hidden="true">&times;</span>'
+    - '<div role="dialog">'
 sources:
   - https://www.w3.org/TR/using-aria/
   - https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-hidden

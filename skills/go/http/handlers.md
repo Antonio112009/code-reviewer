@@ -9,6 +9,11 @@ activation:
     - '\bw\.(?:WriteHeader|Write|Header)\('
     - '\br\.(?:FormValue|PostFormValue|ParseForm|Form|PostForm|Body|Context)\b'
     - '\bhttp\.ResponseWriter\b'
+  examples:
+    - 'http.Error(w, "bad request", http.StatusBadRequest)'
+    - 'w.WriteHeader(http.StatusOK)'
+    - 'name := r.FormValue("name")'
+    - 'func handler(w http.ResponseWriter, r *http.Request) {}'
 sources:
   - https://pkg.go.dev/net/http#Error
   - https://pkg.go.dev/net/http#ResponseWriter

@@ -8,6 +8,10 @@ activation:
     - '\bIFormFile(?:Collection)?\b|\bMultipartReader\b|\.FileName\b'
     - '\[(?:RequestSizeLimit|DisableRequestSizeLimit|RequestFormLimits)\b|\bMaxRequestBodySize\b|\bMultipartBodyLengthLimit\b'
     - '\bServeUnknownFileTypes\b|\bUseStaticFiles\(|\bPhysicalFileProvider\b'
+  examples:
+    - 'public async Task<IActionResult> Upload(IFormFile file)'
+    - '[RequestSizeLimit(50_000_000)]'
+    - 'app.UseStaticFiles(new StaticFileOptions { ServeUnknownFileTypes = true });'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads
   - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel/options

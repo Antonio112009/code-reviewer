@@ -9,6 +9,12 @@ activation:
     - 'keyboardShouldPersistTaps(?:=\{|\s*:\s*)(?:true|false)\b'
     - 'react-native/Libraries/|\buseColorScheme\(|\bsetColorScheme\('
     - '<Modal\b[^>\n]{0,160}\banimated\b'
+  examples:
+    - "const style = { ...StyleSheet.absoluteFillObject, backgroundColor: 'black' };"
+    - '<StatusBar backgroundColor="#000" translucent />'
+    - '<ScrollView keyboardShouldPersistTaps={true}>'
+    - 'const scheme = useColorScheme();'
+    - '<Modal visible={open} animated transparent>{children}</Modal>'
   versions: { framework.react-native: '>=0.85' }
 sources:
   - https://reactnative.dev/blog/2026/04/07/react-native-0.85

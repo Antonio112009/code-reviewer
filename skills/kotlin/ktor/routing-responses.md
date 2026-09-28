@@ -11,6 +11,12 @@ activation:
     - '\b(?:get|post|put|patch|delete)\s*\(\s*"'
     - '\bcall\.parameters\s*\['
     - '\breceiveMultipart\s*\(|\bPartData\.FileItem\b|\boriginalFileName\b'
+  examples:
+    - 'call.respond(HttpStatusCode.Forbidden)'
+    - 'val body = call.receiveText()'
+    - 'authenticate("jwt") { get("/me") { call.respond(user) } }'
+    - 'val id = call.parameters["id"]!!.toInt()'
+    - 'val multipart = call.receiveMultipart()'
 sources:
   - https://ktor.io/docs/server-responses.html
   - https://ktor.io/docs/server-requests.html

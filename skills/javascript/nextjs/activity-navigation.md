@@ -8,6 +8,11 @@ activation:
     - "\\b(?:signOut|logout|logOut)\\s*\\("
     - "<(?:video|audio|iframe|dialog|style)\\b"
     - "\\bbfcacheId\\b"
+  examples:
+    - "cacheComponents: true,"
+    - "await signOut();"
+    - "<video autoPlay muted loop src={heroVideo} />"
+    - "const testId = `${bfcacheId}-item`;"
   versions: { framework.nextjs: ">=16" }
 sources:
   - https://nextjs.org/docs/app/api-reference/config/next-config-js/cacheComponents

@@ -8,6 +8,10 @@ activation:
     - '\b(?:Pg|Mysql|Sqlite)Connection\b'
     - '\br2d2::|\bConnectionManager<|\bdeadpool_diesel\b|\bdiesel_async\b|\.interact\('
     - '\.transaction(?:::<[^>\n]{0,60}>)?\(|\.build_transaction\(\)'
+  examples:
+    - 'let conn = PgConnection::establish(&url)?;'
+    - 'let pool = r2d2::Pool::builder().build(ConnectionManager::<PgConnection>::new(url))?;'
+    - 'conn.transaction(|conn| diesel::insert_into(users::table).values(&new_user).execute(conn))?;'
 sources:
   - https://docs.rs/diesel/latest/diesel/connection/trait.Connection.html#method.transaction
   - https://docs.rs/deadpool/latest/deadpool/managed/struct.Timeouts.html

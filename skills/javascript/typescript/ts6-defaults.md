@@ -7,6 +7,8 @@ activation:
   files: ['**/tsconfig.json', '**/tsconfig.*.json']
   content:
     - '"(?:rootDir|outDir|module|target|strict|ignoreDeprecations|baseUrl|moduleResolution|esModuleInterop|downlevelIteration|outFile)"\s*:'
+  examples:
+    - '"rootDir": "./src",'
 sources:
   - https://devblogs.microsoft.com/typescript/announcing-typescript-6-0/
   - https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/

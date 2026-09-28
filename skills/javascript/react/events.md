@@ -7,6 +7,10 @@ activation:
     - "\\bcreatePortal\\s*\\("
     - "\\b(?:stopPropagation|preventDefault)\\s*\\("
     - "\\bon(?:Wheel|TouchStart|TouchMove|Scroll|Blur)=\\{"
+  examples:
+    - "createPortal(<Menu />, document.body)"
+    - "e.stopPropagation();"
+    - "<div onWheel={handleWheel} onTouchStart={handleTouchStart}>"
 sources:
   - https://react.dev/reference/react-dom/createPortal
   - https://react.dev/reference/react-dom/components/common

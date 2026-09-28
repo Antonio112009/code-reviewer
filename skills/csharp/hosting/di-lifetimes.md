@@ -8,6 +8,10 @@ activation:
     - '\bAdd(?:Singleton|Scoped|Transient|Keyed(?:Singleton|Scoped|Transient))\b|\bTryAdd\w*\('
     - '\bIServiceProvider\b|\bIServiceScopeFactory\b|\bCreate(?:Async)?Scope\(|\bBuildServiceProvider\('
     - '\bGet(?:Required)?Service\b|\bApplicationServices\b|\bapp\.Services\b'
+  examples:
+    - 'services.AddSingleton<IEmailSender, SmtpEmailSender>();'
+    - 'using var scope = _scopeFactory.CreateScope();'
+    - 'var db = app.Services.GetRequiredService<AppDbContext>();'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection/guidelines
   - https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection/service-lifetimes

@@ -8,6 +8,10 @@ activation:
     - '\bfrankenphp_handle_request\s*\(|\bSpiral\\RoadRunner\\|\bPSR7Worker\b'
     - '\b(?:Open)?Swoole\\|\bHyperf\\|\bWorkerman\\|\bReact\\(?:Http|EventLoop)\\|\bAmp\\'
     - '\bpcntl_fork\s*\('
+  examples:
+    - 'use Spiral\RoadRunner\PSR7Worker;'
+    - 'use Swoole\Coroutine;'
+    - 'pcntl_fork();'
 sources:
   - https://frankenphp.dev/docs/worker/
   - https://docs.roadrunner.dev/docs/php-worker/worker

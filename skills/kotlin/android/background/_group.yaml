@@ -8,3 +8,8 @@ detect:
     - '\b(?:Service|BroadcastReceiver|AlarmManager|JobScheduler|JobService|WorkManager)\b'
     - '<(?:service|receiver)\b'
     - '\b(?:startForegroundService|registerReceiver|setExact\w*|setAlarmClock)\s*\('
+  examples:
+    - 'import androidx.work.WorkManager'
+    - 'class SyncReceiver : BroadcastReceiver() {'
+    - '<receiver android:name=".SyncReceiver" android:exported="false">'
+    - 'alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)'

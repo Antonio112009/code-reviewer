@@ -8,6 +8,10 @@ activation:
     - '\b(?:authentication_classes|DEFAULT_AUTHENTICATION_CLASSES|SessionAuthentication|TokenAuthentication|BasicAuthentication|JWTAuthentication)\b'
     - '\b(?:throttle_classes|throttle_scope|DEFAULT_THROTTLE_CLASSES|DEFAULT_THROTTLE_RATES|NUM_PROXIES|AnonRateThrottle|UserRateThrottle|ScopedRateThrottle)\b'
     - '\b(?:SIMPLE_JWT|ROTATE_REFRESH_TOKENS|BLACKLIST_AFTER_ROTATION|ACCESS_TOKEN_LIFETIME|REFRESH_TOKEN_LIFETIME|obtain_auth_token)\b'
+  examples:
+    - 'authentication_classes = [SessionAuthentication, TokenAuthentication]'
+    - 'throttle_classes = [UserRateThrottle]'
+    - 'SIMPLE_JWT = {"ROTATE_REFRESH_TOKENS": True}'
 sources:
   - https://www.django-rest-framework.org/api-guide/throttling/
   - https://www.django-rest-framework.org/api-guide/authentication/

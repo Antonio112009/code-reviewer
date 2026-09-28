@@ -9,6 +9,11 @@ activation:
     - '\bapp\.(?:whenReady|requestSingleInstanceLock|setAsDefaultProtocolClient)\('
     - '[''"](?:second-instance|open-url|render-process-gone|child-process-gone|unresponsive)[''"]'
     - '\bsafeStorage\b|\belectron-store\b|\b(?:readFileSync|execSync|spawnSync)\('
+  examples:
+    - 'const win = new BrowserWindow({ webPreferences: { preload } });'
+    - 'app.whenReady().then(createWindow);'
+    - "app.on('second-instance', (event, argv) => { focusWindow(); });"
+    - 'const token = safeStorage.decryptString(encrypted);'
 sources:
   - https://www.electronjs.org/docs/latest/faq
   - https://www.electronjs.org/docs/latest/tutorial/launch-app-from-url-in-another-app

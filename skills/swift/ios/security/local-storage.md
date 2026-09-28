@@ -7,6 +7,10 @@ activation:
     - '\bUserDefaults\b|@(?:AppStorage|SceneStorage)\b|\bNSKeyedArchiver\b|\.write\(to:|\bFileManager\b|\b(?:caches|documents)Directory\b|\bisExcludedFromBackup\b'
     - '\b(?:complete|completeUnlessOpen|completeUntilFirstUserAuthentication)FileProtection\b|\bFileProtectionType\b|\bfileProtection\b'
     - '\bprivacy:\s*\.public\b|\bNSLog\(|\bos_log\(|\bLogger\(|\bUIPasteboard\b'
+  examples:
+    - 'UserDefaults.standard.set(authToken, forKey: "token")'
+    - 'try data.write(to: url, options: .completeFileProtection)'
+    - 'logger.info("user \(userId, privacy: .public) logged in")'
 sources:
   - https://developer.apple.com/documentation/uikit/encrypting-your-app-s-files
   - https://developer.apple.com/documentation/os/generating-log-messages-from-your-code

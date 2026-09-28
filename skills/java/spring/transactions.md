@@ -9,6 +9,10 @@ activation:
     - '\bTransactionTemplate\b'
     - '\bPropagation\.[A-Z_]+'
     - '\bsetRollbackOnly\('
+  examples:
+    - '@Transactional(propagation = Propagation.REQUIRES_NEW)'
+    - 'TransactionTemplate template = new TransactionTemplate(manager);'
+    - 'status.setRollbackOnly();'
 sources:
   - https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/rolling-back.html
   - https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html

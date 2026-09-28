@@ -11,6 +11,13 @@ activation:
     - '[Tt]hread\w{0,30}(?:\(\))?\.(?:stop|suspend|resume)\(\s*\)'
     - '\bvoid\s+finalize\s*\(\s*\)'
     - '\bVirtualMachine\.attach\(|\bByteBuddyAgent\.install\('
+  examples:
+    - 'field.setAccessible(true);'
+    - 'System.setSecurityManager(new SecurityManager());'
+    - 'sun.misc.Unsafe unsafe = getUnsafe();'
+    - 'workerThread.stop();'
+    - 'protected void finalize() throws Throwable { cleanup(); }'
+    - 'VirtualMachine.attach(pid);'
 sources:
   - https://openjdk.org/jeps/403
   - https://openjdk.org/jeps/500

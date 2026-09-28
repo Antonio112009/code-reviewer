@@ -9,6 +9,11 @@ activation:
     - "\\bnew\\s+GraphQLScalarType\\s*\\(|\\b(?:parseValue|parseLiteral|coerceInputValue|coerceInputLiteral|coerceOutputValue)\\s*[(:]"
     - "\\bGraphQLNonNull\\b|\\bnullable\\s*:\\s*false\\b|\\b[a-z]\\w*(?:\\([^)\\n]{0,120}\\))?\\s*:\\s*\\[?[A-Z]\\w*!"
     - "\\bstatus400ForVariableCoercionErrors\\b"
+  examples:
+    - 'throw new GraphQLError(dbErr.message);'
+    - 'parseValue(value) { return new Date(value); },'
+    - 'email: String!'
+    - 'status400ForVariableCoercionErrors: true,'
 sources:
   - https://www.apollographql.com/docs/apollo-server/data/errors
   - https://the-guild.dev/graphql/yoga-server/docs/features/error-masking

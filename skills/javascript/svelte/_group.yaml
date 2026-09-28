@@ -14,3 +14,6 @@ detect:
   content:
     - "from ['\"](?:svelte(?:/[a-z-]+)?|@sveltejs/kit(?:/[a-z-]+)?|\\$app/[a-z-]+|\\$env/[a-z/-]+|\\./\\$types)['\"]"
     - "\\$(?:state|derived|effect|props|bindable)(?:\\.[a-z]+)?\\s*\\("
+  examples:
+    - 'import { onMount } from ''svelte'';'
+    - 'let count = $state(0);'

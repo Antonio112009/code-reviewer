@@ -9,6 +9,10 @@ activation:
     - '\be\.(?:Use|Pre|Group|IPExtractor|HTTPErrorHandler|Debug)\b'
     - '\bmiddleware\.(?:CORS\w{0,10}|Timeout\w{0,10}|BodyLimit|Recover\w{0,10})\b'
     - '\becho\.(?:Bind\w{2,15}|Extract\w{2,25}|NewHTTPError|StatusCode|HTTPError|Err\w{2,20})\b'
+  examples:
+    - 'return c.JSON(http.StatusOK, user)'
+    - 'e.Use(middleware.CORSWithConfig(cfg))'
+    - 'return echo.NewHTTPError(http.StatusBadRequest, "invalid id")'
 sources:
   - https://echo.labstack.com/guide/binding/
   - https://echo.labstack.com/guide/ip-address/

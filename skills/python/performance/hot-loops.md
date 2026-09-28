@@ -10,6 +10,13 @@ activation:
     - "\\b(?:pd\\.concat|np\\.(?:append|concatenate|vstack|hstack))\\s*\\(|\\._?append\\s*\\(\\s*(?:df|pd\\.|row)"
     - "\\.(?:iterrows|itertuples)\\s*\\(|\\.apply\\s*\\([^)\\n]{0,120}\\baxis\\s*=\\s*1\\b"
     - "\\b(?:sum|any|all|max|min|sorted|set)\\s*\\(\\s*\\[[^\\]\\n]{1,120}\\bfor\\b|\\bcopy\\.deepcopy\\s*\\("
+  examples:
+    - 'if user_id in active_ids:'
+    - 'queue.pop(0)'
+    - 'html += f"<li>{item}</li>"'
+    - 'result = pd.concat([result, new_row])'
+    - 'for idx, row in df.iterrows():'
+    - 'total = sum([x * 2 for x in values])'
 sources:
   - https://docs.python.org/3/library/stdtypes.html#common-sequence-operations
   - https://docs.python.org/3/library/collections.html#collections.deque

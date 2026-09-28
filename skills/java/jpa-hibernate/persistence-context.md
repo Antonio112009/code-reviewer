@@ -9,6 +9,11 @@ activation:
     - '\.(?:persist|merge|flush|detach|refresh|lock|executeUpdate)\('
     - '@(?:Version|Lock|Modifying)\b'
     - '\bLockModeType\.'
+  examples:
+    - 'EntityManager em = emf.createEntityManager();'
+    - 'em.persist(order);'
+    - '@Version private long version;'
+    - 'em.lock(order, LockModeType.PESSIMISTIC_WRITE);'
 sources:
   - https://docs.hibernate.org/orm/7.0/introduction/html_single/Hibernate_Introduction.html
   - https://docs.hibernate.org/orm/7.0/userguide/html_single/Hibernate_User_Guide.html

@@ -8,6 +8,10 @@ activation:
     - '->(?:executeQuery|executeStatement|fetchAssociative|fetchAllAssociative|fetchOne|fetchFirstColumn|iterateAssociative|quoteIdentifier|quoteSingleIdentifier)\s*\('
     - '\b(?:ArrayParameterType|ParameterType)::|\bDriverManager::getConnection\s*\(|\bTypes::(?:BIGINT|DATETIME_MUTABLE|DATE_MUTABLE)\b'
     - '->(?:delete|update|insert)\s*\(\s*[''"]\w+[''"]\s*,'
+  examples:
+    - '$rows = $conn->fetchAllAssociative(''SELECT * FROM users WHERE team_id = ?'', [$teamId]);'
+    - '$conn->executeQuery(''SELECT id FROM users WHERE id IN (?)'', [$ids], [ArrayParameterType::INTEGER]);'
+    - '$conn->delete(''users'', [''id'' => $id]);'
 sources:
   - https://github.com/doctrine/dbal/blob/4.4.x/UPGRADE.md
   - https://www.doctrine-project.org/projects/doctrine-dbal/en/current/reference/data-retrieval-and-manipulation.html

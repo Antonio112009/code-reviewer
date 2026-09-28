@@ -6,6 +6,7 @@ tags: [CWE-758]
 activation:
   files: ['*.{h,hh,hpp,hxx,ipp,inl,tpp}']
   content: ['^[ \t]*#\s*(?:define\s+\w+\(|if\b|elif\b|pragma\s+pack)']
+  examples: ['#define SQ(x) ((x) * (x))']
 sources:
   - https://gcc.gnu.org/onlinedocs/cpp/Macro-Pitfalls.html
   - https://gcc.gnu.org/onlinedocs/cpp/If.html

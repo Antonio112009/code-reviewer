@@ -7,6 +7,9 @@ activation:
   content:
     - '\$wpdb->(?:query|get_results|get_var|get_row|get_col|prepare|insert|update|delete|replace|esc_like)\s*\('
     - '\besc_sql\s*\(|[''"`]wp_\w+[''"`]'
+  examples:
+    - '$rows = $wpdb->get_results($wpdb->prepare(''SELECT * FROM orders WHERE id = %d'', $id));'
+    - '$table = ''wp_posts'';'
 sources:
   - https://developer.wordpress.org/reference/classes/wpdb/prepare/
   - https://developer.wordpress.org/reference/classes/wpdb/

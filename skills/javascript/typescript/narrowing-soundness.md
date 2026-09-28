@@ -9,6 +9,12 @@ activation:
     - '\bswitch\s*\(|\bdefault\s*:'
     - '\bObject\.(?:keys|entries)\s*\(|\bas\s+(?:\(\s*)?keyof\b'
     - '\breadonly\s|\bReadonly<|\bas\s+const\b'
+  examples:
+    - 'const first = arr[i];'
+    - 'if (this.conn) { await x(); this.conn.query(); }'
+    - 'switch (status) {'
+    - 'const keys = Object.keys(obj) as (keyof Config)[];'
+    - 'const config = { retries: 3 } as const;'
 sources:
   - https://www.typescriptlang.org/tsconfig/#noUncheckedIndexedAccess
   - https://www.typescriptlang.org/docs/handbook/2/narrowing.html#exhaustiveness-checking

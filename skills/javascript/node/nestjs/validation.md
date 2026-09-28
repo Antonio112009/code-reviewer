@@ -9,6 +9,10 @@ activation:
     - "@(?:Body|Query|Param|Headers)\\s*\\("
     - "@(?:IsOptional|ValidateNested|ValidateIf|Type|Transform|IsString|IsNumber|IsInt|IsBoolean|IsEnum|IsArray)\\s*\\("
     - "\\bimport\\s+type\\s*\\{[^}\\n]{0,200}Dto\\b|\\benableImplicitConversion\\b|\\bforbidUnknownValues\\b"
+  examples:
+    - '@Param("id", ParseIntPipe) id: number'
+    - '@IsOptional() @IsString() name?: string'
+    - 'import type { CreateUserDto } from "./create-user.dto"'
 sources:
   - https://docs.nestjs.com/techniques/validation
   - https://docs.nestjs.com/pipes

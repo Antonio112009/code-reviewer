@@ -8,6 +8,10 @@ activation:
     - '\bAddCookie\(|\bCookieAuthenticationOptions\b|\bConfigureApplicationCookie\(|\b(?:SecurePolicy|ExpireTimeSpan|SlidingExpiration|HttpOnly)\b'
     - '\bSign(?:In|Out)Async\(|\bPasswordSignInAsync\(|\bSignInManager\b|\bValidatePrincipal\b'
     - '\breturnUrl\b|\b(?:Local)?Redirect\(|\bIsLocalUrl\(|\bOnRedirectTo(?:Login|AccessDenied)\b'
+  examples:
+    - 'options.Cookie.SecurePolicy = CookieSecurePolicy.Always;'
+    - 'var result = await _signInManager.PasswordSignInAsync(user, password, isPersistent, lockoutOnFailure: false);'
+    - 'return LocalRedirect(returnUrl);'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/security/authentication/cookie
   - https://learn.microsoft.com/en-us/aspnet/core/security/preventing-open-redirects

@@ -10,6 +10,13 @@ activation:
     - "\\bshareReplay\\s*\\("
     - "\\|\\s*async\\b"
     - "\\bnew\\s+(?:Behavior|Replay|Async)?Subject\\b"
+  examples:
+    - 'this.user$.subscribe(u => (this.user = u));'
+    - 'this.user$.pipe(takeUntilDestroyed()).subscribe();'
+    - 'readonly user = toSignal(this.user$);'
+    - 'this.data$ = source$.pipe(shareReplay(1));'
+    - '<div *ngIf="user$ | async as user">{{ user.name }}</div>'
+    - 'private readonly destroy$ = new Subject<void>();'
 sources:
   - https://angular.dev/ecosystem/rxjs-interop
   - https://angular.dev/ecosystem/rxjs-interop/take-until-destroyed

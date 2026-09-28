@@ -9,3 +9,7 @@ detect:
     - '^[ \t]*import[ \t]+(?:static[ \t]+)?org\.springframework\.security\.'
     - '^[ \t]*import[ \t]+org\.springframework\.web\.cors\.'
     - '@CrossOrigin\b'
+  examples:
+    - 'import org.springframework.security.config.annotation.web.builders.HttpSecurity;'
+    - 'import org.springframework.web.cors.CorsConfiguration;'
+    - '@CrossOrigin(origins = "https://app.example.com")'

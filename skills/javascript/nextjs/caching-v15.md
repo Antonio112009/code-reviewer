@@ -9,6 +9,11 @@ activation:
     - "\\bexport\\s+(?:async\\s+)?function\\s+GET\\b"
     - "\\b(?:revalidatePath|revalidateTag|updateTag|connection)\\s*\\("
     - "\\b(?:staleTimes|router\\.refresh)\\b"
+  examples:
+    - "const res = await fetch(url);"
+    - "export async function GET(request) {"
+    - "updateTag('posts');"
+    - "staleTimes: { dynamic: 30 },"
   versions: { framework.nextjs: ">=15" }
 sources:
   - https://nextjs.org/docs/app/guides/caching-without-cache-components

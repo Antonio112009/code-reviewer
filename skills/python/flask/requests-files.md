@@ -9,6 +9,11 @@ activation:
     - '\b(?:secure_filename|send_file|send_from_directory|safe_join)\('
     - '\.save\([^)\n]{0,120}\bfilename\b'
     - '\b(?:MAX_CONTENT_LENGTH|MAX_FORM_MEMORY_SIZE|MAX_FORM_PARTS|max_content_length)\b'
+  examples:
+    - 'data = request.get_json(silent=True)'
+    - 'filename = secure_filename(file.filename)'
+    - 'file.save(os.path.join(UPLOAD_DIR, file.filename))'
+    - 'app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024'
 sources:
   - https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
   - https://flask.palletsprojects.com/en/stable/web-security/#resource-use

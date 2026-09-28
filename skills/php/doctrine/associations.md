@@ -8,6 +8,9 @@ activation:
     - '#\[ORM\\(?:OneToMany|ManyToOne|ManyToMany|OneToOne|JoinColumn|JoinTable)\b|<(?:one-to-many|many-to-one|many-to-many|one-to-one)\b'
     - '\b(?:mappedBy|inversedBy|orphanRemoval|cascade|onDelete)\b|\bEXTRA_LAZY\b|fetch:\s*[''"]EAGER'
     - '->(?:matching|removeElement)\s*\(|\bCriteria::create\s*\('
+  examples:
+    - '#[ORM\OneToMany(mappedBy: ''post'', targetEntity: Comment::class, cascade: [''persist''], orphanRemoval: true)]'
+    - '$approved = $post->getComments()->matching(Criteria::create()->where(Criteria::expr()->eq(''approved'', true)));'
 sources:
   - https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/unitofwork-associations.html
   - https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/working-with-associations.html

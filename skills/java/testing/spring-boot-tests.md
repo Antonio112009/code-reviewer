@@ -7,6 +7,9 @@ activation:
   content:
     - '@(?:SpringBootTest|DataJpaTest|WebMvcTest|WebFluxTest|JdbcTest|MockBean|SpyBean|MockitoBean|MockitoSpyBean|DirtiesContext|AutoConfigureTestDatabase|ServiceConnection|Sql)\b'
     - '\b(?:TestRestTemplate|WebTestClient|RestTestClient|MockMvc)\b'
+  examples:
+    - '@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)'
+    - 'MockMvc mockMvc;'
 sources:
   - https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html
   - https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/ctx-management/caching.html

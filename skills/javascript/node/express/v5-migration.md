@@ -12,6 +12,14 @@ activation:
     - "\\bres\\.(?:json|jsonp|send|redirect)\\s*\\([^()\\n]{1,120},\\s*\\d{3}\\s*\\)|\\bres\\.send\\s*\\(\\s*\\d{3}\\s*\\)|\\bres\\.redirect\\s*\\(\\s*['\"]back['\"]"
     - "\\bres\\.status\\s*\\(\\s*(?:err|error|e)\\b|\\breq\\.host\\b|\\bapp\\.listen\\s*\\(|\\bexpress\\.(?:urlencoded|static)\\s*\\(|\\b(?:res\\.sendfile|req\\.param|app\\.del)\\s*\\("
     - "\\b(?:mongoSanitize|hpp|xss)\\s*\\(\\s*\\)"
+  examples:
+    - 'app.get(''/files/*'', serveFile);'
+    - 'const rest = req.params.splat.join(''/'');'
+    - 'const status = req.query.filter.status;'
+    - 'const { email, password } = req.body;'
+    - 'res.redirect(''back'');'
+    - 'res.status(err.code).json({ message: err.message });'
+    - 'app.use(mongoSanitize());'
 sources:
   - https://expressjs.com/en/guide/migrating-5.html
   - https://expressjs.com/en/5x/api/application/

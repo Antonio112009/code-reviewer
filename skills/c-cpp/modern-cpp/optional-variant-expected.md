@@ -7,6 +7,9 @@ activation:
   content:
     - '\b(?:optional|variant|expected|unexpected|nullopt|get_if|holds_alternative|bad_optional_access|bad_expected_access)\b'
     - '\.(?:value_or|has_value|and_then|or_else|transform_error)\s*\('
+  examples:
+    - 'std::optional<int> result = std::nullopt;'
+    - 'int x = result.value_or(0);'
 sources:
   - https://en.cppreference.com/w/cpp/utility/optional/optional
   - https://en.cppreference.com/w/cpp/utility/expected/operator*

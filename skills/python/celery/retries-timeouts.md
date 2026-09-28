@@ -9,6 +9,11 @@ activation:
     - '\b(?:autoretry_for|retry_backoff|retry_backoff_max|retry_jitter|max_retries|default_retry_delay|dont_autoretry_for|retry_kwargs)\b'
     - '\b(?:time_limit|soft_time_limit|task_time_limit|task_soft_time_limit|SoftTimeLimitExceeded)\b'
     - '\bbind\s*=\s*True\b'
+  examples:
+    - 'raise self.retry(exc=exc)'
+    - '@shared_task(autoretry_for=(ConnectionError,), max_retries=5)'
+    - '@shared_task(soft_time_limit=30)'
+    - '@shared_task(bind=True)'
 sources:
   - https://docs.celeryq.dev/en/stable/userguide/tasks.html#retrying
   - https://docs.celeryq.dev/en/stable/userguide/tasks.html#automatic-retry-for-known-exceptions

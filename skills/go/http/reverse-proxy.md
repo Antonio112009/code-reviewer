@@ -8,6 +8,10 @@ activation:
     - '\bhttputil\.(?:ReverseProxy|NewSingleHostReverseProxy|ProxyRequest)\b'
     - '\b(?:Director|Rewrite|ModifyResponse|ErrorHandler)\s*[:=]'
     - '\.(?:SetXForwarded|SetURL)\('
+  examples:
+    - 'proxy := httputil.NewSingleHostReverseProxy(target)'
+    - 'proxy.Director = func(req *http.Request) { req.URL.Host = target.Host }'
+    - 'proxy.SetXForwarded()'
 sources:
   - https://pkg.go.dev/net/http/httputil#ReverseProxy
   - https://go.dev/doc/go1.26

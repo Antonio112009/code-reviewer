@@ -9,6 +9,11 @@ activation:
     - '\.get\([^)\n]{0,60}\)|\bAsyncResult\(|\bdisable_sync_subtasks\b'
     - '\b(?:chord|group|chain)\(|\blink_error\s*=|\.link_error\('
     - '\b(?:ignore_result|task_ignore_result|result_expires|result_backend|task_always_eager|CELERY_TASK_ALWAYS_EAGER)\b'
+  examples:
+    - 'send_email.delay(user.id)'
+    - 'result = AsyncResult(task_id).get(timeout=5)'
+    - 'workflow = chain(fetch.s(), process.s())'
+    - 'task_always_eager = True'
 sources:
   - https://docs.celeryq.dev/en/stable/userguide/tasks.html#database-transactions
   - https://docs.celeryq.dev/en/stable/django/first-steps-with-django.html

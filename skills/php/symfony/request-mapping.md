@@ -8,6 +8,10 @@ activation:
     - '#\[(?:MapRequestPayload|MapQueryString|MapQueryParameter|MapUploadedFile|Groups|Ignore|MaxDepth)\b'
     - '->(?:deserialize|denormalize|normalize|serialize)\s*\(|\bOBJECT_TO_POPULATE\b|\bALLOW_EXTRA_ATTRIBUTES\b'
     - '\$request->(?:query|request|attributes)->get\s*\(|\$request->get\s*\('
+  examples:
+    - 'public function create(#[MapRequestPayload] ProductInput $input): Response'
+    - '$product = $serializer->deserialize($json, Product::class, ''json'', [OBJECT_TO_POPULATE => $entity]);'
+    - '$ids = $request->query->get(''ids'');'
 sources:
   - https://symfony.com/doc/current/controller.html#mapping-request-data-to-typed-objects
   - https://symfony.com/doc/current/serializer.html

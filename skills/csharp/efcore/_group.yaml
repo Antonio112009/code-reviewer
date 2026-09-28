@@ -10,3 +10,8 @@ detect:
     - '\b(?:DbContext|DbSet|ModelBuilder|MigrationBuilder|EntityTypeBuilder|IEntityTypeConfiguration|DbContextOptions|IDbContextFactory)\b'
     - '\.(?:Include|ThenInclude|AsNoTracking|AsSplitQuery|ToListAsync|ToArrayAsync|FirstOrDefaultAsync|SingleOrDefaultAsync|AnyAsync|CountAsync|SaveChanges|SaveChangesAsync|ExecuteUpdate|ExecuteUpdateAsync|ExecuteDelete|ExecuteDeleteAsync|FromSql|FromSqlRaw|FromSqlInterpolated|SqlQuery|SqlQueryRaw|ExecuteSql|ExecuteSqlRaw|ExecuteSqlAsync|ExecuteSqlRawAsync)\b'
     - '\[(?:Key|Precision|Index|Owned|Keyless|ForeignKey|InverseProperty|Timestamp|ConcurrencyCheck|DatabaseGenerated|NotMapped|Table|Column)\b'
+  examples:
+    - 'using Microsoft.EntityFrameworkCore;'
+    - 'public class AppDbContext : DbContext { public DbSet<Order> Orders { get; set; } }'
+    - 'var orders = await context.Orders.AsNoTracking().ToListAsync();'
+    - '[Key] public int Id { get; set; }'

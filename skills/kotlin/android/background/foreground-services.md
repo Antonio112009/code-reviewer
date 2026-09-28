@@ -14,6 +14,15 @@ activation:
     - '\bBOOT_COMPLETED\b'
     - '<service\b'
     - '\bMediaSessionService\b|\brequestAudioFocus\s*\('
+  examples:
+    - 'startForegroundService(Intent(this, SyncService::class.java))'
+    - 'ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, type)'
+    - '<service android:name=".SyncService" android:foregroundServiceType="dataSync" />'
+    - '<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />'
+    - 'override fun onTimeout(startId: Int, fgsType: Int) { stopSelf() }'
+    - 'catch (e: ForegroundServiceStartNotAllowedException) { fallbackToWorkManager() }'
+    - 'if (intent.action == "android.intent.action.BOOT_COMPLETED") rescheduleWork()'
+    - 'class PlaybackService : MediaSessionService() {'
 sources:
   - https://developer.android.com/develop/background-work/services/fgs/launch
   - https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start

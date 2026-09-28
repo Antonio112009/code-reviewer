@@ -6,6 +6,9 @@ activation:
   content:
     - '\bTask\s*(?:\(|\{|\.detached\b|\.sleep\b|\.checkCancellation\b|\.isCancelled\b)'
     - '\.cancel\(\)|\bwithTaskCancellationHandler\b|\bfor\s+(?:try\s+)?await\b'
+  examples:
+    - 'self.refreshTask = Task { await self.refresh() }'
+    - 'refreshTask?.cancel()'
 sources:
   - https://developer.apple.com/documentation/swift/task
   - https://developer.apple.com/documentation/swift/task/sleep(nanoseconds:)

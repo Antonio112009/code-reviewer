@@ -9,6 +9,11 @@ activation:
     - '\bexec\.(?:Command|CommandContext|LookPath)\b'
     - '\bcmd\.(?:Env|Run|Start|Output|CombinedOutput|Wait|WaitDelay|Cancel|SysProcAttr)\b'
     - '\bsyscall\.(?:Exec|ForkExec)\b'
+  examples:
+    - 'import "os/exec"'
+    - 'cmd := exec.Command("sh", "-c", "convert "+name)'
+    - 'cmd.Env = append(os.Environ(), "LD_PRELOAD="+path)'
+    - 'syscall.Exec(binary, args, env)'
 sources:
   - https://pkg.go.dev/os/exec
   - https://pkg.go.dev/os/exec#Cmd.WaitDelay

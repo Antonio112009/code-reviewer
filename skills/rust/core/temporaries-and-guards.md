@@ -11,6 +11,13 @@ activation:
     - '\bwhile\s+let\b'
     - '\bmem::forget\b|\bBox::leak\b|\bRc::new\(\s*RefCell'
     - '\.enter\(\)|\.acquire(?:_owned)?\(\)|\btempdir\(\)'
+  examples:
+    - 'let value = cache.borrow_mut();'
+    - 'let _ = mutex.lock().await;'
+    - 'let handle = thread::spawn(move || counter += 1);'
+    - 'while let Some(job) = queue.lock().unwrap().pop() {'
+    - 'mem::forget(guard);'
+    - 'let permit = semaphore.acquire().await?;'
 sources:
   - https://doc.rust-lang.org/reference/destructors.html#temporary-scopes
   - https://doc.rust-lang.org/edition-guide/rust-2024/temporary-if-let-scope.html

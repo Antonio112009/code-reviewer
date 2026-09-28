@@ -7,6 +7,14 @@ activation:
   content:
     - '<EditForm\b|\bEditContext\b|\b(?:ObjectGraph)?DataAnnotationsValidator\b|\bValidationMessageStore\b'
     - '\bOn(?:Valid|Invalid)?Submit\b|\[SupplyParameterFromForm\b|\bFormName\b|\bAddValidation\('
+  examples:
+    - '<EditForm Model="_model" OnValidSubmit="HandleValidSubmit">'
+    - 'private EditContext _editContext = new(_model);'
+    - '<DataAnnotationsValidator />'
+    - 'private readonly ValidationMessageStore _messages;'
+    - '<EditForm Model="_model" FormName="checkout" OnSubmit="HandleSubmit">'
+    - '[SupplyParameterFromForm] public OrderModel? Model { get; set; }'
+    - 'editContext.AddValidation(dataAnnotationsProcessor);'
 sources:
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/forms/validation
   - https://learn.microsoft.com/en-us/aspnet/core/blazor/forms/

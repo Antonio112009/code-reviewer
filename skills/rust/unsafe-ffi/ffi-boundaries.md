@@ -9,6 +9,11 @@ activation:
     - '\bC(?:String|Str)\b|\bc_(?:char|int|long|ulong|void)\b'
     - '#\[repr\(C'
     - '\bcatch_unwind\b|\blibc::|\bbindgen\b'
+  examples:
+    - 'extern "C" fn on_event(ptr: *const c_char) {'
+    - 'let s = unsafe { CStr::from_ptr(ptr) };'
+    - '#[repr(C)]'
+    - 'let result = catch_unwind(|| process(data));'
 sources:
   - https://doc.rust-lang.org/nomicon/ffi.html
   - https://doc.rust-lang.org/std/ffi/struct.CString.html#method.as_ptr

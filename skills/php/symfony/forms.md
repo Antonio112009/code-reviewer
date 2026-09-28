@@ -7,6 +7,9 @@ activation:
   content:
     - '->(?:createForm|createFormBuilder|handleRequest|isSubmitted|isValid)\s*\(|\bextends\s+AbstractType\b'
     - '\b(?:EntityType|CollectionType|UrlType)::class\b|[''"](?:mapped|csrf_protection|allow_extra_fields|query_builder|by_reference|allow_delete)[''"]\s*=>'
+  examples:
+    - '$form = $this->createForm(PostType::class, $post);'
+    - '$builder->add(''category'', EntityType::class, [''query_builder'' => $qb]);'
 sources:
   - https://symfony.com/doc/current/forms.html
   - https://symfony.com/doc/current/reference/forms/types/entity.html

@@ -8,6 +8,9 @@ activation:
     - '\bCompletableFuture\b'
     - '\bCompletionStage\b'
     - '\.(?:supplyAsync|runAsync|thenApply|thenApplyAsync|thenCompose|thenAccept|thenCombine|allOf|anyOf|orTimeout|completeOnTimeout|exceptionally|handle|whenComplete)\('
+  examples:
+    - 'CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> fetch(), executor);'
+    - 'CompletionStage<Void> stage = future.thenAccept(this::process);'
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/CompletableFuture.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/ForkJoinPool.html#commonPool()

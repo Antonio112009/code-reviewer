@@ -7,6 +7,10 @@ activation:
     - "\\]\\s*\\[[^\\n]{1,160}?\\]\\s*=[^=]"
     - "\\binplace\\s*=\\s*True\\b"
     - "\\.to_numpy\\s*\\(|\\.values\\b|\\bSettingWithCopyWarning\\b|\\bcopy_on_write\\b|\\bChainedAssignmentError\\b"
+  examples:
+    - 'df["col"][mask] = v'
+    - 'df["col"].fillna(0, inplace=True)'
+    - 'arr = df.to_numpy(copy=True)'
 sources:
   - https://pandas.pydata.org/docs/whatsnew/v3.0.0.html#consistent-copy-view-behaviour-with-copy-on-write
   - https://pandas.pydata.org/docs/user_guide/copy_on_write.html

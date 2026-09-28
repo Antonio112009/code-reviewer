@@ -9,6 +9,12 @@ activation:
     - '\bmax-http-header-size\b'
     - 'EnableAutoConfiguration='
     - '\bsetUseTrailingSlashMatch\('
+  examples:
+    - 'import javax.persistence.Entity;'
+    - 'spring.redis.host=localhost'
+    - 'server.max-http-header-size=8KB'
+    - 'org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.example.MyAutoConfig'
+    - 'configurer.setUseTrailingSlashMatch(true);'
   versions: { framework.spring: ">=3" }
 sources:
   - https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.0-Migration-Guide

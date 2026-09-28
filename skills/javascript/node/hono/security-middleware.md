@@ -9,6 +9,11 @@ activation:
     - "\\b(?:jwt|jwk|cors|csrf|secureHeaders|bodyLimit|basicAuth|bearerAuth|ipRestriction)\\s*\\("
     - "\\bserveStatic\\s*\\(|\\bgetConnInfo\\s*\\(|\\bparseBody\\s*\\("
     - "\\b(?:getCookie|getSignedCookie|setSignedCookie|setCookie)\\s*\\("
+  examples:
+    - 'import { cors } from "hono/cors"'
+    - 'app.use("*", cors({ origin: "*" }))'
+    - 'app.use("/static/*", serveStatic({ root: "./public" }))'
+    - 'const token = await getSignedCookie(c, secret, "session")'
 sources:
   - https://hono.dev/docs/middleware/builtin/jwt
   - https://github.com/honojs/hono/security/advisories/GHSA-f67f-6cw9-8mq4

@@ -9,3 +9,7 @@ detect:
     - '\bI?Db(?:Connection|Command|DataReader|Parameter|Transaction)\b'
     - '\busing\s+Dapper\b|\bDapper\.'
     - '\bTransactionScope\b'
+  examples:
+    - 'IDbConnection connection = new SqlConnection(connectionString);'
+    - 'using Dapper;'
+    - 'using var scope = new TransactionScope();'

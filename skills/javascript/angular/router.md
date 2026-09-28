@@ -9,6 +9,12 @@ activation:
     - "\\b(?:ResolveFn|RedirectCommand|ActivatedRoute|provideRouter|withComponentInputBinding|withRouterConfig)\\b"
     - "\\bparamsInheritanceStrategy\\b"
     - "\\bsnapshot\\.(?:params|paramMap|queryParams|queryParamMap|data)\\b"
+  examples:
+    - 'export const authGuard: CanActivateFn = (route) => true;'
+    - '{ path: ''admin'', canActivate: [authGuard] },'
+    - 'constructor(private route: ActivatedRoute) {}'
+    - 'withRouterConfig({ paramsInheritanceStrategy: ''always'' })'
+    - 'const id = this.route.snapshot.paramMap.get(''id'');'
 sources:
   - https://angular.dev/guide/routing/route-guards
   - https://angular.dev/guide/routing/read-route-state

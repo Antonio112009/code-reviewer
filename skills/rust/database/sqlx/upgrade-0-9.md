@@ -9,6 +9,11 @@ activation:
     - '\.(?:options|charset|collation|set_names)\('
     - '\bmigrate!\s*\(|\bsqlx\.toml\b|\bsqlx-toml\b'
     - '\bAssertSqlSafe\b'
+  examples:
+    - 'let opts = PgConnectOptions::new().host("localhost");'
+    - 'opts = opts.collation("utf8mb4_unicode_ci");'
+    - 'sqlx::migrate!("./migrations").run(&pool).await?;'
+    - 'let q = sqlx::query(AssertSqlSafe(sql));'
   versions: { orm.sqlx: '>=0.9' }
 sources:
   - https://github.com/launchbadge/sqlx/blob/main/CHANGELOG.md

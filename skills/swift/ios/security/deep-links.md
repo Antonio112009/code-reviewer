@@ -6,6 +6,9 @@ activation:
   content:
     - '\bonOpenURL\b|\bopenURLContexts\b|\bcontinue\s+userActivity\b|\bNSUserActivityTypeBrowsingWeb\b|\bwebpageURL\b|\bopen\s+url:\s*URL\b'
     - '\bASWebAuthenticationSession\b|\bcallbackURLScheme\b|<key>(?:CFBundleURLTypes|CFBundleURLSchemes)</key>|\bapplinks:'
+  examples:
+    - '.onOpenURL { url in handleDeepLink(url) }'
+    - 'let session = ASWebAuthenticationSession(url: authURL, callbackURLScheme: "myapp") { callback, error in }'
 sources:
   - https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app
   - https://developer.apple.com/documentation/xcode/supporting-universal-links-in-your-app

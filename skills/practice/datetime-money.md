@@ -43,6 +43,17 @@ activation:
     - \b(?:BigDecimal|RoundingMode|MathContext|ROUND_HALF_\w+|Money|MonetaryAmount|NumberFormat\.getCurrencyInstance)\b|\bDecimal\(|\bdecimal\.Decimal\b|\.toFixed\(|\bcurrency\b
     - \b(?:\w+_)?(?:price|amount|balance|subtotal|tax|vat|discount|refund|fee|cents)s?\b\s*[-+*/]=?\s*[\w(]|\b\w+(?:Price|Amount|Balance|Subtotal|Tax|Discount|Refund|Fee|Cents)s?\b\s*[-+*/]=?\s*[\w(]
     - \b(?:[Pp]rice|[Aa]mount|[Bb]alance|[Tt]otal|[Cc]ost|[Ff]ee)\w*\??\s*(?::\s*)?(?:float|double|number|Float|Double|float32|float64|f32|f64|REAL|FLOAT|DOUBLE)\b|\b(?:double|float|Double|Float)\s+(?:[Pp]rice|[Aa]mount|[Bb]alance|[Tt]otal|[Cc]ost|[Ff]ee)
+  examples:
+    - 'const created = new Date();'
+    - 'import dayjs from "dayjs";'
+    - 'now = datetime.utcnow()'
+    - 'Instant now = Instant.now();'
+    - 'now := time.Now()'
+    - 'Carbon::now()->addDays(3);'
+    - 'SELECT NOW(), CURRENT_TIMESTAMP;'
+    - 'BigDecimal total = price.setScale(2, RoundingMode.HALF_UP);'
+    - 'const total = order.subtotal + order.tax;'
+    - 'double price = 9.99;'
 ---
 - **Naive times**: `datetime.now()`/`utcnow()`, `LocalDateTime`, `DateTime.Now` or SQL `timestamp` without zone stored or compared across zones; `utcnow().timestamp()` read as local → shifted instants, naive/aware errors. Fix: aware UTC instants, `timestamptz`.
 - **Implicit zone**: JS parses `"2026-03-01"` as UTC but `"2026-03-01T00:00"` as local; `getDate()` mixed with `getUTC*`; `toISOString().slice(0, 10)` or server-zone "today" for users elsewhere → off-by-one days. Fix: explicit zones.

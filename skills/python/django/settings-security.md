@@ -9,6 +9,10 @@ activation:
     - '^[ \t]*(?:DEBUG|SECRET_KEY|SECRET_KEY_FALLBACKS|ALLOWED_HOSTS|USE_X_FORWARDED_HOST|USE_X_FORWARDED_PORT|CSRF_TRUSTED_ORIGINS|PASSWORD_HASHERS)\s*='
     - '^[ \t]*(?:SECURE|SESSION_COOKIE|CSRF_COOKIE)_\w+\s*='
     - '\bcsp_nonce\b|\bCSP\.NONCE\b'
+  examples:
+    - 'DEBUG = True'
+    - 'SESSION_COOKIE_SECURE = False'
+    - '<script nonce="{{ csp_nonce }}">'
 sources:
   - https://docs.djangoproject.com/en/stable/howto/deployment/checklist/
   - https://docs.djangoproject.com/en/stable/ref/settings/#secure-proxy-ssl-header

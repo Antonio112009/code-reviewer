@@ -7,6 +7,10 @@ activation:
     - '^\s*go\s+1\.\d{1,2}'
     - '^\s*toolchain\s+go1\.'
     - '^\s*godebug\b'
+  examples:
+    - 'go 1.23'
+    - 'toolchain go1.23.4'
+    - 'godebug tlsrsakex=0'
 sources:
   - https://go.dev/doc/godebug
   - https://go.dev/ref/mod#go-mod-file-go

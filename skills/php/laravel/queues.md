@@ -8,6 +8,9 @@ activation:
     - '\bShouldQueue\b|\bShouldBeUnique\w*\b|\bSerializesModels\b|->afterCommit\s*\('
     - '::dispatch(?:Sync|If|Unless)?\s*\(|\bdispatch\s*\(|\bBus::(?:batch|chain)\s*\('
     - '\bretry_after\b|\$(?:tries|timeout|backoff|maxExceptions)\b|#\[(?:Tries|Timeout|Backoff|UniqueFor|FailOnTimeout)\b|\bWithoutOverlapping\b'
+  examples:
+    - 'class ProcessPayment implements ShouldQueue { use SerializesModels; public int $tries = 5; }'
+    - 'ProcessPayment::dispatch($order)->afterCommit();'
 sources:
   - https://laravel.com/docs/13.x/queues
   - https://laravel.com/docs/13.x/queues#jobs-and-database-transactions

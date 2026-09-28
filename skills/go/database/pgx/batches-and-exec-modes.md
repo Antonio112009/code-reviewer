@@ -11,6 +11,13 @@ activation:
     - '\b(?:default_query_exec_mode|statement_cache_capacity|description_cache_capacity|prefer_simple_protocol)\b'
     - '[Pp]g[Bb]ouncer'
     - '\bCopyFrom\('
+  examples:
+    - 'br := pool.SendBatch(ctx, batch)'
+    - 'batch := &pgx.Batch{}'
+    - 'mode := pgx.QueryExecModeSimpleProtocol'
+    - 'dsn := "postgres://user@host/db?default_query_exec_mode=exec"'
+    - '// behind PgBouncer, prepared statements must be disabled'
+    - 'n, err := conn.CopyFrom(ctx, pgx.Identifier{"logs"}, cols, rows)'
 sources:
   - https://pkg.go.dev/github.com/jackc/pgx/v5#QueryExecMode
   - https://github.com/jackc/pgx/blob/master/CHANGELOG.md

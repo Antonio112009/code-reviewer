@@ -12,6 +12,14 @@ activation:
     - '\bfinally\s*\{'
     - '\b(?:FileInputStream|FileOutputStream|RandomAccessFile|ZipFile|Socket)\s*\('
     - '\.(?:bufferedReader|bufferedWriter|inputStream|outputStream|openStream|openConnection|getConnection|prepareStatement|executeQuery|rawQuery)\s*\('
+  examples:
+    - 'TODO("handle refund flow")'
+    - 'assert(balance >= 0) { "balance must be non-negative" }'
+    - 'runCatching { repository.save(order) }'
+    - 'catch (e: Exception) { logger.warn(e) }'
+    - 'finally { connection.close() }'
+    - 'val socket = Socket(host, port)'
+    - 'val body = connection.getInputStream().bufferedReader().readText()'
 sources:
   - https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-t-o-d-o.html
   - https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/assert.html

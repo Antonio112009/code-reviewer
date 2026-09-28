@@ -6,6 +6,9 @@ activation:
   content:
     - "(?<![.\\w$])(?:reactive|shallowReactive|shallowRef|toRefs?|toRaw|markRaw|triggerRef|readonly)\\s*(?:<[^>\\n]{0,80}>)?\\("
     - "(?<![.\\w$])ref\\s*(?:<[^>\\n]{0,80}>)?\\("
+  examples:
+    - 'const state = reactive({ count: 0 });'
+    - 'const count = ref(0);'
   versions: { framework.vue: ">=3" }
 sources:
   - https://vuejs.org/guide/essentials/reactivity-fundamentals.html

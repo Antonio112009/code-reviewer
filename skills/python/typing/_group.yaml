@@ -8,3 +8,7 @@ detect:
     - "\\b(?:typing|typing_extensions|annotationlib)\\b"
     - "\\bfrom\\s+__future__\\s+import\\s+annotations\\b"
     - "\\b__annotations__\\b"
+  examples:
+    - "from typing import Optional"
+    - "from __future__ import annotations"
+    - "hints = cls.__annotations__"

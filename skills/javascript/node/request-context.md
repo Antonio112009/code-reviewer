@@ -10,6 +10,12 @@ activation:
     - '^(?:export\s+)?let\s+(?:current|active|request|req|user|tenant|session|ctx|context)[A-Z]?\w*\b'
     - '\bglobal(?:This)?\.(?:user|currentUser|tenant|request|req|session|ctx|context)\s*='
     - '^\s*(?:this\.)?(?:current|active)(?:User|Tenant|Request|Session|Transaction)\s*='
+  examples:
+    - 'const als = new AsyncLocalStorage();'
+    - 'const store = als.getStore();'
+    - 'let currentUser = null;'
+    - 'globalThis.currentUser = user;'
+    - 'this.currentUser = user;'
 sources:
   - https://nodejs.org/api/async_context.html#class-asynclocalstorage
   - https://nodejs.org/api/async_context.html#asynclocalstorageenterwithstore

@@ -10,6 +10,12 @@ activation:
     - '\bstatic\s+(?:final\s+)?(?:Random|SecureRandom|SplittableRandom|UUID)\b'
     - '\bstatic\s*\{|\bSystem\.getenv\('
     - '\bquarkus\.native\.'
+  examples:
+    - '@RegisterForReflection'
+    - 'Class<?> type = Class.forName(className);'
+    - 'private static final SecureRandom RANDOM = new SecureRandom();'
+    - 'static { System.getenv("SEED"); }'
+    - 'quarkus.native.additional-build-args=--initialize-at-run-time'
 sources:
   - https://quarkus.io/guides/writing-native-applications-tips
   - https://quarkus.io/guides/config-reference

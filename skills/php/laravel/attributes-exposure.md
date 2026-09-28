@@ -8,6 +8,10 @@ activation:
     - '\$request->(?:all|input|except|post|json)\s*\(|request\(\)->(?:all|input|except)\s*\('
     - '\$(?:fillable|guarded|hidden|visible|appends)\b|#\[(?:Fillable|Guarded|Unguarded|Hidden|Visible)\b|::unguard\s*\('
     - '->(?:forceFill|forceCreate|makeVisible|setVisible)\s*\(|\bextends\s+(?:JsonResource|ResourceCollection)\b'
+  examples:
+    - '$user = User::create($request->all());'
+    - 'protected $guarded = [];'
+    - 'class UserResource extends JsonResource'
 sources:
   - https://laravel.com/docs/13.x/eloquent#mass-assignment
   - https://laravel.com/docs/13.x/eloquent-serialization

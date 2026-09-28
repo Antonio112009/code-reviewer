@@ -9,6 +9,11 @@ activation:
     - '->getClient(?:OriginalName|OriginalExtension|MimeType)\s*\(|->(?:hashName|extension)\s*\('
     - '[''"|](?:mimes|mimetypes|image|extensions|file):?|\bFile::(?:image|types)\s*\('
     - '\bresponse\(\)->(?:download|file)\s*\('
+  examples:
+    - '$path = $request->file(''avatar'')->storeAs(''avatars'', $filename, ''public'');'
+    - '$original = $file->getClientOriginalName();'
+    - '''avatar'' => [''required'', ''mimes:png,jpg'', ''max:2048''],'
+    - 'return response()->download(storage_path(''app/exports/'' . $filename));'
 sources:
   - https://laravel.com/docs/13.x/validation#rule-mimes
   - https://laravel.com/docs/13.x/filesystem#file-uploads

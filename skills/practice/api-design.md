@@ -30,6 +30,15 @@ activation:
     - \bexport\s+(?:async\s+)?function\s+(?:GET|POST|PUT|PATCH|DELETE)\b|\bexport\s+const\s+(?:GET|POST|PUT|PATCH|DELETE)\s*[:=]
     - \.status\(\d{3}\)|\breply\.code\(|\bWriteHeader\(|\bhttp\.Error\(|\b(?:ResponseEntity|HTTPException|JsonResponse|StatusCodes|HttpStatus)\b|[Ii]dempoten|\b(?:next_?[cC]ursor|page_?[tT]oken)\b|\bIf-Match\b|\bETag\b
     - "[Ww]ebhook|\\bconstructEvent\\(|\\bX-Hub-Signature|\\bsvix\\b|\\bStripe-Signature\\b"
+  examples:
+    - 'app.post("/orders", createOrder);'
+    - 'app.MapGet("/orders/{id}", GetOrder);'
+    - '@GetMapping("/orders/{id}")'
+    - '@app.post("/orders")'
+    - 'Route::post("/orders", [OrderController::class, "store"]);'
+    - 'export async function POST(request: Request) {'
+    - 'res.status(409).json({ error: "Idempotency-Key already used" });'
+    - 'const event = stripe.webhooks.constructEvent(rawBody, sig, secret);'
 ---
 - **Breaking change**: removed/renamed fields, endpoints, parameters or enum values; changed types, units, nullability or defaults; new required inputs or rejected unknown fields on existing endpoints → deployed clients break. Fix: additive changes, deprecate, version.
 - **Schema evolution**: protobuf tag or type changed, deleted field not `reserved`, field moved into `oneof`, renames (break ProtoJSON), new enum values for strict decoders (`Codable`, Jackson) → failed or corrupt decoding. Fix: `reserved`, unknown-value handling.

@@ -10,6 +10,11 @@ activation:
     - '\.(?:saveAll|persist|flush|clear)\('
     - '\bStatelessSession\b'
     - '@(?:GeneratedValue|SequenceGenerator)\b'
+  examples:
+    - '@GeneratedValue(strategy = GenerationType.IDENTITY)'
+    - 'hibernate.jdbc.batch_size=50'
+    - 'repository.saveAll(batch);'
+    - 'StatelessSession session = sessionFactory.openStatelessSession();'
 sources:
   - https://github.com/hibernate/hibernate-orm/blob/main/documentation/src/main/asciidoc/userguide/chapters/batch/Batching.adoc
   - https://docs.hibernate.org/orm/7.0/migration-guide/migration-guide.html

@@ -9,6 +9,10 @@ activation:
     - '\bmigrationBuilder\.\w+\(|\bMigrationBuilder\b'
     - '\.(?:Migrate|MigrateAsync|EnsureCreated|EnsureCreatedAsync|EnsureDeleted|EnsureDeletedAsync)\('
     - '\bHasData\(|\bPendingModelChangesWarning\b'
+  examples:
+    - 'migrationBuilder.RenameColumn(name: "Name", table: "Users", newName: "FullName");'
+    - 'app.Services.GetRequiredService<AppDbContext>().Database.Migrate();'
+    - 'modelBuilder.Entity<Status>().HasData(new Status { Id = 1, Name = "Active" });'
 sources:
   - https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/managing
   - https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/applying

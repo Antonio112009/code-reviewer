@@ -5,6 +5,9 @@ activation:
   content:
     - '@Model\b|\bModel(?:Context|Container|Actor)\b|@ModelActor\b|@Query\b|\bFetchDescriptor\b|#Predicate\b'
     - '@(?:Attribute|Relationship)\(|\bVersionedSchema\b|\bSchemaMigrationPlan\b|\bPersistentIdentifier\b|\.modelContainer\(|\bautosaveEnabled\b'
+  examples:
+    - '@Model final class Recipe { var title: String }'
+    - '@Relationship(deleteRule: .cascade) var ingredients: [Ingredient]'
 sources:
   - https://developer.apple.com/documentation/swiftdata/modelcontext
   - https://developer.apple.com/documentation/swiftdata/modelcontext/autosaveenabled

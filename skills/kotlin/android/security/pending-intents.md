@@ -10,6 +10,11 @@ activation:
     - '\bFLAG_(?:MUTABLE|IMMUTABLE|UPDATE_CURRENT|ONE_SHOT|NO_CREATE|CANCEL_CURRENT)\b'
     - '\bsetPendingIntent(?:Creator|)BackgroundActivityStartMode\b'
     - '\bsetContentIntent\s*\('
+  examples:
+    - 'val pi = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)'
+    - 'val pi = PendingIntentCompat.getActivity(context, 0, intent, 0, false)'
+    - 'options.setPendingIntentBackgroundActivityStartMode(MODE_BACKGROUND_ACTIVITY_START_ALLOWED)'
+    - 'notificationBuilder.setContentIntent(pendingIntent)'
 sources:
   - https://developer.android.com/privacy-and-security/risks/pending-intent
   - https://developer.android.com/reference/android/app/PendingIntent

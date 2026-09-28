@@ -7,6 +7,10 @@ activation:
     - '\bDateTime(?:Offset)?\.(?:Now|UtcNow|Today|Parse|ParseExact|TryParse|SpecifyKind)\b'
     - '\.(?:ToUniversalTime|ToLocalTime)\(|\bDateTimeKind\b|\bTimeZoneInfo\b|\bTimeProvider\b'
     - '\bTimeSpan\b|\.(?:Milliseconds|Seconds|Minutes|Hours|Days)\b'
+  examples:
+    - 'var createdAt = DateTime.Now;'
+    - 'var utc = createdAt.ToUniversalTime();'
+    - 'var timeout = TimeSpan.FromSeconds(90);'
 sources:
   - https://learn.microsoft.com/en-us/dotnet/standard/datetime/choosing-between-datetime
   - https://learn.microsoft.com/en-us/dotnet/api/system.datetime.compare

@@ -11,6 +11,13 @@ activation:
     - '\b(?:node-serialize|serialize-javascript|funcster)\b|\bunserialize\s*\(|\bv8\.deserialize\s*\('
     - '\bjs-yaml\b|\byaml\.load(?:All)?\s*\('
     - '\brequire\s*\(\s*[^''"`\s)]|\bimport\s*\(\s*[^''"`\s)]'
+  examples:
+    - 'eval(userInput);'
+    - 'setTimeout("doStuff()", 100);'
+    - 'vm.runInNewContext(code, sandbox);'
+    - 'const obj = unserialize(data);'
+    - 'const doc = yaml.load(input);'
+    - 'const plugin = require(pluginName);'
 sources:
   - https://nodejs.org/api/vm.html#vm-executing-javascript
   - https://github.com/patriksimek/vm2/security/advisories

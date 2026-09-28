@@ -7,6 +7,9 @@ activation:
   content:
     - '\bHttp::(?:get|post|put|patch|delete|send|pool|withToken|withHeaders|timeout|retry|asForm|acceptJson|baseUrl|withoutVerifying)\b'
     - '->(?:withoutVerifying|retry|throw|throwIf|successful|failed|json)\s*\('
+  examples:
+    - '$response = Http::timeout(5)->retry(3, 100)->post(''https://api.example.com/charge'', $payload);'
+    - '$response = Http::withoutVerifying()->get($url)->throw()->json();'
 sources:
   - https://laravel.com/docs/13.x/http-client#error-handling
   - https://laravel.com/docs/13.x/http-client#timeout

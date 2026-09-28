@@ -10,6 +10,12 @@ activation:
     - '->\s*(?:dict|Any|list\[dict|JSONResponse)\b'
     - '@\w+\.patch\(|\bexclude_unset\s*=|\bmodel_copy\(\s*update\s*='
     - '\bJinja2Templates\(|\bTemplateResponse\('
+  examples:
+    - '@app.get("/users/{user_id}", response_model=UserOut)'
+    - 'return JSONResponse(content=data)'
+    - 'def get_user(user_id: int) -> dict:'
+    - 'updated = item.model_dump(exclude_unset=True)'
+    - 'templates = Jinja2Templates(directory="templates")'
 sources:
   - https://fastapi.tiangolo.com/tutorial/response-model/
   - https://fastapi.tiangolo.com/advanced/response-directly/

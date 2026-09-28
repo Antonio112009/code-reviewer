@@ -6,6 +6,10 @@ activation:
   content:
     - '\bAssert\.\w+(?:<[^>\n]{1,60}>)?\(|\.Should\(\)|\bRecord\.Exception(?:Async)?\('
     - '\b(?:ThrowAsync|ThrowExactlyAsync|NotThrowAsync|CompleteWithinAsync|BeEquivalentTo)\b'
+  examples:
+    - 'Assert.Equal(5, result);'
+    - 'await act.Should().ThrowAsync<InvalidOperationException>();'
+    - 'var ex = await Record.ExceptionAsync(() => sut.SaveAsync(order));'
 sources:
   - https://xunit.net/xunit.analyzers/rules/xUnit2021
   - https://fluentassertions.com/exceptions/
