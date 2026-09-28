@@ -177,8 +177,23 @@ Code sessions without user settings), `--full`, two runs each, the variants side
   load the user's settings and get three built-in tools.
 
 AACR-Bench is a weak test of skills. 42% of its references are maintainability and readability comments that
-no checklist targets, and two runs of 30 PRs cannot resolve a difference this small. Skills stay on. A larger
-sample, or the eval corpus with and without skills, is needed before trimming them.
+no checklist targets, and two runs of 30 PRs cannot resolve a difference this small.
+
+The eval corpus (`code-reviewer eval --full`, 33 cases: 16 hard, 2 from real repositories, 8 clean; one run per
+variant, main at 23c6948) is where skills are aimed:
+
+| Eval corpus | Recall | Precision | F1 | False positives on clean changes | Duplicates | Cost |
+|---|---|---|---|---|---|---|
+| Skills (default) | 100% (27/27) | 96% | 98% | 0 of 8 | 4 | $6.95 |
+| `--skills none` | 100% (27/27) | 93% | 96% | 1 of 8 | 8 | $6.11 |
+
+- **Recall is saturated** either way: every planted defect was found.
+- **Without skills the review is noisier.** It flagged one clean change (an unvalidated `order` parameter in
+  `go/invoice-list-sorting`), doubled the duplicates, and rated a CSV injection `minor` instead of `major`.
+- **Skills cost ~14% more** on the corpus (~9% on AACR).
+
+Skills stay on. The difference is one false positive and a few duplicates in one run each, so it is not a
+strong effect either way. They pay for themselves in precision and severity, not in recall.
 
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
