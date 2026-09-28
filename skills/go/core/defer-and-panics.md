@@ -5,13 +5,17 @@ priority: 62
 tags: [CWE-248, CWE-404]
 activation:
   content:
-    - '\bdefer\b'
+    - '\bdefer\s+func\b'
+    - '^\t{2,}defer\b'
+    - '\bdefer\s+[\w.]{1,60}\([^)\n]{1,200}\)'
     - '\b(?:panic|recover)\s*\('
     - '\bos\.Exit\s*\('
     - '\blog\.(?:Fatal|Panic)\w{0,2}\('
     - '\bgo\s+func\b'
   examples:
-    - 'defer f.Close()'
+    - 'defer func() { tx.Rollback() }()'
+    - '		defer rows.Close()'
+    - 'defer finish(err)'
     - 'if r := recover(); r != nil {'
     - 'os.Exit(1)'
     - 'log.Fatalf("failed: %v", err)'

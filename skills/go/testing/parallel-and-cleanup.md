@@ -5,13 +5,15 @@ priority: 50
 tags: [CWE-665]
 activation:
   content:
-    - '\bt\.(?:Parallel|Run|Cleanup|Setenv|Chdir|Context|Fatal\w{0,2}|FailNow|Skip\w{0,3}|TempDir)\('
+    - '\bt\.(?:Parallel|Cleanup|Setenv|Chdir|Context|TempDir)\('
+    - '\bgo\s+func\b'
     - '\bfunc\s+TestMain\b'
     - '\bos\.(?:Setenv|Chdir)\('
   examples:
     - 't.Parallel()'
     - 'func TestMain(m *testing.M) {'
     - 'os.Setenv("FOO", "bar")'
+    - 'go func() { done <- srv.Serve(ln) }()'
 sources:
   - https://pkg.go.dev/testing#T.Parallel
   - https://pkg.go.dev/testing#T.Cleanup
