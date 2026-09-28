@@ -7,3 +7,6 @@ detect:
   content:
     - '^[ \t]*(?:@\w+[ \t]+)?import[ \t]+(?:\w+[ \t]+)?(?:SwiftUI|UIKit|AppKit|WatchKit|WidgetKit|ActivityKit|Observation|CoreData|SwiftData|CloudKit|StoreKit|WebKit|SafariServices|Security|LocalAuthentication|AuthenticationServices|BackgroundTasks|UserNotifications|AVFoundation|Photos|PhotosUI|CoreLocation|Contacts|EventKit|HealthKit|CoreBluetooth|CoreMotion|AppTrackingTransparency|AdSupport|OSLog|os)\b'
     - '\b(?:UserDefaults|UIApplication|UIPasteboard|SecItem(?:Add|CopyMatching|Update|Delete)|kSecAttr\w+)\b|@AppStorage\b'
+  examples:
+    - 'import SwiftUI'
+    - 'UserDefaults.standard.set(true, forKey: "onboarded")'

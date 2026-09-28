@@ -5,6 +5,9 @@ activation:
   content:
     - '@Observable\b|@ObservationIgnored\b|@Bindable\b|\bwithObservationTracking\b|\bwithContinuousObservationTracking\b|\bObservations\s*[({]'
     - '\bObservableObject\b|\bobjectWillChange\b'
+  examples:
+    - '@Observable final class ProfileModel {'
+    - 'class LegacyViewModel: ObservableObject {'
 sources:
   - https://developer.apple.com/documentation/swiftui/migrating-from-the-observable-object-protocol-to-the-observable-macro
   - https://github.com/swiftlang/swift-evolution/blob/main/proposals/0506-advanced-observation-tracking.md

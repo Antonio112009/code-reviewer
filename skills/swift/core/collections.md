@@ -6,6 +6,10 @@ activation:
     - '\b(?:ArraySlice|Substring)\b|\.(?:enumerated|dropFirst|dropLast|prefix|suffix|removeFirst|remove)\(|\.indices\b'
     - '\[[^\]\n]{0,60}\.\.[.<][^\]\n]{0,60}\]'
     - '\bArray\(repeating:|\.hashValue\b|\blazy\.(?:map|filter|compactMap)\b'
+  examples:
+    - 'let slice: ArraySlice<Int> = numbers.dropFirst(2)'
+    - 'let chunk = data[4..<8]'
+    - 'var grid = Array(repeating: Cell(), count: 100)'
 sources:
   - https://developer.apple.com/documentation/swift/arrayslice
   - https://developer.apple.com/documentation/swift/hasher

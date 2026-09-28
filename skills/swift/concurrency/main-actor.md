@@ -7,6 +7,10 @@ activation:
     - '@MainActor\b|\bMainActor\.(?:run|assumeIsolated)\b|\bDispatchQueue\.main\b|\bThread\.isMainThread\b'
     - '\bnonisolated\b|@preconcurrency\b|\bqueue:\s*nil\b|\bdelegateQueue:|\.receive\(on:'
     - '\bTask\s*(?:\(\s*(?:priority:\s*\.\w+\s*)?\)\s*)?\{'
+  examples:
+    - '@MainActor final class ProfileViewModel: ObservableObject {'
+    - 'NotificationCenter.default.addObserver(forName: .userDidLogin, object: nil, queue: nil) { _ in }'
+    - 'Task { expensiveParse(data) }'
 sources:
   - https://developer.apple.com/documentation/swift/mainactor
   - https://developer.apple.com/documentation/foundation/notificationcenter/addobserver(forname:object:queue:using:)

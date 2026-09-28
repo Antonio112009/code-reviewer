@@ -9,6 +9,11 @@ activation:
     - '\b(?:TimeoutLayer|RequestBodyTimeoutLayer|RequestBodyDeadlineLayer|RequestBodyLimitLayer|CorsLayer|TraceLayer)\b'
     - '\bimpl\s+IntoResponse\s+for\b'
     - '\b(?:Signed|Private)?CookieJar\b|\bKey::generate\(|\btower_sessions\b|\bcycle_id\('
+  examples:
+    - 'axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await?;'
+    - 'let app = Router::new().layer(CorsLayer::very_permissive());'
+    - 'impl IntoResponse for AppError {'
+    - 'let jar: PrivateCookieJar = PrivateCookieJar::new(key);'
   versions: { framework.axum: '>=0.7' }
 sources:
   - https://github.com/tokio-rs/axum/blob/main/axum/CHANGELOG.md

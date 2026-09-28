@@ -10,6 +10,12 @@ activation:
     - '\bfs::(?:write|read|read_to_string|rename|copy|set_permissions)\b'
     - '\.(?:write|read|read_to_end|read_to_string|flush|sync_all)\(|\.take\(\s*\d'
     - '\btemp_dir\(\)|\btempfile\b'
+  examples:
+    - 'let mut writer = BufWriter::new(file);'
+    - 'let file = File::create(path)?;'
+    - 'fs::write(&path, contents)?;'
+    - 'writer.flush()?;'
+    - 'let dir = env::temp_dir().join("app.tmp");'
 sources:
   - https://doc.rust-lang.org/std/io/struct.BufWriter.html
   - https://doc.rust-lang.org/std/fs/struct.File.html

@@ -11,6 +11,13 @@ activation:
     - '\bfilter_map\(\s*(?:Result::ok|\|\w+\|\s*\w+\.ok\(\))'
     - '\.map_err\(\s*\|_\|'
     - '\bimpl\s+Drop\s+for\b'
+  examples:
+    - 'let _ = fs::remove_file(&path);'
+    - 'conn.execute(query).ok();'
+    - 'let limit = input.parse().unwrap_or(0);'
+    - 'let valid: Vec<_> = rows.into_iter().filter_map(Result::ok).collect();'
+    - 'let value = risky().map_err(|_| Error::Internal)?;'
+    - 'impl Drop for Connection {'
 sources:
   - https://doc.rust-lang.org/std/result/index.html#results-must-be-used
   - https://doc.rust-lang.org/std/result/enum.Result.html#method.ok

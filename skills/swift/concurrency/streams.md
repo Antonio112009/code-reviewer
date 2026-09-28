@@ -7,6 +7,10 @@ activation:
     - '\bAsync(?:Throwing)?Stream\b|\bonTermination\b|\.values\b|\bnotifications\(named:'
     - '\bAnyCancellable\b|\.sink\s*[({]|\.assign\(to:|\b(?:PassthroughSubject|CurrentValueSubject)\b|@Published\b'
     - '\bFuture\s*[<({]|\.catch\s*[({]|\.replaceError\(|\.receive\(on:|\beraseToAnyPublisher\('
+  examples:
+    - 'let stream = AsyncStream<Event> { continuation in'
+    - 'subject.sink { value in print(value) }.store(in: &cancellables)'
+    - 'return publisher.receive(on: DispatchQueue.main).eraseToAnyPublisher()'
 sources:
   - https://github.com/swiftlang/swift-evolution/blob/main/proposals/0314-async-stream.md
   - https://github.com/swiftlang/swift/blob/main/stdlib/public/Concurrency/AsyncStreamBuffer.swift

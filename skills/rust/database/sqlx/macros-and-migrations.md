@@ -10,6 +10,12 @@ activation:
     - '\bSQLX_OFFLINE\b'
     - '\b(?:NaiveDateTime|PrimitiveDateTime|OffsetDateTime)\b|\bDateTime<Utc>'
     - '\bquery_as::<|#\[sqlx\('
+  examples:
+    - 'let user = query_as!(User, "SELECT * FROM users WHERE id = $1", id).fetch_one(&pool).await?;'
+    - 'sqlx::migrate!("./migrations").run(&pool).await?;'
+    - 'if env::var("SQLX_OFFLINE").is_ok() { }'
+    - 'let created_at: DateTime<Utc> = row.created_at;'
+    - '#[sqlx(rename = "user_id")]'
 sources:
   - https://docs.rs/sqlx/latest/sqlx/macro.query.html
   - https://docs.rs/sqlx/latest/sqlx/migrate/enum.MigrateError.html

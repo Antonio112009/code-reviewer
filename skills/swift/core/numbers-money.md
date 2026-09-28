@@ -6,6 +6,10 @@ activation:
     - '\b(?:Decimal|NSDecimalNumber|NumberFormatter|NSNumber)\b|\.formatted\(\.(?:number|currency|percent)\b|\.currency\(code:'
     - '\b(?:price|amount|balance|subtotal|total(?:Price|Amount|Cost)|currency|money|cents|fees?|tax)(?:[A-Z]\w*)?\s*[:=]'
     - '\b(?:Double|Float)\(\s*\w+(?:\.text)?\s*\)'
+  examples:
+    - 'let total: Decimal = 19.99'
+    - 'let amount = Double(priceField.text) ?? 0'
+    - 'let label = value.formatted(.currency(code: "USD"))'
 sources:
   - https://developer.apple.com/documentation/foundation/decimal
   - https://github.com/swiftlang/swift/issues/45905

@@ -6,6 +6,9 @@ activation:
   content:
     - '\bNSManagedObject(?:Context|ID)?\b|\bviewContext\b|\bnewBackgroundContext\(|\bperformBackgroundTask\b|\.perform(?:AndWait)?\s*[({]'
     - '\bNSBatch(?:Delete|Update|Insert)Request\b|\bautomaticallyMergesChangesFromParent\b|\bmergePolicy\b|\bobjectID\b|\.save\(\)'
+  examples:
+    - 'container.viewContext.perform { try? container.viewContext.save() }'
+    - 'let deleteRequest = NSBatchDeleteRequest(fetchRequest: request)'
 sources:
   - https://developer.apple.com/documentation/coredata/using-core-data-in-the-background
   - https://developer.apple.com/documentation/coredata/nsbatchdeleterequest

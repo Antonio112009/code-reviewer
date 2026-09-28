@@ -6,6 +6,10 @@ activation:
     - '\bBG(?:TaskScheduler|AppRefreshTask(?:Request)?|ProcessingTask(?:Request)?|ContinuedProcessingTask(?:Request)?|Task)\b|\b(?:begin|end)BackgroundTask\b|\.backgroundTask\('
     - '\bURLSessionConfiguration\.background\b|\bhandleEventsForBackgroundURLSession\b|\burlSessionDidFinishEvents\b|\bdidFinishDownloadingTo\b'
     - '<key>(?:BGTaskSchedulerPermittedIdentifiers|UIBackgroundModes)</key>'
+  examples:
+    - 'BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.app.refresh", using: nil) { task in }'
+    - 'let config = URLSessionConfiguration.background(withIdentifier: "com.app.upload")'
+    - '<key>BGTaskSchedulerPermittedIdentifiers</key>'
 sources:
   - https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/register(fortaskwithidentifier:using:launchhandler:)
   - https://developer.apple.com/documentation/backgroundtasks/bgtask/settaskcompleted(success:)

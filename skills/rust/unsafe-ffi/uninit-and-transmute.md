@@ -9,6 +9,11 @@ activation:
     - '\btransmute(?:_copy)?\b'
     - '\.set_len\('
     - '#\[repr\((?:packed|transparent|C)'
+  examples:
+    - 'let mut buf = MaybeUninit::<[u8; 64]>::uninit();'
+    - 'let value: u32 = unsafe { mem::transmute(bytes) };'
+    - 'unsafe { v.set_len(n) };'
+    - '#[repr(packed)]'
 sources:
   - https://doc.rust-lang.org/std/mem/union.MaybeUninit.html
   - https://doc.rust-lang.org/std/mem/fn.transmute.html

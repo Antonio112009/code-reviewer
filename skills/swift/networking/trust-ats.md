@@ -9,6 +9,10 @@ activation:
     - '<key>NS(?:AppTransportSecurity|AllowsArbitraryLoads\w*|AllowsLocalNetworking|ExceptionDomains|Exception\w+|PinnedDomains|Pinned\w+Identities)</key>'
     - '\bURLAuthenticationChallenge\b|\bdidReceive\s+challenge\b|\bserverTrust\b|\bSecTrust\w*|\bURLCredential\(trust:|\.useCredential\b|NSURLAuthenticationMethodServerTrust'
     - '\b(?:ServerTrustManager|DisabledTrustEvaluator|PinnedCertificatesTrustEvaluator|PublicKeysTrustEvaluator)\b|\bsec_protocol_options_set_verify_block\b|\bNWProtocolTLS\b'
+  examples:
+    - '<key>NSAllowsArbitraryLoads</key>'
+    - 'completionHandler(.useCredential, URLCredential(trust: challenge.protectionSpace.serverTrust!))'
+    - 'let evaluators = ["api.example.com": DisabledTrustEvaluator()]'
 sources:
   - https://developer.apple.com/documentation/bundleresources/information-property-list/nsapptransportsecurity/nsallowsarbitraryloads
   - https://developer.apple.com/documentation/bundleresources/information-property-list/nsapptransportsecurity/nspinneddomains

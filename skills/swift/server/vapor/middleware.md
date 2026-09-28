@@ -9,6 +9,10 @@ activation:
     - '\bapp\.middleware\.use\(|\bCORSMiddleware\b|\ballowedOrigin\b|\ballowCredentials\b'
     - '\bFileMiddleware\(|\bpublicDirectory\b|\bworkingDirectory\b|\bErrorMiddleware\b'
     - '\bEnvironment\.(?:detect|get)\(|\bapp\.environment\b|--env\b|\bisRelease\b'
+  examples:
+    - 'app.middleware.use(CORSMiddleware(configuration: .default()), at: .beginning)'
+    - 'app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))'
+    - 'let env = try Environment.detect()'
 sources:
   - https://docs.vapor.codes/advanced/middleware/
   - https://github.com/vapor/vapor/blob/4.122.2/Sources/Vapor/Middleware/CORSMiddleware.swift

@@ -10,6 +10,12 @@ activation:
     - '\b(?:bcrypt|argon2|scrypt|pbkdf2)::|\bSha(?:256|512)::digest\('
     - '\brsa::|\bRsaPrivateKey\b|\bPkcs1v15Encrypt\b|\bOaep\b'
     - '\bsubtle::|\bConstantTimeEq\b|\bverify_slice\('
+  examples:
+    - 'let nonce = Nonce::from_slice(b"unique nonce");'
+    - 'let mut rng = StdRng::seed_from_u64(42);'
+    - 'let hash = bcrypt::hash(password, DEFAULT_COST)?;'
+    - 'let key = RsaPrivateKey::new(&mut rng, 2048)?;'
+    - 'use subtle::ConstantTimeEq;'
 sources:
   - https://docs.rs/aes-gcm/latest/aes_gcm/
   - https://github.com/rust-random/rand/blob/master/CHANGELOG.md

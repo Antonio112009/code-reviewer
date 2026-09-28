@@ -9,6 +9,11 @@ activation:
     - '\bunsafe\s+extern\b'
     - '#\[unsafe\('
     - '\bsafe\s+(?:fn|static)\b'
+  examples:
+    - 'edition = "2024"'
+    - 'unsafe extern "C" {'
+    - '#[unsafe(no_mangle)]'
+    - 'safe fn c_add(a: i32, b: i32) -> i32;'
   versions: { lang.rust: '>=1.85' }
 sources:
   - https://doc.rust-lang.org/edition-guide/rust-2024/temporary-if-let-scope.html

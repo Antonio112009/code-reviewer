@@ -7,3 +7,8 @@ detect:
   languages: [rust]
   files: ['**/routes/**/*.rs', '**/handlers/**/*.rs', '**/routes.rs', '**/handlers.rs', '**/router.rs']
   content: ['\baxum(?:_extra|_core)?::', '\btower_http::', '\bRouter::new\(\)', '#\[debug_handler\]']
+  examples:
+    - 'use axum::{Router, routing::get};'
+    - 'let app = Router::new().route("/health", get(health)).layer(TraceLayer::new_for_http());'
+    - 'use tower_http::cors::CorsLayer;'
+    - '#[debug_handler]'

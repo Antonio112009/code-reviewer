@@ -7,6 +7,9 @@ activation:
   content:
     - '\bloadPersistentStores\b|\bNSPersistent(?:Cloud\w*)?Container\b|\bNSPersistentStoreDescription\b|\bdestroyPersistentStore\b|\bNSStagedMigrationManager\b'
     - '\bNSFetchRequest\b|\bNSFetchedResultsController\b|\bNSPredicate\(format:|\bfetchBatchSize\b|\bsectionNameKeyPath\b'
+  examples:
+    - 'container.loadPersistentStores { description, error in }'
+    - 'let predicate = NSPredicate(format: "name == %@", name)'
 sources:
   - https://developer.apple.com/documentation/coredata/nspersistentstoredescription/shouldmigratestoreautomatically
   - https://developer.apple.com/documentation/coredata/creating-a-core-data-model-for-cloudkit

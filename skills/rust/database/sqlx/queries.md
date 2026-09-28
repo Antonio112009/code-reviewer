@@ -10,6 +10,11 @@ activation:
     - '\bQueryBuilder\b|\.push(?:_bind|_values|_tuples)\(|\.push\(\s*&?format!'
     - '\bAssertSqlSafe\b'
     - '\.fetch_(?:one|optional|all)\('
+  examples:
+    - 'let row = sqlx::query("SELECT 1").fetch_one(&pool).await?;'
+    - 'let rows = query(&format!("SELECT * FROM {table}")).fetch_all(&pool).await?;'
+    - 'let mut qb = QueryBuilder::new("INSERT INTO users (name) ");'
+    - 'let row = query(AssertSqlSafe(sql)).fetch_optional(&pool).await?;'
 sources:
   - https://docs.rs/sqlx/latest/sqlx/struct.QueryBuilder.html
   - https://github.com/launchbadge/sqlx/blob/main/CHANGELOG.md

@@ -5,6 +5,9 @@ description: Tests that pass while broken or flake — Swift Testing's default p
 activation:
   files: ['**/*Tests.swift', '**/*Test.swift', '**/Tests/**/*.swift']
   content: ['^[ \t]*import[ \t]+(?:Testing|XCTest)\b', '@(?:Test|Suite)\b|#(?:expect|require)\(|\bXCTAssert\w*\(|\bconfirmation\(']
+  examples:
+    - 'import Testing'
+    - '@Test func loginSucceeds() async throws { #expect(user.isActive) }'
 sources:
   - https://developer.apple.com/documentation/testing/parallelization
   - https://developer.apple.com/documentation/testing/migratingfromxctest

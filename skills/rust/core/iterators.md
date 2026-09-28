@@ -8,6 +8,10 @@ activation:
     - '\.(?:zip|chunks_exact|rchunks_exact|take_while|skip_while|dedup|dedup_by|dedup_by_key|lines|flatten|filter_map|read_dir)\('
     - 'collect::<\s*(?:std::collections::)?(?:Hash|BTree)(?:Map|Set)\b'
     - '\bHash(?:Map|Set)\b'
+  examples:
+    - 'let pairs: Vec<_> = ids.iter().zip(names.iter()).collect();'
+    - 'let map = pairs.into_iter().collect::<HashMap<_, _>>();'
+    - 'let mut seen: HashSet<UserId> = HashSet::new();'
 sources:
   - https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.zip
   - https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.take_while

@@ -10,6 +10,12 @@ activation:
     - '\brealip_remote_addr\b|\bpeer_addr\b|\bconnection_info\('
     - '\bimpl\s+ResponseError\s+for\b|\berror_response\('
     - '\bweb::block\('
+  examples:
+    - 'async fn create(body: web::Json<NewUser>) -> impl Responder {'
+    - 'App::new().app_data(web::JsonConfig::default().limit(4096))'
+    - 'let ip = req.connection_info().realip_remote_addr().map(String::from);'
+    - 'impl ResponseError for AppError {'
+    - 'let result = web::block(move || heavy_compute()).await??;'
 sources:
   - https://docs.rs/actix-web/latest/actix_web/web/struct.JsonConfig.html
   - https://docs.rs/actix-web/latest/actix_web/web/struct.PayloadConfig.html

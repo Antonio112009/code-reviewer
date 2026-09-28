@@ -10,6 +10,12 @@ activation:
     - '\bStatement::from_(?:string|sql_and_values)\b|\braw_sql!|\bfind_by_statement\b|_raw\('
     - '\.begin\(\)|\.transaction\b'
     - '\.find_related\(|\.load_(?:one|many)\(|\binto_active_model\(\)'
+  examples:
+    - 'user.save(&db).await?;'
+    - 'Entity::update_many().filter(Column::Active.eq(false)).exec(db).await?;'
+    - 'let stmt = Statement::from_string(DbBackend::Postgres, sql);'
+    - 'let txn = db.begin().await?;'
+    - 'let posts = user.find_related(Post).all(db).await?;'
 sources:
   - https://www.sea-ql.org/SeaORM/docs/basic-crud/save/
   - https://www.sea-ql.org/SeaORM/docs/basic-crud/update/

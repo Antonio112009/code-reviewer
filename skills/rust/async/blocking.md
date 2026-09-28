@@ -11,6 +11,13 @@ activation:
     - '\breqwest::blocking\b|\bfrom_std\('
     - '\bRuntime::new\(|\bBuilder::new_(?:current_thread|multi_thread)\('
     - '\b(?:bcrypt|argon2)::|\bhash_password\b'
+  examples:
+    - 'let data = std::fs::read_to_string(path)?;'
+    - 'let result = tokio::task::spawn_blocking(move || heavy_compute()).await?;'
+    - 'tx.blocking_send(event)?;'
+    - 'let client = reqwest::blocking::Client::new();'
+    - 'let rt = Runtime::new()?;'
+    - 'let hash = bcrypt::hash(password, DEFAULT_COST)?;'
 sources:
   - https://docs.rs/tokio/latest/tokio/task/fn.spawn_blocking.html
   - https://docs.rs/tokio/latest/tokio/task/fn.block_in_place.html

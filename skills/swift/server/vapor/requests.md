@@ -7,6 +7,10 @@ activation:
     - '\breq\.(?:content|query)\.decode\(|\bValidatable\b|\.validate\((?:content|query):|\bvalidations\(_'
     - '\breq\.parameters\.get\(|\bdefaultMaxBodySize\b|\bbody:\s*\.(?:collect|stream)\b|\bAbort\(\s*\.\w+\s*,\s*reason:'
     - '#unsafeHTML\(|\breq\.view\.render\('
+  examples:
+    - 'let input = try req.content.decode(CreateUserRequest.self)'
+    - 'let id = try req.parameters.get("id", as: UUID.self)'
+    - 'return req.view.render("profile", context)'
 sources:
   - https://docs.vapor.codes/basics/validation/
   - https://docs.vapor.codes/basics/routing/

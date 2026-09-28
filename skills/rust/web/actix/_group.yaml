@@ -7,3 +7,8 @@ detect:
   languages: [rust]
   files: ['**/routes/**/*.rs', '**/handlers/**/*.rs', '**/routes.rs', '**/handlers.rs', '**/router.rs']
   content: ['\bactix_(?:web|files|session|identity|cors|multipart|ws)::', '\bweb::(?:Data|Json|Path|Query|Form|Payload|block|scope|resource)\b', '\bHttpServer::new\b', '#\[(?:actix_web::)?(?:get|post|put|patch|delete|route)\(\s*"']
+  examples:
+    - 'use actix_web::{App, HttpServer};'
+    - 'async fn get_user(path: web::Path<Uuid>, data: web::Data<AppState>) -> impl Responder {'
+    - 'HttpServer::new(|| App::new()).bind(("0.0.0.0", 8080))?.run().await'
+    - '#[get("/users/{id}")]'

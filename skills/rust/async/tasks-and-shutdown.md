@@ -10,6 +10,12 @@ activation:
     - '\bCancellationToken\b|\bshutdown_(?:timeout|background)\('
     - '#\[tokio::(?:main|test)'
     - '\.instrument\(|\.in_current_span\(\)|\.enter\(\)'
+  examples:
+    - 'let handle: JoinHandle<()> = tokio::spawn(async move { worker(rx).await });'
+    - 'signal::ctrl_c().await?;'
+    - 'let token = CancellationToken::new();'
+    - '#[tokio::main]'
+    - 'let response = fetch().instrument(tracing::info_span!("fetch")).await;'
 sources:
   - https://docs.rs/tokio/latest/tokio/task/struct.JoinSet.html
   - https://docs.rs/tokio/latest/tokio/signal/fn.ctrl_c.html

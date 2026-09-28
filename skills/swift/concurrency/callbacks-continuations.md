@@ -6,6 +6,9 @@ activation:
   content:
     - '\bwith(?:Checked|Unsafe)(?:Throwing)?Continuation\b|\bcontinuation\.resume\b|\b(?:Checked|Unsafe)Continuation\b'
     - '\bcompletion(?:Handler)?\s*[:(]|@escaping\s*(?:@\w+\s*)?\('
+  examples:
+    - 'return try await withCheckedThrowingContinuation { continuation in'
+    - 'func loadUser(completion: @escaping (Result<User, Error>) -> Void) {'
 sources:
   - https://github.com/swiftlang/swift-evolution/blob/main/proposals/0300-continuation.md
   - https://developer.apple.com/documentation/swift/withcheckedthrowingcontinuation(isolation:function:_:)

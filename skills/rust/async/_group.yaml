@@ -5,3 +5,9 @@ priority: 60
 detect:
   languages: [rust]
   content: ['\basync\s+(?:fn|move|\{)', '\.await\b', '\btokio::', '#\[tokio::', '\bfutures(?:_util)?::']
+  examples:
+    - 'async fn fetch_user(id: UserId) -> Result<User, Error> {'
+    - 'let user = db.fetch_user(id).await?;'
+    - 'let (tx, mut rx) = tokio::sync::mpsc::channel(32);'
+    - '#[tokio::main]'
+    - 'let joined = futures_util::future::join_all(tasks).await;'

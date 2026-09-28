@@ -9,6 +9,9 @@ activation:
   content:
     - '\bcargo::?(?:rerun-if-changed|rerun-if-env-changed|rustc-link-lib|rustc-link-search|rustc-cfg|rustc-env|warning)\b'
     - '\bCARGO_CFG_\w+|\bOUT_DIR\b'
+  examples:
+    - 'println!("cargo:rerun-if-changed=build.rs");'
+    - 'let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();'
 sources:
   - https://doc.rust-lang.org/cargo/reference/build-scripts.html
   - https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts

@@ -4,3 +4,5 @@ category: framework
 priority: 60
 detect:
   content: ['^[ \t]*(?:@\w+[ \t]+)?import[ \t]+(?:\w+[ \t]+)?SwiftUI\b']
+  examples:
+    - 'import SwiftUI'

@@ -6,6 +6,10 @@ activation:
     - '\bUI(?:Application|Scene|WindowScene)Delegate\b|\bapplication(?:DidBecomeActive|WillResignActive|DidEnterBackground|WillEnterForeground)\b|\bwillConnectTo\b|\bopenURLContexts\b'
     - '\bUIApplicationSceneManifest\b|\.(?:keyWindow|windows)\b|\bconnectionOptions\b'
     - '\bpresent\([^)\n]{1,80}\banimated:|\bUIAlertController\b|\bUIActivityViewController\b|\bpopoverPresentationController\b|\bmodalPresentationStyle\b|\bviewWillAppear\b|\bpresentationControllerDidDismiss\b'
+  examples:
+    - 'class SceneDelegate: UIResponder, UIWindowSceneDelegate {'
+    - 'let window = UIApplication.shared.windows.first'
+    - 'present(alert, animated: true, completion: nil)'
 sources:
   - https://developer.apple.com/documentation/technotes/tn3187-migrating-to-the-uikit-scene-based-life-cycle
   - https://developer.apple.com/documentation/xcode/supporting-universal-links-in-your-app

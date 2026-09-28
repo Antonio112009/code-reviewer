@@ -9,6 +9,11 @@ activation:
     - '\bPathBuf::from\(|\bPath::new\(|\bcanonicalize\(|\bstrip_prefix\('
     - '\bunpack(?:_in)?\(|\b(?:enclosed|mangled)_name\(|\bZipArchive\b|\btar::Archive\b'
     - '\bNamedFile::open|\bServeDir\b|\bServeFile\b|\bactix_files\b'
+  examples:
+    - 'let full_path = base_dir.join(&user_supplied);'
+    - 'let canonical = path.canonicalize()?;'
+    - 'let mut archive = ZipArchive::new(file)?;'
+    - 'let file = NamedFile::open(format!("static/{tail}"))?;'
 sources:
   - https://doc.rust-lang.org/std/path/struct.Path.html#method.join
   - https://docs.rs/tar/latest/tar/struct.Entry.html#method.unpack_in

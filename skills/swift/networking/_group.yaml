@@ -7,3 +7,7 @@ detect:
     - '\b(?:URLSession\w*|URLRequest|URLComponents|URLAuthenticationChallenge|URLCredential|HTTPURLResponse|SecTrust\w*|NWConnection|NWListener|ServerTrustManager|ServerTrustEvaluating)\b'
     - '^[ \t]*import[ \t]+(?:Alamofire|Network|FoundationNetworking)\b'
     - '<key>NS(?:AppTransportSecurity|AllowsArbitraryLoads\w*|ExceptionDomains|PinnedDomains|AllowsLocalNetworking)</key>'
+  examples:
+    - 'let (data, response) = try await URLSession.shared.data(for: request)'
+    - 'import Alamofire'
+    - '<key>NSAppTransportSecurity</key>'

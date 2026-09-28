@@ -13,6 +13,15 @@ activation:
     - '\bBox<dyn\s+(?:std::error::)?Error\b'
     - '\.downcast(?:_ref|_mut)?::<'
     - '\.map_err\(\s*\|\w+\|\s*\w+\.to_string\(\)\s*\)'
+  examples:
+    - 'return Err(anyhow!("failed to load config: {path}"));'
+    - 'error!("request failed: {e}");'
+    - '#[error("invalid input: {0}")]'
+    - 'let config = load().context("failed to load config")?;'
+    - 'ensure!(user.is_active, "user is not active");'
+    - 'fn run() -> Result<(), Box<dyn std::error::Error>> {'
+    - 'if let Some(io_err) = err.downcast_ref::<io::Error>() {'
+    - 'let result = do_thing().map_err(|e| e.to_string());'
 sources:
   - https://docs.rs/anyhow/latest/anyhow/struct.Error.html#display-representations
   - https://docs.rs/thiserror/latest/thiserror/

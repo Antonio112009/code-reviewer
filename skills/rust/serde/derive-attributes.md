@@ -7,6 +7,9 @@ activation:
   content:
     - '#\[serde\('
     - 'derive\([^)\n]{0,200}\bDeserialize\b'
+  examples:
+    - '#[serde(default)]'
+    - '#[derive(Debug, Deserialize)]'
 sources:
   - https://serde.rs/container-attrs.html
   - https://serde.rs/field-attrs.html

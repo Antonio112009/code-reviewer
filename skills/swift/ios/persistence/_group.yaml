@@ -5,3 +5,5 @@ priority: 62
 detect:
   files: ['**/*.xcdatamodel/contents']
   content: ['^[ \t]*(?:@\w+[ \t]+)?import[ \t]+(?:\w+[ \t]+)?(?:CoreData|SwiftData)\b']
+  examples:
+    - 'import CoreData'

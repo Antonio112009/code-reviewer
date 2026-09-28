@@ -7,6 +7,9 @@ activation:
   content:
     - '\.(?:route|route_layer|route_service|nest|nest_service|merge|fallback|layer)\('
     - '\bServiceBuilder\b|\bfrom_fn(?:_with_state)?\('
+  examples:
+    - 'let app = Router::new().route("/users/{id}", get(get_user)).layer(auth_layer);'
+    - 'let middleware = ServiceBuilder::new().layer(from_fn(auth));'
 sources:
   - https://docs.rs/axum/latest/axum/struct.Router.html
   - https://docs.rs/axum/latest/axum/middleware/index.html#ordering

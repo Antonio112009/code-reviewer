@@ -10,6 +10,12 @@ activation:
     - '\b(?:Condvar|OnceLock|LazyLock|lazy_static!|thread_local!)'
     - '\bAtomic(?:Bool|Usize|Isize|U64|I64|U32|I32|Ptr)\b|\bOrdering::(?:Relaxed|Acquire|Release|AcqRel|SeqCst)\b'
     - '\bthread::(?:spawn|scope|Builder)\b'
+  examples:
+    - 'use std::sync::{Arc, Mutex};'
+    - 'let guard = mutex.lock().unwrap();'
+    - 'static CONFIG: OnceLock<Config> = OnceLock::new();'
+    - 'static COUNTER: AtomicUsize = AtomicUsize::new(0);'
+    - 'let handle = thread::spawn(move || worker());'
 sources:
   - https://doc.rust-lang.org/std/sync/struct.Mutex.html#poisoning
   - https://doc.rust-lang.org/std/sync/struct.RwLock.html

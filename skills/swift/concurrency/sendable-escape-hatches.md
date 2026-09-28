@@ -6,6 +6,9 @@ activation:
   content:
     - '@unchecked\s+Sendable|\bnonisolated\(unsafe\)|@preconcurrency\b|\blazy\s+var\b'
     - '\b(?:os_unfair_lock\w*|pthread_mutex\w*|OSAllocatedUnfairLock|Mutex|NSLock|NSRecursiveLock)\b|\bwithLock(?:Unchecked)?\b|\buncheckedState:'
+  examples:
+    - 'final class Cache: @unchecked Sendable {'
+    - 'private let lock = OSAllocatedUnfairLock(initialState: [String: User]())'
 sources:
   - https://developer.apple.com/documentation/os/osallocatedunfairlock
   - https://docs.swift.org/swift-book/documentation/the-swift-programming-language/properties/

@@ -4,6 +4,9 @@ description: LocalAuthentication misuse — biometric success used as a bypassab
 tags: [CWE-287, CWE-603]
 activation:
   content: ['\bLAContext\b|\b(?:evaluate|canEvaluate)Policy\b|\bLAPolicy\b|\bbiometry\w*|\bSecAccessControlCreateWithFlags\b|\.userPresence\b|\bevaluatedPolicyDomainState\b']
+  examples:
+    - 'let context = LAContext()'
+    - 'context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, error in }'
 sources:
   - https://developer.apple.com/documentation/localauthentication/accessing-keychain-items-with-face-id-or-touch-id
   - https://developer.apple.com/documentation/localauthentication/logging-a-user-into-your-app-with-face-id-or-touch-id

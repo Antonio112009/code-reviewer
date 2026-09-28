@@ -5,6 +5,9 @@ activation:
   content:
     - '\b(?:DateFormatter|ISO8601DateFormatter|DateComponents|Calendar|TimeZone|DateInterval)\b|\.dateFormat\b|\btimeIntervalSince(?:1970|ReferenceDate|Now)\b'
     - '\b(?:86_?400|3_?600)\b|\b60\s*\*\s*60\b|\.formatted\(\s*(?:date:|\.dateTime|\.iso8601)'
+  examples:
+    - 'let formatter = DateFormatter(); formatter.dateFormat = "yyyy-MM-dd"'
+    - 'let tomorrow = date.addingTimeInterval(86400)'
 sources:
   - https://developer.apple.com/documentation/foundation/dateformatter
   - https://developer.apple.com/documentation/foundation/iso8601dateformatter

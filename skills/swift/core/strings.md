@@ -6,6 +6,10 @@ activation:
     - '\bNS(?:Range|String|MutableAttributedString|AttributedString|RegularExpression)\b|\.utf(?:8|16)\b|\bString\.Index\b'
     - '\.(?:split|components|index|distance|replacingOccurrences|precomposedStringWithCanonicalMapping)\('
     - '\bString\((?:data|decoding|bytes|cString):'
+  examples:
+    - 'let range = NSRange(location: 0, length: text.utf16.count)'
+    - 'let parts = line.split(separator: ",", omittingEmptySubsequences: false)'
+    - 'let text = String(data: responseData, encoding: .utf8)'
 sources:
   - https://developer.apple.com/documentation/swift/string
   - https://developer.apple.com/documentation/swift/string/utf16view

@@ -4,3 +4,5 @@ category: framework
 priority: 62
 detect:
   content: ['^[ \t]*(?:@\w+[ \t]+)?import[ \t]+(?:\w+[ \t]+)?(?:Vapor|Fluent\w*|Leaf|JWT)\b']
+  examples:
+    - 'import Vapor'

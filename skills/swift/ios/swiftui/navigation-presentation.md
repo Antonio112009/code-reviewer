@@ -5,6 +5,9 @@ activation:
   content:
     - '\bNavigation(?:Link|Stack|SplitView|View|Path)\b|\.navigationDestination\('
     - '\.(?:sheet|fullScreenCover|popover|alert|confirmationDialog)\('
+  examples:
+    - 'NavigationStack { NavigationLink(value: item) { Text(item.title) } }'
+    - '.sheet(item: $selectedItem) { item in DetailView(item: item) }'
 sources:
   - https://developer.apple.com/documentation/swiftui/view/navigationdestination(for:destination:)
   - https://developer.apple.com/documentation/swiftui/view/sheet(item:ondismiss:content:)

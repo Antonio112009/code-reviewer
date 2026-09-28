@@ -9,6 +9,11 @@ activation:
     - '\b(?:Encoding|Decoding)Key::'
     - '\binsecure_(?:decode|disable_signature_validation)\b|\bdangerous::'
     - '\b(?:validate_(?:exp|nbf|aud)|required_spec_claims|set_(?:audience|issuer))\b'
+  examples:
+    - 'let mut validation = Validation::new(Algorithm::HS256);'
+    - 'let key = DecodingKey::from_secret(secret.as_bytes());'
+    - 'let claims = jsonwebtoken::dangerous::insecure_decode(&token)?;'
+    - 'validation.set_audience(&["my-service"]);'
 sources:
   - https://docs.rs/jsonwebtoken/latest/jsonwebtoken/struct.Validation.html
   - https://github.com/Keats/jsonwebtoken/blob/master/CHANGELOG.md

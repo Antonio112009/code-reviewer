@@ -11,6 +11,13 @@ activation:
     - '#\[derive\([^)\n]{0,200}\b(?:PartialOrd|Ord|Hash)\b'
     - '\.(?:sort_by|sort_unstable_by|max_by|min_by|binary_search_by)\(|\bpartial_cmp\b'
     - '\bBorrow<|\b(?:FxHash|FnvHash)(?:Map|Set)\b|\bBuildHasherDefault\b'
+  examples:
+    - 'impl PartialEq for Version {'
+    - 'impl Hash for Version {'
+    - 'fn cmp(&self, other: &Self) -> Ordering {'
+    - '#[derive(PartialEq, PartialOrd, Ord)]'
+    - 'items.sort_by(|a, b| a.priority.cmp(&b.priority));'
+    - 'let cache: FxHashMap<UserId, Profile> = FxHashMap::default();'
 sources:
   - https://doc.rust-lang.org/std/hash/trait.Hash.html#hash-and-eq
   - https://doc.rust-lang.org/std/cmp/trait.Ord.html

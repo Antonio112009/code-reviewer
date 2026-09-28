@@ -8,6 +8,10 @@ activation:
     - '\breqwest\b|\bClientBuilder\b|\bureq::'
     - '\.error_for_status(?:_ref)?\(|\bredirect::Policy\b'
     - '\.(?:get|post|put|patch|delete)\([^)\n]{0,120}\)\s*\.(?:json|form|query|header|bearer_auth|basic_auth|timeout|body)\('
+  examples:
+    - 'let client = reqwest::Client::builder().timeout(Duration::from_secs(10)).build()?;'
+    - 'let resp = client.get(&url).send().await?.error_for_status()?;'
+    - 'let resp = client.post(&url).json(&payload).send().await?;'
 sources:
   - https://docs.rs/reqwest/latest/reqwest/struct.ClientBuilder.html
   - https://docs.rs/reqwest/latest/reqwest/struct.Client.html

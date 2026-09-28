@@ -8,6 +8,10 @@ activation:
     - '\b(?:State|Extension|ConnectInfo|Json|Form|Query|Path|Multipart|Bytes)\s*[<(]'
     - '\bDefaultBodyLimit\b|\bto_bytes\('
     - '\b(?:Optional)?FromRequest(?:Parts)?\b'
+  examples:
+    - 'async fn handler(State(pool): State<PgPool>, Json(payload): Json<NewUser>) -> impl IntoResponse {'
+    - 'let body = to_bytes(req.into_body(), usize::MAX).await?;'
+    - 'impl FromRequestParts<AppState> for AuthUser {'
 sources:
   - https://docs.rs/axum/latest/axum/struct.Extension.html
   - https://docs.rs/axum/latest/axum/extract/struct.DefaultBodyLimit.html

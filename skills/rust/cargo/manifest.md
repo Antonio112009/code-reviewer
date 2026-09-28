@@ -9,6 +9,11 @@ activation:
     - '\b(?:default-features|resolver|rust-version|panic|overflow-checks|rustflags|edition)\s*='
     - '\bgit\s*=\s*"|\bworkspace\s*=\s*true\b'
     - '^\s*(?:async-std|serde_yaml|serde_yml|bincode)\s*='
+  examples:
+    - '[profile.release]'
+    - 'panic = "abort"'
+    - 'serde = { workspace = true }'
+    - 'async-std = "1.12"'
 sources:
   - https://doc.rust-lang.org/cargo/reference/profiles.html
   - https://doc.rust-lang.org/cargo/reference/resolver.html

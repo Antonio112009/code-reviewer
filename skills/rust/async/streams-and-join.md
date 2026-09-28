@@ -9,6 +9,11 @@ activation:
     - '\b(?:try_)?join_all\(|\b(?:try_)?join!'
     - '\.for_each(?:_concurrent)?\(|\bStreamExt\b'
     - '\bBox::pin\(\s*async\b'
+  examples:
+    - 'let results: Vec<_> = stream::iter(items).buffer_unordered(10).collect().await;'
+    - 'let results = futures::future::try_join_all(requests).await?;'
+    - 'stream.for_each_concurrent(4, |item| async move { process(item).await }).await;'
+    - 'let fut = Box::pin(async move { worker(rx).await });'
 sources:
   - https://rust-lang.github.io/wg-async/vision/submitted_stories/status_quo/barbara_battles_buffered_streams.html
   - https://docs.rs/futures/latest/futures/future/fn.join_all.html

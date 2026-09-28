@@ -10,6 +10,11 @@ activation:
     - '\bQueryable\b|\bas_select\(\)|\bSelectable\b'
     - '\binsert_into\(|\.values\(\s*&'
     - '\.load(?:::<[^>\n]{0,60}>)?\(|\.get_results?\('
+  examples:
+    - 'diesel::update(users::table).set(active.eq(false)).execute(conn)?;'
+    - 'let rows = sql_query("SELECT * FROM users WHERE id = $1").bind::<Integer, _>(id).load(conn)?;'
+    - '#[derive(Queryable, Selectable)]'
+    - 'diesel::insert_into(users::table).values(&new_user).execute(conn)?;'
 sources:
   - https://docs.rs/diesel/latest/diesel/deserialize/trait.Queryable.html
   - https://docs.rs/diesel/latest/diesel/fn.sql_query.html

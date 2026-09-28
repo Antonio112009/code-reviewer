@@ -6,3 +6,9 @@ detect:
   stack: [orm.diesel]
   languages: [rust]
   content: ['\bdiesel(?:_async|_migrations)?::', '\btable!\s*\{', '#\[diesel\(', '\b(?:RunQueryDsl|QueryDsl|ExpressionMethods)\b', 'derive\([^)\n]{0,160}\b(?:Queryable|Insertable|Selectable|AsChangeset|Identifiable)\b']
+  examples:
+    - 'use diesel::prelude::*;'
+    - 'table! { users (id) { id -> Int4, name -> Text, } }'
+    - '#[diesel(table_name = users)]'
+    - 'use diesel::{QueryDsl, RunQueryDsl, ExpressionMethods};'
+    - '#[derive(Queryable, Insertable, Selectable)]'

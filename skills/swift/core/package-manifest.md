@@ -4,6 +4,9 @@ description: Package.swift changes with non-obvious effects — swift-tools-vers
 activation:
   files: ['Package.swift', 'Package@swift-*.swift']
   content: ['\bBundle\.module\b', '\bresources:\s*\[']
+  examples:
+    - 'let icon = Bundle.module.url(forResource: "icon", withExtension: "png")'
+    - 'resources: [.process("Resources")]'
 sources:
   - https://github.com/apple/swift-migration-guide/blob/main/Guide.docc/EnableDataRaceSafety.md
   - https://developer.apple.com/documentation/packagedescription/swiftsetting/unsafeflags(_:_:)

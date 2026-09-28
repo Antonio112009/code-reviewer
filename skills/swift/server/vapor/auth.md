@@ -9,6 +9,10 @@ activation:
     - '\b\w+\.authenticator\(\)|\bguardMiddleware\(|\bredirectMiddleware\(|\breq\.auth\.|\b(?:Model|Session|Bearer|Basic)?Authenticatable\b|\bAsync\w*Authenticator\b'
     - '\bJWTPayload\b|\breq\.jwt\b|\bjwt\.keys\b|\bverifyNotExpired\(|\bverifyIntendedAudience\('
     - '\bapp\.sessions\b|\bSessionsMiddleware\b|\breq\.session\b|\bcookieFactory\b'
+  examples:
+    - 'routes.grouped(User.authenticator(), User.guardMiddleware())'
+    - 'struct UserPayload: JWTPayload { func verify(using signer: JWTSigner) throws { try exp.verifyNotExpired() } }'
+    - 'app.sessions.use(.memory)'
 sources:
   - https://docs.vapor.codes/security/authentication/
   - https://docs.vapor.codes/security/jwt/

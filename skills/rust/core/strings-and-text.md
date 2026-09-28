@@ -10,6 +10,12 @@ activation:
     - 'parse::<\s*f(?:32|64)\s*>|:\s*f(?:32|64)\s*=[^;\n]{0,80}\.parse\('
     - '\bas\s+char\b'
     - '\bRegex(?:Builder)?::new\(|\bfancy_regex::'
+  examples:
+    - 'let count = name.chars().count();'
+    - 'let text = String::from_utf8_lossy(&bytes);'
+    - 'let amount = input.parse::<f64>()?;'
+    - 'let ch = byte as char;'
+    - 'let re = Regex::new(r"^[0-9]+$").unwrap();'
 sources:
   - https://doc.rust-lang.org/std/primitive.f64.html#impl-FromStr-for-f64
   - https://doc.rust-lang.org/std/primitive.char.html#method.is_alphanumeric

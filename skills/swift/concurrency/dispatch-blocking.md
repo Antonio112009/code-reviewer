@@ -4,6 +4,10 @@ description: Blocking primitives inside Swift concurrency's cooperative pool, Di
 tags: [CWE-833, CWE-667]
 activation:
   content: ['\bDispatch(?:Queue|Group|Semaphore|WorkItem)\b|\.sync\s*(?:\(|\{)|\.(?:wait|enter|leave)\(\)|\bThread\.sleep\b|\busleep\(|\bOperationQueue\b|\.barrier\b']
+  examples:
+    - 'let semaphore = DispatchSemaphore(value: 0)'
+    - 'DispatchQueue.main.sync { updateUI() }'
+    - 'group.enter()'
 sources:
   - https://developer.apple.com/videos/play/wwdc2021/10254/
   - https://developer.apple.com/documentation/dispatch/dispatchqueue/sync(execute:)-3segw

@@ -6,6 +6,9 @@ activation:
   content:
     - '\bWK(?:WebView|UserContentController|ScriptMessage\w*|NavigationDelegate|UIDelegate|WebViewConfiguration|FrameInfo)\b|\buserContentController\b'
     - '\.(?:evaluateJavaScript|callAsyncJavaScript|loadFileURL|loadHTMLString|addUserScript)\(|\bdecidePolicyFor\b|\bisInspectable\b'
+  examples:
+    - 'let webView = WKWebView(frame: .zero, configuration: config)'
+    - 'webView.evaluateJavaScript(script)'
 sources:
   - https://developer.apple.com/documentation/webkit/wkscriptmessage/frameinfo
   - https://developer.apple.com/documentation/webkit/wkwebview/callasyncjavascript(_:arguments:in:in:completionhandler:)

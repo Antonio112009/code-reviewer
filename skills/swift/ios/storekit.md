@@ -7,6 +7,9 @@ activation:
   content:
     - '^[ \t]*import[ \t]+StoreKit\b|\bTransaction\.(?:updates|currentEntitlements|unfinished|all|latest)\b|\bVerificationResult\b|\bAppStore\.sync\b'
     - '\.purchase\(|\bPurchaseResult\b|\.finish\(\)|\brevocationDate\b|\bSKPaymentQueue\b|\bSKPaymentTransactionObserver\b|\bfinishTransaction\('
+  examples:
+    - 'for await update in Transaction.updates { }'
+    - 'let result = try await product.purchase()'
 sources:
   - https://developer.apple.com/documentation/storekit/transaction/updates
   - https://developer.apple.com/documentation/storekit/transaction/finish()

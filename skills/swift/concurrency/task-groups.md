@@ -3,6 +3,9 @@ name: Task groups and async let
 description: Structured concurrency pitfalls — unbounded fan-out in task groups, results consumed in completion order, child errors silently dropped, async let cancelled at scope exit and result buffering in long-running groups.
 activation:
   content: ['\bwith(?:Throwing)?(?:Discarding)?TaskGroup\b|\.addTask(?:UnlessCancelled)?\b|\basync\s+let\b|\.waitForAll\(|\bgroup\.next\(']
+  examples:
+    - 'try await withThrowingTaskGroup(of: Data.self) { group in'
+    - 'async let profile = fetchProfile()'
 sources:
   - https://developer.apple.com/documentation/swift/withthrowingtaskgroup(of:returning:isolation:body:)
   - https://github.com/swiftlang/swift-evolution/blob/main/proposals/0317-async-let.md

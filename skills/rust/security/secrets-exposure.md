@@ -9,6 +9,11 @@ activation:
     - '#\[(?:tracing::)?instrument\b'
     - '\bSecret(?:String|Box|Slice)?\b|\bExposeSecret\b|\b[Zz]eroize\b'
     - '(?:[Pp]assword|[Ss]ecret|api_?key|API_?KEY|private_key|[Cc]redential)'
+  examples:
+    - '#[derive(Debug, Clone)]'
+    - '#[instrument(skip(password))]'
+    - 'let config: SecretString = SecretString::new(value);'
+    - 'let api_key = std::env::var("API_KEY")?;'
 sources:
   - https://docs.rs/tracing/latest/tracing/attr.instrument.html
   - https://docs.rs/secrecy/latest/secrecy/

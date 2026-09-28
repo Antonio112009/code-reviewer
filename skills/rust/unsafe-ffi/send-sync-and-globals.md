@@ -9,6 +9,11 @@ activation:
     - '\bstatic\s+mut\b|\baddr_of(?:_mut)?!|&raw\s+(?:const|mut)\b'
     - '\benv::(?:set_var|remove_var)\('
     - '\bno_mangle\b|\bexport_name\b'
+  examples:
+    - 'unsafe impl<T: Send> Send for Wrapper<T> {}'
+    - 'static mut COUNTER: u32 = 0;'
+    - 'env::set_var("RUST_LOG", "debug");'
+    - '#[no_mangle]'
 sources:
   - https://doc.rust-lang.org/nomicon/send-and-sync.html
   - https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html
