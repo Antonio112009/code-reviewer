@@ -3,7 +3,7 @@ import pLimit from 'p-limit';
 import { estimateTokens } from '../chunking/tokens';
 import type { ReviewDepth } from '../config/schema';
 import type { AgentResult, AgentTask, Provider } from '../providers/types';
-import type { FailureKind, Finding, ReasoningLevel, RunTarget } from '../types';
+import type { FailureKind, Finding, ReasoningLevel, ReportedVerdict, RunTarget } from '../types';
 import { resolveInside } from '../util/paths';
 import { failureKindOf, type Spend, spendOf, spendOfResult } from './execute';
 import { resolveVerdicts } from './findings';
@@ -28,6 +28,15 @@ export interface CritiqueOptions {
   batchTokenBudget: number;
   signal?: AbortSignal;
   onBatchDone?: (info: { batch: number; total: number }) => void;
+  /** Verdicts of earlier runs: findings with one are not sent to the critic again. */
+  cache?: CritiqueCache;
+}
+
+/** Verdict store keyed by a finding and its code excerpt (see the result cache in `src/cache/`). */
+export interface CritiqueCache {
+  get(f: Finding, excerpt: string): Promise<Omit<ReportedVerdict, 'id'> | undefined>;
+  /** Called for each fresh verdict of a complete answer, with the files the critic read. */
+  set(f: Finding, excerpt: string, verdict: ReportedVerdict, reads: string[]): Promise<void>;
 }
 
 export interface CritiqueOutcome {
@@ -36,6 +45,8 @@ export interface CritiqueOutcome {
   /** Usage of every critique call, failed ones included. */
   spend: Spend[];
   warnings: string[];
+  /** Findings whose verdict came from the cache. */
+  cachedVerdicts: number;
 }
 
 /** Failures a smaller batch can fix: out of time, steps, output or context. */
@@ -53,9 +64,29 @@ const SPLITTABLE: ReadonlySet<FailureKind> = new Set([
  */
 export async function critiqueFindings(findings: Finding[], opts: CritiqueOptions): Promise<CritiqueOutcome> {
   const excerpts = new Map(findings.map((f) => [f.id, excerpt(opts.root, f)]));
-  const batches = makeBatches(findings, excerpts, opts.batchTokenBudget);
-  const limit = pLimit(opts.concurrency);
   const verdicts = new Map<string, { verdict: Finding['critique']; severity?: Finding['severity'] }>();
+  const record = (original: Finding, v: Omit<ReportedVerdict, 'id'>) =>
+    verdicts.set(original.id, {
+      verdict: {
+        verdict: v.verdict,
+        confidence: v.confidence,
+        reason: v.reason,
+        originalConfidence: original.confidence,
+        originalSeverity: v.severity && v.severity !== original.severity ? original.severity : undefined,
+      },
+      severity: v.severity,
+    });
+  let cachedVerdicts = 0;
+  const pending: Finding[] = [];
+  for (const f of findings) {
+    const known = await opts.cache?.get(f, excerpts.get(f.id)!).catch(() => undefined);
+    if (known) {
+      record(f, known);
+      cachedVerdicts++;
+    } else pending.push(f);
+  }
+  const batches = makeBatches(pending, excerpts, opts.batchTokenBudget);
+  const limit = pLimit(opts.concurrency);
   const spend: Spend[] = [];
   const warnings: string[] = [];
 
@@ -96,16 +127,13 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
     for (const v of resolved.items) {
       const original = batch.find((f) => f.id === v.id);
       if (!original) continue;
-      verdicts.set(v.id, {
-        verdict: {
-          verdict: v.verdict,
-          confidence: v.confidence,
-          reason: v.reason,
-          originalConfidence: original.confidence,
-          originalSeverity: v.severity && v.severity !== original.severity ? original.severity : undefined,
-        },
-        severity: v.severity,
-      });
+      record(original, v);
+      // An early (salvaged) answer may be a guess made in a hurry: not remembered.
+      if (!result.salvaged) {
+        await opts.cache
+          ?.set(original, excerpts.get(original.id)!, v, result.reads ?? [])
+          .catch(() => undefined);
+      }
     }
   };
 
@@ -157,7 +185,7 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
     } else if (v.verdict.verdict === 'rejected') rejected.push({ ...updated, droppedReason: 'critique' });
     else kept.push(updated);
   }
-  return { kept, rejected, spend, warnings };
+  return { kept, rejected, spend, warnings, cachedVerdicts };
 }
 
 function excerpt(root: string, f: Finding): string {

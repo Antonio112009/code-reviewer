@@ -1,6 +1,7 @@
 import path from 'node:path';
 import {
   analyzersSummary,
+  cacheLabel,
   costLabel,
   failureAdvice,
   fallbackLabel,
@@ -261,6 +262,10 @@ export function renderSummary(run: RunRecord, ctx: SummaryContext): string {
   );
   const cost = costLabel(run);
   if (cost) out.push(section(theme, 'Cost', clean(cost), width));
+  const cached = cacheLabel(run);
+  if (cached && run.cache && run.cache.hits + run.cache.critiqueHits > 0) {
+    out.push(section(theme, 'Cache', clean(cached), width));
+  }
   const runDir = ctx.runDir ? ` ${c.dim(sym.arrow)} ${ctx.linker.path(ctx.runDir)}` : '';
   out.push(section(theme, 'Run', `${clean(run.id)} ${c.dim(`(${run.status})`)}${runDir}`, width));
   if (ctx.reports.length) {

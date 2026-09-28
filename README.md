@@ -191,6 +191,23 @@ pricing:                          # example values: use your own prices
   copilot: { request: 0.04 }      # per premium request
 ```
 
+### Cache
+
+Model answers are cached, so a second review of the same code costs nothing: after a fix, only the chunks
+that changed are sent to the model again, and the critic's verdicts on unchanged findings are reused too.
+An answer is reused only while the chunk's code, the instructions and skills, the static hints, the model
+and **every file the model read** (through `read_file`, `grep` or the agent's own read tools) are the same.
+Early answers from a model that ran out of time are never cached, and `eval` never uses the cache.
+
+- Where: the platform's cache directory (`~/Library/Caches/code-reviewer`, `~/.cache/code-reviewer`,
+  `%LOCALAPPDATA%\code-reviewer\Cache`), else the temp directory. Set `CODE_REVIEWER_CACHE_DIR`, or
+  `cache.dir` in the global config (an absolute path, or `project` for `.code-reviewer/cache`). When no
+  directory is writable (locked-down machines), the review runs without a cache.
+- Entries are signed with a key kept in `~/.code-reviewer/cache.key` (or `CODE_REVIEWER_CACHE_KEY`), so a
+  cache inside a repository or restored in CI cannot be seeded with fake "clean" answers.
+- `--no-cache` reviews everything again. Entries unused for `cache.maxAgeDays` (30) or above
+  `cache.maxSizeMb` (500) are removed daily; `code-reviewer cache info | prune | clear` does it by hand.
+
 ## When a model runs out of time or steps
 
 A chunk is never silently skipped. If the model runs out of time, tool steps or output before it
@@ -296,7 +313,7 @@ Architecture, contracts and the safety model: [docs/ARCHITECTURE.md](docs/ARCHIT
 
 - Skill-bundled **structural checks** (ast-grep rules next to each skill). They will run before the LLM
   and be available to it as a tool.
-- Reviewing staged/uncommitted changes; resuming partial runs; caching by chunk.
+- Reviewing staged/uncommitted changes.
 - Resolving review threads whose finding was fixed; Bitbucket and Azure DevOps comments.
 
 ## License

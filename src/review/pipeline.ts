@@ -1,6 +1,20 @@
 import path from 'node:path';
 import pLimit from 'p-limit';
 import { type AnalyzeResult, runAnalyzers, skillsForHits } from '../analyzers';
+import {
+  type CachedReview,
+  type CachedVerdict,
+  type CacheRoute,
+  critiqueCacheKey,
+  getReview,
+  getVerdict,
+  hashReads,
+  hintIdentity,
+  mapHints,
+  openResultCache,
+  reviewCacheKey,
+} from '../cache/review';
+import type { ResultCache } from '../cache/store';
 import { buildChunks, scheduleOrder, splitChunk } from '../chunking/chunker';
 import { buildFileGraph, type FileGraph } from '../chunking/graph';
 import { estimateTokens } from '../chunking/tokens';
@@ -37,11 +51,13 @@ import { loadSkills, type Skill } from '../skills/loader';
 import { changedPaths, collectDiffUnits, type SkippedFile } from '../sources/diff-source';
 import { collectFileUnits } from '../sources/files-source';
 import type {
+  CacheUse,
   Chunk,
   FailureKind,
   Finding,
   ReasoningLevel,
   RefsInfo,
+  ReportedFinding,
   ReviewUnit,
   Role,
   RoleRouting,
@@ -52,7 +68,7 @@ import type {
 import { newRunId, shortHash } from '../util/ids';
 import type { Logger } from '../util/logger';
 import { attributeFindings } from './attribution';
-import { critiqueFindings } from './critique';
+import { type CritiqueCache, critiqueFindings } from './critique';
 import { dedupeFindings } from './dedupe';
 import type { InteractionHost, PhaseId, ReviewEvent, ReviewPlan } from './events';
 import {
@@ -61,7 +77,6 @@ import {
   ModelRouter,
   NoPayloadError,
   RoutedProvider,
-  type RoutedResult,
   runRouted,
   type Spend,
   spendOf,
@@ -84,7 +99,14 @@ import {
   techVersionsForChunk,
   touchedReviewConfig,
 } from './planning';
-import { repairPrompt, reviewInstructions, reviewPrompt } from './prompts';
+import {
+  critiqueFindingIdentity,
+  critiqueInstructions,
+  repairPrompt,
+  reviewInstructions,
+  reviewPrompt,
+  reviewPromptIdentity,
+} from './prompts';
 import { taskTimeoutMs } from './timeouts';
 import { validateFindings } from './validate';
 
@@ -163,11 +185,22 @@ type PartOutcome = { id: string; spend: Spend[] } & (
       hints: StaticHit[];
       findings: Finding[];
       claimed: Set<string>;
-      result: RoutedResult;
+      /** The model's items (hints by run-local id) and the files it read: what the result cache keeps. */
+      items?: ReportedFinding[];
+      reads?: string[];
+      provider: string;
+      model?: string;
+      attempts: number;
+      toolUsage?: Record<string, number>;
+      /** Why the model was asked for an early answer: a partial review, never cached. */
+      salvaged?: string;
+      /** Answered from the result cache; `saved` is what that answer took when it was made. */
+      cached?: { saved?: { inputTokens: number; outputTokens: number } };
     }
   | { kind: 'failed'; hints: StaticHit[]; err: unknown; failure: FailureKind }
   | { kind: 'spent' }
 );
+type DoneOutcome = PartOutcome & { kind: 'done' };
 
 /** Failures a smaller chunk can fix: out of time, steps, output or context window. */
 const SPLITTABLE: ReadonlySet<FailureKind> = new Set([
@@ -688,6 +721,12 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
   });
   const meter = new CostMeter(config.pricing);
   const chunkRecords = new Map(run.chunks.map((c) => [c.id, c]));
+  let cache: ResultCache | undefined;
+  let cacheUse: CacheUse | undefined;
+  const currentRoute = (role: Role): CacheRoute => {
+    const r = router.route(role);
+    return { provider: r.provider, model: r.model, reasoning: r.reasoning };
+  };
 
   try {
     // Agents read code from a detached, sanitized worktree: they never see (or touch) the user's
@@ -729,58 +768,131 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     const catalog = createSkillCatalog(depthSkills, config.review.skillsExclude);
     const skillTools = config.review.tools && depthSkills.length > 0;
 
+    // Answers for code (and every file the model read) reviewed before with the same instructions and model.
+    const opened = chunks.length ? await openResultCache({ config, repoRoot, warn, logger }) : undefined;
+    if (opened) {
+      cache = opened.cache;
+      cacheUse = {
+        dir: opened.location.dir,
+        hits: 0,
+        misses: 0,
+        critiqueHits: 0,
+        critiqueMisses: 0,
+        saved: { inputTokens: 0, outputTokens: 0 },
+      };
+    }
+
     // 6. Review chunks (largest first) ----------------------------------------------------------------
     await phase('review', `Reviewing ${chunks.length} chunk(s)`, async () => {
       const limit = pLimit(config.review.concurrency);
       const allFiles = units.filter((u) => u.status !== 'deleted').map((u) => u.path);
       const byId = new Map(chunks.map((c) => [c.id, c]));
 
+      const instructionsFor = (chunk: Chunk) =>
+        reviewInstructions({
+          mode,
+          depth,
+          rules: rules.text,
+          rulesOrigin: rules.origin,
+          skills: chunkSkills.get(chunk.id) ?? [],
+          project: config.project,
+          skillTools,
+          readTools: config.review.tools,
+        });
+      const promptOptions = (chunk: Chunk, part: Chunk, hints: StaticHit[]) => ({
+        target,
+        chunk: part,
+        totalChunks: chunks.length,
+        otherFiles: allFiles,
+        hints,
+        stack: chunkStack.get(chunk.id),
+      });
+      const buildTask = (
+        chunk: Chunk,
+        part: Chunk,
+        hints: StaticHit[],
+        limits: { timeoutMs: number; maxSteps: number },
+      ): AgentTask => ({
+        kind: 'findings',
+        label: part.id,
+        instructions: instructionsFor(chunk),
+        prompt: reviewPrompt(promptOptions(chunk, part, hints)),
+        reasoning: 'medium',
+        readTools: config.review.tools,
+        root,
+        git,
+        maxSteps: limits.maxSteps,
+        timeoutMs: limits.timeoutMs,
+        stallTimeoutMs: config.review.stallTimeoutMs,
+        maxOutputTokens: reviewRole?.maxOutputTokens,
+        signal: req.signal,
+        onActivity: (a) => {
+          if (a.kind === 'tool') emit({ type: 'chunk-activity', chunkId: chunk.id, tool: a.name });
+        },
+        ...(skillTools
+          ? { skills: catalog, skillsExclude: config.review.skillsExclude, skillDepth: depth }
+          : {}),
+        ...(skillTools && projectSkillsRoot ? { projectRoot: projectSkillsRoot } : {}),
+      });
+      /** Result cache key of a task on a route (see `reviewPromptIdentity` for what counts). */
+      const cacheKeyFor = (
+        task: AgentTask,
+        chunk: Chunk,
+        part: Chunk,
+        hints: StaticHit[],
+        route: CacheRoute,
+      ) =>
+        reviewCacheKey({
+          route,
+          instructions: task.instructions,
+          prompt: reviewPromptIdentity(promptOptions(chunk, part, hints)),
+          readTools: task.readTools,
+          skillTools: task.skills !== undefined,
+          git: task.git,
+          maxOutputTokens: task.maxOutputTokens,
+        });
+
+      /** Findings of a chunk from reported items; claims of the hints they confirm. */
+      const toChunkFindings = (
+        items: ReportedFinding[],
+        chunk: Chunk,
+        hints: StaticHit[],
+        provider: string,
+        model: string | undefined,
+      ) => {
+        const hintById = new Map(hints.map((h) => [h.id, h]));
+        const claimed = new Set<string>();
+        const findings = items.map((r) => {
+          const f = toFinding(r, {
+            root,
+            chunkId: chunk.id,
+            provider,
+            model,
+            skills: chunkRecords.get(chunk.id)!.skills,
+          });
+          f.origin = 'llm';
+          const hint = r.hint ? hintById.get(r.hint) : undefined;
+          // A claim counts only when the finding points at the hint's code.
+          if (hint && claimsHint(f, hint)) {
+            claimed.add(hint.id);
+            f.tool = { analyzer: hint.analyzer, ruleId: hint.ruleId };
+            if (hint.nonRejectable) {
+              f.nonRejectable = true;
+              mustReport.get(hint.id)?.claimedBy.add(f.id);
+            }
+          }
+          return f;
+        });
+        return { findings, claimed };
+      };
+
       /** One review task for a chunk (or a split part of one); throws with the usage it spent. */
       const reviewOnce = async (
         chunk: Chunk,
         part: Chunk,
         hints: StaticHit[],
-        limits: { timeoutMs: number; maxSteps: number },
-      ): Promise<PartOutcome & { kind: 'done' }> => {
-        const matches = chunkSkills.get(chunk.id) ?? [];
-        const task: AgentTask = {
-          kind: 'findings',
-          label: part.id,
-          instructions: reviewInstructions({
-            mode,
-            depth,
-            rules: rules.text,
-            rulesOrigin: rules.origin,
-            skills: matches,
-            project: config.project,
-            skillTools,
-            readTools: config.review.tools,
-          }),
-          prompt: reviewPrompt({
-            target,
-            chunk: part,
-            totalChunks: chunks.length,
-            otherFiles: allFiles,
-            hints,
-            stack: chunkStack.get(chunk.id),
-          }),
-          reasoning: 'medium',
-          readTools: config.review.tools,
-          root,
-          git,
-          maxSteps: limits.maxSteps,
-          timeoutMs: limits.timeoutMs,
-          stallTimeoutMs: config.review.stallTimeoutMs,
-          maxOutputTokens: reviewRole?.maxOutputTokens,
-          signal: req.signal,
-          onActivity: (a) => {
-            if (a.kind === 'tool') emit({ type: 'chunk-activity', chunkId: chunk.id, tool: a.name });
-          },
-          ...(skillTools
-            ? { skills: catalog, skillsExclude: config.review.skillsExclude, skillDepth: depth }
-            : {}),
-          ...(skillTools && projectSkillsRoot ? { projectRoot: projectSkillsRoot } : {}),
-        };
+        task: AgentTask,
+      ): Promise<DoneOutcome> => {
         const result = await runRouted('review', task, router, registry);
         const spend: Spend[] = [...result.spend];
         let resolved = resolveFindings(result);
@@ -815,29 +927,13 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         if (resolved.invalid) warn(`${part.id}: ${resolved.invalid} malformed finding(s) ignored`);
         for (const w of result.warnings) warn(`${part.id}: ${w}`);
 
-        const hintById = new Map(hints.map((h) => [h.id, h]));
-        const claimed = new Set<string>();
-        const findings = resolved.items.map((r) => {
-          const f = toFinding(r, {
-            root,
-            chunkId: chunk.id,
-            provider: result.provider,
-            model: result.model,
-            skills: chunkRecords.get(chunk.id)!.skills,
-          });
-          f.origin = 'llm';
-          const hint = r.hint ? hintById.get(r.hint) : undefined;
-          // A claim counts only when the finding points at the hint's code.
-          if (hint && claimsHint(f, hint)) {
-            claimed.add(hint.id);
-            f.tool = { analyzer: hint.analyzer, ruleId: hint.ruleId };
-            if (hint.nonRejectable) {
-              f.nonRejectable = true;
-              mustReport.get(hint.id)?.claimedBy.add(f.id);
-            }
-          }
-          return f;
-        });
+        const { findings, claimed } = toChunkFindings(
+          resolved.items,
+          chunk,
+          hints,
+          result.provider,
+          result.model,
+        );
         await store.saveArtifact(run.id, part.id, {
           chunk: {
             id: part.id,
@@ -854,17 +950,104 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           via: resolved.via,
           hints: hints.map((h) => h.id),
           claimedHints: [...claimed],
+          reads: result.reads ?? [],
           reply: replyText,
           submission: result.submission,
           warnings: result.warnings,
         });
-        return { kind: 'done', id: part.id, hints, spend, findings, claimed, result };
+        return {
+          kind: 'done',
+          id: part.id,
+          hints,
+          spend,
+          findings,
+          claimed,
+          items: resolved.items,
+          reads: result.reads ?? [],
+          provider: result.provider,
+          ...(result.model ? { model: result.model } : {}),
+          attempts: result.attempts,
+          ...(result.toolUsage ? { toolUsage: result.toolUsage } : {}),
+          ...(result.salvaged ? { salvaged: result.salvaged } : {}),
+        };
+      };
+
+      /** Remembers a complete answer (an early, salvaged one is partial: never cached). */
+      const remember = async (out: DoneOutcome, task: AgentTask, chunk: Chunk, part: Chunk) => {
+        if (!cache || out.salvaged || out.cached) return;
+        const reads = await hashReads(root, out.reads ?? []);
+        if (!reads) return;
+        // The route the task ran on (after any fallback): what the next run looks up.
+        const route = currentRoute('review');
+        const usage = sumUsage(out.spend.map((x) => x.usage));
+        const identities = new Map(out.hints.map((h) => [h.id, hintIdentity(h)]));
+        await cache.set('review', cacheKeyFor(task, chunk, part, out.hints, route), {
+          kind: 'result',
+          items: mapHints(out.items ?? [], identities),
+          provider: out.provider,
+          ...(out.model ? { model: out.model } : {}),
+          usage: { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens },
+          reads,
+        } satisfies CachedReview);
+      };
+
+      /** A cached answer as a reviewed part: no model call, no usage. */
+      const fromCache = async (
+        entry: Extract<CachedReview, { kind: 'result' }>,
+        chunk: Chunk,
+        part: Chunk,
+        hints: StaticHit[],
+      ): Promise<DoneOutcome> => {
+        const ids = new Map(hints.map((h) => [hintIdentity(h), h.id]));
+        const items = mapHints(entry.items, ids);
+        const { findings, claimed } = toChunkFindings(items, chunk, hints, entry.provider, entry.model);
+        await store.saveArtifact(run.id, part.id, {
+          chunk: { id: part.id, files: part.files, tokens: part.tokens },
+          cached: true,
+          provider: entry.provider,
+          model: entry.model,
+          hints: hints.map((h) => h.id),
+          claimedHints: [...claimed],
+          items,
+        });
+        return {
+          kind: 'done',
+          id: part.id,
+          hints,
+          spend: [],
+          findings,
+          claimed,
+          provider: entry.provider,
+          ...(entry.model ? { model: entry.model } : {}),
+          attempts: 0,
+          cached: { saved: entry.usage },
+        };
+      };
+
+      const reviewHalves = async (
+        chunk: Chunk,
+        halves: [Chunk, Chunk],
+        hints: StaticHit[],
+        limits: { timeoutMs: number; maxSteps: number },
+        level: number,
+        notes: string[],
+      ): Promise<PartOutcome[]> => {
+        const out: PartOutcome[] = [];
+        for (const half of halves) {
+          const own = new Set(half.files);
+          const halfLimits = { ...limits, timeoutMs: taskTimeoutMs(config.review, half.tokens) };
+          const halfHints = hints.filter((h) => own.has(h.file));
+          out.push(...(await reviewWithRecovery(chunk, half, halfHints, halfLimits, level + 1, notes)));
+        }
+        return out;
       };
 
       /**
-       * Reviews a chunk and recovers from failures a smaller or longer task can fix: a chunk that ran out of
-       * time, steps, output or context is split in two (twice at most), a single part that timed out gets
-       * one retry with twice the time, a stalled agent one fresh retry.
+       * Reviews a chunk: from the result cache when the same code (and every file the model read) was
+       * reviewed before with the same instructions and model; otherwise by the model, recovering from
+       * failures a smaller or longer task can fix: a chunk that ran out of time, steps, output or context is
+       * split in two (twice at most; remembered for the next run), a single part that timed out gets one
+       * retry with twice the time, a stalled agent one fresh retry.
        */
       const reviewWithRecovery = async (
         chunk: Chunk,
@@ -875,8 +1058,29 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         notes: string[],
         retried = false,
       ): Promise<PartOutcome[]> => {
+        const task = buildTask(chunk, part, hints, limits);
+        const key = cache ? cacheKeyFor(task, chunk, part, hints, currentRoute('review')) : undefined;
+        if (key && !retried) {
+          const entry = await getReview(cache!, key, root);
+          if (entry?.kind === 'result') {
+            cacheUse!.hits++;
+            cacheUse!.saved.inputTokens += entry.usage?.inputTokens ?? 0;
+            cacheUse!.saved.outputTokens += entry.usage?.outputTokens ?? 0;
+            return [await fromCache(entry, chunk, part, hints)];
+          }
+          const halves = entry?.kind === 'split' && level < MAX_SPLIT_LEVEL ? splitChunk(part) : undefined;
+          if (halves) {
+            notes.push(
+              `${part.id}: split into ${halves.map((h) => h.id).join(' + ')} (as in an earlier run)`,
+            );
+            return reviewHalves(chunk, halves, hints, limits, level, notes);
+          }
+          cacheUse!.misses++;
+        }
         try {
-          return [await reviewOnce(chunk, part, hints, limits)];
+          const out = await reviewOnce(chunk, part, hints, task);
+          await remember(out, task, chunk, part);
+          return [out];
         } catch (err) {
           const failure = failureKindOf(err, req.signal);
           const failed: PartOutcome = {
@@ -894,14 +1098,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           if (halves) {
             notes.push(`${part.id}: ${failure} — split into ${halves.map((h) => h.id).join(' + ')}`);
             emit({ type: 'chunk-activity', chunkId: chunk.id, note: `${failure}: splitting` });
-            const out: PartOutcome[] = [spent];
-            for (const half of halves) {
-              const own = new Set(half.files);
-              const halfLimits = { ...limits, timeoutMs: taskTimeoutMs(config.review, half.tokens) };
-              const halfHints = hints.filter((h) => own.has(h.file));
-              out.push(...(await reviewWithRecovery(chunk, half, halfHints, halfLimits, level + 1, notes)));
-            }
-            return out;
+            if (key) await cache!.set('review', key, { kind: 'split' } satisfies CachedReview);
+            return [spent, ...(await reviewHalves(chunk, halves, hints, limits, level, notes))];
           }
           const longer = Math.min(config.review.maxTimeoutMs, limits.timeoutMs * 2);
           const retry = retried
@@ -954,13 +1152,13 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             const usage = sumUsage(spend.map((s) => s.usage));
             const cost = meter.add(spend);
             run.usage = sumUsage([run.usage, usage]);
-            const done = outcomes.filter((o): o is PartOutcome & { kind: 'done' } => o.kind === 'done');
+            const done = outcomes.filter((o): o is DoneOutcome => o.kind === 'done');
             const failed = outcomes.filter((o): o is PartOutcome & { kind: 'failed' } => o.kind === 'failed');
             const toolCalls: Record<string, number> = {};
             for (const d of done) {
               collected.push(...d.findings);
-              addCounts(toolCalls, d.result.toolUsage);
-              if (d.result.salvaged) notes.push(`${d.id}: ${d.result.salvaged} — early answer`);
+              addCounts(toolCalls, d.toolUsage);
+              if (d.salvaged) notes.push(`${d.id}: ${d.salvaged} — early answer`);
               // Hints the model saw but did not confirm: it acted as the false-positive filter — except
               // for secrets / vulnerable dependencies, which `mustReport` reports unless a claim survives.
               for (const h of d.hints) {
@@ -981,7 +1179,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
               }
             }
             addCounts(run.toolUsage!, toolCalls);
-            const last = done.at(-1)?.result;
+            const last = done.at(-1);
+            const fromCacheCount = done.filter((d) => d.cached).length;
             Object.assign(rec, {
               status: failed.length ? 'failed' : 'done',
               findings: done.reduce((n, d) => n + d.findings.length, 0),
@@ -990,8 +1189,11 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
               durationMs: Date.now() - started,
               toolCalls,
               ...(last ? { provider: last.provider, model: last.model } : {}),
-              attempts: done.reduce((n, d) => n + d.result.attempts, 0) + outcomes.length - done.length,
+              attempts: done.reduce((n, d) => n + d.attempts, 0) + outcomes.length - done.length,
               ...(notes.length ? { recovery: notes } : {}),
+              ...(fromCacheCount
+                ? { cached: fromCacheCount === outcomes.length ? ('all' as const) : ('partial' as const) }
+                : {}),
             });
             if (failed.length) {
               const first = failed[0]!;
@@ -1032,6 +1234,27 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     let final = unique;
     const aborted = () => req.signal?.aborted === true;
 
+    /** Critic verdicts by finding: reused while the finding, its code and the files the critic read are unchanged. */
+    const critiqueCache = (c: ResultCache, instructions: string): CritiqueCache => {
+      const keyOf = (f: Finding, excerpt: string) =>
+        critiqueCacheKey({
+          route: currentRoute('critique'),
+          instructions,
+          finding: critiqueFindingIdentity(f),
+          excerpt,
+          readTools: config.review.tools,
+        });
+      return {
+        get: (f, excerpt) => getVerdict(c, keyOf(f, excerpt), root),
+        set: async (f, excerpt, verdict, reads) => {
+          const hashed = await hashReads(root, reads);
+          if (!hashed) return;
+          const { id: _id, ...rest } = verdict;
+          await c.set('critique', keyOf(f, excerpt), { ...rest, reads: hashed } satisfies CachedVerdict);
+        },
+      };
+    };
+
     // 8. Self-critique ---------------------------------------------------------------------------------
     if (routes.critique && final.length > 0 && aborted()) {
       warn('Interrupted — self-critique skipped; findings are unverified.');
@@ -1054,7 +1277,12 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           batchTokenBudget: Math.max(8_000, Math.floor(budget / 2)),
           signal: req.signal,
           onBatchDone: ({ batch, total }) => emit({ type: 'critique-progress', batch, total }),
+          ...(cache ? { cache: critiqueCache(cache, critiqueInstructions(mode, depth)) } : {}),
         });
+        if (cacheUse) {
+          cacheUse.critiqueHits += outcome.cachedVerdicts;
+          cacheUse.critiqueMisses += final.length - outcome.cachedVerdicts;
+        }
         final = outcome.kept;
         rejected.push(...outcome.rejected);
         meter.add(outcome.spend);
@@ -1117,6 +1345,13 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     run.durationMs = Date.now() - startedAt;
     const cost = meter.summary();
     if (cost) run.cost = cost;
+    if (cacheUse) run.cache = cacheUse;
+    await cache
+      ?.autoPrune({
+        maxAgeMs: config.cache.maxAgeDays * 24 * 60 * 60 * 1000,
+        maxBytes: config.cache.maxSizeMb * 1024 * 1024,
+      })
+      .catch(() => undefined);
     if (!req.providers) await registry.disposeAll();
     await snapshot?.dispose().catch(() => undefined);
     if (repo && statusBefore !== undefined) {

@@ -6,7 +6,12 @@ export interface Submission {
   verdicts?: ReportedVerdict[];
   notes?: string[];
   calls: number;
+  /** Files the model read through our tools (root-relative): a cached result is valid while they are unchanged. */
+  reads?: string[];
 }
+
+/** Most distinct files recorded as read by one task. */
+const MAX_READS = 500;
 
 /**
  * Accumulates `submit_*` tool calls. Models sometimes submit in several calls,
@@ -32,6 +37,14 @@ export class SubmissionCollector {
       for (const v of (payload as SubmitVerdicts).verdicts) byId.set(v.id, v);
       this.state.verdicts = [...byId.values()];
     }
+    this.persist();
+  }
+
+  /** Records a file a tool showed to the model (root-relative, posix). */
+  noteRead(rel: string): void {
+    const reads = this.state.reads ?? [];
+    if (reads.includes(rel) || reads.length >= MAX_READS) return;
+    this.state.reads = [...reads, rel];
     this.persist();
   }
 

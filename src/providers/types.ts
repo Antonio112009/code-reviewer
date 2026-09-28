@@ -57,6 +57,11 @@ export interface AgentResult {
   interruptedBy?: 'timeout' | 'stalled';
   /** Why the model was asked to submit early (see `AgentTask.salvage`); set when that happened. */
   salvaged?: string;
+  /**
+   * Files the model read (root-relative, posix), through our tools or the agent's own read/search tools
+   * as far as they are reported: a cached result stays valid while they are unchanged.
+   */
+  reads?: string[];
   toolCalls: number;
   /** Tool calls by normalised tool name (read_file, grep, submit_findings, Read, …). */
   toolUsage?: Record<string, number>;

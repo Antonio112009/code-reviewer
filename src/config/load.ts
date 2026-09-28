@@ -191,6 +191,12 @@ function assertNoLaunchFields(partial: Record<string, unknown>, file: string): v
         `${file}: ${prefix}publish.${urlKey} is not allowed in a project config — it decides where your access token is sent. Put it in ${globalPath} or pass --api-url.`,
       );
     }
+    // The reviewed repository must not choose where files are written.
+    if ((layer.cache as { dir?: unknown } | undefined)?.dir !== undefined) {
+      throw new ConfigError(
+        `${file}: ${prefix}cache.dir is not allowed in a project config — it decides where files are written. Put it in ${globalPath} or set CODE_REVIEWER_CACHE_DIR.`,
+      );
+    }
   }
   const providerSets: Array<[string, unknown]> = layers.map(([prefix, layer]) => [
     `${prefix}providers`,

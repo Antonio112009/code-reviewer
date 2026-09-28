@@ -55,6 +55,8 @@ export function testConfig(overrides: (c: Config) => void = () => {}): Config {
     critique: { provider: 'mock', reasoning: 'low' },
   };
   config.output.formats = ['md', 'json', 'html'];
+  // Reviews start from scratch unless a test is about the cache.
+  config.cache.enabled = false;
   overrides(config);
   return config;
 }

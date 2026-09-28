@@ -3,6 +3,7 @@ import { runMcpServe } from '../tools/mcp-server';
 import { distrustDirectory } from '../util/executables';
 import { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
+import { registerCacheCommands } from './commands/cache';
 import { registerConfigCommands } from './commands/config';
 import { registerEvalCommand } from './commands/eval';
 import { registerInitCommand } from './commands/init';
@@ -31,6 +32,7 @@ export function buildProgram(): Command {
   registerConfigCommands(program);
   registerSkillCommands(program);
   registerEvalCommand(program);
+  registerCacheCommands(program);
 
   // Internal: MCP server spawned by ACP agents to expose our tools; not for direct use.
   program

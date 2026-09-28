@@ -117,6 +117,18 @@ export interface CostSummary extends Money {
   unpriced: string[];
 }
 
+export interface CacheUse {
+  dir: string;
+  /** Chunks or split parts answered from the cache / by a model. */
+  hits: number;
+  misses: number;
+  /** Findings whose critique verdict came from the cache / from the critic. */
+  critiqueHits: number;
+  critiqueMisses: number;
+  /** Tokens the cached answers took when they were made. */
+  saved: { inputTokens: number; outputTokens: number };
+}
+
 /**
  * Why a chunk could not be reviewed:
  * - `timeout` — the task ran out of time; `stalled` — the agent stopped sending updates;
@@ -385,6 +397,8 @@ export interface ChunkRecord {
   usage?: Usage;
   /** Known cost of every attempt (reported, or computed from `pricing`). */
   cost?: Money;
+  /** The answer came from the result cache: for the whole chunk, or for some of its split parts. */
+  cached?: 'all' | 'partial';
   durationMs?: number;
   timeoutMs?: number;
   /** Tool calls by tool name (read_file, grep, …) made while reviewing this chunk. */
@@ -445,6 +459,8 @@ export interface RunRecord {
   usage: Usage;
   /** Cost of the run, when at least part of it is known. */
   cost?: CostSummary;
+  /** Result cache use, when the cache was on. */
+  cache?: CacheUse;
   summary?: string;
   warnings: string[];
   error?: string;

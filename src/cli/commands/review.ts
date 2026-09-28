@@ -54,6 +54,8 @@ export interface ReviewFlags {
   explainRefs?: boolean;
   /** Opt-in project analyzers (comma list), or false for --no-analyzers. */
   analyzers?: string | boolean;
+  /** --no-cache */
+  cache?: boolean;
   plain?: boolean;
   onUnavailable?: string;
   chunking?: string;
@@ -219,6 +221,7 @@ export function applyRunFlags(config: Config, f: ReviewFlags): void {
     config.analyzers.builtin = false;
     config.analyzers.external = 'off';
   }
+  if (f.cache === false) config.cache.enabled = false;
 }
 
 /** `--analyzers eslint,tsc` → opt-in project analyzers. */
@@ -399,6 +402,7 @@ function addReviewOptions(cmd: Command): Command {
       'also run these opt-in project analyzers (eslint,tsc,golangci-lint,phpstan,semgrep,osv-scanner)',
     );
   return addRunLimitOptions(tuned)
+    .option('--no-cache', 'review everything again: do not reuse or store cached model answers')
     .option('--plain', 'plain progress lines instead of the live dashboard')
     .option('--dry-run', 'show files, chunks, skills and hints without calling any model')
     .option('--json', 'print the run (or the plan with --dry-run) as JSON on stdout')

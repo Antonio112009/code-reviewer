@@ -332,6 +332,35 @@ The code under review, and therefore model output, is treated as untrusted.
 - **CI gate.** `--fail-on` exits with an error when chunks failed, because unreviewed code must not
   pass a gate.
 
+## Result cache (`src/cache/`)
+
+- **What is cached.** A chunk's (or split part's) findings, and the critic's verdict per finding. Early
+  (salvaged) answers are partial and never cached. A chunk that had to be split is remembered as `split`,
+  so the next run starts with its halves. `eval` turns the cache off: it measures the model.
+- **Key** (`cache/review.ts`): the route (provider, model, reasoning), the full instructions (rules,
+  project, skills, depth), `prompts.ts#reviewPromptIdentity` — the chunk's rendered code and context,
+  files, grouping, stack line and hints by content — and the tool settings. Left out on purpose: chunk
+  numbering, commit shas, the list of other files and hint ids, which change with any commit elsewhere in
+  the change. Cached answers refer to hints by identity (`analyzer|rule|file|lines`), mapped back to the
+  run's ids. A verdict's key is the finding as the critic sees it (`critiqueFindingIdentity`), its code
+  excerpt, the critique instructions and the critic's route.
+- **Files the model read.** Our `read_file` / `grep` (`SubmissionCollector.noteRead`, also through
+  `mcp-serve`) and the ACP agent's own read/search tool calls (`locations`) and `fs/read_text_file` requests
+  are recorded (`AgentResult.reads`). Their content hashes are stored with the answer; a lookup re-hashes
+  them in the review root and misses when one changed (or appeared). Files matched by nothing in a search
+  are not tracked: `--no-cache` after large refactors.
+- **Store** (`cache/store.ts`): `<dir>/v1/<kind>/<xx>/<sha256>.json`, written atomically (temp file +
+  rename), safe with concurrent runs. Every entry carries an HMAC-SHA256 over kind, key and data, with a
+  secret from `CODE_REVIEWER_CACHE_KEY` or `~/.code-reviewer/cache.key` (created 0600): a planted, edited
+  or foreign entry is a miss, never an error. Entries are validated with zod on read; reads refresh the
+  mtime for LRU pruning. `autoPrune` runs at most daily (`cache.maxAgeDays`, `cache.maxSizeMb`); `clear`
+  removes only the `v1/` tree, since the directory may be shared.
+- **Location** (`cache/location.ts`): `CODE_REVIEWER_CACHE_DIR` (absolute only), `cache.dir` (global config
+  only: an absolute path or `project`), the platform cache directory (macOS `~/Library/Caches`, Windows
+  `%LOCALAPPDATA%` — never the roaming profile, Linux `$XDG_CACHE_HOME` / `~/.cache`), then the temp
+  directory; the first writable one wins, none → no cache and a warning.
+- The run records `cache` (hits, misses, verdict hits, tokens saved) and `cached` per chunk.
+
 ## Usage and cost (`review/execute.ts`, `models/pricing.ts`)
 
 - `runRouted` records the usage of **every attempt** (`Spend`: provider, model, usage), failed ones too:
@@ -391,7 +420,7 @@ The code under review, and therefore model output, is treated as untrusted.
 
 ## Known limitations / roadmap
 
-- Reviewing uncommitted or staged changes; `--resume` of partial runs; a cache by chunk hash.
+- Reviewing uncommitted or staged changes.
 - Resolving PR/MR threads of fixed findings; Bitbucket / Azure DevOps comments; GitHub/GitLab username
   resolution.
 - An LLM run summary (`roles.summary` is reserved); a cost budget that stops a run.

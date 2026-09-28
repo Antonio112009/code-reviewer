@@ -329,6 +329,31 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
     },
   ],
   [
+    'cache',
+    {
+      doc: [
+        'Reuses model answers for chunks and findings whose code (and every file the model read) is unchanged.',
+        'Entries are signed with a key in the global config directory. `--no-cache` skips the cache for a run.',
+      ],
+      notes: {
+        project: [`cache.dir decides where files are written: set it in ${GLOBAL_CONFIG_HINT}.`],
+      },
+      keys: {
+        enabled: { doc: 'Use the cache.', example: D.cache.enabled },
+        dir: {
+          doc: 'An absolute directory, or `project` for .code-reviewer/cache (default: the OS cache directory).',
+          scope: 'global',
+          example: '/var/cache/code-reviewer',
+        },
+        maxAgeDays: { doc: 'Remove entries unused for this many days.', example: D.cache.maxAgeDays },
+        maxSizeMb: {
+          doc: 'Remove the least recently used entries above this size.',
+          example: D.cache.maxSizeMb,
+        },
+      },
+    },
+  ],
+  [
     'pricing',
     {
       doc: [
@@ -517,6 +542,7 @@ export function projectConfigViolations(config: PartialConfig): string[] {
     if (analyzers?.project?.length) out.push(`${prefix}analyzers.project`);
     const publish = isPlainObject(layer.publish) ? layer.publish : {};
     for (const key of PUBLISH_URL_KEYS) if (publish[key] !== undefined) out.push(`${prefix}publish.${key}`);
+    if (isPlainObject(layer.cache) && layer.cache.dir !== undefined) out.push(`${prefix}cache.dir`);
     const providers = isPlainObject(layer.providers) ? layer.providers : {};
     for (const [id, cfg] of Object.entries(providers)) {
       for (const field of ['command', 'args', 'env']) {

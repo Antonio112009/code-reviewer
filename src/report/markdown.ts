@@ -1,5 +1,6 @@
 import type { Finding, RunRecord } from '../types';
 import {
+  cacheLabel,
   chunkModelLabel,
   costLabel,
   depthLabel,
@@ -208,7 +209,7 @@ function renderChunks(run: RunRecord, out: string[]): void {
   );
   for (const c of run.chunks) {
     const status = [
-      `${c.status}${c.failure ? ` (${c.failure})` : ''}${c.attempts && c.attempts > 1 ? ` (${c.attempts} attempts)` : ''}${c.error ? `: ${c.error.split('\n')[0]!.slice(0, 120)}` : ''}`,
+      `${c.status}${c.cached ? ` (${c.cached === 'all' ? 'cached' : 'partly cached'})` : ''}${c.failure ? ` (${c.failure})` : ''}${c.attempts && c.attempts > 1 ? ` (${c.attempts} attempts)` : ''}${c.error ? `: ${c.error.split('\n')[0]!.slice(0, 120)}` : ''}`,
       ...(c.recovery ?? []).map((r) => `↻ ${r}`),
     ].join('; ');
     out.push(
@@ -250,6 +251,8 @@ export function renderMarkdown(run: RunRecord): string {
   out.push(`| Tokens | ${cell(tokensLabel(run))} |`);
   const cost = costLabel(run);
   if (cost) out.push(`| Cost | ${cell(cost)} |`);
+  const cached = cacheLabel(run);
+  if (cached) out.push(`| Cache | ${cell(cached)} |`);
   const failed = run.chunks.filter((c) => c.status === 'failed');
   out.push(`| Chunks | ${run.chunks.length}${failed.length ? ` (${failed.length} failed)` : ''} |`);
   out.push(`| Depth | ${cell(depthLabel(run))} |`);

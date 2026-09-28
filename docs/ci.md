@@ -114,6 +114,23 @@ request never see it.
 - **Code scanning** of private repositories needs GitHub Advanced Security (Code Security). Set `sarif: false`
   without it.
 - **GitHub Enterprise Server**: the action uses the `GITHUB_API_URL` of the runner; nothing to configure.
+- **Result cache between runs** (optional): pushes to a pull request then only pay for the chunks that
+  changed. Point `CODE_REVIEWER_CACHE_DIR` at a directory restored with `actions/cache`, and give every job
+  the same signing key through a secret, `CODE_REVIEWER_CACHE_KEY` (32+ characters): without it each job
+  signs with a new key and finds nothing. Fork pull requests get no secrets, so they neither read nor
+  seed the cache.
+
+  ```yaml
+  - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+    with:
+      path: .cr-cache
+      key: code-reviewer-${{ github.event.pull_request.number }}-${{ github.sha }}
+      restore-keys: code-reviewer-${{ github.event.pull_request.number }}-
+  # then, in the review step:
+  env:
+    CODE_REVIEWER_CACHE_DIR: ${{ github.workspace }}/.cr-cache
+    CODE_REVIEWER_CACHE_KEY: ${{ secrets.CODE_REVIEWER_CACHE_KEY }}
+  ```
 
 ## GitLab CI
 

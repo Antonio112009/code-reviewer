@@ -112,6 +112,7 @@ export class BedrockProvider implements Provider {
         model: modelId,
         stopReason: outOfSteps ? 'max_turn_requests' : result.finishReason,
         ...(salvaged && collector.submitted ? { salvaged } : {}),
+        ...(collector.submission.reads ? { reads: collector.submission.reads } : {}),
         toolCalls,
         toolUsage,
         warnings: [

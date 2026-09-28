@@ -61,6 +61,8 @@ export function evalRunConfig(config: Config, dir: string): Config {
   c.analyzers.project = [];
   c.review.authors = false;
   c.output.dir = path.join(dir, 'runs');
+  // An eval measures the model: a cached answer would repeat an earlier run (and `--repeat` would be moot).
+  c.cache.enabled = false;
   return c;
 }
 

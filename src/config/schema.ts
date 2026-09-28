@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { z } from 'zod';
 import { REASONING_LEVELS, SEVERITIES } from '../types';
 
@@ -233,6 +234,25 @@ export type PublishSettings = z.infer<typeof PublishSettingsSchema>;
 /** `publish` keys that decide where an access token is sent: rejected in project configs. */
 export const PUBLISH_URL_KEYS = ['githubApiUrl', 'gitlabApiUrl'] as const;
 
+/** Reusing model answers for unchanged chunks and findings (`src/cache/`). */
+export const CacheSettingsSchema = z.object({
+  /** `--no-cache` turns it off for one run. */
+  enabled: z.boolean(),
+  /**
+   * An absolute directory, or `project` for `.code-reviewer/cache` in the repository. Default: the platform's
+   * cache directory. Global config only: a project config must not choose where files are written.
+   */
+  dir: z
+    .string()
+    .refine((v) => v === 'project' || path.isAbsolute(v), 'must be an absolute path or "project"')
+    .optional(),
+  /** Entries not used for this many days are removed (checked at most once a day). */
+  maxAgeDays: z.number().int().positive(),
+  /** Least recently used entries are removed above this size. */
+  maxSizeMb: z.number().int().positive(),
+});
+export type CacheSettings = z.infer<typeof CacheSettingsSchema>;
+
 const RolesSchema = z.object({
   review: RoleConfigSchema.optional(),
   critique: RoleConfigSchema.optional(),
@@ -252,6 +272,7 @@ const ConfigBodySchema = z.object({
   /** Prices by `provider:model`, `model` or `provider` (the most specific key wins). */
   pricing: z.record(z.string(), PriceSchema),
   publish: PublishSettingsSchema,
+  cache: CacheSettingsSchema,
 });
 
 export const ConfigSchema = ConfigBodySchema.extend({
@@ -377,6 +398,11 @@ export const DEFAULT_CONFIG: Config = {
     dir: '.code-reviewer/runs',
   },
   pricing: {},
+  cache: {
+    enabled: true,
+    maxAgeDays: 30,
+    maxSizeMb: 500,
+  },
   publish: {
     maxInlineComments: 30,
     minSeverity: 'info',
@@ -417,6 +443,7 @@ export const PartialConfigSchema = z
     output: OutputSettingsSchema.partial().strict().optional(),
     pricing: z.record(z.string(), PriceSchema).optional(),
     publish: PublishSettingsSchema.partial().strict().optional(),
+    cache: CacheSettingsSchema.partial().strict().optional(),
     profiles: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();

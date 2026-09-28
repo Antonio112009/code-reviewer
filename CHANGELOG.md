@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Result cache.** A second review of the same code costs nothing: model answers are reused per chunk
+  (and the critic's verdicts per finding) while the code, instructions, skills, hints, model and every
+  file the model read are unchanged; after a fix only the changed chunks go to the model. Chunks that had
+  to be split start with their halves next time. Early (salvaged) answers are never cached and `eval`
+  never uses the cache. Entries live in the platform cache directory (or `CODE_REVIEWER_CACHE_DIR`,
+  global `cache.dir`), are signed with a per-user key (`~/.code-reviewer/cache.key` or
+  `CODE_REVIEWER_CACHE_KEY`) so a planted entry is ignored, and are pruned daily (`cache.maxAgeDays`,
+  `cache.maxSizeMb`). New `--no-cache` flag and `code-reviewer cache info | prune | clear`; runs and
+  reports show hits and tokens saved.
+
 - **Recovery instead of failed chunks.** A model that runs out of time, tool steps or output is asked for
   the findings it already has (one short extra turn; on Bedrock the last step offers only
   `submit_findings`). A chunk that still fails is split in two and reviewed again (up to four parts); a

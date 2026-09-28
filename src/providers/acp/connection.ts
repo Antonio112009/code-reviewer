@@ -20,6 +20,28 @@ interface SessionState {
   root: string;
   denied: string[];
   toolCalls: number;
+  /** Files the agent read or searched (root-relative), from tool call locations and fs reads. */
+  reads: Set<string>;
+  /** Tool kind per tool call id: updates may omit it. */
+  toolKinds: Map<string, string>;
+}
+
+/** Tool kinds whose locations are files the agent looked at. */
+const READ_KINDS = new Set(['read', 'search']);
+const MAX_READS = 500;
+
+/** Root-relative posix path of a file inside `root`, or undefined outside it. */
+function relativeInside(root: string, p: string): string | undefined {
+  const rel = path.relative(root, path.resolve(root, p));
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return undefined;
+  return rel.split(path.sep).join('/');
+}
+
+function noteReads(state: SessionState, paths: Array<string | undefined>): void {
+  for (const p of paths) {
+    const rel = p ? relativeInside(state.root, p) : undefined;
+    if (rel && state.reads.size < MAX_READS) state.reads.add(rel);
+  }
 }
 
 /** What the turns of one task have produced so far (a task may take a second, salvage turn). */
@@ -122,6 +144,7 @@ export class AcpConnection {
         const rel = path.isAbsolute(params.path) ? path.relative(root, params.path) : params.path;
         const abs = resolveInside(root, rel);
         let content = readFileSync(abs, 'utf8');
+        noteReads(state, [abs]);
         if (params.line != null || params.limit != null) {
           const lines = content.split('\n');
           const start = Math.max(0, (params.line ?? 1) - 1);
@@ -253,7 +276,13 @@ export class AcpConnection {
     } catch (err) {
       throw new Error(`session/new failed: ${describeError(err)}${this.stderrHint()}`);
     }
-    const state: SessionState = { root: task.root, denied: [], toolCalls: 0 };
+    const state: SessionState = {
+      root: task.root,
+      denied: [],
+      toolCalls: 0,
+      reads: new Set(),
+      toolKinds: new Map(),
+    };
     this.sessions.set(session.sessionId, state);
 
     const turn: TurnState = {
@@ -314,8 +343,11 @@ export class AcpConnection {
       requests: turn.prompts,
       ...(turn.cost ? { reportedCost: turn.cost } : {}),
     };
+    const submission = readSubmission(submitFile);
+    noteReads(state, submission.reads ?? []);
     return {
-      submission: readSubmission(submitFile),
+      submission,
+      ...(state.reads.size ? { reads: [...state.reads] } : {}),
       text: turn.text,
       usage,
       model: task.model,
@@ -425,6 +457,19 @@ export class AcpConnection {
         turn.toolUsage[name] = (turn.toolUsage[name] ?? 0) + 1;
         task.onActivity?.({ kind: 'tool', name });
         this.logger.debug(`[acp] ${task.label} tool: ${update.title}`);
+        if (update.kind) state.toolKinds.set(update.toolCallId, update.kind);
+        if (update.kind && READ_KINDS.has(update.kind))
+          noteReads(
+            state,
+            (update.locations ?? []).map((l) => l.path),
+          );
+      } else if (update.sessionUpdate === 'tool_call_update') {
+        const kind = update.kind ?? state.toolKinds.get(update.toolCallId);
+        if (kind && READ_KINDS.has(kind))
+          noteReads(
+            state,
+            (update.locations ?? []).map((l) => l.path),
+          );
       } else if (update.sessionUpdate === 'usage_update' && update.cost) {
         // Cumulative session cost; agents that bill differently (Copilot) usually send none.
         const { amount, currency } = update.cost;

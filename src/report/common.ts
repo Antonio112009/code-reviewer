@@ -135,6 +135,21 @@ export function costLabel(run: Pick<RunRecord, 'cost'>): string | undefined {
   return `${known} + unknown (${how}; ${c.unknownTasks} model call${c.unknownTasks === 1 ? '' : 's'} without cost: ${hint})`;
 }
 
+/**
+ * `4 of 5 chunks and 3 of 3 verdicts from the cache, ≈ 120k tokens saved`; undefined when the cache was off.
+ */
+export function cacheLabel(run: Pick<RunRecord, 'cache'>): string | undefined {
+  const c = run.cache;
+  if (!c) return undefined;
+  const parts = [`${c.hits} of ${c.hits + c.misses} chunk${c.hits + c.misses === 1 ? '' : 's'}`];
+  if (c.critiqueHits + c.critiqueMisses > 0) {
+    const verdicts = c.critiqueHits + c.critiqueMisses;
+    parts.push(`${c.critiqueHits} of ${verdicts} verdict${verdicts === 1 ? '' : 's'}`);
+  }
+  const saved = c.saved.inputTokens + c.saved.outputTokens;
+  return `${parts.join(' and ')} from the cache${saved ? `, ≈ ${formatTokens(saved)} tokens saved` : ''}`;
+}
+
 const FAILURE_ADVICE: Record<FailureKind, string> = {
   timeout: 'ran out of time — raise review.timeout / review.maxTimeoutMs, or lower --max-chunk-tokens',
   stalled:
