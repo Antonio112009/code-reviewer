@@ -8,6 +8,11 @@ activation:
     - '\bPromise\.all(?:Settled)?\s*\(\s*[\w$.]+\.map\s*\('
     - '\b(?:p-limit|pLimit|p-map|pMap|p-queue|PQueue|Bottleneck|limiter)\b'
     - '\bsetInterval\s*\(\s*async\b'
+  examples:
+    - 'for (const id of ids) await fetchItem(id);'
+    - 'await Promise.all(items.map(callApi));'
+    - 'const limit = pLimit(5);'
+    - 'setInterval(async () => { await poll(); }, 1000);'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
   - https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Async_JS/Promises#combining_multiple_promises

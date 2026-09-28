@@ -9,6 +9,10 @@ activation:
     - "\\bresponse\\s*:\\s*\\{\\s*['\"]?(?:\\d|default)"
     - "\\b(?:addSchema|setValidatorCompiler|setSerializerCompiler|withTypeProvider|setSchemaErrorFormatter)\\s*[(<]"
     - "\\bType\\.(?:Object|String|Number|Integer|Optional|Array)\\s*\\(|\\badditionalProperties\\b|\\bcoerceTypes\\b|\\bremoveAdditional\\b"
+  examples:
+    - 'fastify.get(''/users/:id'', { schema: { response: { 200: userSchema } } }, handler);'
+    - 'fastify.addSchema(userSchema);'
+    - 'const UserSchema = Type.Object({ name: Type.String() }, { additionalProperties: false });'
 sources:
   - https://fastify.dev/docs/latest/Reference/Validation-and-Serialization/
   - https://fastify.dev/docs/latest/Guides/Migration-Guide-V5/

@@ -9,6 +9,11 @@ activation:
     - '\b(?:parseInt|parseFloat|Number|isNaN)\s*\('
     - '[^=!<>]==[^=]|!=[^=]'
     - '\bprocess\.env\.\w+\s*(?:\)|&&|\|\||\?|$)'
+  examples:
+    - 'const retries = opts.retries || 3;'
+    - 'const id = parseInt(req.params.id, 10);'
+    - 'if (role != ''admin'') return;'
+    - 'if (process.env.DISABLE_AUTH) return next();'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number#number_coercion

@@ -9,6 +9,10 @@ activation:
     - "\\breplacements\\s*:|\\bbind\\s*:|\\bQueryTypes\\.\\w+"
     - "\\b(?:attributes|order|group)\\s*:\\s*(?:req|input|query|body|params)\\b|\\bwhere\\s*:\\s*(?:req|input|query|body|filter)\\b"
     - "\\bwhere\\s*:\\s*\\{[^}\\n]{0,120}:\\s*req\\.(?:body|query)\\b"
+  examples:
+    - 'const rows = await sequelize.query(sql, { replacements: { id }, type: QueryTypes.SELECT })'
+    - 'const rows = await User.findAll({ attributes: req.query.fields, order: req.query.sort })'
+    - 'const rows = await User.findAll({ where: { email: req.body.email } })'
 sources:
   - https://sequelize.org/docs/v6/core-concepts/raw-queries/
   - https://github.com/advisories/GHSA-wrh9-cjv3-2hpw

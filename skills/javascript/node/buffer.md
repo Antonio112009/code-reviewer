@@ -9,6 +9,11 @@ activation:
     - '\.(?:subarray|byteOffset)\b|\.(?:read|write)U?Int\w*\s*\('
     - '\.buffer\b'
     - '\bnew\s+Buffer\s*\('
+  examples:
+    - 'const buf = Buffer.allocUnsafe(1024);'
+    - 'const view = buf.subarray(0, buf.readUInt32BE(0));'
+    - 'const shared = new Uint8Array(buf.buffer);'
+    - 'const legacy = new Buffer(16);'
 sources:
   - https://nodejs.org/api/buffer.html#bufbyteoffset
   - https://nodejs.org/api/buffer.html#static-method-bufferallocunsafesize

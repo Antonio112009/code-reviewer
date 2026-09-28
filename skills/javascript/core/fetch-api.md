@@ -8,6 +8,11 @@ activation:
     - '\bnew\s+(?:Request|Response|AbortController|URLSearchParams)\b'
     - '\bAbortSignal\.(?:timeout|any)\s*\('
     - '\bres(?:ponse)?\.(?:json|text|blob|arrayBuffer|formData)\s*\(\s*\)|\bres(?:ponse)?\.(?:ok|bodyUsed)\b'
+  examples:
+    - 'const res = await fetch(''/api/users'');'
+    - 'const params = new URLSearchParams({ page: ''2'' });'
+    - 'const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(3000)]);'
+    - 'const data = await res.json();'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch
   - https://developer.mozilla.org/en-US/docs/Web/API/Response/ok

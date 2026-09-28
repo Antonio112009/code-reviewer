@@ -9,6 +9,11 @@ activation:
     - '\bpage\.(?:goto|click|fill|locator|getBy\w+|waitFor\w*|evaluate)\s*\('
     - '\.(?:isVisible|isHidden|textContent|innerText|count|all)\s*\(\s*\)'
     - '\btest\.describe\.(?:serial|configure)\b|\bstorageState\b|\bfullyParallel\b'
+  examples:
+    - 'import { test, expect } from ''@playwright/test'';'
+    - 'await page.goto(''/login'');'
+    - 'const visible = await loc.isVisible();'
+    - 'test.describe.serial(''suite'', () => {});'
 sources:
   - https://playwright.dev/docs/best-practices
   - https://playwright.dev/docs/test-assertions

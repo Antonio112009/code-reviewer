@@ -6,6 +6,9 @@ activation:
   content:
     - '\b(?:jest|vi)\.(?:useFakeTimers|useRealTimers|advanceTimersByTime|advanceTimersToNextTimer|runAllTimers|runOnlyPendingTimers|setSystemTime|runAllTicks)\w*\b'
     - '\bmock\.timers\.\w+\s*\(|\bfakeTimers\s*:|\bshouldAdvanceTime\b'
+  examples:
+    - 'vi.useFakeTimers();'
+    - 'mock.timers.enable({ apis: [''setTimeout''] });'
 sources:
   - https://jestjs.io/docs/jest-object#fake-timers
   - https://vitest.dev/config/faketimers

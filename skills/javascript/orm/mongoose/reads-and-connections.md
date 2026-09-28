@@ -9,6 +9,10 @@ activation:
     - "\\bsyncIndexes\\s*\\(|\\bautoIndex\\b|\\bbufferCommands\\b|\\bbufferTimeoutMS\\b|\\bmaxPoolSize\\b"
     - "\\bmongoose\\.(?:connect|createConnection|startSession|set|model)\\s*\\(|\\bstartSession\\s*\\(|\\bwithTransaction\\s*\\(|\\bsession\\s*:"
     - "\\btoJSON\\b|\\btransform\\s*:"
+  examples:
+    - 'const users = await User.find().lean();'
+    - 'await mongoose.connect(uri, { autoIndex: false, maxPoolSize: 10 });'
+    - 'userSchema.set("toJSON", { transform: (doc, ret) => { delete ret.password; } });'
 sources:
   - https://mongoosejs.com/docs/tutorials/lean.html
   - https://mongoosejs.com/docs/api/model.html

@@ -9,6 +9,11 @@ activation:
     - '\bawait\b'
     - '\.then\s*\('
     - '\bnew\s+Promise\s*\('
+  examples:
+    - 'async function loadUser(id) { return db.find(id); }'
+    - 'const user = await loadUser(id);'
+    - 'fetchData().then(data => render(data));'
+    - 'const p = new Promise((resolve, reject) => { resolve(42); });'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function

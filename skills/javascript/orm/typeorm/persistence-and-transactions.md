@@ -8,6 +8,10 @@ activation:
     - "\\.transaction\\s*\\(|\\bcreateQueryRunner\\s*\\(|\\bqueryRunner\\.\\w+\\s*\\(|\\bstartTransaction\\s*\\("
     - "\\.(?:save|insert|update|upsert|remove|softRemove|preload|merge)\\s*\\("
     - "\\bcascade\\s*:|\\bsynchronize\\s*:|\\bmigrationsRun\\b|@(?:BeforeInsert|BeforeUpdate|AfterLoad|AfterInsert)\\s*\\(|\\bEntitySubscriberInterface\\b"
+  examples:
+    - 'await dataSource.transaction(async (manager) => { await manager.save(User, user) })'
+    - '@BeforeInsert() setCreatedAt() { this.createdAt = new Date() }'
+    - 'const config = { synchronize: process.env.NODE_ENV === "development" }'
 sources:
   - https://typeorm.io/docs/listeners-and-subscribers/
   - https://typeorm.io/docs/transactions/

@@ -9,6 +9,11 @@ activation:
     - "\\breflector\\.(?:get|getAllAndOverride|getAllAndMerge)\\b|\\bSetMetadata\\s*\\(|\\bReflector\\.createDecorator\\b"
     - "\\bhandleConnection\\s*\\(|@WebSocketGateway\\s*\\(|\\bswitchToHttp\\s*\\(|\\bGqlExecutionContext\\b"
     - "\\b(?:jwtService|jwt)\\.(?:decode|verify\\w*)\\b|\\bignoreExpiration\\b|\\bPassportStrategy\\s*\\("
+  examples:
+    - '@UseGuards(JwtAuthGuard)'
+    - 'const isPublic = this.reflector.getAllAndOverride(IS_PUBLIC_KEY, [ctx.getHandler(), ctx.getClass()])'
+    - 'const req = context.switchToHttp().getRequest()'
+    - 'const payload = jwtService.decode(token)'
 sources:
   - https://docs.nestjs.com/guards
   - https://docs.nestjs.com/security/authentication

@@ -8,6 +8,11 @@ activation:
     - '\b(?:jest|vi)\.(?:restoreAllMocks|resetAllMocks|clearAllMocks|stubEnv|stubGlobal)\s*\('
     - '\.mock(?:Reset|Restore|Clear|Implementation|ReturnValue|ResolvedValue|RejectedValue)\w*\s*\('
     - '\b(?:clearMocks|resetMocks|restoreMocks|unstubEnvs|unstubGlobals)\s*:'
+  examples:
+    - 'vi.mock(''./db'');'
+    - 'vi.restoreAllMocks();'
+    - 'fn.mockResolvedValue(data);'
+    - 'clearMocks: true,'
 sources:
   - https://jestjs.io/docs/jest-object#jestmockmodulename-factory-options
   - https://jestjs.io/docs/ecmascript-modules#module-mocking-in-esm

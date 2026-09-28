@@ -10,6 +10,12 @@ activation:
     - "\\bc\\.req\\.(?:json|parseBody|query|queries|param|header|valid|formData|text)\\s*\\("
     - "\\bawait\\s+next\\s*\\(|\\breturn\\s+next\\s*\\(|\\bnext\\s*\\(\\s*\\)"
     - "\\bc\\.(?:executionCtx|env)\\b|\\bwaitUntil\\s*\\("
+  examples:
+    - 'app.use("*", auth)'
+    - 'app.post("/users", zValidator("json", schema), handler)'
+    - 'const body = await c.req.valid("json")'
+    - 'await next()'
+    - 'c.executionCtx.waitUntil(logRequest())'
 sources:
   - https://hono.dev/docs/api/routing
   - https://hono.dev/docs/guides/middleware

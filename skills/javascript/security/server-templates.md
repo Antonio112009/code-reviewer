@@ -10,6 +10,11 @@ activation:
     - '<%-|\{\{\{|!\{|\|\s*safe\b|\bautoescape\s*:\s*false|\bSafeString\b'
     - '\ballowProto(?:Properties|Methods)ByDefault\b'
     - '<script[^>\n]{0,80}>[^<\n]{0,200}\$\{|\bwindow\.__\w+__\s*='
+  examples:
+    - 'const html = ejs.render(template, data);'
+    - '<%- userInput %>'
+    - 'allowProtoPropertiesByDefault: true,'
+    - '<script>window.__STATE__ = ${JSON.stringify(state)}</script>'
 sources:
   - https://ejs.co/#docs
   - https://github.com/advisories/GHSA-phwq-j96m-2c2q

@@ -8,6 +8,10 @@ activation:
     - "\\bresponseMeta\\b|\\bhttp(?:Batch|BatchStream|Subscription)?Link\\b|\\bsplitLink\\b|\\bwsLink\\b|\\bmaxURLLength\\b"
     - "\\.subscription\\s*\\(|\\btracked\\s*\\(|\\bopts\\.signal\\b|\\bon\\s*\\(\\s*\\w+\\s*,\\s*['\"][\\w:-]+['\"]"
     - "\\bcreateExpressMiddleware\\s*\\(|\\bfetchRequestHandler\\s*\\(|\\bcreateHTTPServer\\s*\\(|\\boctetInputParser\\b|\\bFormData\\b"
+  examples:
+    - 'const link = httpBatchLink({ url });'
+    - '.subscription(async function* () { yield event; });'
+    - 'app.use(''/trpc'', createExpressMiddleware({ router }));'
 sources:
   - https://trpc.io/docs/server/caching
   - https://trpc.io/docs/client/links/httpBatchStreamLink

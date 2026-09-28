@@ -8,6 +8,10 @@ activation:
     - "\\bnew\\s+DataLoader\\b|\\bDataLoader\\s*<|\\bdataloader\\b"
     - "\\.(?:load|loadMany|clear|clearAll|prime)\\s*\\("
     - "@(?:ResolveField|FieldResolver)\\s*\\("
+  examples:
+    - 'const userLoader = new DataLoader(batchUsers);'
+    - 'const user = await userLoader.load(id);'
+    - '@ResolveField(() => User)'
 sources:
   - https://github.com/graphql/dataloader
   - https://www.prisma.io/docs/orm/prisma-client/queries/query-optimization-performance

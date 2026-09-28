@@ -11,6 +11,13 @@ activation:
     - '\bNumber\.(?:MAX_SAFE_INTEGER|isInteger|isSafeInteger|EPSILON)\b'
     - '\s%\s|\|\s*0\b|>>>?\s*0\b'
     - '\b(?:price|amount|total|balance|cents|tax|fee)\w*\s*[*/]'
+  examples:
+    - 'const display = total.toFixed(2);'
+    - 'const page = Math.floor(offset / pageSize);'
+    - 'const id = 9007199254740993n;'
+    - 'if (!Number.isSafeInteger(id)) throw new Error(''bad id'');'
+    - 'const remainder = count % pageSize;'
+    - 'const lineTotal = priceCents * quantity;'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toFixed
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER

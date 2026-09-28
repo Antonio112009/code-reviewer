@@ -9,6 +9,10 @@ activation:
     - "\\b(?:runValidators|returnDocument|setDefaultsOnInsert|updatePipeline|upsert)\\b|\\bnew\\s*:\\s*true\\b"
     - "\\.(?:pre|post)\\s*\\(\\s*['\"]"
     - "\\bunique\\s*:\\s*true\\b"
+  examples:
+    - 'await User.updateOne({ _id }, { $set: { name } }, { runValidators: true });'
+    - 'userSchema.pre("save", function (next) { this.updatedAt = Date.now(); next(); });'
+    - 'email: { type: String, unique: true },'
 sources:
   - https://mongoosejs.com/docs/validation.html
   - https://mongoosejs.com/docs/middleware.html

@@ -8,6 +8,10 @@ activation:
     - "\\.transaction\\s*\\(|\\.transacting\\s*\\(|\\.forUpdate\\s*\\(|\\.forShare\\s*\\(|\\btrx\\.(?:commit|rollback)\\s*\\("
     - "\\bknex\\s*\\(\\s*\\{|\\brequire\\s*\\(\\s*['\"]knex['\"]\\s*\\)\\s*\\(|\\bpool\\s*:\\s*\\{|\\bacquireConnectionTimeout\\b|\\.destroy\\s*\\("
     - "\\.returning\\s*\\("
+  examples:
+    - 'const trx = await knex.transaction();'
+    - 'const db = knex({ client: "pg", pool: { min: 0, max: 10 } });'
+    - 'const [row] = await knex("users").insert(user).returning("*");'
 sources:
   - https://knexjs.org/guide/transactions.html
   - https://knexjs.org/guide/

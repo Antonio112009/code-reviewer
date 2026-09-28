@@ -9,6 +9,11 @@ activation:
     - "\\.(?:register|addHook|decorate(?:Request|Reply)?|setErrorHandler|setNotFoundHandler)\\s*\\("
     - "\\breply\\.(?:send|hijack)\\s*\\(|\\breturn\\s+reply\\b"
     - "\\bdone\\s*\\(\\s*\\)"
+  examples:
+    - 'module.exports = fp(userRoutes);'
+    - 'fastify.addHook(''onRequest'', authenticate);'
+    - 'return reply.send({ ok: true });'
+    - 'done();'
 sources:
   - https://fastify.dev/docs/latest/Reference/Encapsulation/
   - https://fastify.dev/docs/latest/Reference/Hooks/

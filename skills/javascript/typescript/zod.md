@@ -7,6 +7,10 @@ activation:
     - '\bfrom\s+[''"]zod(?:/v4|/v3|/mini)?[''"]'
     - '\bz\.(?:object|string|number|boolean|coerce|enum|record|array|union|infer|strictObject|looseObject|stringbool|uuid|email)\b'
     - '\.(?:safeParse|parseAsync|safeParseAsync|passthrough|prefault)\s*\('
+  examples:
+    - 'import { z } from ''zod'';'
+    - 'const schema = z.object({ name: z.string() });'
+    - 'const result = schema.safeParse(input);'
 sources:
   - https://zod.dev/v4/changelog
   - https://zod.dev/api#coercion

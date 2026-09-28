@@ -9,6 +9,11 @@ activation:
     - '\b(?:keepAliveTimeout|headersTimeout|requestTimeout|maxRequestsPerSocket|insecureHTTPParser|maxHeaderSize)\b'
     - '\bserver\.(?:close|listen|setTimeout|closeIdleConnections|closeAllConnections)\s*\('
     - '\breq\.on\s*\(\s*[''"](?:data|end|close|aborted)[''"]|\bres\.writeHead\s*\('
+  examples:
+    - 'const server = http.createServer(handler);'
+    - 'server.keepAliveTimeout = 65000;'
+    - 'server.listen(3000);'
+    - 'req.on("data", (chunk) => body.push(chunk));'
 sources:
   - https://nodejs.org/api/http.html#serverkeepalivetimeout
   - https://nodejs.org/api/http.html#serverrequesttimeout

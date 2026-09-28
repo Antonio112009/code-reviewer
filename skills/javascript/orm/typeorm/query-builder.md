@@ -8,6 +8,10 @@ activation:
     - "\\bcreateQueryBuilder\\s*\\(|\\.(?:andWhere|orWhere|orderBy|addOrderBy|addSelect|setParameters?|getRawMany|getRawOne|leftJoinAndSelect|innerJoinAndSelect)\\b"
     - "\\b(?:manager|dataSource|queryRunner|connection)\\.query\\s*\\("
     - "\\.(?:where|having)\\s*\\(\\s*`"
+  examples:
+    - 'const qb = userRepo.createQueryBuilder("user").andWhere("user.id = :id", { id })'
+    - 'const rows = await manager.query("SELECT * FROM users WHERE id = " + id)'
+    - 'qb.where(`user.id = ${id}`)'
 sources:
   - https://typeorm.io/docs/query-builder/select-query-builder/
   - https://typeorm.io/docs/releases/1.0/release-notes/

@@ -7,6 +7,10 @@ activation:
     - '\bJSON\.(?:parse|stringify)\s*\('
     - '\btoJSON\s*\('
     - '\.json\s*\(\s*\)'
+  examples:
+    - 'const payload = JSON.stringify(order);'
+    - 'class Money { toJSON() { return this.cents; } }'
+    - 'const body = await res.json();'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse

@@ -8,6 +8,10 @@ activation:
     - "\\.(?:findFirst\\w*|findMany|updateMany\\w*|deleteMany|update|delete|count)\\s*\\(\\s*\\{"
     - "\\bwhere\\s*:\\s*\\{|\\b(?:OR|AND|NOT)\\s*:\\s*\\["
     - "\\bstrictUndefinedChecks\\b|\\bPrisma\\.skip\\b|\\bP2025\\b|\\bmode\\s*:\\s*['\"]insensitive['\"]"
+  examples:
+    - 'const user = await prisma.user.findFirst({ where: { id: input.id } })'
+    - 'const users = await prisma.user.findMany({ where: { OR: [{ email: q }, { name: q }] } })'
+    - 'const rows = await prisma.user.findMany({ where: { email: { contains: q, mode: "insensitive" } } })'
 sources:
   - https://www.prisma.io/docs/orm/v7/prisma-client/special-fields-and-types/null-and-undefined
   - https://www.prisma.io/docs/orm/v7/reference/error-reference

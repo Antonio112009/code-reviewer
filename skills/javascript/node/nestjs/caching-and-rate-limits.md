@@ -7,6 +7,9 @@ activation:
   content:
     - "\\bCacheInterceptor\\b|\\bCacheModule\\b|@CacheKey\\s*\\(|@CacheTTL\\s*\\(|\\bCACHE_MANAGER\\b|\\bcacheManager\\.(?:get|set|del|mget|mset|wrap|clear)\\b"
     - "\\bThrottlerModule\\b|\\bThrottlerGuard\\b|@(?:Throttle|SkipThrottle)\\s*\\(|\\bgetTracker\\s*\\("
+  examples:
+    - '@UseInterceptors(CacheInterceptor)'
+    - '@UseGuards(ThrottlerGuard)'
 sources:
   - https://docs.nestjs.com/techniques/caching
   - https://docs.nestjs.com/security/rate-limiting

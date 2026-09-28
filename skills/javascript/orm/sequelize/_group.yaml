@@ -8,3 +8,7 @@ detect:
     - "(?:from|require\\()\\s*['\"](?:sequelize|sequelize-typescript|@sequelize/core|@nestjs/sequelize)['\"]"
     - "\\b(?:sequelize|Sequelize)\\.(?:query|transaction|define|sync|literal|fn|col|where|cast)\\s*\\("
     - "\\bqueryInterface\\.\\w+\\s*\\(|\\.(?:findByPk|findAndCountAll|findOrCreate|bulkCreate)\\s*\\("
+  examples:
+    - 'import { Sequelize } from "sequelize"'
+    - 'const rows = await sequelize.query("SELECT 1")'
+    - 'const user = await User.findByPk(id)'

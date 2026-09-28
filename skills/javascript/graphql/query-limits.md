@@ -9,6 +9,11 @@ activation:
     - "\\ballowBatchedHttpRequests\\b|\\bbatching\\s*:|\\bintrospection\\s*:|\\bpersistedQueries\\b|\\bpersistedDocuments\\b|\\bhideSchemaDetailsFromClientErrors\\b"
     - "\\bnew\\s+ApolloServer\\b|\\bcreateYoga\\s*\\(|\\bcreateHandler\\s*\\(|\\bgraphqlHTTP\\s*\\("
     - "\\b(?:first|last|limit|take|pageSize|perPage)\\s*:\\s*(?:Int\\b|\\{\\s*type\\b|\\[?\\s*GraphQLInt\\b)"
+  examples:
+    - 'validationRules: [depthLimit(5)],'
+    - 'introspection: process.env.NODE_ENV !== ''production'','
+    - 'const server = new ApolloServer({ typeDefs, resolvers });'
+    - 'first: Int'
 sources:
   - https://www.apollographql.com/docs/apollo-server/api/apollo-server
   - https://www.apollographql.com/docs/apollo-server/v3/requests

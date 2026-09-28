@@ -19,3 +19,11 @@ detect:
     - '(?:\bfrom\s*|\brequire\s*\(\s*)[''"](?:express|fastify|koa|hono|@nestjs/[\w-]+|@hapi/hapi|@koa/[\w-]+|@fastify/[\w-]+|socket\.io|ws|undici|axios|got|pino|winston|execa|dotenv(?:/config)?|commander|yargs|bullmq|ioredis|pg|mysql2|mongodb|mongoose|@prisma/client|typeorm|sequelize|knex|drizzle-orm(?:/[\w-]+)?)[''"]'
     - '\(\s*req\b[^()\n]{0,60},\s*res\b|\bctx\.(?:request|response|throw|state)\b|\b(?:request|reply)\.(?:send|code|header)\s*\('
     - '@(?:Controller|Module|Resolver|WebSocketGateway|Processor)\s*\(|\bc\.(?:req\.(?:param|query|json|header|valid)|json|text)\s*\('
+  examples:
+    - 'import fs from "node:fs";'
+    - 'process.exit(1);'
+    - 'const buf = Buffer.from(data);'
+    - 'const configPath = path.join(__dirname, "config.json");'
+    - 'import axios from "axios";'
+    - 'app.get("/health", (req, res) => res.send("ok"));'
+    - '@Controller("users")'

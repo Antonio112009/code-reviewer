@@ -11,6 +11,12 @@ activation:
     - '\bnew\s+\w*Error\s*\('
     - '\bfinally\s*\{'
     - '\bPromise\.reject\s*\('
+  examples:
+    - 'throw new Error(''save failed'');'
+    - 'try { save(); } catch (e) { report(e); }'
+    - 'fetchData().catch(err => log(err));'
+    - 'try { lock(); } finally { unlock(); }'
+    - 'return Promise.reject(new Error(''timeout''));'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/cause
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/try...catch#the_finally_block

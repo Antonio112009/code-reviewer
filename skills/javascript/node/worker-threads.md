@@ -8,6 +8,11 @@ activation:
     - '\bnew\s+Worker\s*\('
     - '\b(?:parentPort|workerData|isMainThread|receiveMessageOnPort)\b'
     - '\bSharedArrayBuffer\b|\bAtomics\.\w+\s*\(|\btransferList\b'
+  examples:
+    - 'const { Worker } = require("node:worker_threads");'
+    - 'const worker = new Worker("./task.js");'
+    - 'parentPort.postMessage(result);'
+    - 'const counter = new SharedArrayBuffer(4);'
 sources:
   - https://nodejs.org/api/worker_threads.html
   - https://nodejs.org/api/worker_threads.html#considerations-when-cloning-objects-with-prototypes-classes-and-accessors

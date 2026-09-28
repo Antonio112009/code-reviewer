@@ -10,6 +10,13 @@ activation:
     - '\bSlowBuffer\b|[''"](?:node:)?_(?:stream|tls|http)_\w+[''"]|\.writeHeader\s*\('
     - '\burl\.parse\s*\(|\bmodule\.register\s*\(|\bpunycode\b'
     - '\bassert\s*\{\s*type\s*:|--experimental-transform-types|\bcorepack\b'
+  examples:
+    - 'const cipher = crypto.createCipher("aes192", password);'
+    - 'const ok = util.isArray(value);'
+    - 'fs.rmdirSync(dir, { recursive: true });'
+    - 'const buf = new SlowBuffer(1024);'
+    - 'const parsed = url.parse(requestUrl);'
+    - 'import config from "./config.json" assert { type: "json" };'
 sources:
   - https://nodejs.org/api/deprecations.html
   - https://nodejs.org/en/blog/release/v24.0.0

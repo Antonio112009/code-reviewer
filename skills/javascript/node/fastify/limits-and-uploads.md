@@ -10,6 +10,12 @@ activation:
     - "@fastify/(?:multipart|cookie|static|rate-limit|session|secure-session)"
     - "\\b(?:request|req)\\.(?:file|files|parts|saveRequestFiles)\\s*\\(|\\battachFieldsToBody\\b|\\bthrowFileSizeLimit\\b|\\bpart\\.filename\\b"
     - "\\bunsignCookie\\s*\\(|\\b(?:request|req)\\.cookies\\b"
+  examples:
+    - 'const app = Fastify({ trustProxy: true, requestTimeout: 120000 });'
+    - 'const clientIp = request.ip;'
+    - 'import multipart from ''@fastify/multipart'';'
+    - 'const uploadPath = path.join(uploadDir, part.filename);'
+    - 'const { valid, value } = request.unsignCookie(request.cookies.sid);'
 sources:
   - https://fastify.dev/docs/latest/Reference/Server/
   - https://github.com/fastify/fastify-multipart

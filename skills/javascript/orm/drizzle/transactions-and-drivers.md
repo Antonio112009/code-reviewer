@@ -8,6 +8,10 @@ activation:
     - "\\.transaction\\s*\\(|\\btx\\.rollback\\s*\\(|\\bTransactionRollbackError\\b|\\bdb\\.batch\\s*\\("
     - "drizzle-orm/(?:neon-http|neon-serverless|postgres-js|node-postgres|mysql2|d1|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)"
     - "\\bpostgres\\s*\\(|\\bnew\\s+(?:Pool|Client)\\s*\\(|\\bprepare\\s*:\\s*(?:false|true)\\b|\\.prepare\\s*\\(\\s*['\"]|\\bdrizzle\\s*\\("
+  examples:
+    - 'await db.transaction(async (tx) => { await tx.insert(users).values(user); });'
+    - 'import { drizzle } from "drizzle-orm/node-postgres";'
+    - 'const sql = postgres(connectionString, { prepare: false });'
 sources:
   - https://orm.drizzle.team/docs/transactions
   - https://orm.drizzle.team/docs/connect-neon

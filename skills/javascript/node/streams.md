@@ -9,6 +9,11 @@ activation:
     - '\.on\s*\(\s*[''"](?:data|readable|end|finish|drain)[''"]'
     - '\bcreate(?:Read|Write)Stream\s*\(|\bnew\s+(?:Readable|Writable|Transform|Duplex|PassThrough)\b|\bReadable\.from\s*\('
     - '\.write\s*\(|\bhighWaterMark\b|\.toArray\s*\(\s*\)'
+  examples:
+    - 'src.pipe(dest);'
+    - 'readable.on("data", (chunk) => handle(chunk));'
+    - 'const input = fs.createReadStream(filePath);'
+    - 'const ok = writable.write(chunk);'
 sources:
   - https://nodejs.org/api/stream.html#streampipelinesource-transforms-destination-options
   - https://nodejs.org/api/stream.html#event-drain

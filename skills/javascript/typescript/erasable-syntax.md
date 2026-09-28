@@ -9,6 +9,11 @@ activation:
     - '\bimport\s*\(\s*[''"]\.{1,2}/[^''"\n]{1,200}\.[mc]?ts[''"]'
     - '\b(?:erasableSyntaxOnly|allowImportingTsExtensions|rewriteRelativeImportExtensions)\b'
     - '--(?:experimental-)?(?:strip|transform)-types'
+  examples:
+    - 'import { User } from ''./types.ts'';'
+    - 'const config = await import(''./config.ts'');'
+    - '"erasableSyntaxOnly": true,'
+    - 'node --experimental-strip-types server.ts'
 sources:
   - https://nodejs.org/api/typescript.html
   - https://www.typescriptlang.org/tsconfig/#erasableSyntaxOnly

@@ -10,6 +10,13 @@ activation:
     - '\bnew\s+(?:Map|Set|WeakMap|WeakSet)\b'
     - '\.(?:union|intersection|difference|symmetricDifference|isSubsetOf|isSupersetOf|isDisjointFrom)\s*\('
     - '\[\s*(?:key|k|id|name|prop|field)\s*\]\s*(?:=[^=]|\+\+|\|\|=|\?\?=)'
+  examples:
+    - 'const merged = { ...defaults, ...opts };'
+    - 'const keys = Object.keys(config);'
+    - 'const copy = structuredClone(state);'
+    - 'const cache = new Map();'
+    - 'const shared = setA.union(setB);'
+    - 'counts[key]++;'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax
   - https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm

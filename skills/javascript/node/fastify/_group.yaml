@@ -9,3 +9,8 @@ detect:
     - "\\bFastify(?:Instance|Request|Reply|PluginAsync|PluginCallback|ServerOptions)\\b"
     - "\\b(?:fastify|app|server|instance)\\.(?:register|decorate(?:Request|Reply)?|addHook|setErrorHandler|addContentTypeParser|addSchema)\\s*\\("
     - "\\bfunction\\s*\\w*\\s*\\(\\s*(?:fastify|instance)\\s*[,:)]"
+  examples:
+    - 'import Fastify from ''fastify'';'
+    - 'const userRoutes: FastifyPluginAsync = async (fastify) => {'
+    - 'fastify.register(userRoutes, { prefix: ''/users'' });'
+    - 'module.exports = function (fastify, opts, done) {'

@@ -8,6 +8,10 @@ activation:
     - "\\bClientProxy\\b|\\bClientsModule\\b|@Client\\s*\\(|\\.(?:send|emit)\\s*(?:<[^>\\n]{0,80}>)?\\s*\\(\\s*(?:\\{|['\"][\\w.:/-]+['\"])"
     - "@(?:MessagePattern|EventPattern|Payload|Ctx)\\s*\\("
     - "\\bRpcException\\b|\\bTransport\\.\\w+\\b|\\b(?:createMicroservice|connectMicroservice)\\s*\\(|\\bnoAck\\b"
+  examples:
+    - 'private readonly client: ClientProxy'
+    - '@MessagePattern("orders.created")'
+    - 'throw new RpcException("Invalid order")'
 sources:
   - https://docs.nestjs.com/microservices/basics
   - https://docs.nestjs.com/faq/hybrid-application

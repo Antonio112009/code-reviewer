@@ -10,6 +10,12 @@ activation:
     - "\\bshield\\s*\\(|\\bgraphql-shield\\b|\\bfallbackRule\\b|\\bauthChecker\\b"
     - "\\b(?:context|ctx)\\.(?:user|auth|session|viewer|currentUser)\\b"
     - "\\b(?:Query|Mutation|Subscription)\\s*:\\s*\\{"
+  examples:
+    - '__resolveReference(ref) { return getById(ref.id); },'
+    - '@UseGuards(AuthGuard)'
+    - 'const permissions = shield({ Query: isAuthenticated });'
+    - 'if (!ctx.user) throw new Error(''unauthorized'');'
+    - 'Query: { order: (parent, args, ctx) => resolveOrder(args) },'
 sources:
   - https://graphql.org/learn/authorization/
   - https://www.apollographql.com/docs/graphos/schema-design/federated-schemas/entities/intro

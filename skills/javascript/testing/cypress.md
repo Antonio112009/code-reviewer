@@ -7,6 +7,9 @@ activation:
   content:
     - '\bcy\.[a-z]\w*\s*\('
     - '\bCypress\.(?:\$|Commands|env|on)\b'
+  examples:
+    - 'cy.get(''button'').click();'
+    - 'Cypress.Commands.add(''login'', () => {});'
 sources:
   - https://docs.cypress.io/app/core-concepts/introduction-to-cypress
   - https://docs.cypress.io/app/core-concepts/retry-ability

@@ -8,6 +8,10 @@ activation:
     - "\\b(?:express-session|cookie-session|cookie-parser)\\b|\\bsession\\s*\\(\\s*\\{|\\bcookieParser\\s*\\("
     - "\\breq\\.(?:session|signedCookies|cookies)\\b"
     - "\\bres\\.(?:cookie|clearCookie)\\s*\\("
+  examples:
+    - 'app.use(session({ secret: ''keyboard cat'', resave: false, saveUninitialized: false }));'
+    - 'req.session.userId = user.id;'
+    - 'res.clearCookie(''sid'', { path: ''/'' });'
 sources:
   - https://github.com/expressjs/session
   - https://expressjs.com/en/advanced/best-practice-security.html

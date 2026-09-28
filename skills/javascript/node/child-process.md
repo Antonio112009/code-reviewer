@@ -8,6 +8,11 @@ activation:
     - '(?<![.\w$])(?:exec|execSync|execFile|execFileSync|spawn|spawnSync|fork)\s*\('
     - '\b(?:cp|childProcess)\.\w+\s*\('
     - '\bmaxBuffer\b|\bkillSignal\b|\bdetached\s*:'
+  examples:
+    - 'const { spawn } = require("node:child_process");'
+    - 'const child = spawn("git", ["status"]);'
+    - 'cp.exec("ls -la", (err, stdout) => {});'
+    - 'exec(cmd, { maxBuffer: 10 * 1024 * 1024 });'
 sources:
   - https://nodejs.org/api/child_process.html#child-process
   - https://nodejs.org/api/child_process.html#event-error

@@ -8,6 +8,10 @@ activation:
     - "\\b(?:knex|trx|db)\\.raw\\b|\\.(?:whereRaw|orWhereRaw|havingRaw|orderByRaw|joinRaw|groupByRaw)\\s*\\("
     - "\\.(?:whereNotIn|del)\\s*\\(|\\.where\\s*\\(\\s*(?:\\{\\s*\\.\\.\\.|req\\b|filters?\\b|query\\b|input\\b|params\\b|conditions\\b|criteria\\b)"
     - "\\.(?:onConflict|merge|count|first)\\s*\\("
+  examples:
+    - 'const rows = await knex.raw("SELECT * FROM users WHERE id = ?", [id]);'
+    - 'const rows = await knex("users").where(filters).whereNotIn("id", excluded);'
+    - 'await knex("users").insert(row).onConflict("id").merge();'
 sources:
   - https://knexjs.org/guide/raw.html
   - https://knexjs.org/guide/query-builder.html

@@ -10,6 +10,12 @@ activation:
     - "\\bnew\\s+\\w*Exception\\s*\\(\\s*(?:err|error|e|ex)\\b"
     - "\\bClassSerializerInterceptor\\b|@(?:Exclude|Expose|SerializeOptions)\\s*\\(|\\b(?:plainToInstance|instanceToPlain)\\s*\\("
     - "@(?:Get|Post|Put|Patch|Delete)\\s*\\(\\s*['\"]:\\w+"
+  examples:
+    - '@Res({ passthrough: true }) res: Response'
+    - '@Catch(HttpException)'
+    - 'throw new BadRequestException(err)'
+    - '@UseInterceptors(ClassSerializerInterceptor)'
+    - '@Get(":id")'
 sources:
   - https://docs.nestjs.com/controllers
   - https://docs.nestjs.com/exception-filters

@@ -10,6 +10,12 @@ activation:
     - "\\bgraphqlUploadExpress\\b|\\bGraphQLUpload\\b|\\bmultipart\\s*:"
     - "@cacheControl\\b|\\bcacheControl\\b|\\buseResponseCache\\s*\\(|\\bresponseCachePlugin\\b"
     - "\\bcontext\\s*:\\s*(?:async\\s*)?\\(|\\bcontext\\s*\\(\\s*\\{\\s*req\\b"
+  examples:
+    - 'csrfPrevention: true,'
+    - 'app.use(''/graphql'', expressMiddleware(server));'
+    - 'app.use(graphqlUploadExpress({ maxFileSize: 10_000_000 }));'
+    - '@cacheControl(maxAge: 60)'
+    - 'context: async ({ req }) => ({ user: req.user }),'
 sources:
   - https://www.apollographql.com/docs/apollo-server/security/cors
   - https://the-guild.dev/graphql/yoga-server/docs/features/csrf-prevention

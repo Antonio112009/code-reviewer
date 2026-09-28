@@ -10,6 +10,12 @@ activation:
     - '\bsetMaxListeners\s*\(|\bsetInterval\s*\('
     - '\bnew\s+Promise\s*\('
     - '\.subarray\s*\('
+  examples:
+    - 'const cache = new Map();'
+    - 'server.on(''connection'', handleConn);'
+    - 'setInterval(poll, 1000);'
+    - 'const pending = new Promise((resolve) => { queue.push(resolve); });'
+    - 'const view = buffer.subarray(0, 16);'
 sources:
   - https://nodejs.org/api/events.html#eventsdefaultmaxlisteners
   - https://nodejs.org/api/timers.html#timeoutunref

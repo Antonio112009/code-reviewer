@@ -10,6 +10,12 @@ activation:
     - "\\blogger\\s*:\\s*(?:pino|winston|bunyan|logger|log|createLogger)\\b|\\buseSemicolonDelimiter\\b|\\bjsonShortHand\\b"
     - "\\.listen\\s*\\(\\s*(?:\\d|port\\b|PORT\\b|process\\.env)"
     - "\\bparams\\.hasOwnProperty\\s*\\(|\\bexposeHeadRoutes\\b|\\bmethod\\s*:\\s*['\"](?:HEAD|DELETE)['\"]|\\.(?:head|delete)\\s*\\("
+  examples:
+    - 'reply.redirect(301, ''/login'');'
+    - 'const isPublic = request.routeConfig.public;'
+    - 'const app = Fastify({ logger: pino({ level: ''info'' }) });'
+    - 'app.listen(3000, ''0.0.0.0'');'
+    - 'if (params.hasOwnProperty(''id'')) {'
 sources:
   - https://fastify.dev/docs/latest/Guides/Migration-Guide-V5/
   - https://fastify.dev/docs/latest/Reference/Request/

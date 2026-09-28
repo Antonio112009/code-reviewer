@@ -9,6 +9,13 @@ activation:
     - '\bdeclare\s+[a-z][\w$]*\s*[:!?]|^\s*[a-z][\w$]*!\s*:'
     - '\breflect-metadata\b|\bReflect\.(?:getMetadata|defineMetadata)\s*\('
     - '^import\s+type\s+\{[^}\n]{1,200}\b[A-Z][\w$]*(?:Service|Repository|Provider|Client)\b'
+  examples:
+    - '@Injectable()'
+    - '"useDefineForClassFields": true,'
+    - 'declare name: string;'
+    - 'name!: string;'
+    - 'import ''reflect-metadata'';'
+    - 'import type { UserService } from ''./user.service'';'
 sources:
   - https://www.typescriptlang.org/tsconfig/#useDefineForClassFields
   - https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier

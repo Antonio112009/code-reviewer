@@ -9,6 +9,11 @@ activation:
     - "\\$(?:extends|use|on)\\s*\\("
     - "@prisma/adapter-[\\w-]+|\\bPrisma(?:Pg|MariaDb|BetterSqlite3|Neon|D1|LibSQL|Mssql|PlanetScale)\\b|\\bprisma\\.config\\b|\\bdefineConfig\\s*\\("
     - "\\bconnection_limit\\b|\\bpool_timeout\\b|\\bconnectionTimeoutMillis\\b|\\bprovider\\s*=\\s*['\"]prisma-client"
+  examples:
+    - 'const prisma = globalThis.prisma ?? new PrismaClient()'
+    - 'const prisma = basePrisma.$extends(withSoftDeleteMiddleware)'
+    - 'import { PrismaPg } from "@prisma/adapter-pg"'
+    - 'const pool = new Pool({ connectionTimeoutMillis: 30000 })'
 sources:
   - https://www.prisma.io/docs/orm/prisma-client/client-extensions
   - https://www.prisma.io/docs/orm/v7/more/upgrade-guides/upgrading-versions/upgrading-to-prisma-7

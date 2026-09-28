@@ -9,6 +9,11 @@ activation:
     - "\\.(?:where|having)\\s*\\(|\\b(?:and|or)\\s*\\("
     - "\\b(?:db|tx|trx)\\.(?:update|delete)\\s*\\("
     - "\\beq\\s*\\([^()\\n]{1,80},\\s*null\\s*\\)"
+  examples:
+    - 'const col = sql.raw(sortColumn);'
+    - 'const rows = await db.select().from(users).where(and(eq(users.id, id), gt(users.age, 18)));'
+    - 'await db.update(users).set({ name }).where(eq(users.id, id));'
+    - 'const rows = await db.select().from(users).where(eq(users.deletedAt, null));'
 sources:
   - https://orm.drizzle.team/docs/sql
   - https://orm.drizzle.team/docs/guides/conditional-filters-in-query

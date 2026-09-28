@@ -10,6 +10,13 @@ activation:
     - '=\s*[\w$.]+\.concat\s*\(|\bBuffer\.concat\s*\('
     - '\.(?:toLocaleString|toLocaleDateString|localeCompare)\s*\(|\bnew\s+Intl\.\w+\s*\('
     - '\bJSON\.parse\s*\(\s*JSON\.stringify\s*\('
+  examples:
+    - 'items.reduce((acc, x) => ({ ...acc, [x.id]: x }), {});'
+    - 'const shared = a.filter(x => b.includes(x));'
+    - 'queue.shift();'
+    - 'arr = arr.concat(x);'
+    - 'items.sort((a, b) => a.name.localeCompare(b.name));'
+    - 'const clone = JSON.parse(JSON.stringify(obj));'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toLocaleString

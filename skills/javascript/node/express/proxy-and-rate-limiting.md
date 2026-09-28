@@ -11,6 +11,13 @@ activation:
     - "\\bexpress-rate-limit\\b|\\brate-limiter-flexible\\b|\\b(?:rateLimit|slowDown)\\s*\\(|\\bkeyGenerator\\s*:"
     - "\\breq\\.(?:path|originalUrl|url)\\.(?:startsWith|includes|match|endsWith)\\s*\\(|\\breq\\.path\\s*[!=]=="
     - "\\b(?:app|router)\\.use\\s*\\(\\s*['\"][^'\"\\n]{1,80}['\"]\\s*,"
+  examples:
+    - 'app.set(''trust proxy'', 1);'
+    - 'const clientIp = req.ip;'
+    - 'const forwarded = req.headers[''x-forwarded-for''];'
+    - 'const limiter = rateLimit({ keyGenerator: (req) => req.ip });'
+    - 'if (req.path.startsWith(''/admin'')) {'
+    - 'app.use(''/api/login'', loginLimiter);'
 sources:
   - https://expressjs.com/en/guide/behind-proxies.html
   - https://express-rate-limit.mintlify.app/reference/error-codes
