@@ -124,6 +124,7 @@ export async function postRun(opts: PostRunOptions): Promise<boolean> {
     const parts = [
       plural(outcome.inline.length, 'inline comment'),
       outcome.alreadyPosted.length ? `${outcome.alreadyPosted.length} already there` : '',
+      outcome.resolved.length ? `${outcome.resolved.length} fixed thread(s) resolved` : '',
       `summary ${outcome.summary}`,
     ].filter(Boolean);
     logger.success(

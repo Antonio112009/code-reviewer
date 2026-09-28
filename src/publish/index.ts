@@ -8,7 +8,7 @@ import type { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
 import { githubAdapter, githubHeaders } from './github';
 import { gitlabAdapter, gitlabHeaders } from './gitlab';
-import { ApiClient, type FetchLike, type SleepLike } from './http';
+import { ApiClient, ApiError, type FetchLike, type SleepLike } from './http';
 import {
   type CommentableDiff,
   type ForgeAdapter,
@@ -17,7 +17,8 @@ import {
   planPublication,
   type SummaryReason,
 } from './plan';
-import { renderInlineComment, renderSummary } from './render';
+import { renderInlineComment, renderResolvedReply, renderSummary } from './render';
+import { type FixedThread, fixedThreads } from './resolve';
 import {
   missingTokenMessage,
   PublishError,
@@ -67,6 +68,8 @@ export interface PublishOutcome {
   summary?: 'created' | 'updated';
   /** Set when the pull request head differs from the reviewed commit. */
   stale?: { prHead: string; forced: boolean };
+  /** Threads of earlier comments resolved because their finding was fixed (not in a dry run). */
+  resolved: FixedThread[];
   notes: string[];
 }
 
@@ -160,7 +163,16 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
       listed: plan.summary,
       notes,
     });
-    return { target, dryRun: true, inline, listed: plan.summary, alreadyPosted: [], summaryBody, notes };
+    return {
+      target,
+      dryRun: true,
+      inline,
+      listed: plan.summary,
+      alreadyPosted: [],
+      summaryBody,
+      resolved: [],
+      notes,
+    };
   }
 
   const token = tokenFor(target.forge, env);
@@ -202,6 +214,10 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
   listed.sort(
     (a, b) => (SEVERITY_ORDER[a.finding.severity] ?? 9) - (SEVERITY_ORDER[b.finding.severity] ?? 9),
   );
+  const resolved =
+    opts.settings.resolveFixed !== false && !stale && opts.repo
+      ? await resolveFixed(adapter, opts.repo, run, findings, state.posted, notes, logger)
+      : [];
   const staleInfo = stale ? { prHead: state.headSha, forced: opts.force === true } : undefined;
   const summaryBody = renderSummary({
     run,
@@ -210,6 +226,7 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
     alreadyPosted: plan.alreadyPosted,
     listed,
     staleHead: staleInfo,
+    resolved: resolved.length,
     notes,
   });
   const summary = await adapter.upsertSummary(summaryBody);
@@ -222,6 +239,40 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
     summaryBody,
     summary,
     ...(staleInfo ? { stale: staleInfo } : {}),
+    resolved,
     notes,
   };
+}
+
+/**
+ * Resolves the threads of earlier inline comments whose finding was fixed (`fixedThreads` decides). Only
+ * looked at when some fingerprint on the pull request is missing from this run; forge errors (a token that
+ * may comment but not resolve, …) become a note instead of failing the publication.
+ */
+async function resolveFixed(
+  adapter: ForgeAdapter,
+  repo: GitRepo,
+  run: RunRecord,
+  findings: Finding[],
+  posted: ReadonlySet<string>,
+  notes: string[],
+  logger: Logger,
+): Promise<FixedThread[]> {
+  const current = [...findings, ...(run.advisory ?? [])];
+  const present = new Set(current.map((f) => f.fingerprint));
+  if (![...posted].some((fp) => !present.has(fp))) return [];
+  const done: FixedThread[] = [];
+  try {
+    const threads = await adapter.openThreads();
+    for (const fixed of await fixedThreads(repo, run, current, threads)) {
+      await adapter.resolveThread(fixed.thread, renderResolvedReply(fixed.reason, run));
+      logger.debug(`publish: resolved ${fixed.thread.path}:${fixed.thread.endLine} (${fixed.reason})`);
+      done.push(fixed);
+    }
+  } catch (err) {
+    if (!(err instanceof ApiError)) throw err;
+    logger.debug(`publish: resolving fixed threads: ${err.message}`);
+    notes.push(`Earlier comments whose finding was fixed could not be resolved: ${err.message}`);
+  }
+  return done;
 }

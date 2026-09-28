@@ -280,6 +280,11 @@ export const PublishSettingsSchema = z.object({
   /** Findings below this severity are listed in the summary only, never commented inline. */
   minSeverity: z.enum(SEVERITIES),
   /**
+   * Resolve the threads of earlier inline comments whose finding was fixed: the commented code changed and
+   * the new review did not report it again (`publish/resolve.ts`).
+   */
+  resolveFixed: z.boolean(),
+  /**
    * GitHub Enterprise Server API (e.g. https://github.example.com/api/v3) and self-managed GitLab API
    * (e.g. https://gitlab.example.com/api/v4). Your access token is sent there: global config / CLI only.
    */
@@ -475,6 +480,7 @@ export const DEFAULT_CONFIG: Config = {
   publish: {
     maxInlineComments: 30,
     minSeverity: 'info',
+    resolveFixed: true,
   },
   profiles: {},
 };

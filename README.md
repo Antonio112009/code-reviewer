@@ -355,7 +355,9 @@ messages live; `-v` prints the version.
 `code-reviewer review --post` posts the finished review to the branch's GitHub pull request or GitLab merge
 request: an inline comment on each finding inside the diff, and one summary comment (counts, the other
 findings, unreviewed code) that later runs update in place. Re-runs do not repeat comments that are already
-there. `code-reviewer runs publish latest --dry-run` shows what would be posted.
+there, and resolve the threads of findings that were fixed: the commented code changed and the new review
+did not report the finding again (`publish.resolveFixed`; a thread someone reopened stays open).
+`code-reviewer runs publish latest --dry-run` shows what would be posted.
 
 ```bash
 export GITHUB_TOKEN=…            # or GH_TOKEN; GITLAB_TOKEN for GitLab (api scope)
