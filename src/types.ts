@@ -41,6 +41,12 @@ export const ReportedFindingSchema = z.object({
     .describe(
       'Why this is a bug: concrete inputs/state that lead to wrong behaviour, crash or vulnerability',
     ),
+  failurePath: z
+    .string()
+    .optional()
+    .describe(
+      'How the defect is reached, as steps: input or state → code path → failure (e.g. "empty cart from POST /checkout → total() divides by items.length → NaN is charged"). Required for critical and major findings.',
+    ),
   suggestion: z.string().optional().describe('How to fix it (short, optional)'),
   evidence: z.string().optional().describe('The exact offending code (a few lines at most)'),
   confidence: z
@@ -188,6 +194,8 @@ export interface Finding extends ReportedFinding {
   source: { chunkIds: string[]; provider: string; model?: string };
   critique?: CritiqueInfo;
   author?: AuthorInfo;
+  /** Severity lowered before critique because the finding gave no failure path (`review.requireFailurePath`). */
+  lowered?: { from: Severity; reason: 'no-failure-path' };
   /** Set when a validation step rejected the finding (hallucinated path, lines out of range, ...). */
   droppedReason?: string;
   /**

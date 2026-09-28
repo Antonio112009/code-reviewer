@@ -117,6 +117,8 @@ export const ReviewSettingsSchema = z.object({
   depth: z.enum(REVIEW_DEPTHS),
   selfCritique: z.boolean(),
   minConfidence: z.number().min(0).max(1),
+  /** Lower a critical or major model finding one level when it gives no failure path (input → path → failure). */
+  requireFailurePath: z.boolean(),
   /**
    * Kept findings below this confidence, and every `info` finding, are listed apart as "worth a look": in the
    * reports, but not in pull request comments, SARIF / Code Quality or the `--fail-on` gate.
@@ -427,6 +429,7 @@ export const DEFAULT_CONFIG: Config = {
     depth: 'essential',
     selfCritique: true,
     minConfidence: 0.7,
+    requireFailurePath: true,
     advisoryConfidence: 0,
     minSeverity: 'major',
     maxChunkTokens: 40_000,

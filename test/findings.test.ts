@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { commitUrl, lineUrl, parseRemote } from '../src/git/remote';
+import { renderInlineComment } from '../src/publish/render';
 import { dedupeFindings } from '../src/review/dedupe';
 import { completePath, normalizePath, resolveFindings, toFinding } from '../src/review/findings';
+import { critiqueFindingIdentity, reviewInstructions } from '../src/review/prompts';
+import { requireFailurePath } from '../src/review/validate';
 import type { Finding } from '../src/types';
 import { extractJson } from '../src/util/json';
 
@@ -149,5 +152,35 @@ describe('remote links', () => {
       'https://gitlab.example.com/group/sub/app/-/blob/def/x.ts#L7',
     );
     expect(commitUrl(parseRemote('https://bitbucket.org/a/b'), 'x')).toBeUndefined();
+  });
+});
+
+describe('failure paths', () => {
+  const path = 'empty cart from POST /checkout → total() divides by items.length → NaN is charged';
+
+  it('lowers critical and major findings without a failure path one level', () => {
+    const { findings, lowered } = requireFailurePath([
+      finding({ id: 'a', severity: 'critical' }),
+      finding({ id: 'b', severity: 'major', failurePath: 'too short' }),
+      finding({ id: 'c', severity: 'major', failurePath: path }),
+      finding({ id: 'd', severity: 'minor' }),
+      finding({ id: 'e', severity: 'critical', origin: 'static' }),
+    ]);
+    expect(lowered).toBe(2);
+    expect(findings.map((f) => [f.id, f.severity, f.lowered?.from])).toEqual([
+      ['a', 'major', 'critical'],
+      ['b', 'minor', 'major'],
+      ['c', 'major', undefined],
+      ['d', 'minor', undefined],
+      ['e', 'critical', undefined],
+    ]);
+  });
+
+  it('asks the model for it and shows it to the critic and in comments', () => {
+    expect(reviewInstructions({ mode: 'diff', skills: [], readTools: true })).toContain('"failurePath"');
+    expect(critiqueFindingIdentity(finding({ failurePath: path }))).toMatchObject({ failurePath: path });
+    expect(renderInlineComment(finding({ failurePath: path }), 'a'.repeat(32))).toContain(
+      `**Failure path:** ${path}`,
+    );
   });
 });
