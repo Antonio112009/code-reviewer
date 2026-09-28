@@ -93,7 +93,7 @@ the config files and flags, so explicit settings always win.
 | `skillTokenBudget` | 3500 | 6000 |
 | `maxSteps` | 15 | 25 |
 | `contextShare` | 0.1 | 0.2 |
-| `minConfidence` | 0.7 (the default) | 0.5 |
+| `minConfidence` | 0.7 (the default) | 0.3 |
 
 The depth also affects:
 - **Prompts.** The review instructions (`prompts.ts#depthRules`) narrow the scope to serious production
@@ -102,7 +102,7 @@ The depth also affects:
   and the confidence threshold remove the false positives.
 - **Critique.** At essential depth the critic also rejects real but low-impact findings. At full depth it
   rejects only claims it can refute from the code (misread, already handled, impossible), confirms correct
-  low-impact ones at a lower severity, and the threshold is 0.5. On AACR-Bench ctx30 the stricter critic
+  low-impact ones at a lower severity, and the threshold is 0.3 (below 0.6 only "worth a look"). On AACR-Bench ctx30 the stricter critic
   and threshold had dropped 16 of the 26 findings that matched expert-verified references.
 - **Skills.** `skillsForDepth(skills, depth)` keeps only `tier: essential` skills and swaps in their
   `essentialBody`, i.e. without bullets marked `[full]`. The same view feeds per-chunk selection,

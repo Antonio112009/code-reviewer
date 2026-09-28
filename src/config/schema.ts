@@ -460,7 +460,8 @@ export const DEPTH_PRESETS: Record<ReviewDepth, { review: Partial<ReviewSettings
       skillTokenBudget: 6_000,
       maxSteps: 25,
       contextShare: 0.2,
-      minConfidence: 0.5,
+      // What the critic did not reject is kept from 0.3; below advisoryConfidence it is only "worth a look".
+      minConfidence: 0.3,
       advisoryConfidence: 0.6,
     },
   },
