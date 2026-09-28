@@ -20,13 +20,13 @@
   "type": "module",
   "license": "MIT",
   "author": "antonio112009",
-  "homepage": "https://github.com/antonio112009/code-reviewer#readme",
+  "homepage": "https://github.com/Antonio112009/code-reviewer#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/antonio112009/code-reviewer.git"
+    "url": "git+https://github.com/Antonio112009/code-reviewer.git"
   },
   "bugs": {
-    "url": "https://github.com/antonio112009/code-reviewer/issues"
+    "url": "https://github.com/Antonio112009/code-reviewer/issues"
   },
   "bin": {
     "code-reviewer": "dist/cli.js"

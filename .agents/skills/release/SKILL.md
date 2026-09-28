@@ -72,7 +72,15 @@ yourself.
   ```bash
   git push --delete origin vX.Y.Z && git tag -d vX.Y.Z
   ```
-- **The GitHub release exists but staging on npm failed.** Usually the Trusted Publisher settings on
-  npmjs.com are the cause. Fix them and re-run the failed job with `gh run rerun <run-id> --failed`. Do
-  not re-tag.
+- **The GitHub release exists but staging on npm failed.**
+  - When npmjs.com settings are the cause (the Trusted Publisher), fix them and re-run the failed job
+    with `gh run rerun <run-id> --failed`.
+  - When the fix needs a commit and the version is not on npm (check `npm view
+    @antonio112009/code-reviewer versions`):
+    1. delete the release and its tag with `gh release delete vX.Y.Z --yes --cleanup-tag` and
+       `git tag -d vX.Y.Z`;
+    2. fix the problem on `main`;
+    3. tag again.
+- **Provenance and `repository.url`.** npm's provenance check needs `repository.url` in `package.json`
+  to match the GitHub repository exactly, including case: `git+https://github.com/Antonio112009/code-reviewer.git`.
 - **Never** rewrite a tag whose npm version was already approved. Release a new patch version instead.
