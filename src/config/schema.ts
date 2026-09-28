@@ -339,6 +339,7 @@ export type Config = z.infer<typeof ConfigSchema>;
 
 export const DEFAULT_EXCLUDES = [
   '**/package-lock.json',
+  '**/npm-shrinkwrap.json',
   '**/yarn.lock',
   '**/pnpm-lock.yaml',
   '**/bun.lock',

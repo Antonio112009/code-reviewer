@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.1 — 2026-09-28
+
+- **Installs get the dependencies this release was tested with.** The package ships `npm-shrinkwrap.json`,
+  so `npm install -g @antonio112009/code-reviewer` installs the exact dependency tree that CI tested,
+  not the newest versions within the ranges. Minutes after 0.2.0 was published, a dependency released out
+  of order (`@ai-sdk/amazon-bedrock@5.0.98` required an `@ai-sdk/openai` version that did not exist yet)
+  and broke fresh installs; likewise, a new version of a transitive dependency no longer reaches users
+  before a release of ours. npm applies the shrinkwrap to installs from the registry only, not to the
+  GitHub release tarball installed by URL.
+- `npm-shrinkwrap.json` is left out of reviews by default, like the other lockfiles.
+
 ## 0.2.0 — 2026-09-28
 
 Pull request comments and CI integration, reviews of uncommitted changes with a pre-commit hook, direct

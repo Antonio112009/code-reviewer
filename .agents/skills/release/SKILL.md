@@ -29,7 +29,7 @@ yourself.
    - Minor: new features.
    - If the user did not say which, ask.
 
-3. **Bump** without tagging, so `package.json` and `package-lock.json` stay in sync:
+3. **Bump** without tagging, so `package.json` and `npm-shrinkwrap.json` stay in sync:
    ```bash
    npm version X.Y.Z --no-git-tag-version
    ```
