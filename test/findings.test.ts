@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { commitUrl, lineUrl, parseRemote } from '../src/git/remote';
 import { dedupeFindings } from '../src/review/dedupe';
-import { normalizePath, resolveFindings, toFinding } from '../src/review/findings';
+import { completePath, normalizePath, resolveFindings, toFinding } from '../src/review/findings';
 import type { Finding } from '../src/types';
 import { extractJson } from '../src/util/json';
 
@@ -81,6 +81,32 @@ describe('toFinding', () => {
     );
     expect([f.file, f.startLine, f.endLine]).toEqual(['src/x.ts', 3, 9]);
     expect(normalizePath('./b/src/y.ts', '/repo')).toBe('src/y.ts');
+  });
+
+  it('completes a shortened path when exactly one file under review ends that way', () => {
+    const files = [
+      'src/main/java/com/acme/billing/Batches.java',
+      'src/main/java/com/acme/billing/ReminderJob.java',
+      'src/lib/util.ts',
+      'src/app/util.ts',
+    ];
+    const at = (file: string) =>
+      toFinding(
+        { ...base, file, startLine: 15, endLine: 15, title: 'subList end not clamped' },
+        {
+          root: '/repo',
+          chunkId: 'c001',
+          provider: 'mock',
+          skills: [],
+          files,
+        },
+      ).file;
+    expect(at('Batches.java')).toBe('src/main/java/com/acme/billing/Batches.java');
+    expect(at('billing/Batches.java')).toBe('src/main/java/com/acme/billing/Batches.java');
+    expect(at('util.ts')).toBe('util.ts'); // ambiguous: left for validation to reject
+    expect(at('app/util.ts')).toBe('src/app/util.ts');
+    expect(at('atches.java')).toBe('atches.java'); // whole path segments only
+    expect(completePath('src/lib/util.ts', files)).toBe('src/lib/util.ts');
   });
 });
 

@@ -6,7 +6,7 @@ import type { ModelListing, ModelRef, ModelTier } from './types';
 export const MODEL_TIERS: readonly ModelTier[] = ['frontier', 'balanced', 'fast'];
 
 /** Catalog families: one per provider type / ACP preset that has a model catalog. */
-export type CatalogKey = 'bedrock' | 'claude' | 'codex' | 'copilot' | 'gemini' | 'mock';
+export type CatalogKey = 'bedrock' | 'anthropic' | 'claude' | 'codex' | 'copilot' | 'gemini' | 'mock';
 
 export interface CatalogModel {
   /** Id as passed to the provider (Bedrock inference profile id, ACP model option value, CLI `--model`). */
@@ -81,7 +81,13 @@ export const MODEL_CATALOG: Record<CatalogKey, CatalogModel[]> = {
   // Values offered by the Claude Code ACP adapter 0.81 (observed 2026-09-27): the aliases track the newest
   // model of each family (`opus` = Opus 5.5, `sonnet` = Sonnet 5, `haiku` = Haiku 4.5).
   claude: [
-    { id: 'opus', tier: 'frontier', label: 'Opus (newest; Claude Code alias)' },
+    {
+      id: 'opus',
+      tier: 'frontier',
+      label: 'Opus (newest; Claude Code alias)',
+      contextWindow: M,
+      maxOutputTokens: 128_000,
+    },
     {
       id: 'claude-opus-5-5',
       tier: 'frontier',
@@ -127,7 +133,13 @@ export const MODEL_CATALOG: Record<CatalogKey, CatalogModel[]> = {
       maxOutputTokens: 128_000,
       refusalProne: true,
     },
-    { id: 'sonnet', tier: 'balanced', label: 'Sonnet (newest; Claude Code alias)' },
+    {
+      id: 'sonnet',
+      tier: 'balanced',
+      label: 'Sonnet (newest; Claude Code alias)',
+      contextWindow: M,
+      maxOutputTokens: 128_000,
+    },
     {
       id: 'claude-sonnet-5',
       tier: 'balanced',
@@ -171,6 +183,31 @@ export const MODEL_CATALOG: Record<CatalogKey, CatalogModel[]> = {
     { id: 'pro', tier: 'frontier', label: 'Gemini Pro (CLI alias)', unverified: true },
     { id: 'flash', tier: 'balanced', label: 'Gemini Flash (CLI alias)', unverified: true },
     { id: 'flash-lite', tier: 'fast', label: 'Gemini Flash-Lite (CLI alias)', unverified: true },
+  ],
+  // Anthropic API model ids (the API has no alias for "newest").
+  anthropic: [
+    {
+      id: 'claude-opus-5-5',
+      tier: 'frontier',
+      label: 'Claude Opus 5.5',
+      contextWindow: M,
+      maxOutputTokens: 128_000,
+    },
+    {
+      id: 'claude-sonnet-5',
+      tier: 'balanced',
+      label: 'Claude Sonnet 5',
+      contextWindow: M,
+      maxOutputTokens: 128_000,
+    },
+    {
+      id: 'claude-haiku-4-5-20251001',
+      tier: 'fast',
+      label: 'Claude Haiku 4.5',
+      aliases: ['claude-haiku-4-5'],
+      contextWindow: 200_000,
+      maxOutputTokens: 64_000,
+    },
   ],
   mock: [],
 };
@@ -344,9 +381,9 @@ export interface AlternativesOptions {
   includeUnconfined?: boolean;
 }
 
-/** `api` for Bedrock, `acp` for agents, `mock` for the offline provider. */
+/** `api` for direct APIs (Bedrock, Anthropic), `acp` for agents, `mock` for the offline provider. */
 export function providerKind(cfg: ProviderConfig): 'api' | 'acp' | 'mock' {
-  return cfg.type === 'bedrock' ? 'api' : cfg.type;
+  return cfg.type === 'bedrock' || cfg.type === 'anthropic' ? 'api' : cfg.type;
 }
 
 function candidatesOf(p: ProviderInfo): Array<{ model: string; tier: ModelTier; entry?: CatalogModel }> {

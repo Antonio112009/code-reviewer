@@ -205,6 +205,7 @@ export function chunkLine(f: FinishedChunk, state: ReviewState, theme: Theme, o:
       dur,
       findings,
       via,
+      r.cached ? c.cyan(r.cached === 'all' ? 'cached' : 'partly cached') : '',
       r.skills.length ? c.dim(`skills: ${r.skills.map(clean).join(', ')}`) : '',
       tools ? c.dim(`tools: ${tools}`) : '',
     ],

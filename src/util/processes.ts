@@ -119,11 +119,15 @@ export class ProcessRegistry {
   }
 }
 
-/** Polls until process group `pgid` is empty or `timeoutMs` elapsed. */
+/**
+ * Polls until process group `pgid` is empty or `timeoutMs` elapsed. The timer keeps the process alive
+ * (for at most `timeoutMs`): when an orphaned group is all that is left, an unreferenced timer would let
+ * Node exit in the middle of this wait (code 13, unsettled top-level await) and never kill the group.
+ */
 async function waitGroupGone(pgid: number, timeoutMs: number): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (groupAlive(pgid) && Date.now() < deadline) {
-    await new Promise<void>((resolve) => setTimeout(resolve, 50).unref());
+    await new Promise<void>((resolve) => setTimeout(resolve, 50));
   }
 }
 

@@ -1,0 +1,120 @@
+title: Stock reservation with an async forEach inside a transaction
+tags: [typescript, knex, concurrency, data-loss]
+base:
+  package.json: |
+    {
+      "name": "order-sync",
+      "private": true,
+      "dependencies": { "knex": "^3.1.0", "pg": "^8.13.1" },
+      "devDependencies": { "typescript": "^5.7.2" }
+    }
+  src/db.ts: |
+    import knex from 'knex';
+
+    export const db = knex({
+      client: 'pg',
+      connection: process.env.DATABASE_URL,
+      pool: { min: 1, max: 10 },
+    });
+  src/orders/import.ts: |
+    import type { Knex } from 'knex';
+    import { db } from '../db';
+
+    export interface ImportedLine {
+      sku: string;
+      quantity: number;
+      unitPriceCents: number;
+    }
+
+    export interface ImportedOrder {
+      externalId: string;
+      customerId: string;
+      lines: ImportedLine[];
+    }
+
+    async function productIdsBySku(trx: Knex.Transaction, skus: string[]): Promise<Map<string, number>> {
+      const rows: Array<{ id: number; sku: string }> = await trx('products').whereIn('sku', skus).select('id', 'sku');
+      return new Map(rows.map((r) => [r.sku, r.id]));
+    }
+
+    export async function importOrder(order: ImportedOrder): Promise<number> {
+      return db.transaction(async (trx) => {
+        const productIds = await productIdsBySku(trx, order.lines.map((l) => l.sku));
+        const missing = order.lines.filter((l) => !productIds.has(l.sku)).map((l) => l.sku);
+        if (missing.length > 0) throw new Error(`Unknown SKU(s): ${missing.join(', ')}`);
+
+        const [{ id: orderId }] = await trx('orders')
+          .insert({ external_id: order.externalId, customer_id: order.customerId, status: 'imported' })
+          .returning('id');
+        await trx('order_lines').insert(
+          order.lines.map((line) => ({
+            order_id: orderId,
+            product_id: productIds.get(line.sku),
+            quantity: line.quantity,
+            unit_price_cents: line.unitPriceCents,
+          })),
+        );
+        return orderId;
+      });
+    }
+head:
+  src/orders/import.ts: |
+    import type { Knex } from 'knex';
+    import { db } from '../db';
+
+    export interface ImportedLine {
+      sku: string;
+      quantity: number;
+      unitPriceCents: number;
+    }
+
+    export interface ImportedOrder {
+      externalId: string;
+      customerId: string;
+      lines: ImportedLine[];
+    }
+
+    export class OutOfStockError extends Error {
+      constructor(readonly sku: string) {
+        super(`Not enough stock for ${sku}`);
+      }
+    }
+
+    async function productIdsBySku(trx: Knex.Transaction, skus: string[]): Promise<Map<string, number>> {
+      const rows: Array<{ id: number; sku: string }> = await trx('products').whereIn('sku', skus).select('id', 'sku');
+      return new Map(rows.map((r) => [r.sku, r.id]));
+    }
+
+    export async function importOrder(order: ImportedOrder): Promise<number> {
+      return db.transaction(async (trx) => {
+        const productIds = await productIdsBySku(trx, order.lines.map((l) => l.sku));
+        const missing = order.lines.filter((l) => !productIds.has(l.sku)).map((l) => l.sku);
+        if (missing.length > 0) throw new Error(`Unknown SKU(s): ${missing.join(', ')}`);
+
+        order.lines.forEach(async (line) => {
+          const reserved = await trx('stock')
+            .where({ product_id: productIds.get(line.sku) })
+            .andWhere('available', '>=', line.quantity)
+            .decrement('available', line.quantity);
+          if (reserved === 0) throw new OutOfStockError(line.sku);
+        });
+
+        const [{ id: orderId }] = await trx('orders')
+          .insert({ external_id: order.externalId, customer_id: order.customerId, status: 'reserved' })
+          .returning('id');
+        await trx('order_lines').insert(
+          order.lines.map((line) => ({
+            order_id: orderId,
+            product_id: productIds.get(line.sku),
+            quantity: line.quantity,
+            unit_price_cents: line.unitPriceCents,
+          })),
+        );
+        return orderId;
+      });
+    }
+expect:
+  - file: src/orders/import.ts
+    lines: [33, 39]
+    severity: major
+    note: forEach(async) is not awaited; out-of-stock errors never roll back the transaction (unhandled rejections) and decrements can run after commit

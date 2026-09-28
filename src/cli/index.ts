@@ -3,7 +3,9 @@ import { runMcpServe } from '../tools/mcp-server';
 import { distrustDirectory } from '../util/executables';
 import { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
+import { registerCacheCommands } from './commands/cache';
 import { registerConfigCommands } from './commands/config';
+import { registerEvalCommand } from './commands/eval';
 import { registerInitCommand } from './commands/init';
 import { registerProviderCommands } from './commands/providers';
 import { registerReviewCommands } from './commands/review';
@@ -15,8 +17,8 @@ export function buildProgram(): Command {
   const program = new Command()
     .name('code-reviewer')
     .description('LLM code review for diffs and files — Bedrock, Claude Code, Codex, Copilot, Gemini')
-    .version(packageVersion())
-    .option('-v, --verbose', 'debug logging')
+    .version(packageVersion(), '-v, --version', 'print the version')
+    .option('--verbose', 'debug logging (every run also keeps it in its run.log)')
     .option('-q, --quiet', 'only errors')
     .option('-p, --profile <name>', 'config profile to apply')
     .option('-C, --cwd <dir>', 'run as if started in <dir>')
@@ -29,6 +31,8 @@ export function buildProgram(): Command {
   registerProviderCommands(program);
   registerConfigCommands(program);
   registerSkillCommands(program);
+  registerEvalCommand(program);
+  registerCacheCommands(program);
 
   // Internal: MCP server spawned by ACP agents to expose our tools; not for direct use.
   program
@@ -87,7 +91,7 @@ export async function main(argv: string[]): Promise<void> {
       process.exitCode = err.exitCode === 0 ? EXIT.ok : EXIT.error;
       return;
     }
-    const verbose = argv.includes('-v') || argv.includes('--verbose');
+    const verbose = argv.includes('--verbose');
     const logger = new Logger('info');
     logger.error((err as Error).message);
     if (verbose && (err as Error).stack) logger.debug((err as Error).stack!);

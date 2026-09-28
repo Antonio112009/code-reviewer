@@ -148,7 +148,7 @@ export class ReviewState {
         if (e.tool) {
           c.lastTool = e.tool;
           c.tools[e.tool] = (c.tools[e.tool] ?? 0) + 1;
-        }
+        } else if (e.note) c.lastTool = e.note;
         break;
       }
       case 'chunk-done': {

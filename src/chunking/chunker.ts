@@ -259,6 +259,45 @@ function addContext(
   }
 }
 
+/**
+ * Splits a chunk that was too big to review in one go into two halves of about equal size (ids `<id>.1`,
+ * `<id>.2`), keeping the parts of one file together when possible. Read-only context is left out to keep
+ * the halves small. Undefined when the chunk reviews a single part.
+ */
+export function splitChunk(chunk: Chunk): [Chunk, Chunk] | undefined {
+  const parts = chunk.parts.filter((p) => (p.role ?? 'review') === 'review');
+  if (parts.length < 2) return undefined;
+  const total = parts.reduce((s, p) => s + p.tokens, 0);
+  // Cut at the file boundary closest to the middle; within a file only when the chunk is a single file.
+  let best = -1;
+  let bestGap = Number.POSITIVE_INFINITY;
+  let acc = 0;
+  for (let i = 0; i < parts.length - 1; i++) {
+    acc += parts[i]!.tokens;
+    const fileBoundary = parts[i]!.path !== parts[i + 1]!.path;
+    const gap = Math.abs(total / 2 - acc) + (fileBoundary ? 0 : total);
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = i;
+    }
+  }
+  const half = (list: ChunkPart[], n: number, mentions: string[]): Chunk => {
+    const files = [...new Set(list.map((p) => p.path))];
+    return {
+      id: `${chunk.id}.${n}`,
+      index: chunk.index,
+      parts: list,
+      tokens: list.reduce((s, p) => s + p.tokens, 0),
+      files,
+      contextFiles: [],
+      languages: [...new Set(list.map((p) => p.language))],
+      mentions,
+      ...(chunk.groupReasons ? { groupReasons: chunk.groupReasons } : {}),
+    };
+  };
+  return [half(parts.slice(0, best + 1), 1, chunk.mentions), half(parts.slice(best + 1), 2, [])];
+}
+
 /** Chunk ids in execution order: largest first (shortens wall-clock time under a concurrency limit). */
 export function scheduleOrder(chunks: readonly Chunk[]): string[] {
   return [...chunks].sort((a, b) => b.tokens - a.tokens || cmp(a.id, b.id)).map((c) => c.id);

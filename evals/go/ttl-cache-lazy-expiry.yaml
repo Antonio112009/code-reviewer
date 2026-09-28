@@ -1,0 +1,147 @@
+title: Expired entries deleted from the map under a read lock
+tags: [go, concurrency]
+base:
+  go.mod: |
+    module example.com/catalog
+
+    go 1.23
+  internal/cache/ttl.go: |
+    package cache
+
+    import (
+    	"context"
+    	"sync"
+    	"time"
+    )
+
+    type entry struct {
+    	value     []byte
+    	expiresAt time.Time
+    }
+
+    // TTLCache is an in-memory cache shared by all request handlers.
+    type TTLCache struct {
+    	mu    sync.RWMutex
+    	items map[string]entry
+    	ttl   time.Duration
+    	now   func() time.Time
+    }
+
+    func New(ttl time.Duration) *TTLCache {
+    	return &TTLCache{items: make(map[string]entry), ttl: ttl, now: time.Now}
+    }
+
+    func (c *TTLCache) Set(key string, value []byte) {
+    	c.mu.Lock()
+    	defer c.mu.Unlock()
+    	c.items[key] = entry{value: value, expiresAt: c.now().Add(c.ttl)}
+    }
+
+    func (c *TTLCache) Get(key string) ([]byte, bool) {
+    	c.mu.RLock()
+    	defer c.mu.RUnlock()
+    	e, ok := c.items[key]
+    	if !ok || c.now().After(e.expiresAt) {
+    		return nil, false
+    	}
+    	return e.value, true
+    }
+
+    // Janitor removes expired entries every interval until ctx is done.
+    func (c *TTLCache) Janitor(ctx context.Context, interval time.Duration) {
+    	ticker := time.NewTicker(interval)
+    	defer ticker.Stop()
+    	for {
+    		select {
+    		case <-ctx.Done():
+    			return
+    		case <-ticker.C:
+    			c.mu.Lock()
+    			now := c.now()
+    			for k, e := range c.items {
+    				if now.After(e.expiresAt) {
+    					delete(c.items, k)
+    				}
+    			}
+    			c.mu.Unlock()
+    		}
+    	}
+    }
+head:
+  internal/cache/ttl.go: |
+    package cache
+
+    import (
+    	"context"
+    	"sync"
+    	"time"
+    )
+
+    type entry struct {
+    	value     []byte
+    	expiresAt time.Time
+    }
+
+    // TTLCache is an in-memory cache shared by all request handlers.
+    type TTLCache struct {
+    	mu    sync.RWMutex
+    	items map[string]entry
+    	ttl   time.Duration
+    	now   func() time.Time
+    }
+
+    func New(ttl time.Duration) *TTLCache {
+    	return &TTLCache{items: make(map[string]entry), ttl: ttl, now: time.Now}
+    }
+
+    func (c *TTLCache) Set(key string, value []byte) {
+    	c.mu.Lock()
+    	defer c.mu.Unlock()
+    	c.items[key] = entry{value: value, expiresAt: c.now().Add(c.ttl)}
+    }
+
+    func (c *TTLCache) Get(key string) ([]byte, bool) {
+    	c.mu.RLock()
+    	defer c.mu.RUnlock()
+    	e, ok := c.items[key]
+    	if !ok {
+    		return nil, false
+    	}
+    	if c.now().After(e.expiresAt) {
+    		delete(c.items, key)
+    		return nil, false
+    	}
+    	return e.value, true
+    }
+
+    func (c *TTLCache) Len() int {
+    	c.mu.RLock()
+    	defer c.mu.RUnlock()
+    	return len(c.items)
+    }
+
+    // Janitor removes expired entries every interval until ctx is done.
+    func (c *TTLCache) Janitor(ctx context.Context, interval time.Duration) {
+    	ticker := time.NewTicker(interval)
+    	defer ticker.Stop()
+    	for {
+    		select {
+    		case <-ctx.Done():
+    			return
+    		case <-ticker.C:
+    			c.mu.Lock()
+    			now := c.now()
+    			for k, e := range c.items {
+    				if now.After(e.expiresAt) {
+    					delete(c.items, k)
+    				}
+    			}
+    			c.mu.Unlock()
+    		}
+    	}
+    }
+expect:
+  - file: internal/cache/ttl.go
+    lines: [33, 41]
+    severity: major
+    note: delete on the shared map while holding only RLock; concurrent readers write the map at once (fatal "concurrent map writes")

@@ -15,25 +15,49 @@ function sanitizeLogText(msg: string): string {
   return stripUnsafeChars(String(msg)).replace(/\r/g, '');
 }
 
+/** Receives every message, whatever the console level (e.g. a run's log file). */
+export type LogTap = (level: Exclude<LogLevel, 'silent'>, message: string) => void;
+
 /**
  * Minimal stderr logger — stdout is reserved for machine-readable output. While a live terminal UI is
  * active, `setSink` routes lines through it so log output does not corrupt the redrawn area.
  */
 export class Logger {
   private sink?: (line: string) => void;
+  private readonly taps = new Set<LogTap>();
 
-  constructor(public level: LogLevel = 'info') {}
+  constructor(
+    public level: LogLevel = 'info',
+    /** A child logger prints through its parent (sink and level included) and has taps of its own. */
+    private readonly parent?: Logger,
+  ) {}
+
+  /** A logger for one run: same output, plus taps that only see this run's messages. */
+  child(): Logger {
+    return new Logger(this.level, this);
+  }
+
+  /** Adds a tap for every message from now on; returns the function that removes it. */
+  tap(fn: LogTap): () => void {
+    this.taps.add(fn);
+    return () => this.taps.delete(fn);
+  }
 
   /** Route output through `sink` (e.g. the live UI); `undefined` restores direct stderr writes. */
   setSink(sink: ((line: string) => void) | undefined): void {
-    this.sink = sink;
+    if (this.parent) this.parent.setSink(sink);
+    else this.sink = sink;
   }
 
   private enabled(level: LogLevel): boolean {
-    return ORDER[level] <= ORDER[this.level];
+    return ORDER[level] <= ORDER[this.parent?.level ?? this.level];
   }
 
   private write(line: string): void {
+    if (this.parent) {
+      this.parent.write(line);
+      return;
+    }
     if (this.sink) this.sink(line);
     else {
       try {
@@ -44,27 +68,45 @@ export class Logger {
     }
   }
 
+  /** Taps (this logger's and its parents') get the plain message, whatever is printed. */
+  private notify(level: Exclude<LogLevel, 'silent'>, msg: string): void {
+    for (const tap of this.taps) {
+      try {
+        tap(level, msg);
+      } catch {
+        // a failing tap must not break logging
+      }
+    }
+    this.parent?.notify(level, msg);
+  }
+
+  private log(level: Exclude<LogLevel, 'silent'>, msg: string, format: (text: string) => string): void {
+    const text = sanitizeLogText(msg);
+    this.notify(level, text);
+    if (this.enabled(level)) this.write(format(text));
+  }
+
   error(msg: string): void {
-    if (this.enabled('error')) this.write(`${pc.red('✖')} ${sanitizeLogText(msg)}`);
+    this.log('error', msg, (t) => `${pc.red('✖')} ${t}`);
   }
   warn(msg: string): void {
-    if (this.enabled('warn')) this.write(`${pc.yellow('!')} ${sanitizeLogText(msg)}`);
+    this.log('warn', msg, (t) => `${pc.yellow('!')} ${t}`);
   }
   info(msg: string): void {
-    if (this.enabled('info')) this.write(sanitizeLogText(msg));
+    this.log('info', msg, (t) => t);
   }
   /** Secondary information (hints, where something was saved), dimmed. */
   note(msg: string): void {
-    if (this.enabled('info')) this.write(pc.dim(sanitizeLogText(msg)));
+    this.log('info', msg, (t) => pc.dim(t));
   }
   step(msg: string): void {
-    if (this.enabled('info')) this.write(`${pc.cyan('›')} ${sanitizeLogText(msg)}`);
+    this.log('info', msg, (t) => `${pc.cyan('›')} ${t}`);
   }
   success(msg: string): void {
-    if (this.enabled('info')) this.write(`${pc.green('✔')} ${sanitizeLogText(msg)}`);
+    this.log('info', msg, (t) => `${pc.green('✔')} ${t}`);
   }
   debug(msg: string): void {
-    if (this.enabled('debug')) this.write(pc.dim(`[debug] ${sanitizeLogText(msg)}`));
+    this.log('debug', msg, (t) => pc.dim(`[debug] ${t}`));
   }
 }
 

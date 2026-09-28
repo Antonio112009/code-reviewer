@@ -3,6 +3,7 @@ import type {
   AnalyzerRun,
   Chunk,
   ChunkRecord,
+  Money,
   RefsInfo,
   Role,
   RoleRouting,
@@ -59,6 +60,11 @@ export interface ReviewPlan {
   analyzers?: AnalyzerRun[];
   /** Skill ids used by at least one chunk. */
   skills: string[];
+  /**
+   * Lower bound for the review prompts (code, instructions, skills, hints; no tool results, retries or
+   * critique), and their input cost when a price is configured for the review model.
+   */
+  estimate?: { inputTokens: number; cost?: Money };
 }
 
 export type ReviewEvent =
@@ -70,8 +76,8 @@ export type ReviewEvent =
   | { type: 'analyzers'; runs: AnalyzerRun[]; hits: number }
   | { type: 'plan'; plan: ReviewPlan }
   | { type: 'chunk-start'; chunk: Chunk; record: ChunkRecord }
-  /** Live activity inside a running chunk (a tool call, a streamed message). */
-  | { type: 'chunk-activity'; chunkId: string; tool?: string }
+  /** Live activity inside a running chunk (a tool call, a streamed message, a recovery step). */
+  | { type: 'chunk-activity'; chunkId: string; tool?: string; note?: string }
   | { type: 'chunk-done'; chunk: Chunk; record: ChunkRecord }
   | { type: 'critique-start'; findings: number; batches: number }
   | { type: 'critique-progress'; batch: number; total: number }

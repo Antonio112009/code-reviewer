@@ -1,0 +1,186 @@
+name: Code Reviewer
+description: LLM code review of pull requests with code-reviewer — inline comments, a summary comment and SARIF for code scanning.
+author: antonio112009
+branding:
+  icon: check-circle
+  color: purple
+
+# Usage and required permissions: docs/ci.md. Check out the repository at the workspace root, with the
+# pull request head and full history:
+#   - uses: actions/checkout@<sha>
+#     with: { ref: "${{ github.event.pull_request.head.sha }}", fetch-depth: 0, persist-credentials: false }
+
+inputs:
+  provider:
+    description: Provider for the review (claude, codex, copilot, gemini, bedrock). Empty = the configured default.
+    required: false
+    default: ''
+  model:
+    description: Model for the review role (e.g. sonnet, or a Bedrock model id). Empty = the provider default.
+    required: false
+    default: ''
+  depth:
+    description: essential (serious production issues only, fewer tokens) or full (every real defect).
+    required: false
+    default: essential
+  fail-on:
+    description: Fail the job when a finding of this severity or worse remains (critical, major, minor, info), or when part of the change was not reviewed. Empty = never fail on findings.
+    required: false
+    default: ''
+  post:
+    description: 'Post inline comments and a summary comment to the pull request (needs `pull-requests: write`).'
+    required: false
+    default: 'true'
+  sarif:
+    description: 'Upload the findings to GitHub code scanning (needs `security-events: write`).'
+    required: false
+    default: 'true'
+  version:
+    description: code-reviewer release to install, e.g. v0.2.0, or "latest".
+    required: false
+    default: latest
+  tarball-url:
+    description: Install code-reviewer from this tarball URL instead of a release (overrides `version`).
+    required: false
+    default: ''
+  args:
+    description: Extra arguments for `code-reviewer review`, split on whitespace (e.g. "--full --min-confidence 0.8").
+    required: false
+    default: ''
+  output-dir:
+    description: Directory (relative to the workspace) the reports are copied to.
+    required: false
+    default: code-reviewer-reports
+  github-token:
+    description: Token used to post the comments (only the posting step receives it).
+    required: false
+    default: ${{ github.token }}
+  node-version:
+    description: Node.js version for code-reviewer (24 or newer).
+    required: false
+    default: '24'
+
+outputs:
+  exit-code:
+    description: Exit code of `code-reviewer review` (0 ok, 1 findings at or above fail-on, 2 error).
+    value: ${{ steps.review.outputs.exit-code }}
+  report-dir:
+    description: Directory holding report.md, report.json and report.sarif.
+    value: ${{ inputs.output-dir }}
+  sarif-file:
+    description: The SARIF report, when one was written.
+    value: ${{ steps.review.outputs.sarif-file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install code-reviewer
+      shell: bash
+      env:
+        CR_VERSION: ${{ inputs.version }}
+        CR_TARBALL_URL: ${{ inputs.tarball-url }}
+      run: |
+        set -eo pipefail
+        if [ -n "$CR_TARBALL_URL" ]; then
+          url="$CR_TARBALL_URL"
+        elif [ "$CR_VERSION" = "latest" ]; then
+          url="https://github.com/antonio112009/code-reviewer/releases/latest/download/code-reviewer.tgz"
+        else
+          case "$CR_VERSION" in v*) tag="$CR_VERSION" ;; *) tag="v$CR_VERSION" ;; esac
+          url="https://github.com/antonio112009/code-reviewer/releases/download/${tag}/code-reviewer.tgz"
+        fi
+        npm install --global --no-audit --no-fund "$url"
+        code-reviewer --version
+
+    # The review step gets no forge token: the agents that read the (untrusted) pull request never see it.
+    # Posting is a separate step (`runs publish`, the same as `review --post`).
+    - name: Review
+      id: review
+      shell: bash
+      env:
+        CR_PROVIDER: ${{ inputs.provider }}
+        CR_MODEL: ${{ inputs.model }}
+        CR_DEPTH: ${{ inputs.depth }}
+        CR_FAIL_ON: ${{ inputs.fail-on }}
+        CR_SARIF: ${{ inputs.sarif }}
+        CR_ARGS: ${{ inputs.args }}
+        CR_OUT: ${{ inputs.output-dir }}
+        CR_PR_NUMBER: ${{ github.event.pull_request.number }}
+        CR_PR_HEAD: ${{ github.event.pull_request.head.sha }}
+      run: |
+        set -o pipefail
+        formats="md,json"
+        if [ "$CR_SARIF" = "true" ]; then formats="$formats,sarif"; fi
+        args=(review --plain --yes --format "$formats" --out "$CR_OUT" --depth "$CR_DEPTH")
+        if [ -n "$CR_PROVIDER" ]; then args+=(--provider "$CR_PROVIDER"); fi
+        if [ -n "$CR_MODEL" ]; then args+=(--model "$CR_MODEL"); fi
+        if [ -n "$CR_FAIL_ON" ]; then args+=(--fail-on "$CR_FAIL_ON"); fi
+        # Review the pull request head (what the inline comments point at), not the merge commit
+        # actions/checkout creates by default, whenever that commit is available locally.
+        reviewed_head=""
+        if [ -n "$CR_PR_HEAD" ] && git cat-file -e "${CR_PR_HEAD}^{commit}" 2>/dev/null; then
+          args+=(--head "$CR_PR_HEAD")
+          reviewed_head="$CR_PR_HEAD"
+        fi
+        # Extra arguments are split on whitespace, never evaluated by the shell.
+        read -r -a extra <<< "$CR_ARGS"
+        code=0
+        code-reviewer "${args[@]}" "${extra[@]}" || code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        if [ -f "$CR_OUT/report.json" ]; then echo "saved=true" >> "$GITHUB_OUTPUT"; fi
+        if [ -f "$CR_OUT/report.sarif" ]; then
+          echo "sarif-file=$CR_OUT/report.sarif" >> "$GITHUB_OUTPUT"
+          # SARIF lines refer to the reviewed commit: upload it for the pull request head when that was reviewed.
+          if [ -n "$reviewed_head" ] && [ -n "$CR_PR_NUMBER" ]; then
+            echo "sarif-ref=refs/pull/$CR_PR_NUMBER/head" >> "$GITHUB_OUTPUT"
+            echo "sarif-sha=$reviewed_head" >> "$GITHUB_OUTPUT"
+          fi
+        fi
+
+    - name: Post to the pull request
+      id: post
+      if: ${{ inputs.post == 'true' && steps.review.outputs.saved == 'true' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        code=0
+        code-reviewer runs publish latest || code=$?
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+
+    - name: Upload SARIF to code scanning
+      if: ${{ inputs.sarif == 'true' && steps.review.outputs.sarif-file != '' }}
+      uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+      with:
+        sarif_file: ${{ steps.review.outputs.sarif-file }}
+        category: code-reviewer
+        ref: ${{ steps.review.outputs.sarif-ref }}
+        sha: ${{ steps.review.outputs.sarif-sha }}
+
+    - name: Upload the reports
+      if: ${{ always() }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: code-reviewer-reports
+        path: ${{ inputs.output-dir }}
+        if-no-files-found: ignore
+
+    - name: Result
+      shell: bash
+      env:
+        CR_EXIT: ${{ steps.review.outputs.exit-code }}
+        CR_POST_EXIT: ${{ steps.post.outputs.exit-code }}
+      run: |
+        if [ "${CR_POST_EXIT:-0}" != "0" ]; then
+          echo "::error::Posting the review to the pull request failed (see the step log)."
+          exit 2
+        fi
+        if [ "${CR_EXIT:-2}" != "0" ]; then
+          echo "::error::code-reviewer exited with code ${CR_EXIT:-2} (1 = findings at or above fail-on, 2 = error or unreviewed code)"
+          exit "${CR_EXIT:-2}"
+        fi

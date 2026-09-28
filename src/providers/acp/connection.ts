@@ -6,11 +6,18 @@ import { Readable, Writable } from 'node:stream';
 import * as acp from '@agentclientprotocol/sdk';
 import { MCP_SERVER_NAME } from '../../tools/mcp-server';
 import type { Submission } from '../../tools/submission';
-import type { Usage } from '../../types';
+import type { Money, Usage } from '../../types';
 import { trustedPath } from '../../util/executables';
 import type { Logger } from '../../util/logger';
 import { cliEntryPath, resolveInside } from '../../util/paths';
 import { type ManagedProcess, spawnManaged, terminate } from '../../util/processes';
+import {
+  endedWithoutSubmitting,
+  salvagePrompt,
+  salvageReason,
+  salvageTimeoutMs,
+  submitReminderPrompt,
+} from '../salvage';
 import type { AgentResult, AgentTask } from '../types';
 import { decidePermission } from './permissions';
 import { type AcpPreset, type LaunchSpec, THOUGHT_LEVEL_CANDIDATES } from './presets';
@@ -19,6 +26,52 @@ interface SessionState {
   root: string;
   denied: string[];
   toolCalls: number;
+  /** Files the agent read or searched (root-relative), from tool call locations and fs reads. */
+  reads: Set<string>;
+  /** Tool kind per tool call id: updates may omit it. */
+  toolKinds: Map<string, string>;
+}
+
+/** Agent stderr lines written to the debug log per connection. */
+const MAX_STDERR_LOG_LINES = 200;
+
+/** Tool kinds whose locations are files the agent looked at. */
+const READ_KINDS = new Set(['read', 'search']);
+const MAX_READS = 500;
+
+/** Root-relative posix path of a file inside `root`, or undefined outside it. */
+function relativeInside(root: string, p: string): string | undefined {
+  const rel = path.relative(root, path.resolve(root, p));
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return undefined;
+  return rel.split(path.sep).join('/');
+}
+
+function noteReads(state: SessionState, paths: Array<string | undefined>): void {
+  for (const p of paths) {
+    const rel = p ? relativeInside(state.root, p) : undefined;
+    if (rel && state.reads.size < MAX_READS) state.reads.add(rel);
+  }
+}
+
+/** What the turns of one task have produced so far (a task may take a second, salvage turn). */
+interface TurnState {
+  text: string;
+  toolUsage: Record<string, number>;
+  warnings: string[];
+  /** Prompts sent in this session. */
+  prompts: number;
+  stopReason?: string;
+  /** Last usage the agent reported (cumulative for the session). */
+  usage?: Usage;
+  /** Last cumulative session cost from `usage_update`. */
+  cost?: Money;
+  /** How the latest turn was interrupted by us, if it was. */
+  interruptedBy?: 'timeout' | 'stalled';
+  /** Some turn was cancelled: the agent may be unresponsive, so session/close is skipped. */
+  everInterrupted: boolean;
+  aborted: boolean;
+  /** Unfinished `nextUpdate()` read: rejects on dispose, nobody waits for it then. */
+  pending?: Promise<acp.ActiveSessionMessage>;
 }
 
 export type AgentEndpoint = { kind: 'process'; spec: LaunchSpec } | { kind: 'app'; app: acp.AgentApp };
@@ -53,6 +106,7 @@ export class AcpConnection {
   private proc?: ManagedProcess;
   private closing?: Promise<void>;
   private stderrTail: string[] = [];
+  private stderrLogged = 0;
   private conn!: acp.ClientConnection;
   private init!: acp.InitializeResponse;
   private tmpDir!: string;
@@ -100,6 +154,7 @@ export class AcpConnection {
         const rel = path.isAbsolute(params.path) ? path.relative(root, params.path) : params.path;
         const abs = resolveInside(root, rel);
         let content = readFileSync(abs, 'utf8');
+        noteReads(state, [abs]);
         if (params.line != null || params.limit != null) {
           const lines = content.split('\n');
           const start = Math.max(0, (params.line ?? 1) - 1);
@@ -134,8 +189,14 @@ export class AcpConnection {
         this.proc = proc;
         const child = proc.child;
         child.stderr?.setEncoding('utf8').on('data', (d: string) => {
-          this.stderrTail.push(...d.split('\n').filter(Boolean));
+          const lines = d.split('\n').filter(Boolean);
+          this.stderrTail.push(...lines);
           this.stderrTail = this.stderrTail.slice(-40);
+          // Into the debug log (and the run's run.log), capped: a chatty agent must not flood it.
+          for (const line of lines) {
+            if (this.stderrLogged++ < MAX_STDERR_LOG_LINES)
+              this.logger.debug(`[acp:${this.preset.id} stderr] ${line}`);
+          }
         });
         await new Promise<void>((resolve, reject) => {
           child.once('spawn', () => resolve());
@@ -231,104 +292,70 @@ export class AcpConnection {
     } catch (err) {
       throw new Error(`session/new failed: ${describeError(err)}${this.stderrHint()}`);
     }
-    const state: SessionState = { root: task.root, denied: [], toolCalls: 0 };
+    const state: SessionState = {
+      root: task.root,
+      denied: [],
+      toolCalls: 0,
+      reads: new Set(),
+      toolKinds: new Map(),
+    };
     this.sessions.set(session.sessionId, state);
 
-    let text = '';
-    let stopReason: string | undefined;
-    let usage: Usage | undefined;
-    let pending: Promise<acp.ActiveSessionMessage> | undefined;
-    let interrupted = false;
-    let aborted = false;
-    const toolUsage: Record<string, number> = {};
+    const turn: TurnState = {
+      text: '',
+      toolUsage: {},
+      warnings,
+      prompts: 0,
+      everInterrupted: false,
+      aborted: false,
+    };
+    let salvaged: string | undefined;
+    let interruptedBy: TurnState['interruptedBy'];
     try {
       warnings.push(...(await this.configureSession(session, task)));
-      void session.prompt(`${task.instructions}\n\n---\n\n${task.prompt}`).catch(() => {
-        // failures surface through nextUpdate()/the connection; avoid unhandled rejections
+      await this.runTurn(session, state, turn, task, `${task.instructions}\n\n---\n\n${task.prompt}`, {
+        timeoutMs: task.timeoutMs,
+        stallTimeoutMs: task.stallTimeoutMs,
       });
-
-      let deadline = Date.now() + task.timeoutMs;
-      let lastActivity = Date.now();
-      const stallMs = task.stallTimeoutMs;
-      const cancel = async () => {
-        interrupted = true;
-        await this.conn.agent.notify(acp.methods.agent.session.cancel, { sessionId: session.sessionId });
-      };
-      // Keep the pending read across timeouts: a dropped nextUpdate() would swallow the stop message.
-      let next = session.nextUpdate();
-      pending = next;
-      for (;;) {
-        // Before any interruption, also watch for a stalled agent (no updates at all for `stallMs`).
-        const stallAt = !interrupted && stallMs ? lastActivity + stallMs : Number.POSITIVE_INFINITY;
-        const waitUntil = Math.min(deadline, stallAt);
-        const msg = await withTimeout(
-          next,
-          Math.max(waitUntil - Date.now(), 0),
-          this.conn.closed,
-          aborted ? undefined : task.signal,
-        );
-        if (msg === 'timeout' && !interrupted && stallAt < deadline) {
-          warnings.push(`no activity for ${Math.round(stallMs! / 1000)}s — cancelled as stalled`);
-          deadline = Date.now() + this.timeouts.cancelGraceMs;
-          await cancel();
-          continue;
-        }
-        if (msg === 'aborted') {
-          aborted = true;
-          deadline = Date.now() + this.timeouts.abortGraceMs;
-          if (!interrupted) await cancel();
-          continue;
-        }
-        if (msg === 'timeout') {
-          if (interrupted) {
-            this.broken = true;
-            if (aborted) throw new AbortedError();
-            throw new Error(`agent did not stop after cancellation${this.stderrHint()}`);
-          }
-          warnings.push(`timed out after ${Math.round(task.timeoutMs / 1000)}s — cancelled`);
-          deadline = Date.now() + this.timeouts.cancelGraceMs;
-          await cancel();
-          continue;
-        }
-        if (msg === 'closed') {
-          this.broken = true;
-          throw new Error(`agent connection closed${this.stderrHint()}`);
-        }
-        pending = undefined;
-        if (msg.kind === 'stop') {
-          stopReason = msg.stopReason;
-          const u = msg.response.usage;
-          if (u) {
-            usage = {
-              inputTokens: u.inputTokens,
-              outputTokens: u.outputTokens,
-              reasoningTokens: u.thoughtTokens ?? undefined,
-              cachedInputTokens: u.cachedReadTokens ?? undefined,
-            };
-          }
-          break;
-        }
-        next = session.nextUpdate();
-        pending = next;
-        lastActivity = Date.now();
-        const update = msg.update;
-        if (update.sessionUpdate === 'agent_message_chunk' && update.content.type === 'text') {
-          text += update.content.text;
-        } else if (update.sessionUpdate === 'tool_call') {
-          state.toolCalls++;
-          const name = normalizeToolName(update.title, update.kind);
-          toolUsage[name] = (toolUsage[name] ?? 0) + 1;
-          task.onActivity?.({ kind: 'tool', name });
-          this.logger.debug(`[acp] ${task.label} tool: ${update.title}`);
-        }
+      interruptedBy = turn.interruptedBy;
+      // Out of time, steps or output without submitting: one short extra turn keeps the work done so far.
+      const why = salvageReason(turn.stopReason, turn.interruptedBy);
+      if (why && task.salvage !== false && !turn.aborted && readSubmission(submitFile).calls === 0) {
+        const timeoutMs = salvageTimeoutMs(task.timeoutMs);
+        this.logger.debug(`[acp] ${task.label}: ${why} — asking for an early answer`);
+        await this.runTurn(session, state, turn, task, salvagePrompt(task.kind, why), {
+          timeoutMs,
+          stallTimeoutMs: task.stallTimeoutMs ? Math.min(task.stallTimeoutMs, timeoutMs) : undefined,
+        });
+        // Ended on its own: its answer (submit tool or reply text) is the task's result.
+        if (!turn.interruptedBy && !turn.aborted && !salvageReason(turn.stopReason, undefined)) {
+          salvaged = why;
+          interruptedBy = undefined;
+          warnings.push(`${why}: asked the agent for what it had found so far`);
+        } else interruptedBy = turn.interruptedBy ?? interruptedBy;
+      } else if (
+        task.salvage !== false &&
+        !turn.aborted &&
+        readSubmission(submitFile).calls === 0 &&
+        endedWithoutSubmitting(turn.stopReason, turn.text)
+      ) {
+        // Finished, but handed nothing in: the review is complete, only the submission is missing.
+        const timeoutMs = salvageTimeoutMs(task.timeoutMs);
+        this.logger.debug(`[acp] ${task.label}: ended without submitting — reminding the agent`);
+        await this.runTurn(session, state, turn, task, submitReminderPrompt(task.kind), {
+          timeoutMs,
+          stallTimeoutMs: task.stallTimeoutMs ? Math.min(task.stallTimeoutMs, timeoutMs) : undefined,
+        });
+        warnings.push('the agent ended without submitting its findings: reminded it to submit them');
+        interruptedBy = turn.interruptedBy;
       }
     } finally {
       // an unfinished read rejects on dispose; nobody is waiting for it any more
-      pending?.catch(() => undefined);
+      turn.pending?.catch(() => undefined);
       session.dispose();
       this.sessions.delete(session.sessionId);
       // After a cancel the agent may be unresponsive: do not block on session/close then.
-      if (!interrupted && !this.broken && this.init.agentCapabilities?.sessionCapabilities?.close) {
+      if (!turn.everInterrupted && !this.broken && this.init.agentCapabilities?.sessionCapabilities?.close) {
         await this.request(
           this.conn.agent.request(acp.methods.agent.session.close, { sessionId: session.sessionId }),
           this.timeouts.closeMs,
@@ -336,21 +363,153 @@ export class AcpConnection {
         ).catch(() => undefined);
       }
     }
-    if (aborted) throw new AbortedError();
+    if (turn.aborted) throw new AbortedError();
 
     if (state.denied.length) {
       warnings.push(`denied ${state.denied.length} write/exec request(s): ${state.denied.join('; ')}`);
     }
+    // Agents that report no token counts get `estimated` (filled in from the prompt and reply by runRouted).
+    const usage: Usage = {
+      ...(turn.usage ?? { inputTokens: 0, outputTokens: 0, estimated: true }),
+      requests: turn.prompts,
+      ...(turn.cost ? { reportedCost: turn.cost } : {}),
+    };
+    const submission = readSubmission(submitFile);
+    noteReads(state, submission.reads ?? []);
     return {
-      submission: readSubmission(submitFile),
-      text,
+      submission,
+      ...(state.reads.size ? { reads: [...state.reads] } : {}),
+      text: turn.text,
       usage,
       model: task.model,
-      stopReason,
+      stopReason: turn.stopReason,
+      ...(interruptedBy ? { interruptedBy } : {}),
+      ...(salvaged ? { salvaged } : {}),
       toolCalls: state.toolCalls,
-      toolUsage,
+      toolUsage: turn.toolUsage,
       warnings,
     };
+  }
+
+  /**
+   * Sends one prompt and consumes its updates until the stop message. Our own timeout and stall watchdog
+   * cancel the turn (the agent then ends it with `cancelled`); an abort cancels it and throws afterwards.
+   */
+  private async runTurn(
+    session: acp.ActiveSession,
+    state: SessionState,
+    turn: TurnState,
+    task: AgentTask,
+    prompt: string,
+    limits: { timeoutMs: number; stallTimeoutMs?: number },
+  ): Promise<void> {
+    turn.prompts++;
+    turn.interruptedBy = undefined;
+    turn.stopReason = undefined;
+    let interrupted = false;
+    void session.prompt(prompt).catch(() => {
+      // failures surface through nextUpdate()/the connection; avoid unhandled rejections
+    });
+
+    let deadline = Date.now() + limits.timeoutMs;
+    let lastActivity = Date.now();
+    const stallMs = limits.stallTimeoutMs;
+    const cancel = async () => {
+      interrupted = true;
+      turn.everInterrupted = true;
+      await this.conn.agent.notify(acp.methods.agent.session.cancel, { sessionId: session.sessionId });
+    };
+    // Keep the pending read across timeouts: a dropped nextUpdate() would swallow the stop message.
+    let next = session.nextUpdate();
+    turn.pending = next;
+    for (;;) {
+      // Before any interruption, also watch for a stalled agent (no updates at all for `stallMs`).
+      const stallAt = !interrupted && stallMs ? lastActivity + stallMs : Number.POSITIVE_INFINITY;
+      const waitUntil = Math.min(deadline, stallAt);
+      const msg = await withTimeout(
+        next,
+        Math.max(waitUntil - Date.now(), 0),
+        this.conn.closed,
+        turn.aborted ? undefined : task.signal,
+      );
+      if (msg === 'timeout' && !interrupted && stallAt < deadline) {
+        turn.warnings.push(`no activity for ${Math.round(stallMs! / 1000)}s — cancelled as stalled`);
+        turn.interruptedBy = 'stalled';
+        deadline = Date.now() + this.timeouts.cancelGraceMs;
+        await cancel();
+        continue;
+      }
+      if (msg === 'aborted') {
+        turn.aborted = true;
+        deadline = Date.now() + this.timeouts.abortGraceMs;
+        if (!interrupted) await cancel();
+        continue;
+      }
+      if (msg === 'timeout') {
+        if (interrupted) {
+          this.broken = true;
+          if (turn.aborted) throw new AbortedError();
+          throw new Error(`agent did not stop after cancellation${this.stderrHint()}`);
+        }
+        turn.warnings.push(`timed out after ${Math.round(limits.timeoutMs / 1000)}s — cancelled`);
+        turn.interruptedBy = 'timeout';
+        deadline = Date.now() + this.timeouts.cancelGraceMs;
+        await cancel();
+        continue;
+      }
+      if (msg === 'closed') {
+        this.broken = true;
+        throw new Error(`agent connection closed${this.stderrHint()}`);
+      }
+      turn.pending = undefined;
+      if (msg.kind === 'stop') {
+        turn.stopReason = msg.stopReason;
+        // Usage is cumulative for the session: the last report covers every turn.
+        const u = msg.response.usage;
+        if (u) {
+          turn.usage = {
+            inputTokens: u.inputTokens,
+            outputTokens: u.outputTokens,
+            reasoningTokens: u.thoughtTokens ?? undefined,
+            cachedInputTokens: u.cachedReadTokens ?? undefined,
+            cacheWriteTokens: u.cachedWriteTokens ?? undefined,
+          };
+        }
+        return;
+      }
+      next = session.nextUpdate();
+      turn.pending = next;
+      lastActivity = Date.now();
+      const update = msg.update;
+      if (update.sessionUpdate === 'agent_message_chunk' && update.content.type === 'text') {
+        turn.text += update.content.text;
+      } else if (update.sessionUpdate === 'tool_call') {
+        state.toolCalls++;
+        const name = normalizeToolName(update.title, update.kind);
+        turn.toolUsage[name] = (turn.toolUsage[name] ?? 0) + 1;
+        task.onActivity?.({ kind: 'tool', name });
+        this.logger.debug(`[acp] ${task.label} tool: ${update.title}`);
+        if (update.kind) state.toolKinds.set(update.toolCallId, update.kind);
+        if (update.kind && READ_KINDS.has(update.kind))
+          noteReads(
+            state,
+            (update.locations ?? []).map((l) => l.path),
+          );
+      } else if (update.sessionUpdate === 'tool_call_update') {
+        const kind = update.kind ?? state.toolKinds.get(update.toolCallId);
+        if (kind && READ_KINDS.has(kind))
+          noteReads(
+            state,
+            (update.locations ?? []).map((l) => l.path),
+          );
+      } else if (update.sessionUpdate === 'usage_update' && update.cost) {
+        // Cumulative session cost; agents that bill differently (Copilot) usually send none.
+        const { amount, currency } = update.cost;
+        if (Number.isFinite(amount) && amount >= 0 && /^[A-Z]{3}$/.test(currency)) {
+          turn.cost = { amount, currency };
+        }
+      }
+    }
   }
 
   /**

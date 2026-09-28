@@ -7,7 +7,7 @@ import { hasNestedQuantifier } from '../skills/activation';
 import type { SkillCatalog } from '../skills/catalog';
 import { SKILL_CATEGORIES } from '../skills/loader';
 import { SubmitFindingsSchema, SubmitVerdictsSchema } from '../types';
-import { resolveInside } from '../util/paths';
+import { resolveInside, toPosix } from '../util/paths';
 import type { SubmissionCollector } from './submission';
 
 export interface ToolContext {
@@ -50,6 +50,7 @@ const readFileTool = defineTool({
   async execute({ path: rel, startLine, endLine }, ctx) {
     const abs = resolveInside(ctx.root, rel);
     const lines = (await readFile(abs, 'utf8')).split('\n');
+    ctx.collector?.noteRead(toPosix(path.relative(ctx.root, abs)));
     const start = Math.max(1, startLine ?? 1);
     const end = Math.min(lines.length, endLine ?? start + MAX_READ_LINES - 1, start + MAX_READ_LINES - 1);
     const body = lines
@@ -82,6 +83,7 @@ const grepTool = defineTool({
       const { ok, stdout } = await new GitRepo(ctx.root).tryRun(args);
       if (!ok && !stdout) return 'No matches.';
       const lines = stdout.split('\n').filter(Boolean);
+      noteMatchedFiles(lines.slice(0, limit), ctx);
       return clip(formatMatches(lines, limit));
     }
     // No git: JS regexes backtrack, and both the pattern (model output) and the files are untrusted.
@@ -106,6 +108,7 @@ const grepTool = defineTool({
       });
       if (matches.length > limit) break;
     }
+    noteMatchedFiles(matches.slice(0, limit), ctx);
     const out = formatMatches(matches, limit);
     return clip(
       partial ? `${out}\n(search stopped after ${FALLBACK_BUDGET_MS / 1000}s; narrow the pattern)` : out,
@@ -132,6 +135,14 @@ const POSIX_CLASSES: Record<string, string> = {
 /** Translates POSIX bracket classes ([[:space:]]) used with git grep into JS regex syntax. */
 export function posixToJs(pattern: string): string {
   return pattern.replace(/\[:(\w+):\]/g, (m, name: string) => POSIX_CLASSES[name] ?? m);
+}
+
+/** The files behind `path:line:text` matches the model is shown count as read. */
+function noteMatchedFiles(lines: string[], ctx: ToolContext): void {
+  if (!ctx.collector) return;
+  for (const file of new Set(lines.map((l) => /^(.+?):\d+:/.exec(l)?.[1]).filter(Boolean))) {
+    ctx.collector.noteRead(file!);
+  }
 }
 
 function formatMatches(lines: string[], limit: number): string {

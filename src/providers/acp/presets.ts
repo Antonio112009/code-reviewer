@@ -79,7 +79,10 @@ export const PRESETS: Record<AcpPresetId, AcpPreset> = {
     experimental: false,
     cli: 'claude',
     launch(cfg) {
-      const env: Record<string, string> = {};
+      // Our MCP tools (submit_findings above all) are loaded up front instead of behind Claude Code's
+      // ToolSearch: models that skip the search otherwise end the review without handing anything in, and
+      // every task pays one search turn. A value in the provider's `env` still wins.
+      const env: Record<string, string> = { ENABLE_TOOL_SEARCH: 'false' };
       // Make the adapter drive the user's installed (and logged-in) Claude Code.
       const claude = findExecutable('claude');
       if (claude) env.CLAUDE_CODE_EXECUTABLE = claude;

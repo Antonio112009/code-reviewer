@@ -1,0 +1,146 @@
+title: Search-as-you-type with out-of-order responses and a leaked key listener
+tags: [react, typescript, concurrency, resource-leak]
+base:
+  package.json: |
+    {
+      "name": "storefront-web",
+      "private": true,
+      "dependencies": {
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0"
+      }
+    }
+  src/api/products.ts: |
+    export interface Product {
+      id: string;
+      name: string;
+      priceCents: number;
+    }
+
+    export async function searchProducts(query: string): Promise<Product[]> {
+      const res = await fetch(`/api/products?q=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error(`search failed: ${res.status}`);
+      return (await res.json()).items;
+    }
+  src/components/ProductList.tsx: |
+    import type { Product } from '../api/products';
+
+    const price = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+    export function ProductList({ products }: { products: Product[] }) {
+      if (products.length === 0) return null;
+      return (
+        <ul>
+          {products.map((p) => (
+            <li key={p.id}>
+              {p.name} <span>{price.format(p.priceCents / 100)}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+  src/components/ProductSearch.tsx: |
+    import { type FormEvent, useState } from 'react';
+    import { type Product, searchProducts } from '../api/products';
+    import { ProductList } from './ProductList';
+
+    export function ProductSearch() {
+      const [query, setQuery] = useState('');
+      const [results, setResults] = useState<Product[]>([]);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState<string | null>(null);
+
+      async function onSubmit(e: FormEvent) {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+        try {
+          setResults(await searchProducts(query));
+        } catch {
+          setError('Search failed, please try again.');
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      return (
+        <form role="search" onSubmit={onSubmit}>
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search products" />
+          <button type="submit" disabled={loading}>Search</button>
+          {error && <p role="alert">{error}</p>}
+          <ProductList products={results} />
+        </form>
+      );
+    }
+head:
+  src/hooks/useDebouncedValue.ts: |
+    import { useEffect, useState } from 'react';
+
+    export function useDebouncedValue<T>(value: T, delayMs: number): T {
+      const [debounced, setDebounced] = useState(value);
+      useEffect(() => {
+        const timer = setTimeout(() => setDebounced(value), delayMs);
+        return () => clearTimeout(timer);
+      }, [value, delayMs]);
+      return debounced;
+    }
+  src/components/ProductSearch.tsx: |
+    import { useEffect, useRef, useState } from 'react';
+    import { type Product, searchProducts } from '../api/products';
+    import { useDebouncedValue } from '../hooks/useDebouncedValue';
+    import { ProductList } from './ProductList';
+
+    export function ProductSearch() {
+      const [query, setQuery] = useState('');
+      const debouncedQuery = useDebouncedValue(query.trim(), 250);
+      const [results, setResults] = useState<Product[]>([]);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState<string | null>(null);
+      const inputRef = useRef<HTMLInputElement>(null);
+
+      useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+          if (e.key === '/' && !(e.target instanceof Element && e.target.closest('input, textarea, [contenteditable]'))) {
+            e.preventDefault();
+            inputRef.current?.focus();
+          }
+        };
+        window.addEventListener('keydown', onKeyDown);
+      }, []);
+
+      useEffect(() => {
+        if (!debouncedQuery) {
+          setResults([]);
+          return;
+        }
+        setLoading(true);
+        setError(null);
+        searchProducts(debouncedQuery)
+          .then((items) => setResults(items))
+          .catch(() => setError('Search failed, please try again.'))
+          .finally(() => setLoading(false));
+      }, [debouncedQuery]);
+
+      return (
+        <div role="search">
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search products (press /)"
+            aria-busy={loading}
+          />
+          {error && <p role="alert">{error}</p>}
+          <ProductList products={results} />
+        </div>
+      );
+    }
+expect:
+  - file: src/components/ProductSearch.tsx
+    lines: [14, 22]
+    severity: minor
+    note: the keydown listener is never removed (no cleanup), so every mount leaks a handler that keeps firing
+  - file: src/components/ProductSearch.tsx
+    lines: [24, 35]
+    severity: minor
+    note: responses are applied without ignoring stale requests, so a slow earlier search can overwrite the results of the latest query

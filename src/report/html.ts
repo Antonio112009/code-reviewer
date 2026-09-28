@@ -1,8 +1,11 @@
 import type { RunRecord } from '../types';
 import {
   analyzersSummary,
+  cacheLabel,
   chunkModelLabel,
+  costLabel,
   depthLabel,
+  failureAdvice,
   fallbackLabel,
   formatDuration,
   formatNumber,
@@ -223,7 +226,7 @@ function chunksSection(run: RunRecord): string {
     esc(chunkModelLabel(c) || '—'),
     esc(formatDuration(c.timeoutMs)),
     esc(formatDuration(c.durationMs)),
-    `<span class="st-${esc(c.status)}">${esc(c.status)}</span>${c.error ? `: ${esc(c.error.split('\n')[0]!.slice(0, 200))}` : ''}`,
+    `<span class="st-${esc(c.status)}">${esc(c.status)}</span>${c.cached ? ` (${c.cached === 'all' ? 'cached' : 'partly cached'})` : ''}${c.failure ? ` (${esc(c.failure)})` : ''}${c.error ? `: ${esc(c.error.split('\n')[0]!.slice(0, 200))}` : ''}${(c.recovery ?? []).map((r) => `<br><span class="muted">↻ ${esc(r)}</span>`).join('')}`,
     String(c.findings),
   ]);
   return table(
@@ -249,7 +252,9 @@ function chunksSection(run: RunRecord): string {
 /** Self-contained interactive HTML report (no external resources). */
 export function renderHtml(run: RunRecord): string {
   const sorted = { ...run, findings: sortFindings(run.findings), rejected: sortFindings(run.rejected) };
-  const failed = run.chunks.filter((c) => c.status === 'failed').length;
+  const failedChunks = run.chunks.filter((c) => c.status === 'failed');
+  const failed = failedChunks.length;
+  const cost = costLabel(run);
   const meta: Array<[string, string]> = [
     ['Status', run.status],
     ['Created', run.createdAt],
@@ -259,6 +264,8 @@ export function renderHtml(run: RunRecord): string {
       : []),
     ['Duration', formatDuration(run.durationMs)],
     ['Tokens', tokensLabel(run)],
+    ...(cost ? ([['Cost', cost]] as Array<[string, string]>) : []),
+    ...(cacheLabel(run) ? ([['Cache', cacheLabel(run)!]] as Array<[string, string]>) : []),
     ['Chunks', `${run.chunks.length}${failed ? ` (${failed} failed)` : ''}`],
     ['Depth', depthLabel(run)],
     ['Min confidence', String(run.options.minConfidence)],
@@ -295,6 +302,7 @@ export function renderHtml(run: RunRecord): string {
 <div class="summary">${esc(summaryLine(run))}</div>
 <div class="counts">${countChips}</div>
 ${run.error ? `<p class="st-failed">${esc(run.error)}</p>` : ''}
+${failed ? `<div class="st-failed"><b>Not reviewed:</b> ${failed} of ${run.chunks.length} chunks failed.<ul>${failedChunks.map((c) => `<li><code>${esc(c.id)}</code> (${esc(list(c.files, 4))}): ${esc(failureAdvice(c.failure))}</li>`).join('')}</ul></div>` : ''}
 ${run.summary ? `<p>${esc(run.summary)}</p>` : ''}
 <h2>Findings</h2>
 <div class="controls" id="controls"></div>

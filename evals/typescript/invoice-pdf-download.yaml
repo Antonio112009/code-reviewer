@@ -1,0 +1,145 @@
+title: Invoice PDF endpoint loads the invoice without the account scope
+tags: [typescript, express, security]
+base:
+  package.json: |
+    {
+      "name": "billing-portal",
+      "private": true,
+      "dependencies": { "express": "^4.21.2", "postgres": "^3.4.5" }
+    }
+  src/auth.ts: |
+    import type { NextFunction, Request, Response } from 'express';
+    import { sessions } from './sessions';
+
+    export interface SessionUser {
+      id: number;
+      accountId: number;
+      role: 'owner' | 'member';
+    }
+
+    declare module 'express-serve-static-core' {
+      interface Request {
+        user?: SessionUser;
+      }
+    }
+
+    export async function requireUser(req: Request, res: Response, next: NextFunction) {
+      const user = await sessions.userFor(req.cookies?.sid);
+      if (!user) return res.status(401).json({ error: 'unauthenticated' });
+      req.user = user;
+      next();
+    }
+  src/repositories/invoices.ts: |
+    import { sql } from '../db';
+
+    export interface Invoice {
+      id: number;
+      accountId: number;
+      number: string;
+      totalCents: number;
+      currency: string;
+      issuedAt: Date;
+    }
+
+    export const invoices = {
+      async listForAccount(accountId: number, opts: { limit: number }): Promise<Invoice[]> {
+        return sql<Invoice[]>`SELECT * FROM invoices WHERE account_id = ${accountId} ORDER BY issued_at DESC LIMIT ${opts.limit}`;
+      },
+      async findForAccount(accountId: number, id: number): Promise<Invoice | undefined> {
+        const [row] = await sql<Invoice[]>`SELECT * FROM invoices WHERE account_id = ${accountId} AND id = ${id}`;
+        return row;
+      },
+      /** For back-office jobs (dunning, exports) that work across accounts. */
+      async findById(id: number): Promise<Invoice | undefined> {
+        const [row] = await sql<Invoice[]>`SELECT * FROM invoices WHERE id = ${id}`;
+        return row;
+      },
+    };
+  src/routes/invoices.ts: |
+    import { Router } from 'express';
+    import { requireUser } from '../auth';
+    import { invoices } from '../repositories/invoices';
+
+    export const invoicesRouter = Router();
+
+    invoicesRouter.use(requireUser);
+
+    invoicesRouter.get('/', async (req, res) => {
+      const items = await invoices.listForAccount(req.user!.accountId, { limit: 50 });
+      res.json(items.map(({ id, number, totalCents, currency, issuedAt }) => ({ id, number, totalCents, currency, issuedAt })));
+    });
+
+    invoicesRouter.get('/:id', async (req, res) => {
+      const invoice = await invoices.findForAccount(req.user!.accountId, Number(req.params.id));
+      if (!invoice) return res.status(404).json({ error: 'not_found' });
+      res.json(invoice);
+    });
+head:
+  package.json: |
+    {
+      "name": "billing-portal",
+      "private": true,
+      "dependencies": { "express": "^4.21.2", "pdfkit": "^0.15.1", "postgres": "^3.4.5" }
+    }
+  src/routes/invoices.ts: |
+    import { Router } from 'express';
+    import { requireUser } from '../auth';
+    import { renderInvoicePdf } from '../pdf/invoice';
+    import { invoices } from '../repositories/invoices';
+
+    export const invoicesRouter = Router();
+
+    invoicesRouter.use(requireUser);
+
+    invoicesRouter.get('/', async (req, res) => {
+      const items = await invoices.listForAccount(req.user!.accountId, { limit: 50 });
+      res.json(items.map(({ id, number, totalCents, currency, issuedAt }) => ({ id, number, totalCents, currency, issuedAt })));
+    });
+
+    invoicesRouter.get('/:id', async (req, res) => {
+      const invoice = await invoices.findForAccount(req.user!.accountId, Number(req.params.id));
+      if (!invoice) return res.status(404).json({ error: 'not_found' });
+      res.json(invoice);
+    });
+
+    invoicesRouter.get('/:id/pdf', async (req, res, next) => {
+      try {
+        const id = Number(req.params.id);
+        if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+        const invoice = await invoices.findById(id);
+        if (!invoice) return res.status(404).json({ error: 'not_found' });
+        const pdf = await renderInvoicePdf(invoice);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="invoice-${invoice.number}.pdf"`);
+        res.send(pdf);
+      } catch (err) {
+        next(err);
+      }
+    });
+  src/pdf/invoice.ts: |
+    import PDFDocument from 'pdfkit';
+    import type { Invoice } from '../repositories/invoices';
+
+    function money(cents: number, currency: string): string {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(cents / 100);
+    }
+
+    export function renderInvoicePdf(invoice: Invoice): Promise<Buffer> {
+      return new Promise((resolve, reject) => {
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        const chunks: Buffer[] = [];
+        doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+        doc.fontSize(20).text(`Invoice ${invoice.number}`);
+        doc.moveDown().fontSize(12).text(`Issued: ${invoice.issuedAt.toISOString().slice(0, 10)}`);
+        doc.text(`Total: ${money(invoice.totalCents, invoice.currency)}`);
+        doc.end();
+      });
+    }
+expect:
+  - file: src/routes/invoices.ts
+    lines: 25
+    also: [21]
+    severity: major
+    note: findById is not scoped to req.user.accountId, so any signed-in user can download other accounts' invoices by id (IDOR)

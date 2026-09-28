@@ -1,0 +1,71 @@
+# code-reviewer for GitLab merge requests: a Code Quality report in the merge request widget and, with
+# GITLAB_TOKEN, inline discussions plus a summary note (updated in place on every pipeline).
+# Setup, permissions and providers: https://github.com/antonio112009/code-reviewer/blob/main/docs/ci.md
+#
+# Include it from your .gitlab-ci.yml (pin a tag or commit instead of `main` for reproducible pipelines):
+#
+#   include:
+#     - remote: https://raw.githubusercontent.com/antonio112009/code-reviewer/main/ci/gitlab/code-reviewer.gitlab-ci.yml
+#
+# and set, as masked CI/CD variables:
+#   - the provider's credentials, e.g. ANTHROPIC_API_KEY (Claude Code) or AWS credentials (Bedrock);
+#   - GITLAB_TOKEN: a project or group access token with the `api` scope (Reporter role or higher).
+#     CI_JOB_TOKEN cannot create merge request discussions. Without GITLAB_TOKEN nothing is posted.
+#
+# Override the variables below in your own `code-reviewer:` job, e.g. `variables: { CODE_REVIEWER_PROVIDER: bedrock }`.
+
+code-reviewer:
+  stage: test
+  image: node:24
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    GIT_DEPTH: "0"
+    # A release tag such as v0.2.0, or latest.
+    CODE_REVIEWER_VERSION: latest
+    # claude | codex | copilot | gemini | bedrock (empty: the configured default).
+    CODE_REVIEWER_PROVIDER: ""
+    CODE_REVIEWER_MODEL: ""
+    # essential (serious production issues only) | full (every real defect).
+    CODE_REVIEWER_DEPTH: essential
+    # Fail the job on findings of this severity or worse (critical | major | minor | info); empty: never.
+    CODE_REVIEWER_FAIL_ON: ""
+    # Extra arguments for `code-reviewer review`, split on whitespace.
+    CODE_REVIEWER_ARGS: ""
+    # Extra npm packages to install next to code-reviewer, e.g. "@anthropic-ai/claude-code" for Claude Code.
+    CODE_REVIEWER_EXTRA_PACKAGES: ""
+  script:
+    - |
+      set -f
+      if [ "$CODE_REVIEWER_VERSION" = "latest" ]; then
+        url="https://github.com/antonio112009/code-reviewer/releases/latest/download/code-reviewer.tgz"
+      else
+        url="https://github.com/antonio112009/code-reviewer/releases/download/${CODE_REVIEWER_VERSION}/code-reviewer.tgz"
+      fi
+      npm install --global --no-audit --no-fund "$url" $CODE_REVIEWER_EXTRA_PACKAGES
+      set -- review --plain --yes --format md,json,codequality --out code-reviewer-reports --depth "$CODE_REVIEWER_DEPTH"
+      if [ -n "$CODE_REVIEWER_PROVIDER" ]; then set -- "$@" --provider "$CODE_REVIEWER_PROVIDER"; fi
+      if [ -n "$CODE_REVIEWER_MODEL" ]; then set -- "$@" --model "$CODE_REVIEWER_MODEL"; fi
+      if [ -n "$CODE_REVIEWER_FAIL_ON" ]; then set -- "$@" --fail-on "$CODE_REVIEWER_FAIL_ON"; fi
+      # Merged results pipelines check out a merge commit: review the merge request head instead, so the
+      # inline discussions point at the lines of the merge request.
+      if [ -n "$CI_MERGE_REQUEST_SOURCE_BRANCH_SHA" ] && git cat-file -e "${CI_MERGE_REQUEST_SOURCE_BRANCH_SHA}^{commit}"; then
+        set -- "$@" --head "$CI_MERGE_REQUEST_SOURCE_BRANCH_SHA"
+      fi
+      # The review runs without the forge token: the agents that read the merge request never see it.
+      code=0
+      env -u GITLAB_TOKEN code-reviewer "$@" $CODE_REVIEWER_ARGS || code=$?
+      post=0
+      if [ -n "$GITLAB_TOKEN" ] && [ -f code-reviewer-reports/report.json ]; then
+        code-reviewer runs publish latest || post=$?
+      elif [ -z "$GITLAB_TOKEN" ]; then
+        echo "GITLAB_TOKEN is not set: the review is not posted to the merge request (see docs/ci.md)."
+      fi
+      if [ "$post" != "0" ]; then echo "Posting to the merge request failed."; exit 2; fi
+      exit "$code"
+  artifacts:
+    when: always
+    paths:
+      - code-reviewer-reports/
+    reports:
+      codequality: code-reviewer-reports/report.codequality.json

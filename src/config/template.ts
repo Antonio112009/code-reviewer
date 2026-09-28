@@ -1,7 +1,14 @@
 import YAML, { Document, isMap, isScalar, type Pair, type Scalar, type YAMLMap } from 'yaml';
 import { z } from 'zod';
 import { ConfigError, deepMerge } from './load';
-import { type Config, ConfigSchema, DEFAULT_CONFIG, type PartialConfig, PartialConfigSchema } from './schema';
+import {
+  type Config,
+  ConfigSchema,
+  DEFAULT_CONFIG,
+  type PartialConfig,
+  PartialConfigSchema,
+  PUBLISH_URL_KEYS,
+} from './schema';
 
 /** Where a config file lives: in the repository (`.code-reviewer/config.yaml`) or in the user's home. */
 export type ConfigScope = 'project' | 'global';
@@ -85,8 +92,12 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           globalExample: { type: 'bedrock', region: 'us-east-1', profile: 'my-sso-profile' },
         },
         claude: {
-          doc: 'Claude Code over ACP. defaultModel applies when a role sets no model.',
-          example: { type: 'acp', preset: 'claude', defaultModel: 'sonnet' },
+          doc: 'Claude Code over ACP. defaultModel / critiqueModel apply when a role sets no model.',
+          example: { type: 'acp', preset: 'claude', defaultModel: 'sonnet', critiqueModel: 'opus' },
+        },
+        anthropic: {
+          doc: 'The Anthropic API directly (ANTHROPIC_API_KEY): no agent overhead per task, cheaper in CI.',
+          example: { type: 'anthropic', defaultModel: 'claude-sonnet-5', critiqueModel: 'claude-opus-5-5' },
         },
         'my-agent': {
           doc: 'Any other ACP agent, launched with your own command.',
@@ -110,11 +121,11 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
       },
       keys: {
         review: {
-          doc: 'Finds the issues. Omit model to use the provider default.',
-          example: { provider: 'claude', model: 'opus', reasoning: 'medium' },
+          doc: 'Finds the issues. Omit model for the provider default (claude: sonnet); reasoning defaults to high.',
+          example: { provider: 'claude', model: 'opus', reasoning: 'high' },
         },
         critique: {
-          doc: 'Self-critique pass that drops false positives. Unset: the review model with high reasoning.',
+          doc: "Self-critique pass that drops false positives. Unset: the review provider's critiqueModel (claude: opus), high reasoning.",
           example: { provider: 'codex', reasoning: 'high' },
         },
         summary: {
@@ -310,10 +321,88 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
     {
       doc: ['Reports written for every run.'],
       keys: {
-        formats: { doc: 'Any of md, json, html.', example: D.output.formats },
+        formats: {
+          doc: 'Any of md, json, html, sarif (GitHub code scanning), codequality (GitLab).',
+          example: D.output.formats,
+        },
         dir: {
           doc: 'Runs directory, relative to the repository root. Keep it in .gitignore.',
           example: D.output.dir,
+        },
+      },
+    },
+  ],
+  [
+    'cache',
+    {
+      doc: [
+        'Reuses model answers for chunks and findings whose code (and every file the model read) is unchanged.',
+        'Entries are signed with a key in the global config directory. `--no-cache` skips the cache for a run.',
+      ],
+      notes: {
+        project: [`cache.dir decides where files are written: set it in ${GLOBAL_CONFIG_HINT}.`],
+      },
+      keys: {
+        enabled: { doc: 'Use the cache.', example: D.cache.enabled },
+        dir: {
+          doc: 'An absolute directory, or `project` for .code-reviewer/cache (default: the OS cache directory).',
+          scope: 'global',
+          example: '/var/cache/code-reviewer',
+        },
+        maxAgeDays: { doc: 'Remove entries unused for this many days.', example: D.cache.maxAgeDays },
+        maxSizeMb: {
+          doc: 'Remove the least recently used entries above this size.',
+          example: D.cache.maxSizeMb,
+        },
+      },
+    },
+  ],
+  [
+    'pricing',
+    {
+      doc: [
+        'Prices for the cost of a run when the provider reports none (Claude Code reports its own). Keys:',
+        '"provider:model", "model" or "provider"; per million tokens, or per model request (Copilot). Example values only.',
+      ],
+      keys: {
+        'bedrock:global.anthropic.claude-sonnet-4-5': {
+          doc: 'USD per million tokens (set `currency` for another one).',
+          example: { input: 3, cachedInput: 0.3, output: 15 },
+        },
+        copilot: { doc: 'Per request (a premium request).', example: { request: 0.04 } },
+      },
+    },
+  ],
+  [
+    'publish',
+    {
+      doc: [
+        'Review comments on GitHub pull requests / GitLab merge requests (`review --post`, `runs publish`).',
+        'Tokens: GITHUB_TOKEN or GH_TOKEN; GITLAB_TOKEN (api scope). See docs/ci.md.',
+      ],
+      notes: {
+        project: [
+          `API URLs (githubApiUrl, gitlabApiUrl) receive your access token: set them in ${GLOBAL_CONFIG_HINT}.`,
+        ],
+      },
+      keys: {
+        maxInlineComments: {
+          doc: 'Most inline comments per run; the rest are listed in the summary comment.',
+          example: D.publish.maxInlineComments,
+        },
+        minSeverity: {
+          doc: 'Comment inline only on findings of this severity or worse (critical | major | minor | info).',
+          example: D.publish.minSeverity,
+        },
+        githubApiUrl: {
+          doc: 'GitHub Enterprise Server API. Your token is sent here.',
+          scope: 'global',
+          example: 'https://github.example.com/api/v3',
+        },
+        gitlabApiUrl: {
+          doc: 'Self-managed GitLab API. Your token is sent here.',
+          scope: 'global',
+          example: 'https://gitlab.example.com/api/v4',
         },
       },
     },
@@ -348,7 +437,8 @@ const HEADER: Record<ConfigScope, string[]> = {
     'prints the effective configuration. Commented-out lines are examples of further options.',
     '#',
     'This file is read from the checkout under review, so it cannot choose programs to run or where code',
-    `is sent: provider command/args/env, \`models\` and \`analyzers.project\` belong in ${GLOBAL_CONFIG_HINT}.`,
+    'or tokens are sent: provider command/args/env, `models`, `analyzers.project` and publish API URLs',
+    `belong in ${GLOBAL_CONFIG_HINT}.`,
   ],
   global: [
     `code-reviewer global configuration (${GLOBAL_CONFIG_HINT}, or $CODE_REVIEWER_HOME/config.yaml).`,
@@ -440,7 +530,10 @@ export function templateExamples(scope: ConfigScope): PartialConfig {
   return out as PartialConfig;
 }
 
-/** Paths a project config may not contain (the loader rejects them): launch settings, fallbacks, project analyzers. */
+/**
+ * Paths a project config may not contain (the loader rejects them): launch settings, fallbacks, project
+ * analyzers, forge API URLs.
+ */
 export function projectConfigViolations(config: PartialConfig): string[] {
   const out: string[] = [];
   const layers: Array<[string, Record<string, unknown>]> = [['', config as Record<string, unknown>]];
@@ -451,6 +544,9 @@ export function projectConfigViolations(config: PartialConfig): string[] {
     if (layer.models !== undefined) out.push(`${prefix}models`);
     const analyzers = layer.analyzers as { project?: unknown[] } | undefined;
     if (analyzers?.project?.length) out.push(`${prefix}analyzers.project`);
+    const publish = isPlainObject(layer.publish) ? layer.publish : {};
+    for (const key of PUBLISH_URL_KEYS) if (publish[key] !== undefined) out.push(`${prefix}publish.${key}`);
+    if (isPlainObject(layer.cache) && layer.cache.dir !== undefined) out.push(`${prefix}cache.dir`);
     const providers = isPlainObject(layer.providers) ? layer.providers : {};
     for (const [id, cfg] of Object.entries(providers)) {
       for (const field of ['command', 'args', 'env']) {

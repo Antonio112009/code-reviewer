@@ -1,0 +1,84 @@
+title: Duplicated currency formatting extracted into a helper
+tags: [typescript, clean, refactor]
+base:
+  package.json: |
+    {
+      "name": "checkout",
+      "private": true,
+      "devDependencies": { "typescript": "^5.7.2" }
+    }
+  src/types.ts: |
+    export interface CartLine {
+      name: string;
+      quantity: number;
+      unitPriceCents: number;
+    }
+
+    export interface Order {
+      currency: string;
+      items: CartLine[];
+      shippingCents: number;
+      totalCents: number;
+    }
+  src/cart/summary.ts: |
+    import type { CartLine } from '../types';
+
+    export function cartSummary(lines: CartLine[], currency: string, locale = 'en-US') {
+      const formatter = new Intl.NumberFormat(locale, { style: 'currency', currency });
+      const subtotalCents = lines.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0);
+      return {
+        items: lines.map((l) => ({
+          name: l.name,
+          quantity: l.quantity,
+          total: formatter.format((l.unitPriceCents * l.quantity) / 100),
+        })),
+        subtotal: formatter.format(subtotalCents / 100),
+      };
+    }
+  src/orders/receipt.ts: |
+    import type { Order } from '../types';
+
+    export function receiptLines(order: Order, locale = 'en-US'): string[] {
+      const formatter = new Intl.NumberFormat(locale, { style: 'currency', currency: order.currency });
+      const lines = order.items.map(
+        (i) => `${i.quantity} × ${i.name}  ${formatter.format((i.unitPriceCents * i.quantity) / 100)}`,
+      );
+      lines.push(`Shipping  ${formatter.format(order.shippingCents / 100)}`);
+      lines.push(`Total  ${formatter.format(order.totalCents / 100)}`);
+      return lines;
+    }
+head:
+  src/money.ts: |
+    /** Formats amounts in minor units (cents) of one currency. */
+    export function centsFormatter(currency: string, locale = 'en-US'): (cents: number) => string {
+      const formatter = new Intl.NumberFormat(locale, { style: 'currency', currency });
+      return (cents) => formatter.format(cents / 100);
+    }
+  src/cart/summary.ts: |
+    import { centsFormatter } from '../money';
+    import type { CartLine } from '../types';
+
+    export function cartSummary(lines: CartLine[], currency: string, locale = 'en-US') {
+      const money = centsFormatter(currency, locale);
+      const subtotalCents = lines.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0);
+      return {
+        items: lines.map((l) => ({
+          name: l.name,
+          quantity: l.quantity,
+          total: money(l.unitPriceCents * l.quantity),
+        })),
+        subtotal: money(subtotalCents),
+      };
+    }
+  src/orders/receipt.ts: |
+    import { centsFormatter } from '../money';
+    import type { Order } from '../types';
+
+    export function receiptLines(order: Order, locale = 'en-US'): string[] {
+      const money = centsFormatter(order.currency, locale);
+      const lines = order.items.map((i) => `${i.quantity} × ${i.name}  ${money(i.unitPriceCents * i.quantity)}`);
+      lines.push(`Shipping  ${money(order.shippingCents)}`);
+      lines.push(`Total  ${money(order.totalCents)}`);
+      return lines;
+    }
+expect: []

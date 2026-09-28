@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import * as acp from '@agentclientprotocol/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { PRESETS } from '../src/providers/acp/presets';
 import { AcpProvider } from '../src/providers/acp/provider';
 import type { AgentTask } from '../src/providers/types';
 import { resolveFindings } from '../src/review/findings';
@@ -22,6 +23,8 @@ interface FakeAgentLog {
   readContent?: string;
   cancelled: boolean;
   meta?: unknown;
+  /** Text of every prompt received. */
+  prompts?: string[];
 }
 
 const CONFIG_OPTIONS: acp.SessionConfigOption[] = [
@@ -56,9 +59,19 @@ const CONFIG_OPTIONS: acp.SessionConfigOption[] = [
  */
 function fakeAgent(
   log: FakeAgentLog,
-  opts: { hang?: boolean; optionsAfterSet?: acp.SessionConfigOption[] } = {},
+  opts: {
+    hang?: boolean;
+    optionsAfterSet?: acp.SessionConfigOption[];
+    /** How the first prompt of a session ends before any answer: hangs until cancelled, or hits a limit. */
+    firstTurn?: 'hang' | 'max_turn_requests' | 'silent';
+    /** Cumulative session cost sent as a `usage_update`. */
+    cost?: number;
+    /** No token usage in the stop message (like Copilot). */
+    noUsage?: boolean;
+  } = {},
 ): acp.AgentApp {
   const aborts = new Map<string, AbortController>();
+  const turns = new Map<string, number>();
   return acp
     .agent({ name: 'fake-agent' })
     .onRequest(acp.methods.agent.initialize, async () => ({
@@ -83,7 +96,14 @@ function fakeAgent(
     })
     .onRequest(acp.methods.agent.session.prompt, async ({ params, client }) => {
       const sessionId = params.sessionId;
-      if (opts.hang) {
+      const turn = (turns.get(sessionId) ?? 0) + 1;
+      turns.set(sessionId, turn);
+      log.prompts?.push(params.prompt.map((b) => (b.type === 'text' ? b.text : '')).join(''));
+      if (turn === 1 && opts.firstTurn === 'max_turn_requests') {
+        return { stopReason: 'max_turn_requests' as const };
+      }
+      if (turn === 1 && opts.firstTurn === 'silent') return { stopReason: 'end_turn' as const };
+      if (opts.hang || (turn === 1 && opts.firstTurn === 'hang')) {
         const ac = new AbortController();
         aborts.set(sessionId, ac);
         await new Promise((resolve) => ac.signal.addEventListener('abort', resolve));
@@ -135,9 +155,20 @@ function fakeAgent(
           update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: piece } },
         });
       }
+      if (opts.cost !== undefined) {
+        await client.notify(acp.methods.client.session.update, {
+          sessionId,
+          update: {
+            sessionUpdate: 'usage_update',
+            used: 1000,
+            size: 200_000,
+            cost: { amount: opts.cost, currency: 'USD' },
+          },
+        });
+      }
       return {
         stopReason: 'end_turn' as const,
-        usage: { inputTokens: 100, outputTokens: 20, totalTokens: 120 },
+        ...(opts.noUsage ? {} : { usage: { inputTokens: 100, outputTokens: 20, totalTokens: 120 } }),
       };
     });
 }
@@ -161,7 +192,7 @@ function task(over: Partial<AgentTask> = {}): AgentTask {
 
 describe('AcpProvider with an in-process agent', () => {
   it('runs a session: rejects edits, serves reads, sets model/effort, parses findings', async () => {
-    const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false };
+    const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false, prompts: [] };
     const provider = new AcpProvider('claude', { type: 'acp', preset: 'claude' }, silentLogger, 2, {
       endpoint: () => ({ kind: 'app', app: fakeAgent(log) }),
     });
@@ -183,6 +214,8 @@ describe('AcpProvider with an in-process agent', () => {
       const resolved = resolveFindings(result);
       expect(resolved.via).toBe('text');
       expect(resolved.items[0]).toMatchObject({ file: 'app.js', startLine: 2, title: 'Division by zero' });
+      // findings as JSON in the reply count as handed in: no reminder turn
+      expect(log.prompts).toHaveLength(1);
     } finally {
       await provider.dispose();
     }
@@ -228,7 +261,95 @@ describe('AcpProvider with an in-process agent', () => {
       const result = await provider.run(task({ timeoutMs: 200 }));
       expect(log.cancelled).toBe(true);
       expect(result.stopReason).toBe('cancelled');
+      expect(result.interruptedBy).toBe('timeout');
       expect(result.warnings.join('\n')).toMatch(/timed out/);
+    } finally {
+      await provider.dispose();
+    }
+  });
+
+  it('asks for an early answer when a turn times out, keeping the work', async () => {
+    const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false, prompts: [] };
+    const provider = new AcpProvider('claude', { type: 'acp', preset: 'claude' }, silentLogger, 1, {
+      endpoint: () => ({ kind: 'app', app: fakeAgent(log, { firstTurn: 'hang' }) }),
+    });
+    try {
+      const result = await provider.run(task({ timeoutMs: 300 }));
+      expect(log.cancelled).toBe(true);
+      expect(log.prompts).toHaveLength(2);
+      expect(log.prompts![1]).toMatch(/Stop here: the time limit was reached\..*submit_findings/);
+      expect(result.stopReason).toBe('end_turn');
+      expect(result.interruptedBy).toBeUndefined();
+      expect(result.salvaged).toBe('the time limit was reached');
+      expect(result.usage?.requests).toBe(2);
+      expect(resolveFindings(result).items[0]).toMatchObject({ title: 'Division by zero' });
+    } finally {
+      await provider.dispose();
+    }
+  });
+
+  it('asks for an early answer when the agent hits its step limit', async () => {
+    const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false, prompts: [] };
+    const provider = new AcpProvider('claude', { type: 'acp', preset: 'claude' }, silentLogger, 1, {
+      endpoint: () => ({ kind: 'app', app: fakeAgent(log, { firstTurn: 'max_turn_requests' }) }),
+    });
+    try {
+      const result = await provider.run(task());
+      expect(log.cancelled).toBe(false);
+      expect(log.prompts![1]).toMatch(/the step limit was reached/);
+      expect(result.salvaged).toBe('the step limit was reached');
+      expect(resolveFindings(result).items).toHaveLength(1);
+    } finally {
+      await provider.dispose();
+    }
+  });
+
+  it('reminds an agent that ended its turn without submitting anything', async () => {
+    const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false, prompts: [] };
+    const provider = new AcpProvider('claude', { type: 'acp', preset: 'claude' }, silentLogger, 1, {
+      endpoint: () => ({ kind: 'app', app: fakeAgent(log, { firstTurn: 'silent' }) }),
+    });
+    try {
+      const result = await provider.run(task());
+      expect(log.prompts).toHaveLength(2);
+      expect(log.prompts![1]).toMatch(/ended your turn without calling `submit_findings`/);
+      expect(result.salvaged).toBeUndefined(); // a complete review, only the submission was missing
+      expect(result.warnings.join('\n')).toMatch(/reminded it to submit/);
+      expect(resolveFindings(result).items).toHaveLength(1);
+    } finally {
+      await provider.dispose();
+    }
+  });
+
+  it('does not ask for an early answer when salvage is off', async () => {
+    const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false, prompts: [] };
+    const provider = new AcpProvider('claude', { type: 'acp', preset: 'claude' }, silentLogger, 1, {
+      endpoint: () => ({ kind: 'app', app: fakeAgent(log, { firstTurn: 'max_turn_requests' }) }),
+    });
+    try {
+      const result = await provider.run(task({ salvage: false }));
+      expect(log.prompts).toHaveLength(1);
+      expect(result.stopReason).toBe('max_turn_requests');
+      expect(result.salvaged).toBeUndefined();
+    } finally {
+      await provider.dispose();
+    }
+  });
+
+  it('records the cost an agent reports and marks missing token counts as estimated', async () => {
+    const log: FakeAgentLog = { permissions: [], configCalls: [], cancelled: false };
+    const provider = new AcpProvider('claude', { type: 'acp', preset: 'claude' }, silentLogger, 1, {
+      endpoint: () => ({ kind: 'app', app: fakeAgent(log, { cost: 0.0421, noUsage: true }) }),
+    });
+    try {
+      const result = await provider.run(task());
+      expect(result.usage).toEqual({
+        inputTokens: 0,
+        outputTokens: 0,
+        estimated: true,
+        requests: 1,
+        reportedCost: { amount: 0.0421, currency: 'USD' },
+      });
     } finally {
       await provider.dispose();
     }
@@ -253,6 +374,23 @@ describe('AcpProvider with an in-process agent', () => {
     } finally {
       await provider.dispose();
     }
+  });
+});
+
+describe('Claude preset', () => {
+  it('loads our MCP tools up front (no ToolSearch), unless the provider env says otherwise', () => {
+    const spec = PRESETS.claude.launch(
+      { type: 'acp', preset: 'claude', command: '/usr/bin/true' },
+      {
+        reasoning: 'high',
+      },
+    );
+    expect(spec?.env.ENABLE_TOOL_SEARCH).toBe('false');
+    const overridden = PRESETS.claude.launch(
+      { type: 'acp', preset: 'claude', command: '/usr/bin/true', env: { ENABLE_TOOL_SEARCH: 'auto' } },
+      { reasoning: 'high' },
+    );
+    expect(overridden?.env.ENABLE_TOOL_SEARCH).toBe('auto');
   });
 });
 

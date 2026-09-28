@@ -1,10 +1,11 @@
+import path from 'node:path';
 import { z } from 'zod';
 import { REASONING_LEVELS, SEVERITIES } from '../types';
 
 export const ACP_PRESETS = ['claude', 'codex', 'copilot', 'gemini', 'custom'] as const;
 export type AcpPresetId = (typeof ACP_PRESETS)[number];
 
-export const REPORT_FORMATS = ['md', 'json', 'html'] as const;
+export const REPORT_FORMATS = ['md', 'json', 'html', 'sarif', 'codequality'] as const;
 export type ReportFormat = (typeof REPORT_FORMATS)[number];
 
 /** AWS region names (us-east-1, eu-central-2, us-gov-west-1, ap-southeast-5, …). */
@@ -17,6 +18,8 @@ const BedrockProviderSchema = z.strictObject({
   /** AWS profile (SSO profiles work too). Falls back to the default credential chain. */
   profile: z.string().optional(),
   defaultModel: z.string().optional(),
+  /** Model of the self-critique pass when the critique role names none (e.g. a stronger model than the review's). */
+  critiqueModel: z.string().optional(),
 });
 
 const AcpProviderSchema = z.strictObject({
@@ -27,6 +30,16 @@ const AcpProviderSchema = z.strictObject({
   args: z.array(z.string()).optional(),
   env: z.record(z.string(), z.string()).optional(),
   defaultModel: z.string().optional(),
+  /** Model of the self-critique pass when the critique role names none (e.g. a stronger model than the review's). */
+  critiqueModel: z.string().optional(),
+});
+
+/** The Anthropic API with `ANTHROPIC_API_KEY` (no agent in between: see `providers/anthropic.ts`). */
+const AnthropicProviderSchema = z.strictObject({
+  type: z.literal('anthropic'),
+  defaultModel: z.string().optional(),
+  /** Model of the self-critique pass when the critique role names none (e.g. a stronger model than the review's). */
+  critiqueModel: z.string().optional(),
 });
 
 const MockProviderSchema = z.strictObject({
@@ -37,11 +50,13 @@ const MockProviderSchema = z.strictObject({
 
 export const ProviderConfigSchema = z.discriminatedUnion('type', [
   BedrockProviderSchema,
+  AnthropicProviderSchema,
   AcpProviderSchema,
   MockProviderSchema,
 ]);
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 export type BedrockProviderConfig = z.infer<typeof BedrockProviderSchema>;
+export type AnthropicProviderConfig = z.infer<typeof AnthropicProviderSchema>;
 export type AcpProviderConfig = z.infer<typeof AcpProviderSchema>;
 export type MockProviderConfig = z.infer<typeof MockProviderSchema>;
 
@@ -193,6 +208,67 @@ export const UiSettingsSchema = z.object({
 });
 export type UiSettings = z.infer<typeof UiSettingsSchema>;
 
+/**
+ * Price of a model, used for the cost of a run when the provider reports none. Token prices are per million
+ * tokens; `request` is a price per model request (e.g. a Copilot premium request).
+ */
+export const PriceSchema = z.strictObject({
+  input: z.number().nonnegative().optional(),
+  /** Input tokens read from the prompt cache (default: the `input` price). */
+  cachedInput: z.number().nonnegative().optional(),
+  /** Input tokens written to the prompt cache (default: 1.25 × the `input` price, as Anthropic bills it). */
+  cacheWrite: z.number().nonnegative().optional(),
+  /** Output tokens, reasoning included. */
+  output: z.number().nonnegative().optional(),
+  request: z.number().nonnegative().optional(),
+  /** ISO 4217 code (default USD). */
+  currency: z
+    .string()
+    .regex(/^[A-Z]{3}$/, 'must be an ISO 4217 code like USD')
+    .optional(),
+});
+export type Price = z.infer<typeof PriceSchema>;
+
+/** An http(s) URL (fully checked where it is used: `publish/target.ts#validateApiUrl`). */
+const ApiUrlSchema = z.string().regex(/^https?:\/\/\S+$/i, 'must be an http(s) URL');
+
+/** Posting reviews to GitHub pull requests / GitLab merge requests (`review --post`, `runs publish`). */
+export const PublishSettingsSchema = z.object({
+  /** Most inline comments per run; the rest are listed in the summary comment. */
+  maxInlineComments: z.number().int().nonnegative(),
+  /** Findings below this severity are listed in the summary only, never commented inline. */
+  minSeverity: z.enum(SEVERITIES),
+  /**
+   * GitHub Enterprise Server API (e.g. https://github.example.com/api/v3) and self-managed GitLab API
+   * (e.g. https://gitlab.example.com/api/v4). Your access token is sent there: global config / CLI only.
+   */
+  githubApiUrl: ApiUrlSchema.optional(),
+  gitlabApiUrl: ApiUrlSchema.optional(),
+});
+export type PublishSettings = z.infer<typeof PublishSettingsSchema>;
+
+/** `publish` keys that decide where an access token is sent: rejected in project configs. */
+export const PUBLISH_URL_KEYS = ['githubApiUrl', 'gitlabApiUrl'] as const;
+
+/** Reusing model answers for unchanged chunks and findings (`src/cache/`). */
+export const CacheSettingsSchema = z.object({
+  /** `--no-cache` turns it off for one run. */
+  enabled: z.boolean(),
+  /**
+   * An absolute directory, or `project` for `.code-reviewer/cache` in the repository. Default: the platform's
+   * cache directory. Global config only: a project config must not choose where files are written.
+   */
+  dir: z
+    .string()
+    .refine((v) => v === 'project' || path.isAbsolute(v), 'must be an absolute path or "project"')
+    .optional(),
+  /** Entries not used for this many days are removed (checked at most once a day). */
+  maxAgeDays: z.number().int().positive(),
+  /** Least recently used entries are removed above this size. */
+  maxSizeMb: z.number().int().positive(),
+});
+export type CacheSettings = z.infer<typeof CacheSettingsSchema>;
+
 const RolesSchema = z.object({
   review: RoleConfigSchema.optional(),
   critique: RoleConfigSchema.optional(),
@@ -209,6 +285,10 @@ const ConfigBodySchema = z.object({
   models: ModelSettingsSchema,
   ui: UiSettingsSchema,
   output: OutputSettingsSchema,
+  /** Prices by `provider:model`, `model` or `provider` (the most specific key wins). */
+  pricing: z.record(z.string(), PriceSchema),
+  publish: PublishSettingsSchema,
+  cache: CacheSettingsSchema,
 });
 
 export const ConfigSchema = ConfigBodySchema.extend({
@@ -253,17 +333,20 @@ export const DEFAULT_EXCLUDES = [
 export const DEFAULT_CONFIG: Config = {
   project: {},
   providers: {
-    claude: { type: 'acp', preset: 'claude' },
+    // Sonnet is the everyday reviewer (cost/quality); pick Opus per run with `--model opus`.
+    // Opus checks the findings: it drops the weak ones Sonnet's critique lets through, for ~17% more.
+    claude: { type: 'acp', preset: 'claude', defaultModel: 'sonnet', critiqueModel: 'opus' },
     codex: { type: 'acp', preset: 'codex' },
     copilot: { type: 'acp', preset: 'copilot' },
     gemini: { type: 'acp', preset: 'gemini' },
     bedrock: { type: 'bedrock' },
+    anthropic: { type: 'anthropic', defaultModel: 'claude-sonnet-5', critiqueModel: 'claude-opus-5-5' },
     mock: { type: 'mock' },
   },
   roles: {
-    // No critique default: it follows the review provider (with high reasoning) unless configured,
-    // so code is never sent to a provider the user did not choose.
-    review: { provider: 'claude', reasoning: 'medium' },
+    // No critique role by default: it runs on the review provider (its `critiqueModel`, high reasoning), so
+    // code is never sent to a provider the user did not choose.
+    review: { provider: 'claude', reasoning: 'high' },
   },
   review: {
     // The depth-dependent values below are the `essential` preset (see DEPTH_PRESETS).
@@ -333,6 +416,16 @@ export const DEFAULT_CONFIG: Config = {
     formats: ['md', 'json', 'html'],
     dir: '.code-reviewer/runs',
   },
+  pricing: {},
+  cache: {
+    enabled: true,
+    maxAgeDays: 30,
+    maxSizeMb: 500,
+  },
+  publish: {
+    maxInlineComments: 30,
+    minSeverity: 'info',
+  },
   profiles: {},
 };
 
@@ -367,6 +460,9 @@ export const PartialConfigSchema = z
     models: ModelSettingsSchema.partial().strict().optional(),
     ui: UiSettingsSchema.partial().strict().optional(),
     output: OutputSettingsSchema.partial().strict().optional(),
+    pricing: z.record(z.string(), PriceSchema).optional(),
+    publish: PublishSettingsSchema.partial().strict().optional(),
+    cache: CacheSettingsSchema.partial().strict().optional(),
     profiles: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();

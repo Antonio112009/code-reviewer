@@ -11,7 +11,7 @@ export interface ProviderStatus {
   detail: string;
 }
 
-/** Offline availability check: binaries on PATH, AWS credential sources. No network calls. */
+/** Offline availability check: binaries on PATH, AWS credential sources, API keys. No network calls. */
 export function detectProviders(config: Config): ProviderStatus[] {
   return Object.entries(config.providers).map(([id, cfg]): ProviderStatus => {
     if (cfg.type === 'mock') {
@@ -22,6 +22,17 @@ export function detectProviders(config: Config): ProviderStatus[] {
         available: true,
         experimental: false,
         detail: 'built-in',
+      };
+    }
+    if (cfg.type === 'anthropic') {
+      const key = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+      return {
+        id,
+        type: 'anthropic',
+        label: 'Anthropic API',
+        available: key,
+        experimental: false,
+        detail: key ? 'ANTHROPIC_API_KEY is set' : 'ANTHROPIC_API_KEY is not set',
       };
     }
     if (cfg.type === 'bedrock') {

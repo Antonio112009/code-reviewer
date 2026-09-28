@@ -1,12 +1,13 @@
 import { type AmazonBedrockProvider, createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
-import { generateText, hasToolCall, isStepCount } from 'ai';
+import type { LanguageModel } from 'ai';
 import { AWS_REGION_RE, type BedrockProviderConfig } from '../config/schema';
-import { toAiSdkTools } from '../tools/ai-sdk';
-import { SUBMIT_TOOLS, toolsFor } from '../tools/definitions';
-import { SubmissionCollector } from '../tools/submission';
+import { runAiSdkTask } from './ai-sdk-agent';
 import { bedrockRegion } from './aws';
 import { type AgentResult, type AgentTask, type Provider, ProviderError } from './types';
+
+/** Bedrock prompt caching (cache points) is offered for Anthropic's models. */
+const CACHEABLE_MODEL = /anthropic|claude/i;
 
 /**
  * AWS Bedrock through the Vercel AI SDK (Converse API).
@@ -19,6 +20,8 @@ export class BedrockProvider implements Provider {
   constructor(
     readonly id: string,
     private readonly cfg: BedrockProviderConfig,
+    /** Test hook: the language model for a model id (default: Bedrock). */
+    private readonly modelFor?: (modelId: string) => LanguageModel,
   ) {
     const region = bedrockRegion(cfg);
     if (!AWS_REGION_RE.test(region)) {
@@ -42,51 +45,15 @@ export class BedrockProvider implements Provider {
         this.id,
       );
     }
-    const collector = new SubmissionCollector();
-    const toolUsage: Record<string, number> = {};
-    const tools = toAiSdkTools(
-      toolsFor(task.kind, task.readTools, { skills: task.skills }),
-      { root: task.root, git: task.git, collector, skills: task.skills },
-      (name) => {
-        toolUsage[name] = (toolUsage[name] ?? 0) + 1;
-        task.onActivity?.({ kind: 'tool', name });
-      },
-    );
-    const signals = [AbortSignal.timeout(task.timeoutMs), ...(task.signal ? [task.signal] : [])];
-
-    try {
-      const result = await generateText({
-        model: this.bedrock(modelId),
-        instructions: task.instructions,
-        prompt: task.prompt,
-        tools,
-        stopWhen: [isStepCount(task.maxSteps), hasToolCall(SUBMIT_TOOLS[task.kind].name)],
-        reasoning: task.reasoning === 'none' ? 'none' : task.reasoning,
-        maxOutputTokens: task.maxOutputTokens,
-        abortSignal: AbortSignal.any(signals),
-        maxRetries: 3,
-      });
-      const toolCalls = result.steps.reduce((n, s) => n + s.toolCalls.length, 0);
-      return {
-        submission: collector.submission,
-        text: result.text,
-        usage: {
-          inputTokens: result.usage.inputTokens ?? 0,
-          outputTokens: result.usage.outputTokens ?? 0,
-          reasoningTokens: result.usage.outputTokenDetails?.reasoningTokens ?? undefined,
-          cachedInputTokens: result.usage.inputTokenDetails?.cacheReadTokens ?? undefined,
-        },
-        model: modelId,
-        stopReason: result.finishReason,
-        toolCalls,
-        toolUsage,
-        warnings: (result.warnings ?? []).map((w) => JSON.stringify(w)),
-      };
-    } catch (err) {
-      throw new ProviderError(`Bedrock call failed (${modelId}): ${(err as Error).message}`, this.id, {
-        cause: err,
-      });
-    }
+    return runAiSdkTask(task, {
+      providerId: this.id,
+      label: 'Bedrock',
+      model: this.modelFor?.(modelId) ?? this.bedrock(modelId),
+      modelId,
+      ...(CACHEABLE_MODEL.test(modelId)
+        ? { caching: { kind: 'messages', marker: { bedrock: { cachePoint: { type: 'default' } } } } }
+        : {}),
+    });
   }
 
   async dispose(): Promise<void> {}

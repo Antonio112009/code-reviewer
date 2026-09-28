@@ -78,12 +78,82 @@ export const SubmitVerdictsSchema = z.object({
 });
 export type SubmitVerdicts = z.infer<typeof SubmitVerdictsSchema>;
 
+export interface Money {
+  amount: number;
+  /** ISO 4217 code, e.g. `USD`. */
+  currency: string;
+}
+
 export interface Usage {
+  /** Input tokens not served from the prompt cache. */
   inputTokens: number;
   outputTokens: number;
   reasoningTokens?: number;
+  /** Input tokens read from the prompt cache. */
   cachedInputTokens?: number;
+  /** Input tokens written to the prompt cache (priced above plain input). */
+  cacheWriteTokens?: number;
+  /** Model requests: agent prompts, or API calls of a tool loop (Copilot bills requests, not tokens). */
+  requests?: number;
+  /**
+   * The provider reported no token counts, so they were estimated from the prompt and the reply text: a
+   * lower bound, since tool results and hidden reasoning are not counted.
+   */
+  estimated?: boolean;
+  /** Cost the provider reported itself (ACP `usage_update`), when it reports one. */
+  reportedCost?: Money;
 }
+
+/** How the known part of a run's cost was obtained. */
+export type CostBasis = 'reported' | 'priced' | 'estimated';
+
+export interface CostSummary extends Money {
+  /**
+   * `reported` — by the provider; `priced` — reported tokens × the configured `pricing`; `estimated` —
+   * estimated tokens × `pricing`.
+   */
+  basis: CostBasis[];
+  /** Model tasks whose cost is unknown: the provider reported none and no price is configured. */
+  unknownTasks: number;
+  /** `provider:model` routes without a price. */
+  unpriced: string[];
+}
+
+export interface CacheUse {
+  dir: string;
+  /** Chunks or split parts answered from the cache / by a model. */
+  hits: number;
+  misses: number;
+  /** Findings whose critique verdict came from the cache / from the critic. */
+  critiqueHits: number;
+  critiqueMisses: number;
+  /** Tokens the cached answers took when they were made. */
+  saved: { inputTokens: number; outputTokens: number };
+}
+
+/**
+ * Why a chunk could not be reviewed:
+ * - `timeout` — the task ran out of time; `stalled` — the agent stopped sending updates;
+ * - `step-limit` — the model used up its tool steps without submitting; `output-limit` — its answer hit
+ *   the output token limit; `context-limit` — the prompt does not fit the context window;
+ * - `no-output` — the reply carried no findings payload, even after a repair turn;
+ * - `refusal`, `unavailable`, `auth` — the model declined, no usable model, credentials;
+ * - `aborted` — interrupted; `error` — anything else.
+ */
+export const FAILURE_KINDS = [
+  'timeout',
+  'stalled',
+  'step-limit',
+  'output-limit',
+  'context-limit',
+  'no-output',
+  'refusal',
+  'unavailable',
+  'auth',
+  'aborted',
+  'error',
+] as const;
+export type FailureKind = (typeof FAILURE_KINDS)[number];
 
 export interface AuthorInfo {
   name: string;
@@ -119,6 +189,11 @@ export interface Finding extends ReportedFinding {
   author?: AuthorInfo;
   /** Set when a validation step rejected the finding (hallucinated path, lines out of range, ...). */
   droppedReason?: string;
+  /**
+   * Stable id across runs (`review/fingerprint.ts`): file, category, static rule and the reported code, not
+   * line numbers. Keys SARIF/Code Quality results and de-duplicates pull request comments.
+   */
+  fingerprint?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -310,10 +385,22 @@ export interface ChunkRecord {
   skills: string[];
   status: 'pending' | 'running' | 'done' | 'failed';
   error?: string;
+  /** Why the chunk failed (set with `status: 'failed'`). */
+  failure?: FailureKind;
+  /**
+   * What was done to get a result after a problem: an early answer requested from the agent, a split into
+   * smaller parts, a retry with more time or steps.
+   */
+  recovery?: string[];
   findings: number;
   /** Static-analysis hints given to the model for this chunk. */
   hints?: number;
+  /** Tokens of every attempt, failed ones included. */
   usage?: Usage;
+  /** Known cost of every attempt (reported, or computed from `pricing`). */
+  cost?: Money;
+  /** The answer came from the result cache: for the whole chunk, or for some of its split parts. */
+  cached?: 'all' | 'partial';
   durationMs?: number;
   timeoutMs?: number;
   /** Tool calls by tool name (read_file, grep, …) made while reviewing this chunk. */
@@ -372,6 +459,10 @@ export interface RunRecord {
   /** Findings removed by validation, critique or the confidence threshold — kept for auditing. */
   rejected: Finding[];
   usage: Usage;
+  /** Cost of the run, when at least part of it is known. */
+  cost?: CostSummary;
+  /** Result cache use, when the cache was on. */
+  cache?: CacheUse;
   summary?: string;
   warnings: string[];
   error?: string;

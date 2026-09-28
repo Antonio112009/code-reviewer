@@ -1,0 +1,144 @@
+title: Stock reservation moved from an atomic update to read-check-write
+tags: [java, spring, jpa, concurrency, data-loss]
+base:
+  pom.xml: |
+    <project xmlns="http://maven.apache.org/POM/4.0.0">
+      <modelVersion>4.0.0</modelVersion>
+      <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+      </parent>
+      <groupId>com.acme</groupId>
+      <artifactId>inventory</artifactId>
+      <version>1.0.0</version>
+      <dependencies>
+        <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+      </dependencies>
+    </project>
+  src/main/java/com/acme/inventory/StockItem.java: |
+    package com.acme.inventory;
+
+    import jakarta.persistence.Column;
+    import jakarta.persistence.Entity;
+    import jakarta.persistence.Id;
+    import jakarta.persistence.Table;
+
+    @Entity
+    @Table(name = "stock_items")
+    public class StockItem {
+        @Id
+        private Long productId;
+
+        @Column(nullable = false)
+        private int available;
+
+        @Column(nullable = false)
+        private int reserved;
+
+        public Long getProductId() { return productId; }
+        public int getAvailable() { return available; }
+        public void setAvailable(int available) { this.available = available; }
+        public int getReserved() { return reserved; }
+        public void setReserved(int reserved) { this.reserved = reserved; }
+    }
+  src/main/java/com/acme/inventory/StockItemRepository.java: |
+    package com.acme.inventory;
+
+    import org.springframework.data.jpa.repository.JpaRepository;
+    import org.springframework.data.jpa.repository.Modifying;
+    import org.springframework.data.jpa.repository.Query;
+    import org.springframework.data.repository.query.Param;
+
+    public interface StockItemRepository extends JpaRepository<StockItem, Long> {
+        @Modifying
+        @Query("update StockItem s set s.available = s.available - :qty, s.reserved = s.reserved + :qty "
+                + "where s.productId = :productId and s.available >= :qty")
+        int reserve(@Param("productId") long productId, @Param("qty") int qty);
+    }
+  src/main/java/com/acme/inventory/OutOfStockException.java: |
+    package com.acme.inventory;
+
+    public class OutOfStockException extends RuntimeException {
+        public OutOfStockException(long productId, int requested) {
+            super("Product " + productId + ": not enough stock for " + requested);
+        }
+    }
+  src/main/java/com/acme/inventory/InventoryService.java: |
+    package com.acme.inventory;
+
+    import org.springframework.stereotype.Service;
+    import org.springframework.transaction.annotation.Transactional;
+
+    @Service
+    public class InventoryService {
+        private final StockItemRepository stock;
+
+        public InventoryService(StockItemRepository stock) {
+            this.stock = stock;
+        }
+
+        @Transactional
+        public void reserve(long productId, int quantity) {
+            if (quantity <= 0) {
+                throw new IllegalArgumentException("quantity must be positive");
+            }
+            if (stock.reserve(productId, quantity) == 0) {
+                throw new OutOfStockException(productId, quantity);
+            }
+        }
+    }
+head:
+  src/main/java/com/acme/inventory/InventoryService.java: |
+    package com.acme.inventory;
+
+    import org.springframework.stereotype.Service;
+    import org.springframework.transaction.annotation.Transactional;
+
+    @Service
+    public class InventoryService {
+        private final StockItemRepository stock;
+
+        public InventoryService(StockItemRepository stock) {
+            this.stock = stock;
+        }
+
+        @Transactional
+        public void reserve(long productId, int quantity) {
+            if (quantity <= 0) {
+                throw new IllegalArgumentException("quantity must be positive");
+            }
+            StockItem item = stock.findById(productId)
+                    .orElseThrow(() -> new UnknownProductException(productId));
+            if (item.getAvailable() < quantity) {
+                throw new OutOfStockException(productId, quantity, item.getAvailable());
+            }
+            item.setAvailable(item.getAvailable() - quantity);
+            item.setReserved(item.getReserved() + quantity);
+            stock.save(item);
+        }
+    }
+  src/main/java/com/acme/inventory/OutOfStockException.java: |
+    package com.acme.inventory;
+
+    public class OutOfStockException extends RuntimeException {
+        public OutOfStockException(long productId, int requested, int available) {
+            super("Product " + productId + ": requested " + requested + ", available " + available);
+        }
+    }
+  src/main/java/com/acme/inventory/UnknownProductException.java: |
+    package com.acme.inventory;
+
+    public class UnknownProductException extends RuntimeException {
+        public UnknownProductException(long productId) {
+            super("Unknown product " + productId);
+        }
+    }
+expect:
+  - file: src/main/java/com/acme/inventory/InventoryService.java
+    lines: [19, 26]
+    severity: major
+    note: read-check-write without a lock or @Version; concurrent reservations read the same stock and overwrite each other (overselling)

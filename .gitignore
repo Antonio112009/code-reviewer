@@ -3,8 +3,9 @@ dist/
 coverage/
 *.log
 .DS_Store
-# review runs produced when dogfooding the tool on itself
+# review runs and eval results produced when dogfooding the tool on itself
 .code-reviewer/runs/
+.code-reviewer/evals/
 
 # local environment (root only: test fixtures ship .env.example files)
 /.env

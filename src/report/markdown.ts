@@ -1,7 +1,10 @@
 import type { Finding, RunRecord } from '../types';
 import {
+  cacheLabel,
   chunkModelLabel,
+  costLabel,
   depthLabel,
+  failureAdvice,
   fallbackLabel,
   formatDuration,
   formatNumber,
@@ -54,7 +57,7 @@ export function mdText(s: string): string {
 }
 
 /** Single-line text (headings, list items): whitespace collapsed, markup escaped. */
-function mdLine(s: string): string {
+export function mdLine(s: string): string {
   return mdText(s.replace(/\s+/g, ' ').trim());
 }
 
@@ -64,7 +67,7 @@ function cell(s: string): string {
 }
 
 /** Inline code span that cannot be broken out of (backtick runs inside are handled). */
-function code(s: string): string {
+export function code(s: string): string {
   const text = stripControls(s).replace(/\s+/g, ' ');
   const longest = Math.max(0, ...[...text.matchAll(/`+/g)].map((m) => m[0].length));
   const ticks = '`'.repeat(longest + 1);
@@ -205,7 +208,10 @@ function renderChunks(run: RunRecord, out: string[]): void {
     '|---|---|---|---|---|---|---|---|---|---|---|---|',
   );
   for (const c of run.chunks) {
-    const status = `${c.status}${c.attempts && c.attempts > 1 ? ` (${c.attempts} attempts)` : ''}${c.error ? `: ${c.error.split('\n')[0]!.slice(0, 120)}` : ''}`;
+    const status = [
+      `${c.status}${c.cached ? ` (${c.cached === 'all' ? 'cached' : 'partly cached'})` : ''}${c.failure ? ` (${c.failure})` : ''}${c.attempts && c.attempts > 1 ? ` (${c.attempts} attempts)` : ''}${c.error ? `: ${c.error.split('\n')[0]!.slice(0, 120)}` : ''}`,
+      ...(c.recovery ?? []).map((r) => `↻ ${r}`),
+    ].join('; ');
     out.push(
       [
         '',
@@ -242,13 +248,24 @@ export function renderMarkdown(run: RunRecord): string {
   if (run.options.selfCritique)
     out.push(`| Critique model | ${cell(routingLabel(run, 'critique') ?? '—')} |`);
   out.push(`| Duration | ${formatDuration(run.durationMs)} |`);
-  out.push(`| Tokens | ${tokensLabel(run)} |`);
-  const failed = run.chunks.filter((c) => c.status === 'failed').length;
-  out.push(`| Chunks | ${run.chunks.length}${failed ? ` (${failed} failed)` : ''} |`);
+  out.push(`| Tokens | ${cell(tokensLabel(run))} |`);
+  const cost = costLabel(run);
+  if (cost) out.push(`| Cost | ${cell(cost)} |`);
+  const cached = cacheLabel(run);
+  if (cached) out.push(`| Cache | ${cell(cached)} |`);
+  const failed = run.chunks.filter((c) => c.status === 'failed');
+  out.push(`| Chunks | ${run.chunks.length}${failed.length ? ` (${failed.length} failed)` : ''} |`);
   out.push(`| Depth | ${cell(depthLabel(run))} |`);
   out.push(`| Min confidence | ${run.options.minConfidence} |`, '');
   out.push(`**${mdLine(summaryLine(run))}**`, '');
   if (run.error) out.push(`> **Error:** ${mdLine(run.error)}`, '');
+  if (failed.length) {
+    out.push(`> **Not reviewed:** ${failed.length} of ${run.chunks.length} chunks failed.`);
+    for (const c of failed) {
+      out.push(`> - ${codeCell(c.id)} (${cell(list(c.files, 4))}): ${mdLine(failureAdvice(c.failure))}`);
+    }
+    out.push('');
+  }
   if (run.summary) out.push(mdText(run.summary), '');
 
   out.push('## Findings', '');
