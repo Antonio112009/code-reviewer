@@ -32,6 +32,8 @@ const TOOL_CONFIG_FILES = new Set([
   '.editorconfig',
   '.semgrepignore',
   'cppcheck.cfg',
+  'sgconfig.yml',
+  'sgconfig.yaml',
 ]);
 
 const MAX_FILE_CHARS = 2_000_000;

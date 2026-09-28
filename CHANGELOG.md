@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Structural checks in skills.** A skill can carry ast-grep rules (`checks:`), run before the review on
+  the changed files when `ast-grep` is on PATH; matches on changed lines become hints. The first four:
+  `async` callbacks passed to `forEach` and `async` Promise executors (JavaScript/TypeScript), `defer`
+  inside a loop (Go, not inside a closure) and mutable default arguments (Python). The repository's
+  `sgconfig.yml` and ignore files are never used; `fix` and `transform` are refused.
+
 - **Findings name their failure path.** `submit_findings` asks for a `failurePath` — the input or state, the
   code path it takes, the failure (`empty cart from POST /checkout → total() divides by items.length → NaN
   is charged`). The critic checks it step by step, and reports and pull request comments show it. A critical

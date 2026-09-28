@@ -464,8 +464,13 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     return undefined;
   });
 
-  const analyzersP: Promise<AnalyzeResult> = phase('analyzers', 'Running static analyzers', () =>
+  const skillsP: Promise<Skill[]> =
+    config.review.skills === 'none' ? Promise.resolve([]) : loadSkills(projectSkillsRoot, warn);
+
+  const analyzersP: Promise<AnalyzeResult> = phase('analyzers', 'Running static analyzers', async () =>
     runAnalyzers({
+      // Structural checks come with the skills (ast-grep); a failed skill load leaves none.
+      checks: (await skillsP.catch(() => [] as Skill[])).flatMap((s) => s.checks ?? []),
       files: analyzeFilesFrom(units, mode),
       settings: config.analyzers,
       mode,
@@ -519,9 +524,6 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         return { text: '', sources: [], tokens: 0 };
       })
     : Promise.resolve({ text: '', sources: [], tokens: 0 });
-
-  const skillsP: Promise<Skill[]> =
-    config.review.skills === 'none' ? Promise.resolve([]) : loadSkills(projectSkillsRoot, warn);
 
   const preflightP =
     req.dryRun || req.skipPreflight
