@@ -8,6 +8,10 @@ activation:
     - '\$_SERVER\[\s*[''"](?:HTTP_HOST|SERVER_NAME|HTTP_X_FORWARDED_\w+|HTTP_CLIENT_IP|REMOTE_ADDR|HTTPS)'
     - '\$_REQUEST\b|\bextract\s*\(|\bparse_str\s*\('
     - '\bheader\s*\(\s*[''"]Location\s*:'
+  examples:
+    - '$host = $_SERVER[''HTTP_HOST''];'
+    - 'extract($_POST);'
+    - 'header(''Location: '' . $next);'
 sources:
   - https://www.php.net/manual/en/reserved.variables.server.php
   - https://www.php.net/manual/en/function.extract.php

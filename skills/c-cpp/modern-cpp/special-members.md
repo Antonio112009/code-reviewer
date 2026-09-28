@@ -9,6 +9,11 @@ activation:
     - '\boperator\s*=\s*\('
     - '\b(\w+)\s*\(\s*(?:const\s+)?\1\s*&'
     - '\b(?:lock_guard|unique_lock|scoped_lock|shared_lock)\b'
+  examples:
+    - '~Widget() { delete[] data_; }'
+    - 'Widget& operator=(const Widget& other) { data_ = other.data_; return *this; }'
+    - 'Widget(const Widget& other) : data_(other.data_) {}'
+    - 'std::lock_guard<std::mutex> lock(mutex_);'
 sources:
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rc-five
   - https://en.cppreference.com/w/cpp/language/move_constructor

@@ -7,6 +7,9 @@ activation:
   content:
     - '\b(?:read|write|pread|pwrite|recv|recvfrom|send|sendto|fread|fwrite|fgets|fclose|close|fflush|fsync)\s*\('
     - '\berrno\b|\bE(?:INTR|AGAIN|WOULDBLOCK)\b|\bfeof\s*\('
+  examples:
+    - 'ssize_t n = write(fd, buf, len);'
+    - 'if (errno == EINTR) continue;'
 sources:
   - https://man7.org/linux/man-pages/man2/write.2.html
   - https://man7.org/linux/man-pages/man2/close.2.html

@@ -10,6 +10,12 @@ activation:
     - '\bmutable\s+[\w:<>]+\s+\w+'
     - '\b(?:strtok|localtime|gmtime|ctime|asctime|setenv|putenv|unsetenv|setlocale)\s*\('
     - '\bstatic\s+[\w:<>]+\s*\*\s*\w+\s*=\s*(?:nullptr|NULL|0)\s*;'
+  examples:
+    - 'std::thread worker(process_queue);'
+    - 'std::call_once(init_flag, init_resources);'
+    - 'mutable std::mutex cache_mutex;'
+    - 'struct tm *t = localtime(&now);'
+    - 'static Logger* instance = nullptr;'
 sources:
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rconc-volatile2
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rconc-double

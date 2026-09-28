@@ -9,6 +9,11 @@ activation:
     - '\bsizeof\b'
     - '<=\s*[\w.>-]{0,40}?(?:len|size|count|max|LEN|SIZE|COUNT|MAX)'
     - '\[\s*\w{0,40}?(?:len|size|count|LEN|SIZE|COUNT)\s*[-+]?\s*\d*\s*\]'
+  examples:
+    - 'memcpy(dst, src, len);'
+    - 'size_t total = sizeof(buf);'
+    - 'for (i = 0; i <= len; i++) {'
+    - 'buf[len - 1] = 0;'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/arrays-arr/arr30-c/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/arrays-arr/arr38-c/

@@ -10,6 +10,10 @@ activation:
     - '\bnew\s+(?:Limit|GlobalLimit|ThrottlesExceptions\w*)\s*\(|\bdecayMinutes\b|\bHasUuids\b'
     - '\b(?:PreventRequestForgery|VerifyCsrfToken|ValidateCsrfToken)\b|\barray_(?:first|last)\s*\('
     - '\b(?:CACHE_PREFIX|REDIS_PREFIX|SESSION_COOKIE)\b|\bauthPasswordName\b'
+  examples:
+    - 'class User extends Authenticatable { use HasUuids; }'
+    - 'class VerifyCsrfToken extends Middleware {}'
+    - '''prefix'' => env(''CACHE_PREFIX'', ''myapp_cache''),'
 sources:
   - https://laravel.com/docs/11.x/upgrade
   - https://laravel.com/docs/12.x/upgrade

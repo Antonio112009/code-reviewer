@@ -8,6 +8,9 @@ activation:
   content:
     - '\bSchema::(?:create|table|drop\w*|rename)\s*\('
     - '->(?:change|dropColumn|renameColumn|float|double|decimal|foreignId|constrained|cascadeOnDelete)\s*\('
+  examples:
+    - 'Schema::table(''orders'', function (Blueprint $table) { $table->decimal(''total'', 8, 2)->change(); });'
+    - '$table->foreignId(''user_id'')->constrained()->cascadeOnDelete();'
 sources:
   - https://laravel.com/docs/11.x/upgrade#modifying-columns
   - https://laravel.com/docs/13.x/migrations

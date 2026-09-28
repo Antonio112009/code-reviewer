@@ -8,6 +8,9 @@ activation:
   content:
     - '#\[(?:AsMessageHandler|AsMessage)\b|\bMessageBusInterface\b|\bDispatchAfterCurrentBusStamp\b'
     - '\b(?:failure_transport|max_retries|doctrine_transaction)\b|\b(?:Unr|R)ecoverableMessageHandlingException\b'
+  examples:
+    - '#[AsMessageHandler]'
+    - 'failure_transport: failed'
 sources:
   - https://symfony.com/doc/current/messenger.html
   - https://symfony.com/doc/current/messenger.html#retries-failures

@@ -8,6 +8,10 @@ activation:
     - '\b(?:wp_ajax|wp_ajax_nopriv|admin_post|admin_post_nopriv)_\w+|\badmin_init\b|\bis_admin\s*\('
     - '\bcurrent_user_can\s*\(|\bcheck_(?:ajax|admin)_referer\s*\(|\bwp_verify_nonce\s*\('
     - '\bregister_rest_route\s*\(|\bpermission_callback\b|\bregister_(?:post_|term_|user_)?meta\s*\(|\bshow_in_rest\b'
+  examples:
+    - 'add_action(''wp_ajax_nopriv_submit_form'', ''handle_submit'');'
+    - 'if (!current_user_can(''edit_post'', $post_id)) {'
+    - 'register_rest_route(''myplugin/v1'', ''/items'', [''permission_callback'' => ''__return_true'']);'
 sources:
   - https://developer.wordpress.org/apis/security/nonces/
   - https://developer.wordpress.org/reference/functions/is_admin/

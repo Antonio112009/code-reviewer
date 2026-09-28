@@ -9,6 +9,11 @@ activation:
     - '\bnew\s*\('
     - '\bnew\s+[\w:<>]+\s*\['
     - '\bstd::destroy_at\b|->\s*~\w+\s*\('
+  examples:
+    - 'delete[] buffer;'
+    - 'void *p = new (buf) Widget();'
+    - 'int *arr = new int[10];'
+    - 'p->~Widget();'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/rules/memory-management-mem/mem51-cpp/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/rules/expressions-exp/exp57-cpp/

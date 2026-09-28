@@ -8,6 +8,10 @@ activation:
     - '\b(?:rand|mt_rand|mt_srand|uniqid|lcg_value|str_shuffle|array_rand|random_int|random_bytes)\s*\('
     - '\b(?:md5|sha1|crypt|password_hash|password_verify|hash_hmac|hash_equals|strcmp)\s*\('
     - '\bopenssl_(?:encrypt|decrypt|random_pseudo_bytes)\s*\(|\bRandom\\(?:Randomizer|Engine)'
+  examples:
+    - '$token = uniqid();'
+    - 'if (strcmp($token, $expected) === 0) {'
+    - '$cipher = openssl_encrypt($data, ''aes-256-cbc'', $key, 0, $iv);'
 sources:
   - https://www.php.net/manual/en/function.hash-equals.php
   - https://www.php.net/manual/en/function.random-bytes.php

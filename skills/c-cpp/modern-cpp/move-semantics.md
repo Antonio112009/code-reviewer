@@ -6,6 +6,8 @@ tags: [CWE-416, CWE-665]
 activation:
   content:
     - '\bstd::(?:move|forward|exchange)\s*[(<]'
+  examples:
+    - 'auto p2 = std::move(p1);'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/rules/expressions-exp/exp63-cpp/
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#res-move

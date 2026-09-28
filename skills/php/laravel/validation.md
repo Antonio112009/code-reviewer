@@ -8,6 +8,9 @@ activation:
     - '->validate\s*\(|\bValidator::make\s*\(|\bextends\s+FormRequest\b|\bfunction\s+rules\s*\('
     - '\bRule::(?:unique|exists|in|when|enum)\s*\(|->validated\s*\(|->safe\s*\('
     - '[''"|](?:array|max:\d|min:\d|size:\d|url|email|exists:|unique:)'
+  examples:
+    - 'class StoreUserRequest extends FormRequest'
+    - '''email'' => [''required'', ''email'', Rule::unique(''users'')->ignore($this->user)],'
 sources:
   - https://laravel.com/docs/13.x/validation
   - https://laravel.com/docs/13.x/validation#rule-unique

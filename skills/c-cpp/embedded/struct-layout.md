@@ -8,6 +8,10 @@ activation:
     - '__attribute__\s*\(\(\s*(?:__)?packed|#\s*pragma\s+pack\b|\b__packed\b'
     - '\b(?:unsigned|signed|int|u?int(?:8|16|32)_t|uint)\s+\w+\s*:\s*\d+\s*;'
     - '\b(?:hton[sl]|ntoh[sl]|__builtin_bswap\d+|__REV\w*)\s*\(|__BYTE_ORDER__'
+  examples:
+    - 'struct Frame { uint8_t type; uint16_t len; } __attribute__((packed));'
+    - 'uint8_t mode : 3;'
+    - 'uint16_t be = htons(port);'
 sources:
   - https://gcc.gnu.org/gcc-9/changes.html
   - https://en.cppreference.com/w/c/language/bit_field

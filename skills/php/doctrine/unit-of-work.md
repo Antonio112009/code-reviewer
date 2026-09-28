@@ -7,6 +7,9 @@ activation:
   content:
     - '->(?:flush|persist|clear|detach|merge|refresh|lock|wrapInTransaction|transactional)\s*\('
     - '\bLockMode::|#\[ORM\\Version\b|\bresetManager\s*\(|->isOpen\s*\('
+  examples:
+    - '$em->persist($order); $em->flush();'
+    - '$em->find(Order::class, $id, LockMode::PESSIMISTIC_WRITE);'
 sources:
   - https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/working-with-objects.html
   - https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/transactions-and-concurrency.html

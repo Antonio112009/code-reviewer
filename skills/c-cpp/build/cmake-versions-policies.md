@@ -7,6 +7,10 @@ activation:
     - '\bcmake_(?:minimum_required|policy)\s*\(|\bCMP0\d{3}\b|\bCMAKE_POLICY_VERSION_MINIMUM\b'
     - '\bfind_package\s*\(\s*(?:Boost|PythonInterp|PythonLibs|GTest)\b|\bFetchContent_Populate\s*\(|\bexec_program\s*\('
     - '\b[A-Z][A-Z0-9_]{1,40}_(?:FOUND|ROOT)\b'
+  examples:
+    - 'cmake_minimum_required(VERSION 3.10...3.28)'
+    - 'find_package(Boost 1.70 REQUIRED COMPONENTS system)'
+    - 'if(OPENSSL_FOUND)'
 sources:
   - https://cmake.org/cmake/help/latest/release/4.0.html
   - https://cmake.org/cmake/help/latest/release/3.31.html

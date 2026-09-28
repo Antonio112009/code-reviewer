@@ -8,6 +8,10 @@ activation:
     - '\bextends\s+Voter\b|\bVoterInterface\b|\bfunction\s+(?:supports|voteOnAttribute)\s*\('
     - '#\[(?:IsGranted|MapEntity|CurrentUser)\b|->(?:denyAccessUnlessGranted|isGranted)\s*\('
     - '\ballow_if_all_abstain\b|\bstrategy:\s*\w+'
+  examples:
+    - 'class PostVoter extends Voter'
+    - '#[IsGranted(''EDIT'', subject: ''post'')]'
+    - 'allow_if_all_abstain: true'
 sources:
   - https://symfony.com/doc/current/security/voters.html
   - https://symfony.com/doc/current/security.html#securing-controllers-and-other-code

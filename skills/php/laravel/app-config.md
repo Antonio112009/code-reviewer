@@ -9,6 +9,10 @@ activation:
     - '\benv\s*\(\s*[''"]|\bAPP_(?:DEBUG|KEY|PREVIOUS_KEYS)\b'
     - '->trustProxies\s*\(|\$proxies\b|->validateCsrfTokens\s*\(|->preventRequestForgery\s*\(|\$except\b'
     - '\b(?:encrypt|decrypt)\s*\(|\bURL::(?:signedRoute|temporarySignedRoute)\s*\(|\bserializable_classes\b'
+  examples:
+    - '''debug'' => env(''APP_DEBUG'', false),'
+    - '$middleware->trustProxies(at: [''10.0.0.0/8'']);'
+    - '$signedUrl = URL::temporarySignedRoute(''unsubscribe'', now()->addMinutes(30), [''user'' => $user->id]);'
 sources:
   - https://laravel.com/docs/13.x/configuration#configuration-caching
   - https://laravel.com/docs/13.x/encryption

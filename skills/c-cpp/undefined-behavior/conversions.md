@@ -10,6 +10,12 @@ activation:
     - '\b(?:f?getc|getchar)\s*\(|\bEOF\b'
     - '\bstatic_cast\s*<\s*(?:int|long|short|unsigned|size_t|u?int\d+_t)\s*>'
     - '\b(?:l?l?round|lrint|trunc|floor|ceil)\s*\('
+  examples:
+    - 'size_t len = strlen(s);'
+    - 'if (isalpha(c)) { }'
+    - 'int c = getchar();'
+    - 'int n = static_cast<int>(len);'
+    - 'long r = lround(x);'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/integers-int/int31-c/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/characters-and-strings-str/str37-c/

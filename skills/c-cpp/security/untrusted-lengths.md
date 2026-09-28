@@ -9,6 +9,11 @@ activation:
     - '\b(?:recv|recvfrom|recvmsg|fread|read|pread|copy_from_user|get_user)\s*\('
     - '\b(?:alloca|_alloca)\s*\('
     - '->\s*(?:len|length|size|count|offset|off|nbytes)\b(?!\s*\()'
+  examples:
+    - 'uint16_t port = ntohs(hdr->port);'
+    - 'n = recv(fd, buf, sizeof(buf), 0);'
+    - 'char *tmp = alloca(len);'
+    - 'if (offset + pkt->len > buf_size) return -1;'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/arrays-arr/arr30-c/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/integers-int/int30-c/

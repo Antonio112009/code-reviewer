@@ -8,6 +8,10 @@ activation:
     - '\b(?:virtual|override|final)\b'
     - '\b(?:class|struct)\s+\w+\s*(?:final\s*)?:\s*(?:public|protected|private|virtual)\b'
     - '\b(?:dynamic_cast|static_cast)\s*<\s*[\w:]+\s*[*&]\s*>'
+  examples:
+    - 'virtual ~Base() = default;'
+    - 'class Derived final : public Base {'
+    - 'auto* d = dynamic_cast<Derived*>(base);'
 sources:
   - https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#rc-dtor-virtual
   - https://en.cppreference.com/w/cpp/memory/unique_ptr

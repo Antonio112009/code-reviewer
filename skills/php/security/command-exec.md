@@ -8,6 +8,11 @@ activation:
     - '\b(?:exec|shell_exec|system|passthru|popen|proc_open|pcntl_exec)\s*\('
     - '\bescapeshell(?:arg|cmd)\s*\(|`[^`\n]{0,200}\$'
     - '\bmail\s*\('
+  examples:
+    - 'exec("convert " . $filename . " -resize 50% output.png");'
+    - '$escaped = escapeshellarg($userInput);'
+    - '$files = `ls $dir`;'
+    - 'mail($to, $subject, $body, $headers);'
 sources:
   - https://www.php.net/manual/en/function.escapeshellcmd.php
   - https://www.php.net/manual/en/function.proc-open.php

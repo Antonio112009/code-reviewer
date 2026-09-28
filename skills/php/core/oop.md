@@ -9,6 +9,11 @@ activation:
     - '\benum\s+\w+|::(?:from|tryFrom|cases)\s*\('
     - '\breadonly\b|\bclone\b|\b__(?:get|set|clone|unserialize|wakeup)\s*\('
     - '\bstatic\s+\$\w+\s*=|\b(?:private|protected)\(set\)'
+  examples:
+    - 'enum Status: string {'
+    - '$status = Status::tryFrom($input);'
+    - 'public readonly array $items = [];'
+    - 'private static $cache = [];'
 sources:
   - https://www.php.net/manual/en/language.enumerations.backed.php
   - https://www.php.net/manual/en/language.oop5.properties.php

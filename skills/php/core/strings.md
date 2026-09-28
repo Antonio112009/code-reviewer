@@ -8,6 +8,10 @@ activation:
     - '\b(?:strlen|substr|str_pad|strrev|wordwrap|str_split|strtolower|strtoupper|ucfirst|ucwords|stripos|str_ireplace)\s*\('
     - '\b(?:str_contains|str_starts_with|str_ends_with)\s*\('
     - '\bpreg_(?:match|match_all|replace|replace_callback|split|quote|grep)\s*\('
+  examples:
+    - '$len = strlen($name);'
+    - 'if (str_contains($haystack, $needle)) {'
+    - 'if (preg_match(''/^\d+$/'', $input)) {'
 sources:
   - https://www.php.net/manual/en/migration82.incompatible.php
   - https://www.php.net/manual/en/function.str-contains.php

@@ -9,3 +9,4 @@ detect:
     - '\bstd::\w'
     - '^[ \t]*(?:template\s*<|namespace\s+\w|class\s+\w+\s*(?:final\s*)?[:{])'
     - '#\s*include\s*<(?:algorithm|atomic|chrono|coroutine|expected|functional|iostream|map|memory|mutex|optional|ranges|set|span|string|string_view|thread|unordered_map|utility|variant|vector)>'
+  examples: ["std::vector<int> values;", "template <typename T>", "#include <memory>"]

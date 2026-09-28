@@ -8,6 +8,10 @@ activation:
     - '\$_FILES\b|\b(?:move_uploaded_file|is_uploaded_file)\s*\('
     - '\b(?:getimagesize|exif_imagetype|mime_content_type|finfo_file)\s*\('
     - '\bUPLOAD_ERR_\w+'
+  examples:
+    - 'move_uploaded_file($_FILES[''avatar''][''tmp_name''], $dest);'
+    - '$info = getimagesize($tmpName);'
+    - 'if ($_FILES[''file''][''error''] !== UPLOAD_ERR_OK) {'
 sources:
   - https://www.php.net/manual/en/features.file-upload.php
   - https://www.php.net/manual/en/function.getimagesize.php

@@ -8,6 +8,11 @@ activation:
     - '\bEVP_\w+\s*\('
     - '\b(?:RAND_bytes|RAND_priv_bytes|OSSL_PROVIDER_load|EVP_PKEY_get[01]_\w+)\s*\('
     - '\bEVP_CTRL_(?:AEAD|GCM|CCM)_\w+|\bOPENSSL_VERSION_NUMBER\b'
+  examples:
+    - 'if (EVP_DigestVerifyFinal(ctx, sig, siglen) == 1) {'
+    - 'if (RAND_bytes(iv, sizeof(iv)) != 1) return -1;'
+    - 'EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, 16, tag);'
+    - '#if OPENSSL_VERSION_NUMBER < 0x30000000L'
 sources:
   - https://docs.openssl.org/3.5/man3/EVP_DigestVerifyInit/
   - https://docs.openssl.org/3.5/man3/EVP_EncryptInit/

@@ -6,6 +6,8 @@ tags: [CWE-120, CWE-170, CWE-193]
 activation:
   content:
     - '\b(?:str(?:n?cpy|n?cat|l(?:cpy|cat)|len|n?dup)|stpn?cpy|v?sn?printf|gets|v?f?scanf|sscanf)\s*\('
+  examples:
+    - 'strncpy(dst, src, sizeof dst);'
 sources:
   - https://man7.org/linux/man-pages/man7/string_copying.7.html
   - https://man7.org/linux/man-pages/man3/strlcpy.3.html

@@ -9,6 +9,10 @@ activation:
     - '\{!!|@js\s*\(|\bJs::from\s*\('
     - '\bStr::(?:markdown|inlineMarkdown)\s*\(|->(?:markdown|inlineMarkdown)\s*\('
     - '\bnew\s+HtmlString\s*\(|\bBlade::render\s*\('
+  examples:
+    - '{!! $comment->body !!}'
+    - '{{ Str::markdown($post->body) }}'
+    - '{{ new HtmlString($trustedHtml) }}'
 sources:
   - https://laravel.com/docs/13.x/blade#displaying-data
   - https://laravel.com/docs/13.x/strings#method-str-markdown

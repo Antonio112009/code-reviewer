@@ -6,3 +6,4 @@ detect:
   languages: [php]
   files: ["**/wp-content/**/*.php", "**/wp-config.php", "**/wp-includes/**/*.php", "**/wp-admin/**/*.php"]
   content: ["\\badd_(?:action|filter)\\s*\\(\\s*['\"]", "\\$wpdb\\b", "\\bregister_rest_route\\s*\\(", "\\bwp_(?:enqueue_script|verify_nonce|remote_get|remote_post|insert_post|safe_redirect|send_json)\\s*\\(", "^[ \\t/*]{0,6}(?:Plugin|Theme) Name:"]
+  examples: ["add_action('init', 'my_plugin_init');", "global $wpdb;", "register_rest_route('myplugin/v1', '/items', $args);", "wp_enqueue_script('my-script', plugin_dir_url(__FILE__) . 'js/app.js');", " * Plugin Name: My Awesome Plugin"]

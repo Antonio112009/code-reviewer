@@ -9,6 +9,11 @@ activation:
     - '\b(?:file_get_contents|readfile|fopen|file|unlink|file_put_contents|copy|rename|fpassthru|scandir)\s*\([^)\n]{0,80}\$'
     - '\brealpath\s*\(|php://|phar://|data://|zip://|->(?:getNameIndex|statIndex|getStream)\s*\('
     - '\bLIBXML_(?:NOENT|DTDLOAD|DTDATTR|PARSEHUGE)\b'
+  examples:
+    - 'include "lang/" . $lang . ".php";'
+    - '$contents = file_get_contents($path);'
+    - '$real = realpath($path);'
+    - '$dom->loadXML($xml, LIBXML_NOENT | LIBXML_DTDLOAD);'
 sources:
   - https://www.php.net/manual/en/function.include.php
   - https://www.php.net/manual/en/wrappers.php

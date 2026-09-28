@@ -9,6 +9,11 @@ activation:
     - '\bmysqli_(?:query|real_escape_string|multi_query)\s*\(|->real_escape_string\s*\('
     - '\b(?:ORDER\s+BY|LIMIT|LIKE)\b[^;\n]{0,80}\$'
     - '\bSET\s+NAMES\b|\bPDO::ATTR_EMULATE_PREPARES\b|->quote\s*\('
+  examples:
+    - '$pdo->query("SELECT * FROM users WHERE id = $id");'
+    - '$result = mysqli_query($conn, "SELECT * FROM t WHERE id=$id");'
+    - '$sql = "SELECT * FROM users ORDER BY " . $column;'
+    - '$pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);'
 sources:
   - https://www.php.net/manual/en/pdo.prepared-statements.php
   - https://www.php.net/manual/en/ref.pdo-mysql.connection.php

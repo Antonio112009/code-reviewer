@@ -8,6 +8,10 @@ activation:
     - '\bRoute::(?:get|post|put|patch|delete|match|any|resource|apiResource)\s*\(|->scopeBindings\s*\('
     - '\bGate::|->authorize\s*\(|->(?:can|cannot|cant)\s*\(|#\[Authorize\b|[''"]can:'
     - '\bfunction\s+(?:authorize|before)\s*\(|\btokenCan\s*\(|\bBroadcast::channel\s*\('
+  examples:
+    - 'Route::get(''/users/{user}/posts/{post}'', [PostController::class, ''show''])->scopeBindings();'
+    - 'Gate::authorize(''update'', $post);'
+    - 'public function authorize(): bool { return $this->user()->can(''update'', $this->post); }'
 sources:
   - https://laravel.com/docs/13.x/authorization
   - https://laravel.com/docs/13.x/routing#implicit-model-binding-scoping

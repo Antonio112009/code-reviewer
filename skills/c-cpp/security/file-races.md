@@ -7,6 +7,10 @@ activation:
   content:
     - '\b(?:access|faccessat|stat|lstat|open|openat|openat2|creat|fopen|chmod|chown|lchown|rename|unlink|symlink|mkdir|realpath|readlink)\s*\('
     - '\b(?:tmpnam|tempnam|mktemp|mkstemp|mkdtemp|tmpfile)\s*\(|\bO_(?:CREAT|EXCL|NOFOLLOW|TMPFILE)\b|["'']/tmp/'
+  examples:
+    - 'if (stat(path, &st) == 0 && open(path, O_RDONLY) >= 0) {'
+    - 'char *lock_path = "/tmp/app.lock";'
+    - 'int fd = mkstemp(tmpl);'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/input-output-fio/fio45-c/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/posix-pos/pos35-c/

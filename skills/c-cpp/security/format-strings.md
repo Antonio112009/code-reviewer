@@ -8,6 +8,10 @@ activation:
     - '\b(?:v?(?:f|s|sn|d|as)?printf|v?syslog|errx?|warnx?|verrx?|vwarnx?)\s*\('
     - '\b(?:vformat|runtime_format)\s*\(|\bfmt::runtime\s*\('
     - '__attribute__\s*\(\(\s*(?:__)?format(?:__)?\s*\('
+  examples:
+    - 'printf(user_supplied_msg);'
+    - 'fmt::runtime(user_fmt);'
+    - '__attribute__((format(printf, 2, 3)))'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/input-output-fio/fio30-c/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/input-output-fio/fio47-c/

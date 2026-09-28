@@ -7,6 +7,9 @@ activation:
   content:
     - '\bgoto\s+\w+\s*;'
     - '\b(?:fopen|fdopen|fclose|open|openat|close|opendir|closedir|socket|accept4?|pipe2?|dup2?|mmap|munmap|getline|getdelim|asprintf|realpath|scandir|getaddrinfo|freeaddrinfo|regcomp|regfree)\s*\('
+  examples:
+    - 'goto cleanup;'
+    - 'FILE *f = fopen(path, "r");'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/memory-management-mem/mem31-c/
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/rules/input-output-fio/fio42-c/

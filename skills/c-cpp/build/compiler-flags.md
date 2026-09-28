@@ -7,6 +7,10 @@ activation:
     - '-f(?:fast-math|finite-math-only|unsafe-math-optimizations|no-strict-aliasing|wrapv|no-strict-overflow|no-delete-null-pointer-checks)'
     - '-Ofast\b|-march=|_GLIBCXX_(?:DEBUG|USE_CXX11_ABI)|_FILE_OFFSET_BITS|_TIME_BITS|-std=(?:c|gnu)'
     - '\bCMAKE_(?:C|CXX)_STANDARD\b|\b(?:c|cpp)_std\s*='
+  examples:
+    - 'target_compile_options(app PRIVATE -ffast-math)'
+    - 'add_compile_options(-march=native -D_FILE_OFFSET_BITS=64)'
+    - 'set(CMAKE_CXX_STANDARD 17)'
 sources:
   - https://gcc.gnu.org/gcc-13/changes.html
   - https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html

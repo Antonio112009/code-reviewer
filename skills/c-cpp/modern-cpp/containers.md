@@ -7,6 +7,10 @@ activation:
   content:
     - '\b(?:std::)?(?:vector|deque|array|map|unordered_map|multimap|set|unordered_set|multiset|priority_queue)\s*<'
     - '\.(?:front|back|pop_back|pop_front|top)\s*\(\s*\)|\.reserve\s*\('
+  examples:
+    - 'std::vector<int> values;'
+    - 'values.reserve(count);'
+    - 'auto x = values.front();'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/rules/containers-ctr/ctr50-cpp/
   - https://en.cppreference.com/w/cpp/container/map/operator_at

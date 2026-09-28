@@ -8,6 +8,10 @@ activation:
     - '[^=!<>]==[^=]|[^!]!=[^=]'
     - '\b(?:in_array|array_search|array_keys|strpos|stripos|strrpos|filter_var|empty)\s*\('
     - '\bswitch\s*\(|\?:'
+  examples:
+    - 'if ($count == 0) {'
+    - 'if (in_array($status, $allowed, true)) {'
+    - 'switch ($type) {'
 sources:
   - https://www.php.net/manual/en/migration80.incompatible.php
   - https://www.php.net/manual/en/types.comparisons.php

@@ -7,6 +7,9 @@ activation:
   content:
     - '\bjson_(?:encode|decode|validate)\s*\('
     - '\bJSON_(?:THROW_ON_ERROR|BIGINT_AS_STRING|OBJECT_AS_ARRAY)\b'
+  examples:
+    - '$data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);'
+    - '$payload = json_encode($order);'
 sources:
   - https://www.php.net/manual/en/function.json-decode.php
   - https://www.php.net/manual/en/function.json-encode.php

@@ -8,6 +8,10 @@ activation:
     - '\b(?:millis|micros|HAL_GetTick|xTaskGetTickCount\w*|k_uptime_get\w*|esp_timer_get_time|time_us_(?:32|64)|osKernelGetTickCount)\s*\('
     - '\b\w*(?:[Tt]ick|TICK|[Tt]imeout|TIMEOUT|[Dd]eadline)\w*\s*[<>]=?\s*\w'
     - '\b\d{2,}\s*\*\s*\d{3,}\b|\b1\s*<<\s*(?:1[5-9]|2\d|3[01])\b'
+  examples:
+    - 'uint32_t now = HAL_GetTick();'
+    - 'if (deadline <= now) {'
+    - 'uint32_t ms = 60 * 1000;'
 sources:
   - https://docs.arduino.cc/language-reference/en/functions/time/millis/
   - https://docs.arduino.cc/language-reference/en/variables/data-types/int/

@@ -8,6 +8,10 @@ activation:
     - '\bnew\s+WP_Query\s*\(|\bget_posts\s*\(|\b(?:posts_per_page|numberposts|nopaging|meta_query|suppress_filters)\b'
     - '\b(?:add|update)_option\s*\(|\bset_(?:site_)?transient\s*\('
     - '\bwp_schedule_(?:single_)?event\s*\(|\bswitch_to_blog\s*\('
+  examples:
+    - '$query = new WP_Query([''posts_per_page'' => -1]);'
+    - 'update_option(''my_plugin_settings'', $settings);'
+    - 'wp_schedule_event(time(), ''daily'', ''my_cron_hook'');'
 sources:
   - https://developer.wordpress.org/reference/functions/get_posts/
   - https://developer.wordpress.org/reference/classes/wp_query/

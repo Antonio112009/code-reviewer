@@ -7,6 +7,10 @@ activation:
     - '\b(?:add_definitions|add_compile_definitions|add_compile_options|include_directories|link_libraries|target_compile_definitions|target_include_directories|target_link_libraries|target_compile_features)\s*\('
     - '\bCMAKE_(?:C|CXX)_(?:FLAGS\w*|STANDARD\w*|EXTENSIONS)\b|\bCMAKE_BUILD_TYPE\b'
     - '\bfile\s*\(\s*GLOB|\boption\s*\(|\bset\s*\([^)\n]{0,120}\bCACHE\b'
+  examples:
+    - 'target_compile_features(app PUBLIC cxx_std_20)'
+    - 'set(CMAKE_CXX_STANDARD 20)'
+    - 'file(GLOB SOURCES "src/*.cpp")'
 sources:
   - https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html
   - https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html

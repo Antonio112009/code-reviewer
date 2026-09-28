@@ -9,6 +9,11 @@ activation:
     - '\bconstinit\b|^[ \t]*(?:static\s+|inline\s+|extern\s+)?(?:const\s+)?[\w:]+(?:<[^>\n]{0,60}>)?\s+[gs]_\w+\s*[({=]'
     - '\b(?:std::)?(?:vector|basic_string|string)\s*(?:<[^>\n]{0,40}>)?\s*\w+\s*\{\s*\w+\s*,'
     - '\b(?:Eigen|blaze|xt)::'
+  examples:
+    - 'Widget::Widget(int n) : size_(n), buf_(new int[n]) {}'
+    - 'static std::atomic<int> g_counter{0};'
+    - 'std::vector<int> v{10, 1};'
+    - 'Eigen::MatrixXd c = a * b;'
 sources:
   - https://cmu-sei.github.io/secure-coding-standards/sei-cert-cpp-coding-standard/rules/object-oriented-programming-oop/oop53-cpp/
   - https://en.cppreference.com/w/cpp/language/siof

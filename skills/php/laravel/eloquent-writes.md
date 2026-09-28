@@ -8,6 +8,10 @@ activation:
     - '->(?:update|delete|insert|insertOrIgnore|upsert|forceDelete)\s*\(|::(?:insert|upsert|destroy)\s*\('
     - '(?:->|::)(?:firstOrCreate|updateOrCreate|firstOrNew|createOrFirst|increment|decrement|lockForUpdate|sharedLock)\s*\('
     - '\bDB::(?:transaction|beginTransaction)\s*\('
+  examples:
+    - 'User::where(''id'', $id)->update([''active'' => false]);'
+    - '$account = Account::lockForUpdate()->find($id);'
+    - 'DB::transaction(function () use ($order) { $order->save(); });'
 sources:
   - https://laravel.com/docs/13.x/eloquent#mass-updates
   - https://laravel.com/docs/13.x/eloquent#upserts

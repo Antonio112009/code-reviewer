@@ -8,6 +8,9 @@ activation:
     - '\bstd::chrono::|\b(?:system_clock|steady_clock|high_resolution_clock|duration_cast|time_point)\b'
     - '\b(?:time|clock|gettimeofday|clock_gettime|mktime|timegm|difftime)\s*\('
     - '\b(?:time_t|CLOCK_(?:REALTIME|MONOTONIC)\w*|CLOCKS_PER_SEC|_TIME_BITS)\b'
+  examples:
+    - 'auto start = std::chrono::steady_clock::now();'
+    - 'time_t now = time(NULL);'
 sources:
   - https://en.cppreference.com/w/cpp/chrono/high_resolution_clock
   - https://en.cppreference.com/w/c/chrono/clock

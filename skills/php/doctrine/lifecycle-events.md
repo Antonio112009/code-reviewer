@@ -8,6 +8,9 @@ activation:
     - '#\[(?:ORM\\(?:PrePersist|PostPersist|PreUpdate|PostUpdate|PreRemove|PostRemove|PostLoad|PreFlush|HasLifecycleCallbacks)|AsDoctrineListener|AsEntityListener)\b'
     - '\b(?:PreUpdate|OnFlush|PostFlush|PrePersist|PostPersist|PostUpdate|PostRemove|Lifecycle)EventArgs\b'
     - '\bfunction\s+(?:prePersist|postPersist|preUpdate|postUpdate|preRemove|postRemove|onFlush|preFlush|postLoad)\s*\('
+  examples:
+    - '#[ORM\HasLifecycleCallbacks]'
+    - 'public function preUpdate(PreUpdateEventArgs $event): void'
 sources:
   - https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/events.html
   - https://www.doctrine-project.org/projects/doctrine-orm/en/current/reference/events.html#implementing-event-listeners

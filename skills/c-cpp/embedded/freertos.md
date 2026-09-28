@@ -7,6 +7,9 @@ activation:
   content:
     - '\b(?:xTask|vTask|ulTask|uxTask|xQueue|vQueue|uxQueue|xSemaphore|vSemaphore|xEventGroup|xTimer|xStreamBuffer|xMessageBuffer)\w*\s*\('
     - '\b(?:portYIELD_FROM_ISR|portEND_SWITCHING_ISR|taskENTER_CRITICAL\w*|taskEXIT_CRITICAL\w*|pdMS_TO_TICKS|configMAX_(?:SYSCALL|API_CALL)_INTERRUPT_PRIORITY)\b'
+  examples:
+    - 'xQueueSend(xQueue, &item, portMAX_DELAY);'
+    - 'portYIELD_FROM_ISR(xHigherPriorityTaskWoken);'
 sources:
   - https://github.com/FreeRTOS/FreeRTOS-Kernel-Book/blob/main/ch07.md
   - https://github.com/FreeRTOS/FreeRTOS-Kernel-Book/blob/main/ch08.md

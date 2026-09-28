@@ -13,3 +13,4 @@ detect:
     - '\bISR\s*\(|__attribute__\s*\(\(\s*(?:interrupt|isr|signal)\b|\b\w+_IRQHandler\s*\(|\bIRAM_ATTR\b|#\s*pragma\s+(?:vector|interrupt)\b'
     - '\b(?:NVIC_\w+|__disable_irq|__enable_irq|__DSB|__DMB|taskENTER_CRITICAL\w*|portENTER_CRITICAL\w*|xTaskCreate\w*)\s*\('
     - '\(\s*\*\s*\(\s*volatile\s+(?:uint(?:8|16|32)_t|unsigned\s+\w+)\s*\*\s*\)\s*0x[0-9A-Fa-f]+'
+  examples: ["#include \"stm32f4xx_hal.h\"", "void TIM2_IRQHandler(void) {", "__disable_irq();", "#define GPIOA_ODR (*(volatile uint32_t *)0x40020014)"]

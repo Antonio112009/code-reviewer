@@ -5,3 +5,4 @@ priority: 60
 detect:
   files: ["**/*.twig"]
   content: ["\\bTwig\\\\(?:Environment|Loader\\\\)", "->createTemplate\\s*\\(", "\\btemplate_from_string\\b"]
+  examples: ["$twig = new Twig\\Environment($loader, $options);", "$page = $twig->createTemplate($source);", "{{ include(template_from_string(page.snippet)) }}"]

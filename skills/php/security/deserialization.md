@@ -8,6 +8,11 @@ activation:
     - '\b(?:unserialize|igbinary_unserialize|msgpack_unpack)\s*\('
     - '\ballowed_classes\b|phar://'
     - '\bfunction\s+__(?:wakeup|unserialize|destruct|toString)\s*\('
+  examples:
+    - '$data = unserialize($_COOKIE[''session_data'']);'
+    - '$data = unserialize($raw, [''allowed_classes'' => false]);'
+    - 'if (file_exists("phar://" . $path)) {'
+    - 'public function __wakeup(): void {'
 sources:
   - https://www.php.net/manual/en/function.unserialize.php
   - https://www.php.net/manual/en/migration80.incompatible.php

@@ -8,6 +8,9 @@ activation:
   content:
     - '\bApiPlatform\\|#\[(?:ApiResource|ApiProperty|ApiFilter)\b'
     - '#\[(?:GetCollection|Get|Post|Put|Patch|Delete)\s*\(|\bsecurityPostDenormalize\b|\bprevious_object\b'
+  examples:
+    - 'use ApiPlatform\Metadata\ApiResource;'
+    - '#[Patch(securityPostDenormalize: ''object.owner == previous_object.owner'')]'
 sources:
   - https://api-platform.com/docs/core/operations/
   - https://api-platform.com/docs/symfony/security/
