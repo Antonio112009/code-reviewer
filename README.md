@@ -220,7 +220,8 @@ npm install && npm run build && npm run typecheck && npm run lint && npm test
   tag (`git tag v0.1.1 && git push origin v0.1.1`). The release workflow:
   - tests and packs the package, and attests its build provenance;
   - publishes a GitHub release with `code-reviewer.tgz`;
-  - publishes `@antonio112009/code-reviewer` to npm through Trusted Publishing, with provenance.
+  - stages `@antonio112009/code-reviewer` on npm through Trusted Publishing. It goes live once you
+    approve it with 2FA: `npm stage list`, then `npm stage approve <id>`, or on npmjs.com.
 
   Verify a download with `gh attestation verify code-reviewer.tgz --repo antonio112009/code-reviewer`.
 

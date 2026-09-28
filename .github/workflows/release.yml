@@ -1,8 +1,10 @@
 name: Release
 
 # Push a tag that matches package.json (`git tag v0.1.1 && git push origin v0.1.1`): the tarball is tested,
-# attested (build provenance), attached to a GitHub release and published to npm as
-# @antonio112009/code-reviewer through npm Trusted Publishing (OIDC, no stored token). The stable URL
+# attested (build provenance), attached to a GitHub release and staged on npm as
+# @antonio112009/code-reviewer through npm Trusted Publishing (OIDC, no stored token). A maintainer then
+# approves the staged version with 2FA (`npm stage list`, `npm stage approve <id>`), so this workflow alone
+# can never publish to npm. The stable URL
 # https://github.com/antonio112009/code-reviewer/releases/latest/download/code-reviewer.tgz
 # always installs the newest version.
 on:
@@ -50,5 +52,8 @@ jobs:
           gh release create "$GITHUB_REF_NAME" code-reviewer.tgz "code-reviewer-${GITHUB_REF_NAME#v}.tgz" \
             --title "Code Reviewer $GITHUB_REF_NAME" --notes-file CHANGELOG.md
       # Needs the Trusted Publisher configured for this repository and workflow on npmjs.com.
-      - name: Publish to npm
-        run: npm publish "code-reviewer-${GITHUB_REF_NAME#v}.tgz" --access public --provenance
+      # `npm stage` needs a recent npm, pinned here to the version it was tested with.
+      - name: Stage the npm release
+        run: |
+          npm install -g npm@11.19.0
+          npm stage publish "code-reviewer-${GITHUB_REF_NAME#v}.tgz" --access public
