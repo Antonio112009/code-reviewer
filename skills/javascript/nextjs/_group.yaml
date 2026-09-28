@@ -15,3 +15,9 @@ detect:
     - "^\\s*['\"]use (?:client|server|cache)(?::\\s*\\w+)?['\"]"
     - "\\b(?:getServerSideProps|getStaticProps|getStaticPaths|generateStaticParams|generateMetadata)\\b"
     - "\\bNEXT_PUBLIC_\\w+"
+  examples:
+    - "import { NextResponse } from 'next/server';"
+    - "import 'server-only';"
+    - "'use client';"
+    - "export async function generateMetadata() {"
+    - "const apiUrl = process.env.NEXT_PUBLIC_API_URL;"

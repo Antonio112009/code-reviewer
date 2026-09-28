@@ -8,6 +8,10 @@ activation:
     - '\bset(?:Permission(?:Request|Check)|DevicePermission|DisplayMediaRequest)Handler\b'
     - 'select-(?:hid-device|usb-device|serial-port|bluetooth-device)|select-client-certificate'
     - 'certificate-error|ignore-certificate-errors|\bsetCertificateVerifyProc\b'
+  examples:
+    - 'session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => callback(false));'
+    - "session.on('select-usb-device', (event, details, callback) => { callback(details.deviceList[0].deviceId); });"
+    - "app.on('certificate-error', (event, webContents, url, error, certificate, callback) => { callback(true); });"
 sources:
   - https://www.electronjs.org/docs/latest/tutorial/security
   - https://www.electronjs.org/docs/latest/api/session

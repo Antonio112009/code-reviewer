@@ -5,6 +5,8 @@ priority: 72
 tags: [CWE-862, CWE-639, OWASP-A01]
 activation:
   content: ["['\"]use server['\"]"]
+  examples:
+    - "'use server';"
 sources:
   - https://react.dev/reference/rsc/use-server
   - https://react.dev/reference/rsc/server-functions

@@ -7,6 +7,10 @@ activation:
     - 'expo-av|expo-file-system|@react-navigation/|@expo/vector-icons'
     - '\bnew (?:File|Directory)\(|\b(?:readAsStringAsync|writeAsStringAsync|documentDirectory|cacheDirectory)\b'
     - '\b(?:newArchEnabled|edgeToEdgeEnabled)\b'
+  examples:
+    - "import { Audio } from 'expo-av';"
+    - "const file = new File(Paths.document, 'data.json');"
+    - 'newArchEnabled: true,'
   files: ['**/app.config.{js,ts,mjs,cjs}']
   versions: { framework.react-native: '>=0.81' }
 sources:

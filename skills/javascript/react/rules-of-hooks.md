@@ -4,6 +4,8 @@ description: Hook call-order violations — conditional or late hooks, component
 priority: 64
 activation:
   content: ["\\buse[A-Z]\\w*\\s*[<(]"]
+  examples:
+    - "const [value, setValue] = useState(0);"
 sources:
   - https://react.dev/reference/rules/rules-of-hooks
   - https://react.dev/learn/reusing-logic-with-custom-hooks

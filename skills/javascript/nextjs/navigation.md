@@ -9,6 +9,11 @@ activation:
     - "\\bunstable_rethrow\\b"
     - "\\buse(?:Router|SearchParams)\\s*\\("
     - "['\"]next/(?:navigation|router)['\"]"
+  examples:
+    - "redirect('/login');"
+    - "unstable_rethrow(err);"
+    - "const searchParams = useSearchParams();"
+    - "import { redirect } from 'next/navigation';"
 sources:
   - https://nextjs.org/docs/app/api-reference/functions/redirect
   - https://nextjs.org/docs/app/api-reference/functions/unstable_rethrow

@@ -6,6 +6,9 @@ activation:
   content:
     - 'expo-notifications|\bNotifications\.\w+'
     - '\b(?:getExpoPushTokenAsync|getDevicePushTokenAsync|setNotificationHandler|setNotificationChannelAsync|addPushTokenListener|useLastNotificationResponse)\b'
+  examples:
+    - "import * as Notifications from 'expo-notifications';"
+    - 'Notifications.setNotificationHandler({ handleNotification: async () => ({ shouldShowAlert: true }) });'
 sources:
   - https://docs.expo.dev/versions/latest/sdk/notifications/
   - https://expo.dev/changelog/sdk-54

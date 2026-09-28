@@ -8,6 +8,11 @@ activation:
     - "\\bErrorBoundary\\b"
     - "\\bon(?:Caught|Uncaught|Recoverable)Error\\b"
     - "\\bshowBoundary\\b"
+  examples:
+    - "componentDidCatch(error, info) { logError(error, info); }"
+    - "<ErrorBoundary FallbackComponent={ErrorFallback}>{children}</ErrorBoundary>"
+    - "createRoot(container, { onCaughtError, onUncaughtError });"
+    - "showBoundary(error);"
 sources:
   - https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary
   - https://react.dev/blog/2024/04/25/react-19-upgrade-guide

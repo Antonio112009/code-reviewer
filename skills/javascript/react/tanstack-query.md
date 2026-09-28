@@ -8,6 +8,10 @@ activation:
     - "\\bquery(?:Key|Fn)\\s*:"
     - "\\buse(?:Suspense)?(?:Infinite)?Query\\s*\\(\\s*\\{"
     - "\\b(?:useMutation|invalidateQueries|setQueryData)\\b"
+  examples:
+    - "import { useQuery } from '@tanstack/react-query';"
+    - "useQuery({ queryKey: ['user', id], queryFn: () => fetchUser(id) });"
+    - "const mutation = useMutation({ mutationFn: updateUser, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['user'] }) });"
 sources:
   - https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
   - https://tanstack.com/query/latest/docs/framework/react/guides/migrating-to-v5

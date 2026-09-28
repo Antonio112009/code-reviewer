@@ -7,6 +7,9 @@ activation:
   content:
     - "\\bexport\\s+(?:const\\s+metadata|(?:async\\s+)?function\\s+generate(?:Metadata|Viewport))\\b"
     - "\\b(?:metadataBase|openGraph)\\s*:"
+  examples:
+    - "export const metadata = { title: 'Home', openGraph: { images: ['/og.png'] } };"
+    - "export async function generateMetadata({ params }) {"
 sources:
   - https://nextjs.org/docs/app/api-reference/functions/generate-metadata
   - https://nextjs.org/docs/app/api-reference/functions/generate-viewport

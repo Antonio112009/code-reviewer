@@ -8,6 +8,9 @@ activation:
     - '\b(?:FlatList|SectionList|VirtualizedList|FlashList|LegendList)\b'
     - '\brenderItem\b'
     - '<ScrollView\b'
+  examples:
+    - '<FlatList data={items} renderItem={renderRow} keyExtractor={item => item.id} />'
+    - '<ScrollView>{items.map(renderRow)}</ScrollView>'
 sources:
   - https://reactnative.dev/docs/flatlist
   - https://reactnative.dev/docs/optimizing-flatlist-configuration

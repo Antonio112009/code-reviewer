@@ -7,6 +7,10 @@ activation:
     - "\\bexport\\s+const\\s+(?:dynamic|revalidate|fetchCache|dynamicParams|runtime|maxDuration)\\s*="
     - "\\bgenerateStaticParams\\b"
     - "\\bafter\\s*\\("
+  examples:
+    - "export const dynamic = 'force-static';"
+    - "export async function generateStaticParams() {"
+    - "after(() => logAnalytics(event));"
 sources:
   - https://nextjs.org/docs/app/guides/caching-without-cache-components
   - https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config

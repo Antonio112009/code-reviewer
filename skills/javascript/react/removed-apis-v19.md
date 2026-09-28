@@ -11,6 +11,14 @@ activation:
     - "\\b(?:contextTypes|childContextTypes|getChildContext)\\b"
     - "\\bref=['\"]\\w"
     - "\\bthis\\.refs\\b"
+  examples:
+    - "Button.defaultProps = { size: 'medium' };"
+    - "ReactDOM.render(<App />, document.getElementById('root'));"
+    - "unmountComponentAtNode(container);"
+    - "import { act } from 'react-dom/test-utils';"
+    - "static contextTypes = { theme: PropTypes.object };"
+    - '<input ref="nameInput" />'
+    - "this.refs.nameInput.focus();"
   versions: { framework.react: ">=19" }
 sources:
   - https://react.dev/blog/2024/04/25/react-19-upgrade-guide

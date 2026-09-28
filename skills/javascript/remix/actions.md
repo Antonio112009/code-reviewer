@@ -10,6 +10,12 @@ activation:
     - "\\buse(?:Fetcher|Submit|ActionData)\\b"
     - "<(?:Form|fetcher\\.Form)\\b"
     - "\\bredirectTo\\b"
+  examples:
+    - "export async function action({ request }) {"
+    - "export const action = async ({ request }) => {"
+    - "const fetcher = useFetcher();"
+    - '<Form method="post">'
+    - "const redirectTo = formData.get('redirectTo');"
 sources:
   - https://reactrouter.com/start/framework/actions
   - https://api.reactrouter.com/v7/interfaces/react-router.SubmitOptions.html

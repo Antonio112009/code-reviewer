@@ -8,6 +8,9 @@ activation:
     - "\\bprocess\\.env\\b"
     - "\\bNEXT_PUBLIC_\\w+"
     - "\\bloadEnvConfig\\s*\\("
+  examples:
+    - "const apiUrl = process.env.NEXT_PUBLIC_API_URL;"
+    - "loadEnvConfig(process.cwd());"
 sources:
   - https://nextjs.org/docs/app/guides/environment-variables
   - https://nextjs.org/docs/app/api-reference/config/next-config-js/env

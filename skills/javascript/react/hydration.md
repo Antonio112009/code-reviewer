@@ -10,6 +10,12 @@ activation:
     - "\\bhydrateRoot\\s*\\("
     - "\\b(?:localStorage|sessionStorage|matchMedia)\\b"
     - "\\b(?:toLocale(?:Date|Time)?String|Date\\.now|Math\\.random)\\s*\\("
+  examples:
+    - "if (typeof window !== 'undefined') { init(); }"
+    - "<time suppressHydrationWarning>{formatted}</time>"
+    - "hydrateRoot(document, <App />);"
+    - "const theme = localStorage.getItem('theme');"
+    - "const label = date.toLocaleDateString();"
 sources:
   - https://react.dev/reference/react-dom/client/hydrateRoot
   - https://react.dev/reference/react/useId

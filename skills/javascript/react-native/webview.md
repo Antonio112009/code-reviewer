@@ -8,6 +8,9 @@ activation:
     - 'react-native-webview|<WebView\b'
     - '\b(?:injectJavaScript|injectedJavaScript\w*|onShouldStartLoadWithRequest|originWhitelist)\b'
     - '\ballow(?:FileAccess\w*|UniversalAccessFromFileURLs|ingReadAccessToURL)\b'
+  examples:
+    - "<WebView source={{ uri }} originWhitelist={['*']} />"
+    - '<WebView source={{ uri }} allowFileAccess allowUniversalAccessFromFileURLs />'
 sources:
   - https://github.com/react-native-webview/react-native-webview/blob/master/docs/Reference.md
   - https://github.com/react-native-webview/react-native-webview/blob/master/docs/Guide.md

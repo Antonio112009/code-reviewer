@@ -8,6 +8,10 @@ activation:
     - '\bwebPreferences\b|\bnodeIntegration\w*|\bcontextIsolation\b|\bsandbox\s*:'
     - '\b(?:webSecurity|allowRunningInsecureContent|experimentalFeatures|enableBlinkFeatures|webviewTag)\b'
     - 'appendSwitch\(\s*[''"](?:no-sandbox|disable-web-security|disable-site-isolation-trials|ignore-certificate-errors)'
+  examples:
+    - 'webPreferences: { nodeIntegration: false, contextIsolation: true },'
+    - 'webviewTag: true,'
+    - "app.commandLine.appendSwitch('disable-web-security');"
 sources:
   - https://www.electronjs.org/docs/latest/tutorial/security
   - https://www.electronjs.org/docs/latest/tutorial/sandbox

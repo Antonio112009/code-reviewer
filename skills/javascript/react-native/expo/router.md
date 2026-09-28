@@ -7,6 +7,9 @@ activation:
     - 'expo-router'
     - '\buse(?:Local|Global)SearchParams\b|\bStack\.Protected\b|<Redirect\b'
     - '\brouter\.(?:push|replace|navigate|dismissTo|setParams)\('
+  examples:
+    - "import { useLocalSearchParams } from 'expo-router';"
+    - "router.push('/profile');"
   files: ['**/app/**/_layout.{js,jsx,ts,tsx}']
 sources:
   - https://docs.expo.dev/router/advanced/protected/

@@ -8,6 +8,11 @@ activation:
     - "\\buseContext\\s*\\("
     - "\\.Provider\\b"
     - "<\\w+Context\\b"
+  examples:
+    - "const ThemeContext = createContext<Theme>(defaultTheme);"
+    - "const theme = useContext(ThemeContext);"
+    - "<ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>"
+    - "<UserContext value={user}>{children}</UserContext>"
 sources:
   - https://react.dev/reference/react/useContext
   - https://react.dev/reference/react/createContext

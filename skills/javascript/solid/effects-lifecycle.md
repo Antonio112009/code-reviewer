@@ -7,6 +7,10 @@ activation:
     - "\\bcreate(?:Effect|RenderEffect|Root|Reaction)\\s*[(<]"
     - "\\b(?:onMount|onCleanup|untrack|batch|getOwner|runWithOwner)\\s*\\("
     - "(?<![.\\w$])on\\s*\\(\\s*[a-zA-Z_$\\[]"
+  examples:
+    - "createEffect(() => { console.log(count()); });"
+    - "onCleanup(() => clearInterval(id));"
+    - "createEffect(on(source, (value) => { doSomething(value); }));"
   versions: { framework.solid: "<2" }
 sources:
   - https://docs.solidjs.com/concepts/effects

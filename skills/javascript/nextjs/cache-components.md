@@ -8,6 +8,10 @@ activation:
     - "['\"]use cache(?::\\s*\\w+)?['\"]"
     - "\\b(?:cacheLife|cacheTag)\\s*\\("
     - "\\bcacheComponents\\s*:"
+  examples:
+    - "'use cache';"
+    - "cacheTag('user-' + userId);"
+    - "cacheComponents: true,"
   versions: { framework.nextjs: ">=15" }
 sources:
   - https://nextjs.org/docs/app/api-reference/directives/use-cache

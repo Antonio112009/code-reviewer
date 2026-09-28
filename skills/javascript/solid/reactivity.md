@@ -8,6 +8,11 @@ activation:
     - "\\b(?:splitProps|mergeProps|children)\\s*\\("
     - "\\bprops\\.[a-zA-Z_$]"
     - "\\bconst\\s*\\{[^}\\n]{1,120}\\}\\s*=\\s*props\\b"
+  examples:
+    - "const [count, setCount] = createSignal(0);"
+    - "const [local, rest] = splitProps(props, ['title']);"
+    - "return <div>{props.title}</div>;"
+    - "const { title } = props;"
 sources:
   - https://docs.solidjs.com/concepts/components/props
   - https://docs.solidjs.com/concepts/components/basics

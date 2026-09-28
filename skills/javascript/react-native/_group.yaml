@@ -11,3 +11,7 @@ detect:
   content:
     - '(?:\bfrom|\bimport)\s*[''"](?:react-native|expo|@expo/|@react-native|@react-navigation/|@shopify/flash-list)'
     - '\brequire\(\s*[''"](?:react-native|expo|@expo/)'
+  examples:
+    - "import { View } from 'react-native';"
+    - "const RN = require('react-native');"
+

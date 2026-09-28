@@ -8,6 +8,11 @@ activation:
     - "\\bcreate(?:Store|Mutable)\\s*[(<]"
     - "\\b(?:produce|reconcile|unwrap)\\s*\\("
     - "\\)\\.map\\s*\\(\\s*\\(?[a-zA-Z_$]"
+  examples:
+    - "<For each={items()}>{(item) => <Row item={item} />}</For>"
+    - "const [store, setStore] = createStore({ items: [] });"
+    - "setStore('list', reconcile(serverData));"
+    - "{items().map(item => <Row item={item} />)}"
   versions: { framework.solid: "<2" }
 sources:
   - https://docs.solidjs.com/concepts/control-flow/list-rendering

@@ -7,6 +7,9 @@ activation:
   content:
     - '\bEXPO_PUBLIC_\w|\bprocess\.env\b'
     - '\bextra\s*:|\bexpoConfig\b|\bConstants\.(?:expoConfig|manifest\w*)\b'
+  examples:
+    - 'const apiKey = process.env.EXPO_PUBLIC_API_KEY;'
+    - 'const extra = Constants.expoConfig?.extra;'
   files: ['**/app.config.{js,ts,mjs,cjs}', '**/app/**/*+api.{js,ts}']
 sources:
   - https://docs.expo.dev/guides/environment-variables/

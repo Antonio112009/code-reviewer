@@ -8,6 +8,11 @@ activation:
     - "\\b(?:createRef|forwardRef)\\s*[<(]"
     - "\\bref=\\{"
     - "\\buseId\\s*\\("
+  examples:
+    - "const inputRef = useRef<HTMLInputElement>(null);"
+    - "const Input = forwardRef<HTMLInputElement, Props>((props, ref) => <input {...props} ref={ref} />);"
+    - "<input ref={inputRef} />"
+    - "const id = useId();"
 sources:
   - https://react.dev/reference/react/useRef
   - https://react.dev/reference/react-dom/components/common

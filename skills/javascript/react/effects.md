@@ -5,6 +5,8 @@ priority: 65
 tags: [CWE-362, CWE-401]
 activation:
   content: ["\\buse(?:Layout|Insertion)?Effect\\s*\\("]
+  examples:
+    - "useEffect(() => { const id = setInterval(tick, 1000); return () => clearInterval(id); }, []);"
 sources:
   - https://react.dev/reference/react/useEffect
   - https://react.dev/learn/you-might-not-need-an-effect

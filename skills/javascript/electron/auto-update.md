@@ -8,6 +8,10 @@ activation:
     - 'electron-updater|update-electron-app|\bautoUpdater\b'
     - '\b(?:setFeedURL|quitAndInstall|checkForUpdates(?:AndNotify)?)\('
     - '\b(?:allowDowngrade|allowUnverifiedLinuxPackages|disableWebInstaller|verifyUpdateCodeSignature)\b'
+  examples:
+    - "const { autoUpdater } = require('electron-updater');"
+    - 'autoUpdater.checkForUpdatesAndNotify();'
+    - 'autoUpdater.allowDowngrade = true;'
 sources:
   - https://www.electron.build/docs/features/auto-update/
   - https://github.com/electron-userland/electron-builder/security/advisories/GHSA-9jxc-qjr9-vjxq

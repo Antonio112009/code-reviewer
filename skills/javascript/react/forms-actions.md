@@ -7,6 +7,10 @@ activation:
     - "\\buse(?:ActionState|FormStatus|Optimistic|FormState)\\s*\\("
     - "\\b(?:action|formAction)=\\{"
     - "\\brequestFormReset\\s*\\("
+  examples:
+    - "const [state, formAction] = useActionState(updateUser, initialState);"
+    - "<form action={updateUser}>"
+    - "requestFormReset(formRef.current);"
   versions: { framework.react: ">=19" }
 sources:
   - https://react.dev/reference/react/useActionState

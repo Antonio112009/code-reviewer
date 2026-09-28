@@ -8,6 +8,10 @@ activation:
     - 'will-(?:frame-)?navigate|will-redirect|\bsetWindowOpenHandler\b|[''"]new-window[''"]'
     - '\bshell\.(?:openExternal|openPath|showItemInFolder)\b'
     - '\bloadURL\('
+  examples:
+    - "win.webContents.setWindowOpenHandler(({ url }) => ({ action: 'deny' }));"
+    - 'shell.openExternal(url);'
+    - "mainWindow.loadURL('https://example.com');"
 sources:
   - https://www.electronjs.org/docs/latest/tutorial/security
   - https://www.electronjs.org/docs/latest/api/web-contents

@@ -8,6 +8,10 @@ activation:
     - '\bprotocol\.(?:handle|register\w*|intercept\w*|unhandle)\('
     - '\bregisterSchemesAsPrivileged\b|\bnet\.fetch\(|\bpathToFileURL\b'
     - '[''"]file://|\bloadFile\(|\bGrantFileProtocolExtraPrivileges\b'
+  examples:
+    - "protocol.handle('app', (req) => net.fetch(resolveSafe(req.url)));"
+    - "protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true } }]);"
+    - "mainWindow.loadFile('index.html');"
 sources:
   - https://www.electronjs.org/docs/latest/api/protocol
   - https://www.electronjs.org/docs/latest/tutorial/security

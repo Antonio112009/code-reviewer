@@ -8,6 +8,9 @@ activation:
     - '\baccessib\w+|\baria-[a-z]+|\brole='
     - '<(?:Pressable|TouchableOpacity|TouchableHighlight|TouchableWithoutFeedback)\b'
     - '\b(?:hitSlop|allowFontScaling|maxFontSizeMultiplier|importantForAccessibility|AccessibilityInfo)\b'
+  examples:
+    - '<Pressable accessibilityLabel="Delete item" onPress={onDelete}>'
+    - 'hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}'
 sources:
   - https://reactnative.dev/docs/accessibility
   - https://reactnative.dev/docs/accessibilityinfo

@@ -7,6 +7,9 @@ activation:
   content:
     - "\\b(?:revalidatePath|revalidateTag|updateTag|unstable_cache)\\s*\\("
     - "\\bres\\.revalidate\\s*\\("
+  examples:
+    - "revalidatePath('/blog/[slug]', 'page');"
+    - "await res.revalidate('/blog/my-post');"
 sources:
   - https://nextjs.org/docs/app/api-reference/functions/revalidatePath
   - https://nextjs.org/docs/app/api-reference/functions/updateTag

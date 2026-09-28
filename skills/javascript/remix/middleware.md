@@ -10,6 +10,12 @@ activation:
     - "\\bcontext\\.(?:get|set)\\s*\\("
     - "\\bv8_middleware\\b"
     - "\\b(?:getLoadContext|AppLoadContext)\\b"
+  examples:
+    - "export const middleware = [authMiddleware];"
+    - "const context = new RouterContextProvider();"
+    - "context.set(userContext, user);"
+    - "future: { v8_middleware: true },"
+    - "export const getLoadContext = () => ({ db });"
   versions: { framework.remix: ">=7.9" }
 sources:
   - https://reactrouter.com/how-to/middleware

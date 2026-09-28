@@ -9,6 +9,11 @@ activation:
     - "\\b(?:componentDidUpdate|componentWillUnmount|getDerivedStateFromProps|shouldComponentUpdate)\\b"
     - "\\bUNSAFE_component\\w+"
     - "\\bthis\\.setState\\s*\\("
+  examples:
+    - "class UserCard extends React.Component {"
+    - "componentDidUpdate(prevProps) { if (prevProps.id !== this.props.id) this.load(); }"
+    - "UNSAFE_componentWillMount() { this.load(); }"
+    - "this.setState({ count: this.state.count + 1 });"
 sources:
   - https://react.dev/reference/react/Component
   - https://legacy.reactjs.org/blog/2018/06/07/you-probably-dont-need-derived-state.html

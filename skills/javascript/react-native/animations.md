@@ -9,6 +9,10 @@ activation:
     - 'react-native-(?:reanimated|worklets)'
     - '\buse(?:SharedValue|AnimatedStyle|DerivedValue|AnimatedProps|AnimatedGestureHandler|WorkletCallback)\b'
     - '\b(?:runOnJS|runOnUI|scheduleOnRN|scheduleOnUI)\b|[''"]worklet[''"]'
+  examples:
+    - 'Animated.timing(value, { toValue: 1, useNativeDriver: true }).start();'
+    - "import { useSharedValue } from 'react-native-reanimated';"
+    - "const style = useAnimatedStyle(() => { 'worklet'; runOnJS(setCount)(1); return {}; });"
 sources:
   - https://reactnative.dev/docs/animations
   - https://docs.swmansion.com/react-native-reanimated/docs/core/useSharedValue/

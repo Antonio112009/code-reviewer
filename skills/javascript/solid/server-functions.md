@@ -10,6 +10,11 @@ activation:
     - "\\b(?:action|createAsync|useSubmission|useAction)\\s*\\("
     - "\\bgetRequestEvent\\s*\\("
     - "from ['\"]@solidjs/start(?:/[a-z]+)?['\"]"
+  examples:
+    - "'use server';"
+    - "const data = createAsync(() => getUser(id));"
+    - "const event = getRequestEvent();"
+    - "import { getRequestEvent } from '@solidjs/start/server';"
 sources:
   - https://docs.solidjs.com/solid-start/v1/reference/server/use-server
   - https://docs.solidjs.com/solid-start/v1/guides/data-mutation

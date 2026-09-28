@@ -8,6 +8,10 @@ activation:
     - '\buse(?:Navigation|FocusEffect|IsFocused|PreventRemove)\b'
     - '\bnavigation\.(?:navigate|push|popTo|replace|reset|setParams|addListener)\('
     - '\b(?:NavigationContainer|navigationRef)\b|\bcreate\w*Navigator\('
+  examples:
+    - "import { useNavigation } from '@react-navigation/native';"
+    - "navigation.navigate('Profile', { userId });"
+    - 'const Stack = createNativeStackNavigator();'
 sources:
   - https://reactnavigation.org/docs/navigation-lifecycle
   - https://reactnavigation.org/docs/use-focus-effect

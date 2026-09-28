@@ -9,6 +9,11 @@ activation:
     - "['\"](?:server|client)-only['\"]"
     - "\\bexperimental_taint\\w*"
     - "\\bexport\\s+default\\s+async\\s+function\\b"
+  examples:
+    - "'use client';"
+    - "import 'server-only';"
+    - "experimental_taintUniqueValue('do not leak', user, user.ssn);"
+    - "export default async function Page({ params }) {"
 sources:
   - https://react.dev/reference/rsc/use-client
   - https://react.dev/reference/rsc/server-components

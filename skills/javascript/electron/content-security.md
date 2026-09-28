@@ -8,6 +8,10 @@ activation:
     - 'Content-Security-Policy|\bonHeadersReceived\b|\bwebRequest\.'
     - '\b(?:executeJavaScript|executeJavaScriptInIsolatedWorld|insertCSS)\('
     - '\bunsafe-eval\b|X-Frame-Options'
+  examples:
+    - 'session.webRequest.onHeadersReceived((details, callback) => { callback(details); });'
+    - "await webContents.executeJavaScript(`document.title = '${title}'`);"
+    - "script-src 'self' 'unsafe-eval';"
 sources:
   - https://www.electronjs.org/docs/latest/tutorial/security
   - https://www.electronjs.org/docs/latest/breaking-changes

@@ -8,6 +8,10 @@ activation:
     - "['\"]use server['\"]"
     - "\\bserverActions\\s*:"
     - "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY"
+  examples:
+    - "'use server';"
+    - "serverActions: { allowedOrigins: ['example.com'] },"
+    - "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=base64:abc123def456"
 sources:
   - https://nextjs.org/docs/app/guides/server-actions
   - https://nextjs.org/docs/app/guides/data-security

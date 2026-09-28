@@ -8,6 +8,10 @@ activation:
     - "\\bcreate(?:Cookie|CookieSessionStorage|FileSessionStorage|MemorySessionStorage|SessionStorage)\\s*\\("
     - "\\b(?:commitSession|destroySession|getSession)\\s*\\("
     - "\\bsession\\.(?:flash|unset|set)\\s*\\("
+  examples:
+    - "const storage = createCookieSessionStorage({ cookie: { secrets: [secret] } });"
+    - "await commitSession(session);"
+    - "session.set('userId', user.id);"
 sources:
   - https://reactrouter.com/explanation/sessions-and-cookies
   - https://github.com/remix-run/react-router/security/advisories/GHSA-9583-h5hc-x8cw

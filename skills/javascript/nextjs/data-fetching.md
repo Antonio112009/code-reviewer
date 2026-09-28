@@ -9,6 +9,12 @@ activation:
     - "\\b(?:generateStaticParams|generateMetadata)\\b"
     - "\\bcache\\s*\\(\\s*async\\b"
     - "\\bnext\\s*:\\s*\\{\\s*(?:revalidate|tags)\\b"
+  examples:
+    - "const posts = await prisma.post.findMany();"
+    - "const data = await fetch('/api/posts').then(r => r.json());"
+    - "export async function generateStaticParams() {"
+    - "const getUser = cache(async (id) => db.user.findUnique({ where: { id } }));"
+    - "const res = await fetch(url, { next: { revalidate: 60 } });"
 sources:
   - https://nextjs.org/docs/app/getting-started/fetching-data
   - https://nextjs.org/docs/app/guides/caching-without-cache-components

@@ -4,6 +4,8 @@ description: useEffectEvent (React 19.2+) pitfalls — Effect Events called outs
 priority: 63
 activation:
   content: ["\\buseEffectEvent\\b"]
+  examples:
+    - "const onClick = useEffectEvent(() => { logEvent(itemId); });"
 sources:
   - https://react.dev/reference/react/useEffectEvent
   - https://react.dev/blog/2025/10/01/react-19-2

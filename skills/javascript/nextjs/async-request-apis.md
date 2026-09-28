@@ -9,6 +9,12 @@ activation:
     - "\\b(?:cookies|headers|draftMode)\\s*\\(\\s*\\)\\s*\\."
     - "\\bUnsafeUnwrapped\\w+"
     - "\\bgenerate(?:Sitemaps|ImageMetadata)\\b"
+  examples:
+    - "const id = params.id;"
+    - "export default function Page({ params }) {"
+    - "const token = cookies().get('token');"
+    - "const id = (params as UnsafeUnwrappedParams).id;"
+    - "export async function generateImageMetadata() {"
   versions: { framework.nextjs: ">=15" }
 sources:
   - https://nextjs.org/docs/app/guides/upgrading/version-15

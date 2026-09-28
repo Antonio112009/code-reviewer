@@ -6,6 +6,9 @@ activation:
   content:
     - "\\b(?:useTransition|startTransition|useDeferredValue|addTransitionType)\\b"
     - "<ViewTransition\\b"
+  examples:
+    - "const [isPending, startTransition] = useTransition();"
+    - '<ViewTransition name="card">{children}</ViewTransition>'
 sources:
   - https://react.dev/reference/react/useTransition
   - https://react.dev/reference/react/useDeferredValue

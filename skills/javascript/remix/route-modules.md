@@ -9,6 +9,11 @@ activation:
     - "\\bclientLoader\\.hydrate\\b"
     - "\\.server['\"]"
     - "\\bisRouteErrorResponse\\b"
+  examples:
+    - "export function meta() { return [{ title: 'Home' }]; }"
+    - "clientLoader.hydrate = true;"
+    - "import { getUser } from './auth.server';"
+    - "if (isRouteErrorResponse(error)) { return <div>{error.status}</div>; }"
 sources:
   - https://reactrouter.com/start/framework/route-module
   - https://reactrouter.com/api/framework-conventions/server-modules

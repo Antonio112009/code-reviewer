@@ -8,6 +8,10 @@ activation:
     - '\bLinking\.|\bgetInitialURL\b|\buse(?:Linking)?URL\b|expo-linking'
     - '\blinking\s*[:=]\s*\{|\bprefixes\s*:'
     - 'react-native-app-auth|expo-auth-session|\buseAuthRequest\b|\bopenAuthSessionAsync\b'
+  examples:
+    - 'const url = await Linking.getInitialURL();'
+    - "const linking = { prefixes: ['myapp://'] };"
+    - "import { useAuthRequest } from 'expo-auth-session';"
 sources:
   - https://reactnative.dev/docs/linking
   - https://reactnative.dev/docs/security

@@ -9,6 +9,11 @@ activation:
     - "\\bexport\\s+const\\s+loader\\s*="
     - "\\buseLoaderData\\b"
     - "\\bRoute\\.(?:LoaderArgs|ComponentProps)\\b"
+  examples:
+    - "export async function loader({ request }) {"
+    - "export const loader = async ({ params }) => {"
+    - "const data = useLoaderData<typeof loader>();"
+    - "export async function loader({ params }: Route.LoaderArgs) {"
 sources:
   - https://reactrouter.com/start/framework/data-loading
   - https://v2.remix.run/docs/guides/faq/

@@ -6,6 +6,9 @@ activation:
   content:
     - "\\buse(?:State|Reducer)\\s*[<(]"
     - "\\bset(?!Timeout\\b|Interval\\b|Immediate\\b|Attribute\\b|Item\\b|Property\\b|Header\\b)[A-Z]\\w*\\s*\\("
+  examples:
+    - "const [count, setCount] = useState(0);"
+    - "setCount(count + 1);"
 sources:
   - https://react.dev/reference/react/useState
   - https://react.dev/learn/updating-objects-in-state
