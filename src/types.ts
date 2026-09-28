@@ -392,7 +392,16 @@ export interface RoleRouting {
 }
 
 export type RunTarget =
-  | { kind: 'diff'; base: string; head: string; baseSha: string; headSha: string; mergeBase: string }
+  | {
+      kind: 'diff';
+      base: string;
+      head: string;
+      baseSha: string;
+      headSha: string;
+      mergeBase: string;
+      /** The head is a local snapshot of staged / uncommitted changes (not on any forge). */
+      local?: 'staged' | 'uncommitted';
+    }
   | { kind: 'files'; paths: string[]; headSha?: string };
 
 export interface ChunkRecord {
@@ -434,7 +443,7 @@ export interface ChunkRecord {
 export interface RefsInfo {
   /** How base and head were chosen, one line per decision. */
   explanation: string[];
-  baseSource: 'flag' | 'ci' | 'forge' | 'branch-config' | 'rules' | 'default';
+  baseSource: 'flag' | 'ci' | 'forge' | 'branch-config' | 'rules' | 'default' | 'local';
   remote?: string;
   fetched: boolean;
   /** Commits between the merge-base and head. */

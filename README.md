@@ -67,6 +67,8 @@ Everyday commands:
 code-reviewer review                          # your branch vs its base (auto-detected), essential depth
 code-reviewer review --full                   # every real defect, not only production-critical ones
 code-reviewer review --base main --fail-on major   # CI gate: exit code 1 on major or critical findings
+code-reviewer review --staged                 # what you are about to commit (--uncommitted: all local changes)
+code-reviewer hook install                    # review the staged changes before every commit
 code-reviewer review --dry-run                # the plan only: chunks, skills, hints — no LLM calls
 code-reviewer review --post                   # then comment on the branch's pull / merge request
 code-reviewer files src/payments              # review whole files or folders
@@ -172,6 +174,34 @@ code-reviewer providers test claude --model sonnet
 | Fix required | yes, for every finding | when possible |
 | Self-critique | also drops real but low-impact findings; keeps confidence ≥ 0.7 | drops only claims it can refute (low impact lowers the severity); keeps confidence ≥ 0.3 |
 | "Worth a look" | — | findings below confidence 0.6 and `info` findings: in the reports, not in PR comments, SARIF / Code Quality or `--fail-on` |
+
+## Before you commit
+
+`review` compares commits. To review changes that are not committed yet:
+
+```bash
+code-reviewer review --staged                 # the staged changes, exactly what `git commit` records
+code-reviewer review --uncommitted            # every change of the working tree, untracked files too
+code-reviewer review --uncommitted --base main   # the branch and its uncommitted changes
+```
+
+Both compare against HEAD unless `--base` is given. The changes are committed to a throw-away commit on
+top of HEAD that no branch points to: your index, working tree and refs stay as they are, and the review
+works as for any commit (isolated snapshot, cache, blame). Ignored files and the runs directory are never
+taken in. Such a run has no links to the forge and cannot be posted to a pull request.
+
+`code-reviewer hook install` adds a git pre-commit hook that runs `review --staged --fail-on major`:
+findings of that severity block the commit, and anything else lets it through (no provider available,
+nothing staged, errors). Skip it once with `git commit --no-verify` or `CODE_REVIEWER_SKIP=1`.
+
+```bash
+code-reviewer hook install --fail-on critical -- --provider ollama --model qwen3-coder:30b
+code-reviewer hook uninstall
+```
+
+It never overwrites a hook it did not write. When another tool manages the hooks (`core.hooksPath`:
+husky, lefthook, …), it prints the command to add to that tool's pre-commit hook instead. A local model
+keeps the code on your machine and costs nothing per commit.
 
 ## Configuration
 
@@ -368,7 +398,6 @@ Architecture, contracts and the safety model: [docs/ARCHITECTURE.md](docs/ARCHIT
 
 - Skill-bundled **structural checks** (ast-grep rules next to each skill). They will run before the LLM
   and be available to it as a tool.
-- Reviewing staged/uncommitted changes.
 - Resolving review threads whose finding was fixed; Bitbucket and Azure DevOps comments.
 
 ## License

@@ -275,7 +275,7 @@ describe('resolveRefs with a remote', () => {
     writeFileSync(path.join(dir, '.code-reviewer', 'run.json'), '{}');
     const r = await resolve(repo, { base: 'develop', offline: true });
     expect(r.info.notes).toContain(
-      '1 uncommitted change and 1 untracked file not reviewed (commit them to include them)',
+      '1 uncommitted change and 1 untracked file not reviewed (commit them, or pass --staged or --uncommitted to include them)',
     );
   });
 

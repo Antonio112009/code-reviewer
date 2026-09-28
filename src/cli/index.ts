@@ -6,6 +6,7 @@ import { packageVersion } from '../util/paths';
 import { registerCacheCommands } from './commands/cache';
 import { registerConfigCommands } from './commands/config';
 import { registerEvalCommand } from './commands/eval';
+import { registerHookCommands } from './commands/hook';
 import { registerInitCommand } from './commands/init';
 import { registerProviderCommands } from './commands/providers';
 import { registerReviewCommands } from './commands/review';
@@ -27,6 +28,7 @@ export function buildProgram(): Command {
 
   registerInitCommand(program);
   registerReviewCommands(program);
+  registerHookCommands(program);
   registerRunsCommands(program);
   registerProviderCommands(program);
   registerConfigCommands(program);

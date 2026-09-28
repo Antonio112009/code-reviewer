@@ -10,6 +10,7 @@ import {
   REVIEW_DEPTHS,
   type ReportFormat,
 } from '../../config/schema';
+import { type LocalChanges, NothingLocalError } from '../../git/local-changes';
 import { detectProviders } from '../../providers/detect';
 import { SEVERITY_ORDER } from '../../report/common';
 import type { ReviewEvent } from '../../review/events';
@@ -27,6 +28,9 @@ export interface ReviewFlags {
   minSeverity?: string;
   base?: string;
   head?: string;
+  /** --staged / --uncommitted: review changes not committed yet. */
+  staged?: boolean;
+  uncommitted?: boolean;
   provider?: string;
   model?: string;
   reasoning?: string;
@@ -240,6 +244,18 @@ export function applyRunFlags(config: Config, f: ReviewFlags): void {
   if (f.cache === false) config.cache.enabled = false;
 }
 
+/** `--staged` / `--uncommitted`, checked against the flags they cannot be combined with. */
+function localChangesFrom(f: ReviewFlags & PublishCliFlags): LocalChanges | undefined {
+  if (f.staged && f.uncommitted) throw new Error('Pass either --staged or --uncommitted, not both.');
+  const local = f.staged ? 'staged' : f.uncommitted ? 'uncommitted' : undefined;
+  if (!local) return undefined;
+  if (f.head) throw new Error(`--${local} reviews the local checkout: it cannot be combined with --head.`);
+  if (f.post) {
+    throw new Error(`--${local} changes are on no pull request: commit and push them to use --post.`);
+  }
+  return local;
+}
+
 /** `--analyzers eslint,tsc` → opt-in project analyzers. */
 function projectAnalyzersFrom(f: ReviewFlags): string[] | undefined {
   if (typeof f.analyzers !== 'string') return undefined;
@@ -260,6 +276,7 @@ async function execute(
   let ui: ReviewUi | undefined;
   try {
     const failOn = parseEnum(flags.failOn, SEVERITIES, '--fail-on') as Severity | undefined;
+    const local = localChangesFrom(flags);
     const loaded = await loadCliConfig(globals, flagsToOverrides(flags));
     await interactiveDefaults(flags, loaded.sources.length > 0, detectProviders(loaded.config));
     if (flags.selfCritique !== undefined) loaded.config.review.selfCritique = flags.selfCritique;
@@ -297,6 +314,7 @@ async function execute(
       cwd: loaded.cwd,
       base: flags.base,
       head: flags.head,
+      ...(local ? { local } : {}),
       paths,
       config,
       logger,
@@ -358,6 +376,12 @@ async function execute(
     return EXIT.ok;
   } catch (err) {
     logger.setSink(undefined);
+    // Nothing staged (e.g. `git commit --amend` of the message only): an empty review, not a failure.
+    if (err instanceof NothingLocalError) {
+      ui?.stop();
+      logger.note(err.message);
+      return EXIT.ok;
+    }
     if (ui) ui.fail(err as Error);
     else logger.error((err as Error).message);
     if (lifecycle.interrupted) return lifecycle.interruptExitCode ?? EXIT.error;
@@ -445,6 +469,11 @@ export function registerReviewCommands(program: Command): void {
       .option('--from <ref>', 'alias of --base')
       .option('--head <ref>', 'head ref to review (default: HEAD, including unpushed commits)')
       .option('--to <ref>', 'alias of --head')
+      .option('--staged', 'review the staged changes, as `git commit` would record them (base: HEAD)')
+      .option(
+        '--uncommitted',
+        'review all uncommitted changes, untracked files included (base: HEAD; with --base, the branch too)',
+      )
       .option('--remote <name>', 'remote to compare against (default: upstream remote, else origin)')
       .option('--offline', 'do not fetch or query the forge; use local refs only')
       .option('--no-fetch', 'alias of --offline')

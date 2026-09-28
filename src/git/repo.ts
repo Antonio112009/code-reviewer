@@ -110,6 +110,25 @@ function gitCommand(): string {
   return git;
 }
 
+/**
+ * The index a git hook was given (`GIT_INDEX_FILE`, absolute): a pre-commit hook gets the index being
+ * committed, which is a temporary one for `git commit -a` or `git commit <paths>`. Undefined outside hooks.
+ */
+export function hookIndexFile(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const file = env.GIT_INDEX_FILE?.trim();
+  return file ? path.resolve(file) : undefined;
+}
+
+/**
+ * The environment of git children, without `GIT_INDEX_FILE`: git exports it to hooks, and a review started
+ * from a pre-commit hook must not let `worktree add` or `status` use the index being committed. Commands
+ * that should read it (`--staged`) pass it explicitly.
+ */
+export function gitEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
+  const { GIT_INDEX_FILE: _index, ...inherited } = process.env;
+  return { ...inherited, ...extra };
+}
+
 /** Runs git through execa with the child registered for shutdown. */
 interface GitRunOptions {
   cwd: string;
@@ -120,7 +139,12 @@ interface GitRunOptions {
 }
 
 function git(args: string[], opts: GitRunOptions) {
-  const sub = execa(gitCommand(), args, { ...opts, ...SPAWN_OPTS });
+  const sub = execa(gitCommand(), args, {
+    ...opts,
+    env: gitEnv(opts.env),
+    extendEnv: false,
+    ...SPAWN_OPTS,
+  });
   if (sub.pid !== undefined) {
     processes.add({
       label: 'git',
@@ -162,13 +186,17 @@ export class GitRepo {
     return new GitRepo(String(res.stdout).trim());
   }
 
-  async run(args: string[], opts: { cwd?: string; allowFailure?: boolean } = {}): Promise<string> {
+  async run(
+    args: string[],
+    opts: { cwd?: string; allowFailure?: boolean; env?: Record<string, string> } = {},
+  ): Promise<string> {
     const full = [...STABLE_FLAGS, ...args];
     const res = await git(full, {
       cwd: opts.cwd ?? this.root,
       reject: false,
       stripFinalNewline: false,
       maxBuffer: 256 * 1024 * 1024,
+      ...(opts.env ? { env: opts.env } : {}),
     });
     if (res.exitCode !== 0 && !opts.allowFailure) {
       throw new GitError(
@@ -411,7 +439,7 @@ export class GitRepo {
   }
 
   private async buildNetworkEnv(): Promise<NodeJS.ProcessEnv> {
-    const env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' };
+    const env = gitEnv({ GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' });
     if (!process.env.GIT_SSH_COMMAND && !process.env.GIT_SSH && !(await this.configGet('core.sshCommand'))) {
       env.GIT_SSH_COMMAND = SSH_BATCH_COMMAND;
     }

@@ -27,6 +27,7 @@ import {
   workingTreeReader,
 } from '../context/project-rules';
 import { type DetectedStack, detectStack } from '../context/stack';
+import { type LocalChanges, NothingLocalError } from '../git/local-changes';
 import { resolveRefs } from '../git/refs';
 import { parseRemote } from '../git/remote';
 import { GitRepo } from '../git/repo';
@@ -153,6 +154,8 @@ export interface ReviewRequest {
   cwd: string;
   base?: string;
   head?: string;
+  /** Review the staged / uncommitted changes instead of commits (`--staged`, `--uncommitted`). */
+  local?: LocalChanges;
   paths?: string[];
   config: Config;
   logger: Logger;
@@ -349,16 +352,31 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         repo,
         base: req.base,
         head: req.head,
+        ...(req.local
+          ? {
+              local: {
+                mode: req.local,
+                // Run reports quote code: never review them as new files.
+                excludeUntracked: runsDirExclude(repoRoot, path.resolve(repoRoot, config.output.dir)),
+              },
+            }
+          : {}),
         settings: config.git,
         offline: req.offline,
         signal: req.signal,
         warn,
       }).catch((err: unknown) => {
-        if (isAbort(err, req.signal)) throw err;
+        if (isAbort(err, req.signal) || err instanceof NothingLocalError) throw err;
         throw new ReviewError(errorMessage(err));
       }),
     );
-    const commits = await repo.countCommits(`${refs.mergeBase}..${refs.headSha}`).catch(() => undefined);
+    // A local snapshot is not a commit of the user's: count the commits up to HEAD, its parent (none on
+    // top of HEAD, where "0 commits" would only confuse).
+    const tip = refs.local ? refs.local.parent : refs.headSha;
+    const commits =
+      refs.local && refs.info.baseSource === 'local'
+        ? undefined
+        : await repo.countCommits(`${refs.mergeBase}..${tip}`).catch(() => undefined);
     refsInfo = { ...refs.info, ...(typeof commits === 'number' ? { commits } : {}) };
     target = {
       kind: 'diff',
@@ -367,6 +385,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       baseSha: refs.baseSha,
       headSha: refs.headSha,
       mergeBase: refs.mergeBase,
+      ...(refs.local ? { local: refs.local.mode } : {}),
     };
     emit({ type: 'refs', target, refs: refsInfo });
     if (refs.mergeBase === refs.headSha)
@@ -1420,7 +1439,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         const attributed = await attributeFindings(final, {
           repo,
           sha: target.kind === 'diff' ? target.headSha : undefined,
-          linkSha: target.headSha,
+          // A local snapshot exists on no forge: no links.
+          linkSha: target.kind === 'diff' && target.local ? undefined : target.headSha,
           remote,
         });
         final = attributed.findings;
