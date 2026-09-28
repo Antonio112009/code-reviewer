@@ -16,6 +16,8 @@ import { type PlannedInline, SUMMARY_REASON_LABELS, type SummaryReason } from '.
 export const SUMMARY_MARKER = '<!-- code-reviewer:summary -->';
 /** Hidden marker of the (GitHub) review that carries the inline comments. */
 export const REVIEW_MARKER = '<!-- code-reviewer:review -->';
+/** Hidden marker of our reply that resolved a thread: a thread someone reopened is left alone. */
+export const RESOLVED_MARKER = '<!-- code-reviewer:resolved -->';
 
 /** GitHub's comment limit is 65,536 characters; GitLab's is far higher. Stay well below both. */
 export const MAX_COMMENT_CHARS = 60_000;
@@ -120,6 +122,15 @@ export function renderInlineComment(f: Finding, fingerprint: string): string {
   return lines.join('\n');
 }
 
+/** Reply posted before resolving the thread of a finding that was fixed. */
+export function renderResolvedReply(reason: string, run: RunRecord): string {
+  return [
+    `Resolved: ${forgeLine(reason, 200)}, and the latest review (run ${code(clipText(run.id, 128))}) did not report this finding again. Reopen the thread if the problem is still there.`,
+    '',
+    RESOLVED_MARKER,
+  ].join('\n');
+}
+
 /** Top-level body of the GitHub review that carries the inline comments. */
 export function renderReviewBody(count: number): string {
   return `code-reviewer: ${count} inline comment${count === 1 ? '' : 's'} on this revision; the summary comment lists everything.\n\n${REVIEW_MARKER}`;
@@ -137,6 +148,8 @@ export interface SummaryInput {
   listed: Array<{ finding: Finding; reason: SummaryReason }>;
   /** Pull request head when it differs from the reviewed commit. */
   staleHead?: { prHead: string; forced: boolean };
+  /** Threads of earlier comments resolved because their finding was fixed. */
+  resolved?: number;
   /** Extra notes (diff not available, …). */
   notes?: string[];
 }
@@ -215,6 +228,7 @@ export function renderSummary(input: SummaryInput): string {
   const inlineParts = [
     input.posted.length ? `${input.posted.length} new` : '',
     input.alreadyPosted.length ? `${input.alreadyPosted.length} already on this ${request}` : '',
+    input.resolved ? `${input.resolved} resolved (fixed)` : '',
   ].filter(Boolean);
   if (inlineParts.length) out.push(`Inline comments: ${inlineParts.join(', ')}.`, '');
 

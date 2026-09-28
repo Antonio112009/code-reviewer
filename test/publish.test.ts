@@ -13,11 +13,13 @@ import {
   extractFingerprints,
   forgeLine,
   forgeText,
+  RESOLVED_MARKER,
   REVIEW_MARKER,
   renderInlineComment,
   renderSummary,
   SUMMARY_MARKER,
 } from '../src/publish/render';
+import { fixedThreads, mapRange, type PostedThread, touches } from '../src/publish/resolve';
 import { resolvePublishTarget, tokenFor, validateApiUrl } from '../src/publish/target';
 import { computeFingerprint } from '../src/review/fingerprint';
 import { runReview } from '../src/review/pipeline';
@@ -122,7 +124,7 @@ function makeRun(over: Partial<RunRecord> = {}): RunRecord {
   };
 }
 
-const SETTINGS: PublishSettings = { maxInlineComments: 30, minSeverity: 'info' };
+const SETTINGS: PublishSettings = { maxInlineComments: 30, minSeverity: 'info', resolveFixed: true };
 
 // ---------------------------------------------------------------------------------------------------------
 // A fake forge: routes keyed by "METHOD /path" (a list answers in order, the last one repeats)
@@ -411,7 +413,11 @@ describe('publish API URLs in configs', () => {
       'publish:\n  maxInlineComments: 5\n  minSeverity: major\n',
     );
     const project = await loadConfig({ cwd: dir, stopDir: dir });
-    expect(project.config.publish).toEqual({ maxInlineComments: 5, minSeverity: 'major' });
+    expect(project.config.publish).toEqual({
+      maxInlineComments: 5,
+      minSeverity: 'major',
+      resolveFixed: true,
+    });
 
     writeFileSync(
       path.join(home, 'config.yaml'),
@@ -422,7 +428,11 @@ describe('publish API URLs in configs', () => {
     expect(projectConfigViolations({ publish: { githubApiUrl: 'https://x.example' } })).toEqual([
       'publish.githubApiUrl',
     ]);
-    expect(DEFAULT_CONFIG.publish).toEqual({ maxInlineComments: 30, minSeverity: 'info' });
+    expect(DEFAULT_CONFIG.publish).toEqual({
+      maxInlineComments: 30,
+      minSeverity: 'info',
+      resolveFixed: true,
+    });
   });
 });
 
@@ -995,5 +1005,248 @@ describe('code-reviewer runs publish --dry-run', () => {
     await run('runs', 'publish', '20200101-000000-0000', '--dry-run', '--pr', '1', '--repo', 'o/r');
     expect(process.exitCode).toBe(2);
     expect(out.join('')).toBe('');
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------
+describe('resolving the threads of fixed findings', () => {
+  // A later push to the pull request: line 11 and line 22 (f3's "Crash") change.
+  let fixSha: string;
+  beforeAll(() => {
+    repo.git('checkout', '-q', 'feature');
+    const lines = Array.from({ length: 30 }, (_, i) => `const v${i + 1} = ${i + 1};`);
+    lines.splice(19, 1, 'const v20 = compute();', 'const extra1 = 1;', 'const extra2 = safe(2);');
+    lines[10] = 'const v11 = eleven();';
+    repo.git('checkout', '-q', '-b', 'feature-fix');
+    repo.write({ 'src/app.ts': `${lines.join('\n')}\n` });
+    fixSha = repo.commit('fix');
+    repo.git('checkout', '-q', 'main');
+  });
+
+  const FIX = { kept: 'e'.repeat(32), near: '9'.repeat(32), gone: '8'.repeat(32), absent: '7'.repeat(32) };
+
+  /** The review of the fix: one finding at line 10 (still there, so its thread stays too). */
+  function fixRun(over: Partial<RunRecord> = {}): RunRecord {
+    return makeRun({
+      target: {
+        kind: 'diff',
+        base: 'main',
+        head: 'feature-fix',
+        baseSha: mergeBase,
+        headSha: fixSha,
+        mergeBase,
+      },
+      findings: [finding({ id: 'k', startLine: 10, endLine: 10, fingerprint: FIX.kept })],
+      ...over,
+    });
+  }
+
+  const thread = (over: Partial<PostedThread>): PostedThread => ({
+    id: 'T',
+    fingerprint: FP.f3,
+    path: 'src/app.ts',
+    startLine: 22,
+    endLine: 22,
+    commit: headSha,
+    ...over,
+  });
+
+  it('maps old lines through a diff and tells which hunks touch them', () => {
+    const hunks = [
+      { header: '', oldStart: 5, oldLines: 0, newStart: 6, newLines: 2, lines: [] }, // 2 lines inserted after 5
+      { header: '', oldStart: 10, oldLines: 2, newStart: 13, newLines: 1, lines: [] }, // 10-11 → 13
+    ];
+    expect(mapRange(hunks, 3, 4)).toEqual([3, 4]);
+    expect(mapRange(hunks, 8, 8)).toEqual([10, 10]);
+    expect(mapRange(hunks, 11, 12)).toEqual([13, 13]);
+    expect(mapRange(hunks, 20, 21)).toEqual([21, 22]);
+    expect(touches(hunks[1]!, 11, 14)).toBe(true);
+    expect(touches(hunks[1]!, 12, 14)).toBe(false);
+    expect(touches(hunks[0]!, 5, 6)).toBe(true); // inserted between lines 5 and 6
+    expect(touches(hunks[0]!, 6, 8)).toBe(false);
+  });
+
+  it('resolves only threads whose code changed and whose finding is gone', async () => {
+    const git = new GitRepo(repo.root);
+    const run = fixRun();
+    const threads = [
+      thread({ id: 'fixed' }), // line 22 changed, nothing reported there
+      thread({ id: 'untouched', fingerprint: FP.f2, startLine: 2, endLine: 2 }), // not reported, code unchanged
+      thread({ id: 'near', fingerprint: FIX.near, startLine: 11, endLine: 11 }), // changed, but a finding at 10
+      thread({ id: 'kept', fingerprint: FIX.kept, startLine: 10, endLine: 10 }), // reported again
+      thread({ id: 'unknown-commit', commit: 'f'.repeat(40) }), // force-pushed away: proves nothing
+      thread({ id: 'gone-file', fingerprint: FIX.gone, path: 'src/other.ts', startLine: 1, endLine: 1 }),
+    ];
+    const fixed = await fixedThreads(git, run, run.findings, threads);
+    expect(fixed.map((f) => [f.thread.id, f.reason])).toEqual([
+      ['fixed', `the commented code changed in ${fixSha.slice(0, 8)}`],
+      ['gone-file', 'the pull request no longer changes this file'],
+    ]);
+
+    // a file whose review failed is not judged, and nor are local-change runs
+    const failed = fixRun({
+      chunks: [{ id: 'c001', files: ['src/app.ts'], tokens: 1, skills: [], status: 'failed', findings: 0 }],
+    });
+    expect((await fixedThreads(git, failed, failed.findings, [thread({})])).length).toBe(0);
+    const local = fixRun({
+      target: { ...(run.target as Extract<RunRecord['target'], { kind: 'diff' }>), local: 'staged' },
+    });
+    expect(await fixedThreads(git, local, local.findings, [thread({})])).toEqual([]);
+  });
+
+  it('replies and resolves on GitHub, leaving other and reopened threads alone', async () => {
+    const node = (id: string, fingerprint: string, extra: object = {}, author = 'review-bot') => ({
+      id,
+      isResolved: false,
+      path: 'src/app.ts',
+      originalLine: 22,
+      originalStartLine: null,
+      comments: {
+        nodes: [
+          {
+            databaseId: id.length,
+            body: `finding <!-- code-reviewer:fp=${fingerprint} -->`,
+            author: { login: author, __typename: 'User' },
+            originalCommit: { oid: headSha },
+          },
+        ],
+      },
+      ...extra,
+    });
+    const forge = fakeForge(
+      githubRoutes({
+        'GET /repos/acme/shop/pulls/1': () => json({ number: 1, head: { sha: fixSha } }),
+        'GET /repos/acme/shop/pulls/1/comments': () =>
+          json([comment('review-bot', `x <!-- code-reviewer:fp=${FP.f3} -->`)]),
+        'POST /graphql': (c) =>
+          c.body.query.includes('resolveReviewThread')
+            ? json({ data: { resolveReviewThread: { thread: { isResolved: true } } } })
+            : json({
+                data: {
+                  repository: {
+                    pullRequest: {
+                      reviewThreads: {
+                        pageInfo: { hasNextPage: false, endCursor: null },
+                        nodes: [
+                          node('PRRT_fixed', FP.f3),
+                          node('PRRT_theirs', FP.f3, {}, 'mallory'),
+                          node('PRRT_done', FP.f3, { isResolved: true }),
+                          node('PRRT_reopened', FP.f3, {
+                            comments: {
+                              nodes: [
+                                {
+                                  databaseId: 1,
+                                  body: `x <!-- code-reviewer:fp=${FP.f3} -->`,
+                                  author: { login: 'review-bot', __typename: 'User' },
+                                  originalCommit: { oid: headSha },
+                                },
+                                { body: `Resolved: … ${RESOLVED_MARKER}`, author: { login: 'review-bot' } },
+                              ],
+                            },
+                          }),
+                        ],
+                      },
+                    },
+                  },
+                },
+              }),
+        'POST /repos/acme/shop/pulls/1/comments/10/replies': () => json({ id: 500 }, 201),
+      }),
+    );
+    const outcome = await publishGithub(forge, { run: fixRun() });
+    expect(outcome.resolved.map((r) => r.thread.id)).toEqual(['PRRT_fixed']);
+    const [reply] = forge.find('POST /repos/acme/shop/pulls/1/comments/10/replies');
+    expect(reply!.body.body).toContain('the commented code changed');
+    expect(reply!.body.body).toContain(RESOLVED_MARKER);
+    const mutations = forge.find('POST /graphql').filter((c) => c.body.query.includes('resolveReviewThread'));
+    expect(mutations.map((c) => c.body.variables)).toEqual([{ id: 'PRRT_fixed' }]);
+    expect(forge.find('POST /graphql')[0]!.body.variables).toMatchObject({
+      owner: 'acme',
+      name: 'shop',
+      number: 1,
+    });
+    const [patch] = forge.find('PATCH /repos/acme/shop/issues/comments/77');
+    expect(patch!.body.body).toContain('1 resolved (fixed)');
+    for (const call of forge.calls) expect(call.url.origin).toBe('https://api.github.com');
+  });
+
+  it('keeps publishing when the token may not resolve threads', async () => {
+    const forge = fakeForge(
+      githubRoutes({
+        'GET /repos/acme/shop/pulls/1': () => json({ number: 1, head: { sha: fixSha } }),
+        'GET /repos/acme/shop/pulls/1/comments': () =>
+          json([comment('review-bot', `x <!-- code-reviewer:fp=${FP.f3} -->`)]),
+        'POST /graphql': () => json({ message: 'Resource not accessible by integration' }, 403),
+      }),
+    );
+    const outcome = await publishGithub(forge, { run: fixRun() });
+    expect(outcome.resolved).toEqual([]);
+    expect(outcome.summary).toBe('updated');
+    expect(outcome.notes.join('\n')).toContain('could not be resolved');
+  });
+
+  it('does nothing when every earlier fingerprint is still reported, or when disabled', async () => {
+    const forge = fakeForge(
+      githubRoutes({ 'GET /repos/acme/shop/pulls/1': () => json({ number: 1, head: { sha: fixSha } }) }),
+    );
+    await publishGithub(forge, { run: fixRun({ findings: [finding({ fingerprint: FP.f3 })] }) });
+    expect(forge.find('POST /graphql')).toHaveLength(0);
+
+    const off = fakeForge(
+      githubRoutes({
+        'GET /repos/acme/shop/pulls/1': () => json({ number: 1, head: { sha: fixSha } }),
+        'GET /repos/acme/shop/pulls/1/comments': () =>
+          json([comment('review-bot', `x <!-- code-reviewer:fp=${FP.f3} -->`)]),
+      }),
+    );
+    await publishGithub(off, { run: fixRun(), settings: { ...SETTINGS, resolveFixed: false } });
+    expect(off.find('POST /graphql')).toHaveLength(0);
+  });
+
+  it('replies and resolves on GitLab', async () => {
+    const mr = '/api/v4/projects/acme%2Fshop/merge_requests/3';
+    const note = (author: number, body: string, extra: object = {}) => ({
+      id: 1,
+      body,
+      author: { id: author },
+      system: false,
+      resolvable: true,
+      resolved: false,
+      position: { new_path: 'src/app.ts', new_line: 22, head_sha: headSha },
+      ...extra,
+    });
+    const forge = fakeForge({
+      [`GET ${mr}`]: () =>
+        json({ sha: fixSha, diff_refs: { base_sha: mergeBase, start_sha: mergeBase, head_sha: fixSha } }),
+      'GET /api/v4/user': () => json({ id: 5, username: 'review-bot' }),
+      [`GET ${mr}/discussions`]: () =>
+        json([
+          { id: 'abc123def0', notes: [note(5, `x <!-- code-reviewer:fp=${FP.f3} -->`)] },
+          { id: 'abc123def1', notes: [note(6, `x <!-- code-reviewer:fp=${FP.f3} -->`)] },
+          { id: 'abc123def2', notes: [note(5, `x <!-- code-reviewer:fp=${FP.f3} -->`, { resolved: true })] },
+          {
+            id: 'abc123def3',
+            notes: [note(5, `x <!-- code-reviewer:fp=${FP.f3} -->`), note(5, `Resolved ${RESOLVED_MARKER}`)],
+          },
+        ]),
+      [`POST ${mr}/discussions/abc123def0/notes`]: () => json({ id: 9 }, 201),
+      [`PUT ${mr}/discussions/abc123def0`]: () => json({ id: 'abc123def0', resolved: true }),
+      [`GET ${mr}/notes`]: () => json([]),
+      [`POST ${mr}/notes`]: () => json({ id: 13 }, 201),
+    });
+    const outcome = await publishRun({
+      run: fixRun({ repo: { root: repo.root, remote: 'https://gitlab.com/acme/shop', platform: 'gitlab' } }),
+      repo: new GitRepo(repo.root),
+      settings: SETTINGS,
+      flags: { pr: '3' },
+      env: { GITLAB_TOKEN: 'glpat' },
+      fetch: forge.fetch,
+      sleep: noSleep,
+      logger: silentLogger,
+    });
+    expect(outcome.resolved.map((r) => r.thread.id)).toEqual(['abc123def0']);
+    expect(forge.find(`POST ${mr}/discussions/abc123def0/notes`)[0]!.body.body).toContain(RESOLVED_MARKER);
+    const [put] = forge.find(`PUT ${mr}/discussions/abc123def0`);
+    expect(put!.url.searchParams.get('resolved')).toBe('true');
   });
 });

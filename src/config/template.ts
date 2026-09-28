@@ -405,6 +405,10 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           doc: 'Comment inline only on findings of this severity or worse (critical | major | minor | info).',
           example: D.publish.minSeverity,
         },
+        resolveFixed: {
+          doc: 'Resolve the threads of earlier comments whose code changed and whose finding the new review did not report again.',
+          example: D.publish.resolveFixed,
+        },
         githubApiUrl: {
           doc: 'GitHub Enterprise Server API. Your token is sent here.',
           scope: 'global',

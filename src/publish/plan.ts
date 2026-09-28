@@ -2,6 +2,7 @@ import { parseUnifiedDiff } from '../git/diff-parser';
 import type { GitRepo } from '../git/repo';
 import { SEVERITY_ORDER, sortFindings } from '../report/common';
 import type { FileDiff, Finding, Severity } from '../types';
+import type { PostedThread } from './resolve';
 
 /** Context lines of a pull request diff as GitHub and GitLab show it. */
 const PR_DIFF_CONTEXT = 3;
@@ -130,13 +131,17 @@ export interface InlineResult {
   rejected: Array<{ comment: InlineComment; reason: string }>;
 }
 
-/** One forge (GitHub, GitLab): the three calls a publication needs. */
+/** One forge (GitHub, GitLab): the calls a publication needs. */
 export interface ForgeAdapter {
   load(): Promise<ForgeState>;
   /** Posts inline comments anchored on `commitSha` (the reviewed commit). */
   postInline(comments: InlineComment[], commitSha: string): Promise<InlineResult>;
   /** Creates the summary comment, or updates the one an earlier run created. */
   upsertSummary(body: string): Promise<'created' | 'updated'>;
+  /** Unresolved inline threads this tool started (first comment ours, with a fingerprint). */
+  openThreads(): Promise<PostedThread[]>;
+  /** Replies `body` in the thread, then resolves it. */
+  resolveThread(thread: PostedThread, body: string): Promise<void>;
 }
 
 export interface PublicationPlan {

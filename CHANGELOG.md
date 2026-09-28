@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Fixed findings resolve their threads.** When a push changes the code an earlier inline comment was on
+  and the new review does not report that finding again, the comment's thread on the GitHub pull request or
+  GitLab merge request gets a short reply and is resolved. A model can miss a finding it reported before, so
+  nothing is resolved unless the commented lines changed, the file was reviewed in full and no new finding
+  sits where the code went. A thread someone reopens stays open; `publish.resolveFixed: false` turns it off.
+
 ## 0.2.1 — 2026-09-28
 
 - **Installs get the dependencies this release was tested with.** The package ships `npm-shrinkwrap.json`,

@@ -293,14 +293,25 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
     `publish.maxInlineComments`, worst first) and summary entries. Fingerprints already posted by the same
     account are skipped. When the PR/MR head is not the reviewed commit, nothing goes inline unless `--force`.
   - `github.ts` / `gitlab.ts` implement `ForgeAdapter` (`load` → head + posted fingerprints, `postInline`,
-    `upsertSummary`). GitHub: one `COMMENT` review, single comments after a 422, the summary as an issue
-    comment edited in place. GitLab: one positioned discussion per finding (`diff_refs`), the summary as an
-    MR note updated with PUT.
+    `upsertSummary`, `openThreads`, `resolveThread`). GitHub: one `COMMENT` review, single comments after a
+    422, the summary as an issue comment edited in place, review threads through GraphQL
+    (`reviewThreads`, `resolveReviewThread`; `/api/graphql` on Enterprise Server). GitLab: one positioned
+    discussion per finding (`diff_refs`), the summary as an MR note updated with PUT, threads resolved with
+    `PUT …/discussions/:id?resolved=true`.
+  - `resolve.ts` (`publish.resolveFixed`, on the reviewed head only) picks the threads of fixed findings.
+    A model may simply not report a finding again, so every sign must agree: no finding or advisory finding
+    of the run has the fingerprint; the file was reviewed without a failed chunk (or the PR no longer
+    changes it); `git diff -U0 <comment commit> <head> -- <path>` touches the commented lines (a commit
+    missing locally, e.g. after a force push, proves nothing); and no finding of the run lies within three
+    lines of where those lines went (the same issue in rewritten code gets a new fingerprint). The reply
+    carries `<!-- code-reviewer:resolved -->`, so a thread someone reopens is not resolved again. Forge
+    errors (a token that may comment but not resolve) become a summary note.
   - `http.ts` is a small `fetch` client (injectable): timeouts plus the run's abort signal, 429/5xx retries
     honouring `Retry-After` (3 attempts), `Link` pagination, no redirects, same-origin requests only.
   - `render.ts` escapes model/repository text like the Markdown report and also defuses mentions,
     `#123`/`!123` references, links, autolinks and line-leading `/` (GitLab quick actions). Hidden markers
-    (`<!-- code-reviewer:summary -->`, `<!-- code-reviewer:fp=… -->`) identify our comments.
+    (`<!-- code-reviewer:summary -->`, `<!-- code-reviewer:fp=… -->`, `<!-- code-reviewer:resolved -->`)
+    identify our comments.
 
 ## Safety model
 

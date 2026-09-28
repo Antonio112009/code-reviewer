@@ -1,7 +1,8 @@
 import type { Logger } from '../util/logger';
 import { type ApiClient, ApiError } from './http';
 import type { ForgeAdapter, InlineResult } from './plan';
-import { extractFingerprints, SUMMARY_MARKER } from './render';
+import { extractFingerprints, RESOLVED_MARKER, SUMMARY_MARKER } from './render';
+import type { PostedThread } from './resolve';
 import { PublishError, type PublishTarget, targetLabel } from './target';
 
 /*
@@ -20,11 +21,18 @@ interface GitlabNote {
   body?: string;
   system?: boolean;
   author?: GitlabUser | null;
+  resolvable?: boolean;
+  resolved?: boolean;
+  position?: { new_path?: string; new_line?: number | null; head_sha?: string } | null;
 }
 
 interface GitlabDiscussion {
+  id?: string;
   notes?: GitlabNote[] | null;
 }
+
+/** GitLab discussion ids are hex strings. */
+const DISCUSSION_ID_RE = /^[0-9a-f]{8,64}$/i;
 
 interface DiffRefs {
   base_sha: string;
@@ -49,6 +57,7 @@ export function gitlabAdapter(target: PublishTarget, client: ApiClient, logger: 
   const label = targetLabel(target);
   let selfId: number | undefined;
   let refs: DiffRefs | undefined;
+  let discussions: GitlabDiscussion[] = [];
 
   const isOwn = (note: GitlabNote) => selfId !== undefined && note.author?.id === selfId && !note.system;
 
@@ -81,7 +90,7 @@ export function gitlabAdapter(target: PublishTarget, client: ApiClient, logger: 
         throw new PublishError(`GitLab did not return the head commit of merge request ${label}.`);
       }
       selfId = await whoAmI();
-      const discussions = await client.paginate<GitlabDiscussion>(`${mrPath}/discussions`);
+      discussions = await client.paginate<GitlabDiscussion>(`${mrPath}/discussions`);
       const posted = new Set(
         discussions
           .flatMap((d) => d.notes ?? [])
@@ -140,6 +149,36 @@ export function gitlabAdapter(target: PublishTarget, client: ApiClient, logger: 
       }
       await client.request('POST', `${mrPath}/notes`, { body });
       return 'created';
+    },
+
+    async openThreads() {
+      const out: PostedThread[] = [];
+      for (const d of discussions) {
+        const first = d.notes?.[0];
+        const fingerprint = extractFingerprints(first?.body)[0];
+        const pos = first?.position;
+        if (!d.id || !DISCUSSION_ID_RE.test(d.id) || !first || !isOwn(first) || !fingerprint) continue;
+        if (!first.resolvable || first.resolved || !pos?.new_path || typeof pos.new_line !== 'number')
+          continue;
+        if (typeof pos.head_sha !== 'string' || !SHA_RE.test(pos.head_sha)) continue;
+        // resolved by us before and reopened by someone: their call
+        if ((d.notes ?? []).some((note) => isOwn(note) && note.body?.includes(RESOLVED_MARKER))) continue;
+        out.push({
+          id: d.id,
+          fingerprint,
+          path: pos.new_path,
+          startLine: pos.new_line,
+          endLine: pos.new_line,
+          commit: pos.head_sha.toLowerCase(),
+        });
+      }
+      return out;
+    },
+
+    async resolveThread(thread, body) {
+      const path = `${mrPath}/discussions/${encodeURIComponent(thread.id)}`;
+      await client.request('POST', `${path}/notes`, { body });
+      await client.request('PUT', `${path}?resolved=true`);
     },
   };
 }

@@ -240,6 +240,10 @@ publish:
   code it points at; not line numbers), stored as a hidden `<!-- code-reviewer:fp=… -->` marker. A re-run
   skips findings already commented on by the same account, so pushing unrelated commits does not repeat
   them. The same fingerprint keys SARIF `partialFingerprints` and Code Quality `fingerprint`.
+- **Fixed findings.** When a push changes the code of an earlier inline comment and the new review does not
+  report its finding again, the thread gets a short reply and is resolved (`publish.resolveFixed: false`
+  turns this off). A thread someone reopens is left open. If the token may comment but not resolve, the
+  summary says so and everything else is posted.
 - **The summary comment** carries `<!-- code-reviewer:summary -->` and is edited in place on every run.
 - **Stale head.** If the pull request head is not the reviewed commit (someone pushed meanwhile), inline
   comments are skipped (lines may have moved) and the summary says so; `--force` posts them anyway.
