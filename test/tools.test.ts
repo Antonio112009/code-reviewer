@@ -142,8 +142,11 @@ describe('find_symbol', () => {
     },
   );
 
-  it('builds one pattern that git and JavaScript both accept', () => {
+  it('builds one pattern that git and JavaScript both accept, with the name escaped', () => {
     expect(() => new RegExp(definitionPattern('a$b'))).not.toThrow();
+    const re = new RegExp(definitionPattern('a\\(b'));
+    expect(re.test('function a\\(b() {}')).toBe(true);
+    expect(re.test('function ab() {}')).toBe(false);
   });
 });
 
