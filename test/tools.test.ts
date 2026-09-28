@@ -67,6 +67,23 @@ const FILES: Record<string, string> = {
   ].join('\n'),
   'svc/server.go': 'func (s *Server) Serve(l net.Listener) error {\n\treturn s.Serve(l)\n}\n',
   'README.md': 'Call `bool ParseHDKeypath(` to parse a path.\n',
+  'pay/ledger.ts':
+    'export function transferFunds(from: Account, to: Account, cents: number) {\n  from.balance -= cents;\n}\n',
+  'pay/invoices.ts': [
+    "import { transferFunds } from './ledger';",
+    '',
+    'export function payInvoice(customer: Account, merchant: Account, invoice: Invoice) {',
+    '  transferFunds(merchant, customer, invoice.total);',
+    '  return invoice.total;',
+    '}',
+    '',
+    'export async function refund(order: Order) {',
+    '  const fee = 0;',
+    '  transferFunds(order.merchant, order.customer, order.total - fee);',
+    '}',
+    '',
+  ].join('\n'),
+  'docs/payments.md': 'Use transferFunds to move money.\n',
 };
 
 beforeAll(() => {
@@ -164,5 +181,28 @@ describe('tool call log', () => {
     expect(log[0]).toMatchObject({ args: '{"pattern":"GetName"}', lines: 1 });
     expect(log[0]!.chars).toBeGreaterThan(0);
     expect(log[0]!.ms).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('find_references', () => {
+  it.each([true, false])(
+    'groups callers by file and enclosing function, marks definitions (git: %s)',
+    async (git) => {
+      const out = await run('find_references', { name: 'transferFunds' }, ctx({ git }));
+      expect(out).toContain('4 references to transferFunds in 2 files (1 definition)');
+      expect(out).toContain('pay/ledger.ts\n  1  [definition] export function transferFunds(');
+      expect(out).toContain(
+        '  in payInvoice (line 3):\n    4  transferFunds(merchant, customer, invoice.total);',
+      );
+      expect(out).toContain('  in refund (line 8):\n    10  transferFunds(order.merchant');
+      expect(out).toContain("  top level:\n    1  import { transferFunds } from './ledger';");
+      expect(out).not.toContain('docs/payments.md'); // prose is not a reference
+    },
+  );
+
+  it('says when nothing uses a name', async () => {
+    expect(await run('find_references', { name: 'neverUsedAnywhere' })).toBe(
+      'No references to neverUsedAnywhere in code files.',
+    );
   });
 });

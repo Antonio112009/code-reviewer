@@ -118,7 +118,7 @@ flowchart LR
    chunk also gets excerpts of the unchanged code that uses what changed and of the functions it calls.
 4. **Review.** For every chunk:
    - selects the matching skills;
-   - runs the model with read-only tools: `read_file`, `grep`, `find_symbol`, `list_dir`, `git_log`, `git_blame`;
+   - runs the model with read-only tools: `read_file`, `grep`, `find_symbol`, `find_references`, `list_dir`, `git_log`, `git_blame`;
    - collects findings through a strict JSON contract.
 5. **Verify.** Validates the findings (real file, real lines, near the change), dedupes them, and sends
    them to self-critique.

@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
+import { declaredName, enclosingDeclaration } from '../chunking/expand';
 import { parseBlamePorcelain } from '../git/blame';
 import { GitRepo } from '../git/repo';
 import { hasNestedQuantifier } from '../skills/activation';
@@ -160,6 +161,8 @@ interface GitGrepOptions {
   /** `fixed`: plain text; `regex`: PCRE (ERE when git lacks PCRE). */
   mode: 'fixed' | 'regex';
   ignoreCase?: boolean;
+  /** Whole words only (`git grep -w`). */
+  word?: boolean;
   pathspecs?: string[];
 }
 
@@ -172,6 +175,7 @@ async function gitGrep(ctx: ToolContext, opts: GitGrepOptions): Promise<string[]
   const run = (flag: '-F' | '-P' | '-E', pattern: string) => {
     const args = ['grep', '-n', '-I', flag, '--untracked', '--no-color'];
     if (opts.ignoreCase) args.push('-i');
+    if (opts.word) args.push('-w');
     args.push('-e', pattern, '--', ...(opts.pathspecs ?? []));
     return repo.runStatus(args, { timeoutMs: GREP_TIMEOUT_MS });
   };
@@ -438,9 +442,9 @@ export function definitionPattern(name: string): string {
 }
 
 /** Files that hold no definitions: documentation and data. */
-const NON_CODE = ['md', 'markdown', 'rst', 'txt', 'adoc', 'json', 'lock', 'csv', 'svg'].map(
-  (ext) => `:(exclude,glob)**/*.${ext}`,
-);
+const NON_CODE_EXTENSIONS = ['md', 'markdown', 'rst', 'txt', 'adoc', 'json', 'lock', 'csv', 'svg'];
+const NON_CODE = NON_CODE_EXTENSIONS.map((ext) => `:(exclude,glob)**/*.${ext}`);
+const NON_CODE_FILE = new RegExp(`\\.(?:${NON_CODE_EXTENSIONS.join('|')}):\\d+:`, 'i');
 
 const findSymbolTool = defineTool({
   name: 'find_symbol',
@@ -486,11 +490,92 @@ const submitVerdictsTool = defineTool({
 // biome-ignore lint/suspicious/noExplicitAny: required for heterogeneous tool lists
 export type AnyToolDef = ToolDef<any>;
 
+/** Most files and references `find_references` lists. */
+const MAX_REFERENCE_FILES = 30;
+const MAX_REFERENCES = 80;
+
+const findReferencesTool = defineTool({
+  name: 'find_references',
+  description:
+    'Every place a function, method, class, type, field or variable is used in the reviewed revision (whole-word matches in code files), grouped by file and by the enclosing function; definitions are marked. Use it to check each caller of a changed function or each reader of a changed field before reporting a cross-file defect or claiming nothing is affected.',
+  inputSchema: z.object({
+    name: z.string().regex(/^[\w$]+$/, 'identifier expected'),
+    glob: z.string().optional().describe('Optional file glob: "*.ts" matches in every directory'),
+  }),
+  async execute({ name, glob }, ctx) {
+    let lines: string[];
+    if (ctx.git) {
+      lines = await gitGrep(ctx, {
+        pattern: name,
+        mode: 'fixed',
+        word: true,
+        pathspecs: [...(glob ? [globPathspec(glob)] : []), ...NON_CODE],
+      });
+    } else {
+      const escaped = name.replace(/\$/g, '\\$');
+      const out = await jsGrep(ctx, new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`), MAX_REFERENCES + 1, glob);
+      lines = out.split('\n').filter((l) => /^.+?:\d+:/.test(l) && !NON_CODE_FILE.test(l));
+    }
+    return clip(await groupReferences(ctx, name, lines));
+  },
+});
+
+/** `path:line:text` matches grouped by file, then by the enclosing declaration of each line. */
+async function groupReferences(ctx: ToolContext, name: string, lines: string[]): Promise<string> {
+  const byFile = new Map<string, Array<{ line: number; text: string }>>();
+  for (const l of lines) {
+    const m = /^(.+?):(\d+):(.*)$/.exec(l);
+    if (!m) continue;
+    const list = byFile.get(m[1]!) ?? [];
+    list.push({ line: Number(m[2]), text: m[3]! });
+    byFile.set(m[1]!, list);
+  }
+  if (byFile.size === 0) return `No references to ${name} in code files.`;
+  const files = [...byFile.keys()].slice(0, MAX_REFERENCE_FILES);
+  noteMatchedFiles(
+    files.map((f) => `${f}:1:`),
+    ctx,
+  );
+  const out: string[] = [];
+  let shown = 0;
+  let definitions = 0;
+  for (const file of files) {
+    const refs = byFile.get(file)!;
+    const source = await readFile(resolveInside(ctx.root, file), 'utf8')
+      .then((t) => t.split('\n'))
+      .catch(() => undefined);
+    out.push(file);
+    const groups = new Map<string, string[]>();
+    for (const r of refs) {
+      if (shown >= MAX_REFERENCES) break;
+      shown++;
+      const text = r.text.trim().slice(0, 200);
+      if (declaredName(r.text) === name) {
+        definitions++;
+        out.push(`  ${r.line}  [definition] ${text}`);
+        continue;
+      }
+      const at = source ? enclosingDeclaration(source, r.line) : undefined;
+      const key = at && at.line !== r.line ? `in ${at.name} (line ${at.line}):` : 'top level:';
+      groups.set(key, [...(groups.get(key) ?? []), `    ${r.line}  ${text}`]);
+    }
+    for (const [key, items] of groups) out.push(`  ${key}`, ...items);
+  }
+  const total = lines.length;
+  const head = `${total} reference${total === 1 ? '' : 's'} to ${name} in ${byFile.size} file${byFile.size === 1 ? '' : 's'}${definitions ? ` (${definitions} definition${definitions === 1 ? '' : 's'})` : ''}`;
+  const more =
+    total > shown || byFile.size > files.length
+      ? `\n…(${total - shown} more in ${Math.max(0, byFile.size - files.length)} more files; narrow with glob)`
+      : '';
+  return `${head}\n${out.join('\n')}${more}`;
+}
+
 export const READ_TOOLS: AnyToolDef[] = [
   readFileTool,
   grepTool,
   listDirTool,
   findSymbolTool,
+  findReferencesTool,
   gitLogTool,
   gitBlameTool,
 ];
