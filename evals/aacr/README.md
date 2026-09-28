@@ -112,6 +112,29 @@ runs (each run in brackets). "Worth a look" findings count, since they are in th
 - Focused passes add about 1.4 points of F1 for about 70% more cost, and the gain is within the spread of
   two runs, so they stay opt-in.
 
+#### Tried and not adopted: review rounds (as in OpenCodeReview)
+
+OpenCodeReview reviews each group at least twice by default: a later round starts over with the confirmed
+findings listed (at most 30, 300 characters each) and stops when a round adds nothing new. We tried the same
+per chunk on top of the refute-to-drop critique:
+- a second round got the first round's findings;
+- rounds stopped on a round whose findings all repeated earlier locations (±3 lines);
+- a failed later round kept the earlier findings.
+
+| ctx30, two runs each | Findings | Precision | Recall | F1 | Cost / run |
+|---|---|---|---|---|---|
+| One round | 40 | 45.5% | 6.3% (17, 19) | 11.1% (10.3, 11.8) | $20 |
+| Two rounds | 50 | 34.0% | 5.9% (17, 17) | 10.1% (10.1, 10.1) | $30 |
+
+- The second round ran on about 25 of 30 chunks and added about 11 raw findings per run. None of them
+  matched a reference.
+- On the eval corpus it kept recall at 100% but lowered precision from 96% to 87%. It flagged 2 of 8 clean
+  changes and tripled the duplicates, for 45% more cost.
+
+It was not merged. The exhaustive full-depth prompt, findings submitted as they are verified and the
+refute-to-drop critique already recover what the rounds recover in OpenCodeReview: coverage lost when a
+model cuts corners on a large group.
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).
