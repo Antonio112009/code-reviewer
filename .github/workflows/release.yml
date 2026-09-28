@@ -1,7 +1,8 @@
 name: Release
 
-# Push a tag that matches package.json (`git tag v0.1.0 && git push origin v0.1.0`): the tarball is tested,
-# attested (build provenance) and attached to a GitHub release. The stable URL
+# Push a tag that matches package.json (`git tag v0.1.1 && git push origin v0.1.1`): the tarball is tested,
+# attested (build provenance), attached to a GitHub release and published to npm as
+# @antonio112009/code-reviewer through npm Trusted Publishing (OIDC, no stored token). The stable URL
 # https://github.com/antonio112009/code-reviewer/releases/latest/download/code-reviewer.tgz
 # always installs the newest version.
 on:
@@ -36,7 +37,8 @@ jobs:
       - run: npm test
       - name: Pack
         run: |
-          npm pack
+          file="$(npm pack --silent | tail -n 1)"
+          mv "$file" "code-reviewer-${GITHUB_REF_NAME#v}.tgz"
           cp "code-reviewer-${GITHUB_REF_NAME#v}.tgz" code-reviewer.tgz
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
@@ -47,3 +49,6 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" code-reviewer.tgz "code-reviewer-${GITHUB_REF_NAME#v}.tgz" \
             --title "Code Reviewer $GITHUB_REF_NAME" --notes-file CHANGELOG.md
+      # Needs the Trusted Publisher configured for this repository and workflow on npmjs.com.
+      - name: Publish to npm
+        run: npm publish "code-reviewer-${GITHUB_REF_NAME#v}.tgz" --access public --provenance

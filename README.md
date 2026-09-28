@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/antonio112009/code-reviewer/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/antonio112009/code-reviewer/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="version 0.1.0" src="https://img.shields.io/badge/version-0.1.0-7c3aed">
+  <a href="https://www.npmjs.com/package/@antonio112009/code-reviewer"><img alt="npm" src="https://img.shields.io/npm/v/@antonio112009/code-reviewer?color=7c3aed"></a>
   <img alt="node >= 24" src="https://img.shields.io/badge/node-%E2%89%A5%2024-22d3ee">
   <img alt="status: preview" src="https://img.shields.io/badge/status-preview-f472b6">
   <a href="LICENSE"><img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-22c55e"></a>
@@ -33,7 +33,7 @@ Requires **Node.js ≥ 24**, **git**, and one provider: the Claude Code, Codex, 
 logged in, or AWS credentials for Bedrock.
 
 ```bash
-npm install -g https://github.com/antonio112009/code-reviewer/releases/latest/download/code-reviewer.tgz
+npm install -g @antonio112009/code-reviewer
 
 cd /path/to/your/project
 code-reviewer init        # detects your stack and providers, writes .code-reviewer/config.yaml
@@ -41,7 +41,15 @@ code-reviewer review      # reviews your branch against its base branch
 ```
 
 <details>
-<summary>From a clone instead</summary>
+<summary>Other ways to install</summary>
+
+From the latest GitHub release:
+
+```bash
+npm install -g https://github.com/antonio112009/code-reviewer/releases/latest/download/code-reviewer.tgz
+```
+
+From a clone:
 
 ```bash
 git clone https://github.com/antonio112009/code-reviewer.git
@@ -209,9 +217,12 @@ npm install && npm run build && npm run typecheck && npm run lint && npm test
 
   Actions are pinned to commit SHAs, and Dependabot keeps them and the npm dependencies current.
 - **Release.** Bump `version` in `package.json`, add the notes to `CHANGELOG.md`, then push a matching
-  tag (`git tag v0.1.0 && git push origin v0.1.0`). The release workflow tests and packs
-  `code-reviewer.tgz`, attests its build provenance, and publishes it as a GitHub release. Verify a
-  download with `gh attestation verify code-reviewer.tgz --repo antonio112009/code-reviewer`.
+  tag (`git tag v0.1.1 && git push origin v0.1.1`). The release workflow:
+  - tests and packs the package, and attests its build provenance;
+  - publishes a GitHub release with `code-reviewer.tgz`;
+  - publishes `@antonio112009/code-reviewer` to npm through Trusted Publishing, with provenance.
+
+  Verify a download with `gh attestation verify code-reviewer.tgz --repo antonio112009/code-reviewer`.
 
 Architecture, contracts and the safety model: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Changes:
 [CHANGELOG.md](CHANGELOG.md).

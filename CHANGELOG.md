@@ -3,6 +3,7 @@
 ## 0.1.0 — first preview
 
 Released under the [MIT License](LICENSE). Requires Node.js 24 or newer.
+Install with `npm install -g @antonio112009/code-reviewer`.
 
 - **Review targets.** Branch diffs are reviewed like a pull request: `merge-base(base, head)..head`, with
   the base picked from CI, an open PR/MR, branch rules or the remote default. Whole files and folders can

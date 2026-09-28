@@ -1,7 +1,6 @@
 {
-  "name": "code-reviewer",
+  "name": "@antonio112009/code-reviewer",
   "version": "0.1.0",
-  "private": true,
   "description": "Next-level LLM code review: version-aware skills, static hints and self-critique for fewer false positives. Works with Claude Code, Codex, Copilot, Gemini and AWS Bedrock.",
   "keywords": [
     "code-review",
@@ -48,6 +47,9 @@
   ],
   "engines": {
     "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown",
