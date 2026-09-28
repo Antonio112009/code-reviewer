@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Full depth keeps what the critic did not reject from confidence 0.3 (was 0.5).** Findings below 0.6 were
+  already listed only as "worth a look", so the main list, PR comments and gates are unchanged. On AACR-Bench
+  ctx30 the findings the critic confirmed or found uncertain at 0.3–0.5 matched expert-verified references about as often
+  as the kept ones (33%). Keeping them raised F1 from 11.1% to 12.4% (single pass) and from 12.5% to 14.5%
+  (focused passes), at about the same precision (41% → 40%).
+
 - **"Worth a look" findings.** At `--full`, kept findings below confidence 0.6 (`review.advisoryConfidence`)
   and `info` findings are listed apart: in the terminal summary and the Markdown, HTML and JSON reports
   (`advisory`), but not posted to pull requests, exported to SARIF / Code Quality or counted by `--fail-on`;

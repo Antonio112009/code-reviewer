@@ -112,6 +112,25 @@ runs (each run in brackets). "Worth a look" findings count, since they are in th
 - Focused passes add about 1.4 points of F1 for about 70% more cost, and the gain is within the spread of
   two runs, so they stay opt-in.
 
+#### What the new critique still drops
+
+Across the four refute-to-drop runs above, 26 of the 115 dropped findings matched references:
+- **Below the 0.5 threshold, not rejected:** 16 of 48 matched (33%), about as often as the kept findings. The
+  critic often rated a finding it confirmed at 0.35–0.45 to say "unlikely", although it is asked to rate
+  correctness.
+- **Rejected by the critic:** 13 of 67 matched (19%). These were mostly correct but harmless claims: a dead
+  null check, a missing `try/catch` with no observable effect, a design choice.
+
+Keeping the first group from confidence 0.3 (the full preset since then; below 0.6 it is only "worth a look")
+raised F1 at about the same precision (41% → 40% on average):
+
+| ctx30 | Threshold 0.5 | Threshold 0.3 |
+|---|---|---|
+| Single pass (two runs) | 11.1% (10.3, 11.8) | 12.4% (13.1, 11.6) |
+| Focused passes (two runs) | 12.5% (12.4, 12.5) | 14.5% (14.0, 14.9) |
+
+The eval corpus is unaffected: it scores the main list, which still starts at 0.6.
+
 #### Tried and not adopted: review rounds (as in OpenCodeReview)
 
 OpenCodeReview reviews each group at least twice by default: a later round starts over with the confirmed
