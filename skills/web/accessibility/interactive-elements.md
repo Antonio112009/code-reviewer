@@ -9,6 +9,11 @@ activation:
     - '\brole\s*=\s*[{''"]*(?:button|link|checkbox|radio|switch|tab|menuitem|option|menu|menubar|tablist|listbox|grid|tree|combobox)\b'
     - 'href\s*=\s*[{''"]*(?:#[''"]|javascript:)'
     - '\btab[iI]ndex\s*=\s*[{''"]*[1-9]|\baria-disabled\b'
+  examples:
+    - '<div onClick={handleSelect}>Select</div>'
+    - '<li role="tab" aria-selected={isActive}>Tab 1</li>'
+    - '<a href="#" onClick={openMenu}>Menu</a>'
+    - '<div tabIndex={3}>Skip</div>'
 sources:
   - https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html
   - https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/

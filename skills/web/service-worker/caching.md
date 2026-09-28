@@ -7,6 +7,9 @@ activation:
   content:
     - '\bcaches\.\w+\(|\bcache\.(?:put|add|addAll|match)\(|\brespondWith\('
     - '\b(?:CacheFirst|NetworkFirst|StaleWhileRevalidate|CacheOnly|registerRoute|precacheAndRoute|CacheableResponsePlugin|ExpirationPlugin)\b'
+  examples:
+    - 'event.respondWith(caches.match(event.request));'
+    - 'precacheAndRoute(self.__WB_MANIFEST);'
 sources:
   - https://developer.chrome.com/docs/workbox/caching-resources-during-runtime
   - https://developer.mozilla.org/en-US/docs/Web/API/Cache/put

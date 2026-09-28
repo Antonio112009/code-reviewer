@@ -21,6 +21,10 @@ activation:
     - \b(?:createCipheriv|createDecipheriv|createHash|createHmac|createSign|createVerify|timingSafeEqual|randomBytes|pbkdf2(?:Sync)?|scrypt(?:Sync)?|setAuthTag|getAuthTag)\b|\bcrypto\.subtle\b|\bsubtle\.(?:encrypt|decrypt|sign|verify|importKey|deriveKey)\(
     - \b(?:hashlib|compare_digest|Crypto\.Cipher|cryptography\.hazmat|AESGCM|Fernet|javax\.crypto|MessageDigest|SecretKeySpec|IvParameterSpec|GCMParameterSpec|SecureRandom|System\.Security\.Cryptography|AesGcm|Rfc2898DeriveBytes|RandomNumberGenerator|sodium_\w+|RAND_bytes|EVP_\w+|hash_equals)\b|\bCipher\.getInstance\(|"crypto/(?:aes|cipher|hmac|rand|rsa|ecdsa|ed25519|subtle|tls|md5|sha1|sha256)"|\bopenssl_(?:encrypt|decrypt|sign|verify)\(
     - \b(?:MD5|md5|SHA1|sha1|ECB|bcrypt|argon2|rejectUnauthorized|NODE_TLS_REJECT_UNAUTHORIZED|checkServerIdentity|CERT_NONE|check_hostname|CURLOPT_SSL_VERIFY(?:PEER|HOST))\b|\bMath\.random\(\)\.toString\(|\brandom\.choices?\(\s*string\.|\buuid(?:\.uuid|v)?[17]\(
+  examples:
+    - 'const hash = crypto.createHash("sha256").update(data).digest("hex");'
+    - 'digest = hashlib.sha256(data).hexdigest()'
+    - 'const agent = https.request(url, { rejectUnauthorized: false });'
 ---
 - **Password hashing**: MD5, SHA-*, HMAC (even salted) or low-iteration PBKDF2 for passwords → fast cracking. Fix: Argon2id, scrypt, bcrypt; MD5/SHA-1 for cache keys or ETags is fine.
 - **Weak randomness**: `Math.random`, `random`, `java.util.Random`, `math/rand`, time seeds, UUIDv1/v7 or hashed timestamps as keys, IVs, tokens or OTPs → predictable. Fix: platform CSPRNG.

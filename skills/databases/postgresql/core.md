@@ -36,6 +36,11 @@ activation:
     - \b(?:jsonb|JSONB|timestamptz|TIMESTAMPTZ)\b|\bjsonb_\w+\(|\$\d+::\w|::(?:jsonb|timestamptz|regclass|int[248]|float8)\b|\b(?:ON\s+CONFLICT|on\s+conflict)\b|\bon_conflict_do_\w+|\bSKIP\s+LOCKED\b|\bpg_(?:try_)?advisory_\w+|\b(?:INDEX|index)\s+(?:CONCURRENTLY|concurrently)\b|\bRETURNING\b|\b(?:ROW\s+LEVEL\s+SECURITY|SECURITY\s+DEFINER|CREATE\s+POLICY|SET\s+LOCAL)\b|\b(?:setval|set_config|pg_notify)\(|=\s*ANY\s*\(\s*\$\d
     - \b(?:SELECT|UPDATE|DELETE)\b[\s\S]{0,200}?\b(?:FROM|SET|WHERE)\b|\bINSERT\s+INTO\b|\b(?:ALTER|CREATE)\s+(?:TABLE|(?:UNIQUE\s+)?INDEX)\b|['"`](?:BEGIN|COMMIT|ROLLBACK)\b
     - "['\"`]\\s*(?:select\\s+(?:\\*|distinct\\b|count\\(|[\\w.\"]+\\s*(?:,|\\bfrom\\b|\\bas\\b))|update\\s+[\\w.\"]+\\s+set\\b|delete\\s+from\\b|insert\\s+into\\b|with\\s+\\w+\\s+as\\s*\\()"
+  examples:
+    - 'import { Pool } from "pg";'
+    - 'import psycopg2'
+    - 'INSERT INTO users (id, data) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET data = $2 RETURNING id;'
+    - 'const rows = await client.query("select * from users where id = $1", [id]);'
 ---
 - **Pool misuse**: `BEGIN`/`COMMIT` via `pool.query()` hit different connections → no atomicity; unreleased clients hang the pool; without `pool.on('error')` idle-client errors crash Node. Fix: one checked-out client per transaction, `release()` in `finally`.
 - **Type mapping**: node-postgres returns `int8` (`COUNT(*)`) and `numeric` as strings (`+` concatenates) and `date` as local midnight → off-by-one days after `toISOString`. Fix: casts, `setTypeParser`.

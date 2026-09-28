@@ -9,6 +9,11 @@ activation:
     - 'type\s*=\s*[''"]password[''"]|\bone-time-code\b|\bOTPCredential\b'
     - '\bonPaste\b|\bonpaste\b|[''"]paste[''"]|\(paste\)|@paste\b'
     - '\bmax[lL]ength\b'
+  examples:
+    - '<input autoComplete="off" name="username" />'
+    - '<input type="password" autoComplete="new-password" />'
+    - '<input onPaste={(e) => e.preventDefault()} />'
+    - '<input type="password" maxLength={12} />'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/Turning_off_form_autocompletion
   - https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html

@@ -8,6 +8,10 @@ activation:
     - '\bdocument\.cookie\b|\bcookieStore\b|js-cookie|\bCookies\.set\('
     - '\b(?:localStorage|sessionStorage|indexedDB)\b'
     - 'Set-Cookie|\bSameSite=|__Host-|__Secure-|\bPartitioned\b|\bClear-Site-Data\b|\brequestStorageAccess\b'
+  examples:
+    - "document.cookie = 'session=' + sessionId;"
+    - "localStorage.setItem('token', accessToken);"
+    - "res.setHeader('Set-Cookie', 'session=abc; SameSite=Lax');"
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie
   - https://caniuse.com/mdn-http_headers_set-cookie_samesite_lax_default

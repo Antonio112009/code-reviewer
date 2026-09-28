@@ -8,6 +8,10 @@ activation:
     - 'Content-Security-Policy|\bcontentSecurityPolicy\b|\bcspDirectives\b'
     - '\b(?:default|script|style|object|img|connect|frame|worker)-src\b|\bbase-uri\b|\bstrict-dynamic\b'
     - '\bnonce\b|\brequire-trusted-types-for\b|\btrustedTypes\.createPolicy\('
+  examples:
+    - "res.setHeader('Content-Security-Policy', policy);"
+    - "script-src 'self' 'nonce-${nonce}';"
+    - "const policy = trustedTypes.createPolicy('default', { createHTML: (s) => s });"
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP
   - https://web.dev/articles/strict-csp

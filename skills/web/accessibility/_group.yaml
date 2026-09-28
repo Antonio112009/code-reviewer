@@ -13,3 +13,7 @@ detect:
     - '<(?:a|article|aside|audio|button|canvas|details|dialog|div|fieldset|figure|footer|form|h[1-6]|header|iframe|img|input|label|li|main|nav|ol|option|p|picture|section|select|span|summary|svg|table|td|textarea|th|tr|ul|video)[\s>/]'
     - '\b(?:role|aria-[a-z]+|tabindex|tabIndex)\s*[=:]'
     - '\bcreateElement\(\s*[''"][a-z]'
+  examples:
+    - '<button type="submit">Save</button>'
+    - '<div role="button" tabIndex={0}>Menu</div>'
+    - "document.createElement('div')"

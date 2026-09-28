@@ -8,6 +8,9 @@ activation:
   content:
     - '\bpostMessage\(|\baddEventListener\(\s*[''"]message[''"]|\bonmessage\s*='
     - '\b(?:event|e|evt|msg|message)\.origin\b|\bMessageChannel\b|\bBroadcastChannel\b'
+  examples:
+    - 'window.addEventListener("message", handleMessage);'
+    - 'if (event.origin !== "https://app.example.com") return;'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
   - https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html

@@ -31,6 +31,11 @@ activation:
     - "\\b(?:import|from)\\s+(?:pymongo|motor|mongoengine|beanie|bson)\\b|go\\.mongodb\\.org/mongo-driver|\\bMongoDB\\.Driver\\b|\\bIMongo(?:Collection|Database|Client)\\b|\\bcom\\.mongodb\\b|\\bMongo(?:Template|Repository|Client|Collection)\\b|\\bMongoid::Document\\b|\\bMongoDB\\\\(?:Client|Collection)\\b|\\bmongodb::"
     - \bnew\s+(?:mongoose\.)?Schema\s*[(<]|\bmongoose\.(?:model|connect|startSession|Types)\b|\bSchema\.Types\.ObjectId\b|\bObjectId\(|\.(?:findByIdAndUpdate|findOneAndUpdate|findOneAndReplace|countDocuments|insertMany|bulkWrite|withTransaction)\(
     - "[{,]\\s*['\"]?\\$(?:set|setOnInsert|unset|inc|push|addToSet|pull|match|lookup|group|project|unwind|facet|in|nin|ne|gt|gte|lt|lte|regex|where|expr|elemMatch|or|and|exists)['\"]?\\s*:|['\"]\\$(?:set|push|inc|match|in|ne|or|regex|where)['\"]\\s*=>"
+  examples:
+    - 'import mongoose from "mongoose";'
+    - 'import pymongo'
+    - 'const schema = new mongoose.Schema({ name: String });'
+    - 'await User.updateOne(filter, { $set: { name } });'
 ---
 - **Query injection**: request values used directly as filter values accept objects (`{"$ne": null}`, PHP `x[$ne]=`, Python dicts); input reaching `$where`/`$function` or unescaped `$regex` → auth bypass, JS execution, ReDoS. Fix: coerce types, `sanitizeFilter`, escape regexes.
 - **Mongoose bypasses**: `updateOne`/`findOneAndUpdate`, `insertMany` and `bulkWrite` skip `save` middleware, and updates skip validators unless `runValidators: true` → unhashed passwords, missing audit, invalid data. Fix: load and `save()`, or query middleware.

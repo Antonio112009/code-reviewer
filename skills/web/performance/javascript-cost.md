@@ -8,6 +8,11 @@ activation:
     - '\bimport\s*\*\s*as\s+\w+\s+from\b'
     - 'from\s*[''"](?:@/|~/|\.{1,2}/)(?:components|utils|lib|helpers|icons|hooks)[''"]'
     - '\bwindow\.__\w+__\s*=|__NEXT_DATA__|\bhydrat\w*|\bclient:(?:load|idle|visible)\b'
+  examples:
+    - 'import _ from "lodash";'
+    - 'import * as Icons from "react-icons";'
+    - 'import { Button } from "@/components";'
+    - 'window.__INITIAL_STATE__ = { user };'
 sources:
   - https://web.dev/articles/reduce-javascript-payloads-with-code-splitting
   - https://vite.dev/guide/performance

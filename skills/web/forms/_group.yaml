@@ -7,3 +7,6 @@ detect:
   content:
     - '<(?:form|input|select|textarea|button)\b'
     - '\b(?:FormData|requestSubmit|setCustomValidity|reportValidity|checkValidity)\b'
+  examples:
+    - '<input type="email" name="email" required>'
+    - 'const data = new FormData(form);'

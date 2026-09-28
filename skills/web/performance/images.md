@@ -9,6 +9,10 @@ activation:
     - '\bsrc[sS]et\b|\bloading\s*=|\bfetch[pP]riority\b|\bdecoding\s*='
     - '\bbackground(?:-image)?\s*:\s*[^;\n]{0,80}url\(|\bnew Image\('
     - '\bas\s*=\s*[''"]image[''"]'
+  examples:
+    - '<img src={hero} loading="lazy" />'
+    - '.hero { background-image: url("/hero.jpg"); }'
+    - '<link rel="preload" as="image" href="/hero.jpg" />'
 sources:
   - https://web.dev/articles/optimize-lcp
   - https://web.dev/articles/lcp-lazy-loading

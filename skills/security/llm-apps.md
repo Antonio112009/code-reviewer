@@ -22,6 +22,10 @@ activation:
     - (?:\bfrom\s+|\brequire\(\s*|\bimport\(\s*)['"](?:openai|ai|ollama|langchain|@anthropic-ai/[\w-]+|@ai-sdk/[\w-]+|@langchain/[\w-]+|@google/genai|@mistralai/mistralai|@openai/agents|@modelcontextprotocol/[\w-]+|@aws-sdk/client-bedrock(?:-agent)?-runtime)(?:/[\w./-]{0,60})?['"]|^\s*(?:from|import)\s+(?:openai|anthropic|langchain\w*|langgraph|llama_index|litellm|google\.genai|mistralai|ollama|mcp|fastmcp|pydantic_ai|crewai|autogen\w*|smolagents|dspy)\b
     - \b(?:openai-go|anthropic-sdk-go|go-openai|langchaingo|com\.anthropic|com\.openai|langchain4j|springframework\.ai|Azure\.AI\.OpenAI|Anthropic\.SDK|Microsoft\.SemanticKernel|Microsoft\.Extensions\.AI|OpenAI::Client|Anthropic::Client)\b
     - \b(?:chat\.completions\.create|responses\.create|generateText|streamText|generateObject|streamObject|ChatOpenAI|ChatAnthropic|AgentExecutor|create_react_agent|bind_tools|tool_choice|tool_calls|tool_use|dangerouslyAllowBrowser|maxOutputTokens|max_output_tokens|max_completion_tokens|max_tokens|stop_reason|finish_reason|system_prompt|systemPrompt|SYSTEM_PROMPT|McpServer|FastMCP|registerTool|call_tool)\b
+  examples:
+    - 'import OpenAI from "openai";'
+    - 'client = OpenAI::Client.new(access_token: token)'
+    - 'const response = await client.chat.completions.create({ model, messages, tool_choice: "auto" });'
 ---
 - **Prompt injection with tools**: untrusted text (web pages, emails, files, RAG chunks, tool results, memories) in prompts while the model holds side-effecting or data-reading tools → hijacked actions, exfiltration. Fix: isolate untrusted content, least privilege.
 - **Output to sinks**: model output fed to `eval`, SQL, shell, `innerHTML`, file paths, redirects or fetched URLs; Markdown rendered with remote images → XSS, RCE, SSRF, zero-click exfiltration. Fix: treat output as untrusted input.

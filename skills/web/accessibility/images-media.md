@@ -9,6 +9,10 @@ activation:
     - '<(?:img|svg|video|audio|iframe|canvas|picture|object|Image)\b'
     - '\balt\s*=|\bautoplay\b|\bautoPlay\b|<track\b'
     - '\b(?:carousel|marquee|slider)\b|@keyframes|\bprefers-reduced-motion\b'
+  examples:
+    - '<img src={avatar} alt="User avatar" />'
+    - '<video autoPlay muted src={clip} />'
+    - '.carousel { animation: slide 5s infinite; }'
 sources:
   - https://www.w3.org/WAI/tutorials/images/decision-tree/
   - https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html

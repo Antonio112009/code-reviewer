@@ -19,6 +19,13 @@ activation:
     - "@(?:KafkaListener|RabbitListener|SqsListener|JmsListener|Incoming|Outgoing|EventPattern|MessagePattern|Processor|shared_task|app\\.task)\\b|#\\[AsMessageHandler\\b|\\b(?:KafkaTemplate|KafkaConsumer|KafkaProducer|ConsumerRecord|RabbitTemplate|JmsTemplate|SqsClient|SqsAsyncClient|ServiceBusProcessor|ServiceBusClient|ConsumerBuilder|ProducerBuilder|MassTransit|NServiceBus|ConsumeContext|MessageBusInterface|ApplicationJob|Sidekiq::(?:Job|Worker)|Oban|Broadway)\\b|\\bIConsumer<"
     - \.(?:ack|nack|basicAck|basicNack|BasicAck|BasicNack|basic_ack|basic_nack|commitOffsets|commitSync|commitAsync|deleteMessage|delete_message|changeMessageVisibility|sendMessageBatch|send_message_batch|apply_async|perform_async|perform_later)\(|(?<!Promise)\.reject\(\s*\w+\s*,|\b(?:Send|Delete|Receive|ChangeMessageVisibility)Message(?:Batch)?Command\b|\bSQS(?:Event|Handler|BatchResponse)\b|\bXREADGROUP\b|\bxReadGroup\(
     - \b(?:autoAck|auto_ack|noAck|no_ack|enable\.auto\.commit|acks_late|prefetch_count|basicQos|VisibilityTimeout|visibility_timeout|MessageGroupId|MessageDeduplicationId|batchItemFailures|ReportBatchItemFailures|x-dead-letter-exchange|deadLetter\w*|max\.poll\.interval\.ms|AckWait|MaxDeliver|ShouldQueue)\b
+  examples:
+    - 'import { Kafka } from "kafkajs";'
+    - 'from celery import shared_task'
+    - 'import "github.com/segmentio/kafka-go"'
+    - '@KafkaListener(topics = "orders")'
+    - 'channel.basicAck(deliveryTag, false);'
+    - 'const params = { QueueUrl: url, VisibilityTimeout: 30 };'
 ---
 - **Ack before work**: `autoAck`/`noAck`, auto-commit while work runs elsewhere, SQS delete before processing, Celery's default early ack, un-awaited `eachMessage` work → crashes lose messages. Fix: ack after completion.
 - **Non-idempotent consumer**: redeliveries, rebalances and producer retries handled without dedupe key, unique constraint or state check → double charges, duplicate emails. Fix: idempotency key, upsert.

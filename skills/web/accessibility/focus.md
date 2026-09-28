@@ -8,6 +8,10 @@ activation:
     - 'outline(?:-style|-width)?\s*:\s*(?:none|0)\b|:focus\b|:focus-visible\b'
     - '\.focus\(\)|\.blur\(\)|\bautoFocus\b|\bautofocus\b|\bcdkTrapFocus\b|\bfocus-trap\b'
     - 'position\s*:\s*(?:sticky|fixed)|\bscroll-padding|\binert\b'
+  examples:
+    - 'button:focus { outline: none; }'
+    - 'inputRef.current.focus();'
+    - '.header { position: sticky; top: 0; }'
 sources:
   - https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html
   - https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html

@@ -28,6 +28,10 @@ activation:
     - (?:from\s+|require\(\s*)['"](?:redis|ioredis|@redis/client|@upstash/redis|iovalkey|@valkey/valkey-glide|redlock)['"]
     - \b(?:import|from)\s+(?:redis|aioredis|valkey|coredis)\b|github\.com/(?:redis/go-redis|go-redis/redis|gomodule/redigo|valkey-io/valkey-go|redis/rueidis)|\bredis\.Nil\b|\bStackExchange\.Redis\b|\bIConnectionMultiplexer\b|\b(?:Jedis\w*|Redisson\w*|RedisTemplate|StringRedisTemplate|LettuceConnectionFactory)\b|\bio\.lettuce\b|\bRedis\.new\b|\bPredis\\|\bnew\s+Redis\s*\(|\bRedix\b|\bredis::(?:Commands|Client|AsyncCommands|cmd|pipe)\b|\bredis\.call\(
     - \.(?:set[Ee]x|p[Ss]et[Ee]x|set[Nn][Xx]|h[Ss]et|h[Gg]et[Aa]ll|h[Ii]ncr[Bb]y|p[Ee]xpire(?:[Aa]t)?|[Ee]xpire[Aa]t|z[Aa]dd|z[Rr]ange\w*|[lr][Pp]ush|l[Rr]ange|b[lr](?:pop|Pop)|s[Aa]dd|s[Mm]embers|x[Aa]dd|x[Rr]ead[Gg]roup|x[Aa]ck|incr|incr[Bb]y|eval[Ss]ha|unlink|scan_iter)\(|\.expire\([^,()\n]{1,80},\s*\d|\.(?:SetNX|SetEx|SetArgs|HSet|HGetAll|HIncrBy|Expire|ExpireAt|ZAdd|LPush|RPush|BLPop|BRPop|XAdd|XReadGroup|XAck|Incr|IncrBy|Eval|EvalSha|Pipelined|TxPipelined|Watch)\(ctx\b|\b(?:String(?:Set|Get|Increment)|Key(?:Expire|Delete)|Hash(?:Set|GetAll)|Lock(?:Take|Release))Async\(|\bopsFor(?:Value|Hash|List|Set|ZSet)\(\)
+  examples:
+    - 'import Redis from "ioredis";'
+    - 'import redis'
+    - 'await client.setEx(sessionKey, 3600, JSON.stringify(session));'
 ---
 - **Blocking commands**: `KEYS`, `HGETALL`/`SMEMBERS`/`LRANGE 0 -1` or `DEL` on big keys in request paths stall the single-threaded server; in Cluster, `KEYS`/`SCAN` see one node → missed keys. Fix: `SCAN` family, `UNLINK`.
 - **TTL bugs**: `SET`+`EXPIRE` as two calls, or `EXPIRE` only after the first `INCR`, leave immortal keys after a crash → permanent lockouts; plain `SET` drops an existing TTL. Fix: `SET` with `EX`, `EXPIRE NX`, `KEEPTTL`.

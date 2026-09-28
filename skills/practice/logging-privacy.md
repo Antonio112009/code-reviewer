@@ -47,6 +47,12 @@ activation:
     - \bSentry\.\w+|\bcaptureException\(|\bsendDefaultPii\b|\bbeforeSend\b|\b(?:posthog|mixpanel|amplitude|segment|analytics)\.(?:capture|track|identify)\(|\b(?:span|currentSpan)\.(?:setAttributes?|set_attributes?|SetAttributes)\(|\bredact\b
     - "[?&](?:access_?token|api_?key|apikey|token|password|passwd|secret|client_secret|session_?id|email)="
     - \blogging\.level\b|\blog_?[lL]evel\b|\becho\s*=\s*True\b|\borg\.hibernate\.(?:SQL|orm\.jdbc\.bind|type\.descriptor)\b|\bshow[-_]sql\b|\blog:\s*\[[^\]\n]*['"]query['"]|\baudit\w*
+  examples:
+    - 'logger.info("login", { user, password: req.body.password });'
+    - 'error!("request failed: {:?}", request);'
+    - 'Sentry.captureException(err);'
+    - 'const url = `/reset?token=${resetToken}`;'
+    - 'logging.level: DEBUG'
 ---
 - **Secrets in logs**: `Authorization`/`Cookie` headers, tokens, reset links, connection strings, env dumps, or whole HTTP client errors (axios `err.config` holds headers) → credentials in log stores. Fix: allowlist fields.
 - **Whole-object dumps**: logging `req.body`, user or ORM entities, `%+v` structs or payload spreads with password hashes, emails, phones, card or health data → personal data breach. Fix: log ids and chosen fields.

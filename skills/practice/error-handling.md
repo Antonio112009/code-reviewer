@@ -37,6 +37,11 @@ activation:
     - \berr\s*!=\s*nil\b|\berrors\.(?:Is|As|Join)\(|\bfmt\.Errorf\(|\brecover\(\)|\bpanic\(
     - \bmap_err\(|\.ok\(\)|\blet\s+_\s*=|\banyhow::|\bthiserror\b|\bunwrap_or(?:_default|_else)?\(
     - \bretr(?:y|ies|ying)\b|\bbackoff\b|\bRetry-After\b|\.on\(\s*['"]error['"]|\.pipe\(\s*[\w.$]+\s*[,)]|\bPromise\.allSettled\(|\b(?:next|callback|cb|done)\(\s*err\b
+  examples:
+    - 'try { risky(); } catch (err) { logger.warn(err); }'
+    - 'if err != nil { return fmt.Errorf("save: %w", err) }'
+    - 'let value = result.map_err(|e| AppError::from(e))?;'
+    - 'await retry(() => fetchWithBackoff(url), { retries: 3 });'
 ---
 - **Swallowed error**: empty `catch`, `except: pass`, `_ = err`, or a handler that only logs and returns `null`/`[]`/defaults → callers continue on bad data; outages look like "no results". Fix: handle or rethrow.
 - **Over-broad catch**: `except Exception`, `rescue => e` or `catch (Throwable)` around large blocks, mapping every failure to one outcome ("not found", retry, 400) → bugs misreported, retried or hidden. Fix: narrow types near the call.

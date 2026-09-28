@@ -31,6 +31,10 @@ activation:
     - \b(?:jsonwebtoken|jwtVerify|SignJWT|golang-jwt|NextAuth|getServerSession|passport|authenticate_user!|login_required|AuthGuard|SecurityFilterChain|AddAuthentication|AddAuthorization|SAMLResponse|saml2?|Saml2?)\b|\bjwt\.(?:sign|verify|decode|encode|Parse\w*)\(|@(?:PreAuthorize|Secured|login_required|UseGuards)\b|\[Authorize\b|from ['"](?:next-auth|@auth/[\w-]+|better-auth)['"]
     - \b(?:refresh_?[Tt]oken|RefreshToken|reset_?[Tt]oken|resetToken|password_?reset|passwordReset|id_?[Tt]oken|code_verifier|codeVerifier|code_challenge|redirect_uri|redirectUri|email_verified|totp|TOTP|otp|OTP|mfa|MFA|2fa)\b
     - \b(?:req|request)\.session\b|\bres\.cookie\(|\bcookies\(\)\.set\(|\b(?:set_cookie|Set-Cookie|httpOnly|HttpOnly|sameSite|SameSite|session_regenerate_id)\b|\b(?:bcrypt|argon2|password_hash|password_verify|check_password|verify_password)\b|\b(?:rateLimit|RateLimit|rate_limit|tenant_?[Ii]d|tenantId|TenantId)\b
+  examples:
+    - 'const payload = jwt.verify(token, publicKey, { algorithms: ["RS256"] });'
+    - 'const { refreshToken } = req.body;'
+    - 'res.cookie("session", id, { httpOnly: true, sameSite: "strict" });'
 ---
 - **Enforcement gaps**: roles or ids from request data or unverified claims, UI-only checks, sibling handlers or jobs missing the check, `/Admin` or `%2F` variants passing prefix rules → access bypass. Fix: deny by default.
 - **Tenant isolation**: queries, caches, search indexes or storage keys not scoped by the session tenant, or tenant ids from input → cross-tenant leaks. Fix: tenant from the principal.

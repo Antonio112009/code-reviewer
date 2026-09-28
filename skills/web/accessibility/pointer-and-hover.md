@@ -10,6 +10,11 @@ activation:
     - '@(?:mousedown|pointerdown|touchstart|mouseenter|mouseover)\b|\((?:mousedown|pointerdown|touchstart|mouseenter)\)'
     - '\bdraggable\b|\bon(?:Drag\w*|dragstart)\b|\b(?:dnd-kit|react-beautiful-dnd|sortablejs)\b'
     - '\b(?:[Tt]ooltip|popover)\b'
+  examples:
+    - '<button onMouseDown={handleDelete}>Delete</button>'
+    - '<div (mousedown)="onPress()">'
+    - '<li draggable onDragStart={handleDragStart}>Item</li>'
+    - '<Tooltip content="More info"><InfoIcon /></Tooltip>'
 sources:
   - https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus.html
   - https://www.w3.org/WAI/WCAG22/Understanding/pointer-cancellation.html

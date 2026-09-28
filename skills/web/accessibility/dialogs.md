@@ -8,6 +8,10 @@ activation:
     - '<dialog\b|\bshowModal\(|\baria-modal\b'
     - '\brole\s*=\s*[{''"]*(?:dialog|alertdialog)\b'
     - '<(?:Modal|Dialog|Drawer|Sheet|Popup|Lightbox)\b'
+  examples:
+    - 'dialogRef.current.showModal();'
+    - '<div role="alertdialog">'
+    - '<Modal isOpen={isOpen} onClose={close}>'
 sources:
   - https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
   - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/dialog

@@ -43,6 +43,11 @@ activation:
     - \bregistry\s*=\s*["']?https?:|\b_authToken\b|\bstrict-ssl\s*=|\bnpmRegistryServer\b|--(?:extra-)?index-url\b|--trusted-host\b|\ballowInsecureProtocol\b|\b(?:GOSUMDB|GOINSECURE|GONOSUMDB|GONOSUMCHECK|GOPROXY|PIP_(?:EXTRA_)?INDEX_URL|UV_(?:EXTRA_)?INDEX_URL|NPM_CONFIG_REGISTRY)\b|\bunsafe-best-match\b
     - \b(?:curl|wget)\b[^\n|]{0,200}\|\s*(?:sudo\s+)?(?:ba|z)?sh\b|\b(?:npx|bunx|uvx|pipx\s+run)\s+(?:-y\s+)?[@\w]|\bgo\s+(?:run|install)\s+\S+@(?:latest|master|main)\b
     - \bnpm\s+(?:ci|install|i)\b|--(?:no-)?frozen-lockfile\b|--immutable\b|--require-hashes\b|\b(?:pip3?|uv\s+pip)\s+install\b|\buv\s+sync\b|\bpoetry\s+install\b|\bbundle\s+install\b|\bcomposer\s+(?:install|update)\b|\bcargo\s+install\b|\b(?:yarn|pnpm|bun)\s+(?:install|add|i)\b
+  examples:
+    - '"postinstall": "node scripts/setup.js",'
+    - 'registry=https://npm.internal.example.com/'
+    - 'curl -fsSL https://get.example.dev/install.sh | sudo sh'
+    - 'RUN npm ci --production'
 ---
 - **Suspicious new package**: typosquats, lookalike or scope-confused names, AI-hallucinated names, brand-new or single-maintainer packages → attacker code in builds and runtime. Fix: verify publisher and age.
 - **Install-time code**: new `preinstall`/`postinstall`/`prepare` scripts, packages added to `trustedDependencies`/`onlyBuiltDependencies`, networked `build.rs` or `setup.py` → code runs on every install. Fix: remove or justify.
