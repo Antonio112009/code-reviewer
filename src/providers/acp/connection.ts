@@ -80,6 +80,8 @@ export type AgentEndpoint = { kind: 'process'; spec: LaunchSpec } | { kind: 'app
 export interface AcpTimeouts {
   /** initialize, session/new, set_config_option, set_mode */
   setupMs: number;
+  /** initialize alone, which includes starting the agent process; defaults to `setupMs` */
+  initMs?: number;
   /** how long the agent may take to stop after session/cancel (task timeout) */
   cancelGraceMs: number;
   /** how long the agent may take to stop after the run was aborted (Ctrl+C) */
@@ -227,7 +229,7 @@ export class AcpConnection {
           clientCapabilities: { fs: { readTextFile: true, writeTextFile: false }, terminal: false },
           clientInfo: { name: 'code-reviewer', version: '0' },
         }),
-        this.timeouts.setupMs,
+        this.timeouts.initMs ?? this.timeouts.setupMs,
         'initialize',
       );
     } catch (err) {

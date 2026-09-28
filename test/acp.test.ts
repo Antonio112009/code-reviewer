@@ -426,11 +426,22 @@ describe('AcpProvider with a real agent process', () => {
   });
 
   it('fails a task whose session/new never answers, within the setup timeout', async () => {
-    const provider = processProvider('hang-new', { setupMs: 300 });
+    // Starting the agent process can take seconds on a busy CI runner: only session/new gets the short limit.
+    const provider = processProvider('hang-new', { setupMs: 300, initMs: 30_000 });
     try {
       const started = Date.now();
       await expect(provider.run(task())).rejects.toThrow(/session\/new timed out/);
       expect(Date.now() - started).toBeLessThan(5_000);
+    } finally {
+      await provider.dispose();
+    }
+  });
+
+  it('gives initialize its own timeout, so a slow agent start does not count against session/new', async () => {
+    // initialize takes a second here: a shared 300 ms limit would fail it before session/new is reached.
+    const provider = processProvider('slow-start-hang-new', { setupMs: 300, initMs: 30_000 });
+    try {
+      await expect(provider.run(task())).rejects.toThrow(/session\/new timed out/);
     } finally {
       await provider.dispose();
     }
