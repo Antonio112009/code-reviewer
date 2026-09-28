@@ -55,15 +55,21 @@ yourself.
    gh run watch "$(gh run list --workflow release.yml --limit 1 --json databaseId --jq '.[0].databaseId')" --exit-status
    ```
 
-8. **Hand over the npm approval.** Tell the maintainer the version is staged and how to approve it with
-   2FA: `npm stage list`, then `npm stage approve <id>`, or on npmjs.com. Do not approve it, and do not
-   run `npm publish` or create npm tokens.
+8. **Hand over the npm approval.** npm first checks a staged version for a few minutes: `npm stage list`
+   shows `status: validating`, and approving then fails with E409 ("automated review hasn't finished").
+   Wait for `status: staged`, then tell the maintainer how to approve it with 2FA:
+   `npm stage approve <id>` (the id is in the release job's log and in `npm stage list`), or on npmjs.com.
+   Do not approve it, and do not run `npm publish` or create npm tokens.
 
-9. **After approval, check:**
+9. **After approval, check** (a plain `npm view` may answer from the local cache for a while):
    ```bash
-   npm view @antonio112009/code-reviewer version
+   npm view @antonio112009/code-reviewer version --prefer-online
    gh release view vX.Y.Z
    ```
+   The package ships `npm-shrinkwrap.json`, so an install from the registry gets exactly the tested
+   dependency tree. The registry marks such versions: `npm view @antonio112009/code-reviewer@X.Y.Z
+   _hasShrinkwrap` must print `true`. npm applies a shrinkwrap only to packages from the registry, so an
+   install from a local or URL tarball resolves the ranges afresh: that is no test of it.
 
 ## If something fails
 
