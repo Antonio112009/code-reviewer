@@ -150,6 +150,7 @@ export const FAILURE_KINDS = [
   'refusal',
   'unavailable',
   'auth',
+  'budget',
   'aborted',
   'error',
 ] as const;

@@ -39,7 +39,7 @@ import {
   type RootFile,
 } from '../git/snapshot';
 import { findCatalogModel, formatUnavailable, type ModelListing, preflightModels } from '../models';
-import { CostMeter, costOf } from '../models/pricing';
+import { CostBudget, CostMeter, costOf, formatMoney } from '../models/pricing';
 import { isUnconfined } from '../providers/acp/presets';
 import { detectProviders } from '../providers/detect';
 import { ProviderRegistry } from '../providers/registry';
@@ -253,6 +253,8 @@ const SPLITTABLE: ReadonlySet<FailureKind> = new Set([
 ]);
 /** A failed chunk is halved at most this many times (up to four parts). */
 const MAX_SPLIT_LEVEL = 2;
+/** With self-critique, reviews stop at 85% of `review.maxCost`: the rest is kept to verify their findings. */
+const CRITIQUE_RESERVE = 0.15;
 
 function addCounts(total: Record<string, number>, add: Record<string, number> | undefined): void {
   for (const [k, v] of Object.entries(add ?? {})) total[k] = (total[k] ?? 0) + v;
@@ -818,6 +820,16 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
   const collected: Finding[] = [];
   /** Static hints the reviewing model saw and did not confirm (kept for auditing). */
   const hintRejected: Finding[] = [];
+  const costBudget =
+    config.review.maxCost === undefined
+      ? undefined
+      : new CostBudget(config.review.maxCost, config.pricing, {
+          critiqueReserve: routes.critique ? CRITIQUE_RESERVE : 0,
+          onUnpriced: (route) =>
+            warn(
+              `review.maxCost: the cost of ${route} is unknown (no price in \`pricing\`), so its calls do not count toward the limit.`,
+            ),
+        });
   const router = new ModelRouter(routes, {
     config,
     availableProviders,
@@ -826,6 +838,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     logger,
     signal: req.signal,
     emit,
+    ...(costBudget ? { budget: costBudget } : {}),
   });
   const meter = new CostMeter(config.pricing);
   const chunkRecords = new Map(run.chunks.map((c) => [c.id, c]));
@@ -1460,6 +1473,12 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     run.routing = { ...routes };
     const failed = run.chunks.filter((c) => c.status === 'failed').length;
     if (aborted()) warn('The run was interrupted before it finished.');
+    const overBudget = run.chunks.filter((c) => c.failure === 'budget').length;
+    if (costBudget && overBudget) {
+      warn(
+        `review.maxCost (${formatMoney({ ...costBudget.spent, amount: costBudget.max })}) was reached at ${formatMoney(costBudget.spent)}: ${overBudget} of ${run.chunks.length} chunk(s) were not reviewed.`,
+      );
+    }
     run.status = aborted()
       ? 'partial'
       : chunks.length > 0 && failed === chunks.length

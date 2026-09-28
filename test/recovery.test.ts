@@ -3,12 +3,13 @@ import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { splitChunk } from '../src/chunking/chunker';
 import type { Config } from '../src/config/schema';
-import { CostMeter, costOf, formatMoney, priceFor } from '../src/models/pricing';
+import { CostBudget, CostMeter, costOf, formatMoney, priceFor } from '../src/models/pricing';
 import { MockProvider } from '../src/providers/mock';
 import { ProviderRegistry } from '../src/providers/registry';
 import { mayAskForMore, salvagePrompt, salvageReason, salvageTimeoutMs } from '../src/providers/salvage';
 import type { AgentResult, AgentTask, Provider } from '../src/providers/types';
 import {
+  BudgetExceededError,
   failureKindOf,
   NoPayloadError,
   sumUsage,
@@ -403,5 +404,76 @@ describe('splitChunk', () => {
     )!;
     expect(halves.map((h) => h.parts.length)).toEqual([1, 2]);
     expect(splitChunk(chunk([part('a.ts', 100)]))).toBeUndefined();
+  });
+});
+
+describe('cost budget (review.maxCost)', () => {
+  const usage = { inputTokens: 1_000_000, outputTokens: 0 };
+
+  it('counts priced and reported calls, keeps a reserve for the critique and names unpriced routes once', () => {
+    const unpriced: string[] = [];
+    const budget = new CostBudget(
+      2,
+      { 'anthropic:claude-sonnet-5': { input: 1 } },
+      {
+        critiqueReserve: 0.15,
+        onUnpriced: (route) => unpriced.push(route),
+      },
+    );
+    expect(budget.allows('review')).toBe(true);
+    budget.add({ provider: 'anthropic', model: 'claude-sonnet-5', usage }); // $1
+    budget.add({ provider: 'claude', usage: { ...usage, reportedCost: { amount: 0.7, currency: 'USD' } } });
+    expect(budget.spent.amount).toBeCloseTo(1.7);
+    expect(budget.allows('review')).toBe(false); // 1.7 of the 85% (1.7) used
+    expect(budget.allows('critique')).toBe(true);
+    budget.add({ provider: 'codex', model: 'gpt-5', usage });
+    budget.add({ provider: 'codex', model: 'gpt-5', usage });
+    budget.add({ provider: 'claude', usage: { ...usage, reportedCost: { amount: 9, currency: 'EUR' } } });
+    expect(unpriced).toEqual(['codex:gpt-5', 'claude']);
+    expect(budget.spent.amount).toBeCloseTo(1.7);
+    expect(failureKindOf(new BudgetExceededError('x'))).toBe('budget');
+  });
+
+  const priced = (c: Config) => {
+    c.pricing = { mock: { request: 1 } }; // $1 per model call
+    c.review.passes = ['local', 'contracts']; // two chunks
+    c.review.concurrency = 1;
+  };
+
+  it('stops starting chunks once the budget is spent', async () => {
+    const provider = new ScriptedProvider(() => undefined);
+    const { run } = await review(provider, (c) => {
+      priced(c);
+      c.review.maxCost = 1;
+    });
+    expect(provider.tasks).toHaveLength(1);
+    expect(run.chunks.map((c) => `${c.status}/${c.failure ?? '-'}`).sort()).toEqual([
+      'done/-',
+      'failed/budget',
+    ]);
+    expect(run.status).toBe('partial');
+    expect(run.warnings.join('\n')).toContain(
+      'review.maxCost ($1.00) was reached at $1.00: 1 of 2 chunk(s) were not reviewed.',
+    );
+    expect(run.cost?.amount).toBe(1);
+  });
+
+  it('keeps 15% of the budget for the critique', async () => {
+    const provider = new ScriptedProvider(() => undefined);
+    const { run } = await review(provider, (c) => {
+      priced(c);
+      c.review.selfCritique = true;
+      c.review.maxCost = 1.1;
+    });
+    // the second review would start at $1, over 85% of $1.10 (it would run without the reserve): skipped, and
+    // the critique still runs
+    expect(provider.tasks.map((t) => t.kind)).toEqual(['findings', 'verdicts']);
+    expect(run.chunks.map((c) => c.failure ?? '-').sort()).toEqual(['-', 'budget']);
+    expect(run.findings.length + (run.advisory?.length ?? 0)).toBeGreaterThan(0);
+    expect(
+      [...run.findings, ...(run.advisory ?? [])].every(
+        (f) => f.critique?.reason !== 'not verified (critic returned no verdict)',
+      ),
+    ).toBe(true);
   });
 });

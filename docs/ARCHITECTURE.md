@@ -468,6 +468,12 @@ The code under review, and therefore model output, is treated as untrusted.
   of calls without a known cost and the routes without a price. One currency per run.
 - `--dry-run` shows a lower bound for the review prompts (code, instructions, skills, hints) and, with a
   price for the review model, its input cost.
+- **Budget** (`review.maxCost`, `CostBudget`): `runRouted` checks it before every attempt and adds each
+  call's cost when it returns; a task that may not start fails with `BudgetExceededError` (failure kind
+  `budget`, never split or retried). With self-critique on, review tasks stop at 85% of the budget
+  (`CRITIQUE_RESERVE`) and critique batches may use the rest. Running tasks finish, so a run can exceed the
+  budget by what they spend. Calls without a known cost (no price, another currency than USD) do not count
+  and are named once in a warning.
 
 ## Evals (`src/eval/`, `evals/`)
 

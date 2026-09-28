@@ -8,6 +8,7 @@ import {
   refKey,
   resolveFallback,
 } from '../models';
+import { type CostBudget, formatMoney } from '../models/pricing';
 import type { ProviderRegistry } from '../providers/registry';
 import { type AgentResult, type AgentTask, type Provider, ProviderError } from '../providers/types';
 import type { FailureKind, Money, Role, RoleRouting, RunRecord, Usage } from '../types';
@@ -24,6 +25,8 @@ export interface ModelRouterDeps {
   logger: Logger;
   signal?: AbortSignal;
   emit?: (e: ReviewEvent) => void;
+  /** `review.maxCost`: no model call starts once it is spent. */
+  budget?: CostBudget;
 }
 
 /**
@@ -42,6 +45,10 @@ export class ModelRouter {
     private readonly routes: Partial<Record<Role, RoleRouting>>,
     private readonly deps: ModelRouterDeps,
   ) {}
+
+  get budget(): CostBudget | undefined {
+    return this.deps.budget;
+  }
 
   route(role: Role): RoleRouting {
     const r = this.routes[role];
@@ -180,6 +187,9 @@ function messageOf(err: unknown): string {
   return err instanceof Error ? err.message.split('\n')[0]! : String(err);
 }
 
+/** `review.maxCost` is spent: the task was not started. */
+export class BudgetExceededError extends Error {}
+
 /** A turn that ended without a usable answer (cancelled by our timeout or stall watchdog, output or step limit). */
 export class UnfinishedTurnError extends Error {
   constructor(
@@ -205,6 +215,7 @@ export class NoPayloadError extends Error {
 export function failureKindOf(err: unknown, signal?: AbortSignal): FailureKind {
   if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) return 'aborted';
   if (err instanceof UnfinishedTurnError) return err.kind;
+  if (err instanceof BudgetExceededError) return 'budget';
   if (err instanceof NoPayloadError) return 'no-output';
   if (isOwnTimeout(err)) return 'timeout';
   switch (classifyError(err)) {
@@ -269,12 +280,23 @@ export async function runRouted(
   let route = router.route(role);
   const spend: Spend[] = [];
   for (let attempt = 1; ; attempt++) {
+    const budget = router.budget;
+    if (budget && !budget.allows(role)) {
+      throw attachSpend(
+        new BudgetExceededError(
+          `review.maxCost reached (${formatMoney(budget.spent)} of ${formatMoney({ ...budget.spent, amount: budget.max })}): not started`,
+        ),
+        spend,
+      );
+    }
     try {
       const provider = registry.get(route.provider);
       const result = await provider.run({ ...task, model: route.model, reasoning: route.reasoning });
       const model = result.model ?? route.model;
       const usage = usageOrEstimate(result.usage, task, result.text);
-      spend.push({ provider: route.provider, ...(model ? { model } : {}), usage });
+      const entry: Spend = { provider: route.provider, ...(model ? { model } : {}), usage };
+      spend.push(entry);
+      budget?.add(entry);
       // Some agents answer an unusable model with an error message instead of a protocol error.
       const replyError = result.submission.calls === 0 ? detectReplyError(result.text) : undefined;
       if (replyError) throw new ProviderError(replyError, route.provider);
@@ -301,6 +323,7 @@ export async function runRouted(
         spend,
       };
     } catch (err) {
+      if (err instanceof BudgetExceededError) throw err;
       if (task.signal?.aborted || attempt >= MAX_ATTEMPTS || isOwnTimeout(err)) throw attachSpend(err, spend);
       const cls = classifyError(err);
       if (cls === 'transient') {

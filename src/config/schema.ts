@@ -123,6 +123,12 @@ export const ReviewSettingsSchema = z.object({
   /** Hard cap on the number of chunks (a warning is printed when exceeded; nothing is dropped). */
   maxChunks: z.number().int().positive(),
   concurrency: z.number().int().positive(),
+  /**
+   * Most a run may spend (USD, as priced by `pricing` or reported by the provider): no model call starts once
+   * it is reached, and reviews stop at 85% of it while self-critique is on. Calls without a known cost do not
+   * count. Unset = no limit.
+   */
+  maxCost: z.number().positive().optional(),
   projectRules: z.boolean(),
   authors: z.boolean(),
   tools: z.boolean(),

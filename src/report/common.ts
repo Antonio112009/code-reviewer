@@ -167,6 +167,8 @@ const FAILURE_ADVICE: Record<FailureKind, string> = {
   refusal: 'the model declined — use another model (--model or models.fallbacks)',
   unavailable: 'no usable model — see `code-reviewer providers list` and models.fallbacks',
   auth: 'credentials missing or expired — log in to the provider again',
+  budget:
+    'review.maxCost was reached before this part was reviewed — raise it (--max-cost), or review less (essential depth, fewer passes)',
   aborted: 'interrupted',
   error: 'unexpected error — rerun with --verbose for details',
 };
