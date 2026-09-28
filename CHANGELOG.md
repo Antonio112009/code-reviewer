@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- **Opus checks the findings by default.** Providers can name a `critiqueModel` for the self-critique pass
+  (`claude`: `opus`, `anthropic`: `claude-opus-5-5`), used when the critique role names no model; `--model`
+  now sets the review model only. In the eval corpus, Sonnet + Opus critique kept every defect and dropped
+  the weak findings Sonnet's critique let through (precision 95% → 100%) for ~17% more.
+
+- **Anthropic API provider** (`anthropic`, `ANTHROPIC_API_KEY`, `claude-sonnet-5` by default): no agent in
+  between, so a task carries only our prompt — Claude Code reads ~25× more context per task. Meant for CI
+  billed per token.
+- **Prompt caching for direct APIs.** The tool loop's growing prompt is cached (Anthropic: request-level
+  `cache_control`; Bedrock: cache points for Anthropic models). Cache writes are now recorded (also from ACP
+  agents) and priced (`pricing.<model>.cacheWrite`, default 1.25× input); summaries, reports and `eval`
+  show them.
+
 - **Sonnet by default.** Claude reviews and critiques with Sonnet at high reasoning unless a model is
   configured (`--model opus` for a deeper, costlier pass). The review's context window comes from the model
   catalog (Sonnet 5 and Opus 5.5: 1M tokens) instead of a fixed 200k.

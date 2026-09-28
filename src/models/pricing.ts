@@ -3,6 +3,8 @@ import type { CostBasis, CostSummary, Money, Usage } from '../types';
 
 const M = 1_000_000;
 const DEFAULT_CURRENCY = 'USD';
+/** Without a `cacheWrite` price, cache writes cost this much more than plain input (Anthropic's 5-minute cache). */
+const CACHE_WRITE_FACTOR = 1.25;
 
 /** Usage of one model call with the route that made it (see `Spend` in review/execute.ts). */
 export interface PricedSpend {
@@ -38,12 +40,13 @@ export function costOf(
   if (u.reportedCost) return { ...u.reportedCost, basis: 'reported' };
   const price = priceFor(pricing, spend.provider, spend.model);
   if (!price) return undefined;
-  const tokens = u.inputTokens + (u.cachedInputTokens ?? 0) + u.outputTokens;
+  const tokens = u.inputTokens + (u.cachedInputTokens ?? 0) + (u.cacheWriteTokens ?? 0) + u.outputTokens;
   const hasTokenRates = price.input !== undefined || price.output !== undefined;
   if (tokens > 0 && !hasTokenRates && price.request === undefined) return undefined;
   const amount =
     (u.inputTokens * (price.input ?? 0) +
       (u.cachedInputTokens ?? 0) * (price.cachedInput ?? price.input ?? 0) +
+      (u.cacheWriteTokens ?? 0) * (price.cacheWrite ?? (price.input ?? 0) * CACHE_WRITE_FACTOR) +
       u.outputTokens * (price.output ?? 0)) /
       M +
     (u.requests ?? 1) * (price.request ?? 0);

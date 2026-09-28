@@ -56,7 +56,6 @@ import type {
   Chunk,
   FailureKind,
   Finding,
-  ReasoningLevel,
   RefsInfo,
   ReportedFinding,
   ReviewUnit,
@@ -160,20 +159,32 @@ export class ReviewError extends Error {}
 export function resolveRouting(config: Config): { review: RoleRouting; critique?: RoleRouting } {
   const review = config.roles.review;
   if (!review) throw new ReviewError('No review role configured (roles.review).');
-  const route = (
-    r: { provider: string; model?: string; reasoning?: ReasoningLevel },
-    fallback: ReasoningLevel,
-  ) => {
-    const provider = config.providers[r.provider];
-    const defaultModel = provider && 'defaultModel' in provider ? provider.defaultModel : undefined;
-    return { provider: r.provider, model: r.model ?? defaultModel, reasoning: r.reasoning ?? fallback };
+  const modelsOf = (id: string) => {
+    const cfg = config.providers[id];
+    return cfg && cfg.type !== 'mock'
+      ? { defaultModel: cfg.defaultModel, critiqueModel: cfg.critiqueModel }
+      : {};
   };
-  const reviewRoute = route(review, 'medium');
-  const critique = config.review.selfCritique
-    ? config.roles.critique
-      ? route(config.roles.critique, 'high')
-      : { ...reviewRoute, reasoning: 'high' as const }
-    : undefined;
+  const reviewRoute: RoleRouting = {
+    provider: review.provider,
+    model: review.model ?? modelsOf(review.provider).defaultModel,
+    reasoning: review.reasoning ?? 'medium',
+  };
+  if (!config.review.selfCritique) return { review: reviewRoute };
+  // The critic runs on the review provider unless a critique role names another. Without a model of its
+  // own it takes the provider's `critiqueModel` (claude: opus), else the review's model (same provider) or
+  // the provider's default.
+  const r = config.roles.critique;
+  const provider = r?.provider ?? review.provider;
+  const models = modelsOf(provider);
+  const critique: RoleRouting = {
+    provider,
+    model:
+      r?.model ??
+      models.critiqueModel ??
+      (provider === reviewRoute.provider ? reviewRoute.model : models.defaultModel),
+    reasoning: r?.reasoning ?? 'high',
+  };
   return { review: reviewRoute, critique };
 }
 

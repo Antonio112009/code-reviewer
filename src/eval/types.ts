@@ -86,6 +86,8 @@ export interface Metrics {
   inputTokens: number;
   /** Input tokens read from the prompt cache (agents such as Claude Code serve most of their input from it). */
   cachedInputTokens: number;
+  /** Input tokens written to the prompt cache. */
+  cacheWriteTokens: number;
   outputTokens: number;
   /** Known cost (reported by the provider or priced with `pricing`), in the aggregate's `costCurrency`. */
   cost: number;
@@ -205,6 +207,7 @@ export interface EvalComparison {
   unexpected: MetricDelta;
   inputTokens: MetricDelta;
   cachedInputTokens: MetricDelta;
+  cacheWriteTokens: MetricDelta;
   outputTokens: MetricDelta;
   /** Null on a side without cost data (older results, nothing priced). */
   cost: MetricDelta;

@@ -136,6 +136,7 @@ export function sumUsage(usages: Usage[]): Usage {
     total.outputTokens += u.outputTokens;
     if (u.reasoningTokens) total.reasoningTokens = (total.reasoningTokens ?? 0) + u.reasoningTokens;
     if (u.cachedInputTokens) total.cachedInputTokens = (total.cachedInputTokens ?? 0) + u.cachedInputTokens;
+    if (u.cacheWriteTokens) total.cacheWriteTokens = (total.cacheWriteTokens ?? 0) + u.cacheWriteTokens;
     if (u.requests) total.requests = (total.requests ?? 0) + u.requests;
     if (u.estimated) total.estimated = true;
     if (u.reportedCost && (!cost || cost.currency === u.reportedCost.currency)) {

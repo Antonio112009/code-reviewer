@@ -18,6 +18,8 @@ const BedrockProviderSchema = z.strictObject({
   /** AWS profile (SSO profiles work too). Falls back to the default credential chain. */
   profile: z.string().optional(),
   defaultModel: z.string().optional(),
+  /** Model of the self-critique pass when the critique role names none (e.g. a stronger model than the review's). */
+  critiqueModel: z.string().optional(),
 });
 
 const AcpProviderSchema = z.strictObject({
@@ -28,6 +30,16 @@ const AcpProviderSchema = z.strictObject({
   args: z.array(z.string()).optional(),
   env: z.record(z.string(), z.string()).optional(),
   defaultModel: z.string().optional(),
+  /** Model of the self-critique pass when the critique role names none (e.g. a stronger model than the review's). */
+  critiqueModel: z.string().optional(),
+});
+
+/** The Anthropic API with `ANTHROPIC_API_KEY` (no agent in between: see `providers/anthropic.ts`). */
+const AnthropicProviderSchema = z.strictObject({
+  type: z.literal('anthropic'),
+  defaultModel: z.string().optional(),
+  /** Model of the self-critique pass when the critique role names none (e.g. a stronger model than the review's). */
+  critiqueModel: z.string().optional(),
 });
 
 const MockProviderSchema = z.strictObject({
@@ -38,11 +50,13 @@ const MockProviderSchema = z.strictObject({
 
 export const ProviderConfigSchema = z.discriminatedUnion('type', [
   BedrockProviderSchema,
+  AnthropicProviderSchema,
   AcpProviderSchema,
   MockProviderSchema,
 ]);
 export type ProviderConfig = z.infer<typeof ProviderConfigSchema>;
 export type BedrockProviderConfig = z.infer<typeof BedrockProviderSchema>;
+export type AnthropicProviderConfig = z.infer<typeof AnthropicProviderSchema>;
 export type AcpProviderConfig = z.infer<typeof AcpProviderSchema>;
 export type MockProviderConfig = z.infer<typeof MockProviderSchema>;
 
@@ -202,6 +216,8 @@ export const PriceSchema = z.strictObject({
   input: z.number().nonnegative().optional(),
   /** Input tokens read from the prompt cache (default: the `input` price). */
   cachedInput: z.number().nonnegative().optional(),
+  /** Input tokens written to the prompt cache (default: 1.25 × the `input` price, as Anthropic bills it). */
+  cacheWrite: z.number().nonnegative().optional(),
   /** Output tokens, reasoning included. */
   output: z.number().nonnegative().optional(),
   request: z.number().nonnegative().optional(),
@@ -318,16 +334,18 @@ export const DEFAULT_CONFIG: Config = {
   project: {},
   providers: {
     // Sonnet is the everyday reviewer (cost/quality); pick Opus per run with `--model opus`.
-    claude: { type: 'acp', preset: 'claude', defaultModel: 'sonnet' },
+    // Opus checks the findings: it drops the weak ones Sonnet's critique lets through, for ~17% more.
+    claude: { type: 'acp', preset: 'claude', defaultModel: 'sonnet', critiqueModel: 'opus' },
     codex: { type: 'acp', preset: 'codex' },
     copilot: { type: 'acp', preset: 'copilot' },
     gemini: { type: 'acp', preset: 'gemini' },
     bedrock: { type: 'bedrock' },
+    anthropic: { type: 'anthropic', defaultModel: 'claude-sonnet-5', critiqueModel: 'claude-opus-5-5' },
     mock: { type: 'mock' },
   },
   roles: {
-    // No critique default: it follows the review provider (with high reasoning) unless configured,
-    // so code is never sent to a provider the user did not choose.
+    // No critique role by default: it runs on the review provider (its `critiqueModel`, high reasoning), so
+    // code is never sent to a provider the user did not choose.
     review: { provider: 'claude', reasoning: 'high' },
   },
   review: {

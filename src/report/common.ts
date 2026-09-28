@@ -102,7 +102,11 @@ export function formatTokens(n: number): string {
 export function tokensLabel(run: RunRecord): string {
   const u = run.usage;
   const approx = u.estimated ? '≥' : '';
-  const cached = u.cachedInputTokens ? ` (+${formatNumber(u.cachedInputTokens)} cached)` : '';
+  const cacheParts = [
+    u.cachedInputTokens ? `+${formatNumber(u.cachedInputTokens)} cached` : '',
+    u.cacheWriteTokens ? `${formatNumber(u.cacheWriteTokens)} written to cache` : '',
+  ].filter(Boolean);
+  const cached = cacheParts.length ? ` (${cacheParts.join(', ')})` : '';
   const reasoning = u.reasoningTokens ? `, reasoning ${formatNumber(u.reasoningTokens)}` : '';
   const requests = u.requests ? `, ${formatNumber(u.requests)} request${u.requests === 1 ? '' : 's'}` : '';
   const note = u.estimated ? ' (partly estimated: the provider did not report token counts)' : '';

@@ -91,6 +91,8 @@ export interface Usage {
   reasoningTokens?: number;
   /** Input tokens read from the prompt cache. */
   cachedInputTokens?: number;
+  /** Input tokens written to the prompt cache (priced above plain input). */
+  cacheWriteTokens?: number;
   /** Model requests: agent prompts, or API calls of a tool loop (Copilot bills requests, not tokens). */
   requests?: number;
   /**

@@ -55,7 +55,7 @@ const CONFIDENCE_CHOICES = [
   { value: 0.7, hint: 'balanced, the default' },
   { value: 0.8, hint: 'only findings the reviewer is sure about' },
 ];
-const PROVIDER_PREFERENCE = ['claude', 'codex', 'copilot', 'gemini', 'bedrock'];
+const PROVIDER_PREFERENCE = ['claude', 'codex', 'copilot', 'gemini', 'anthropic', 'bedrock'];
 const BASE_CANDIDATES = ['main', 'master', 'develop'];
 /** Languages not worth listing as "the stack" (they still gate skills). */
 /** Width of values in the detection note (the box is ~80 columns). */
@@ -868,7 +868,11 @@ async function askChoices(
         ...io,
         message: 'Self-critique (a second pass that drops false positives)',
         options: [
-          { value: 'same', label: 'Same provider and model, high reasoning', hint: 'recommended' },
+          {
+            value: 'same',
+            label: 'Same provider, its critique model (Claude: Opus), high reasoning',
+            hint: 'recommended',
+          },
           { value: 'other', label: 'A different provider or model' },
           { value: 'off', label: 'Off', hint: 'faster, noisier' },
         ],
@@ -1191,7 +1195,11 @@ function summaryLines(info: WrittenInfo, color: boolean): string[] {
   const row = (label: string, value: string) => `${bold(label.padEnd(10))} ${value}`;
   const role = (r: RoleChoice) => `${r.provider} · ${r.model || 'default model'} · reasoning ${r.reasoning}`;
   const critique =
-    c.critique === 'off' ? 'off' : c.critique === 'same' ? 'same model, reasoning high' : role(c.critique);
+    c.critique === 'off'
+      ? 'off'
+      : c.critique === 'same'
+        ? 'same provider, its critique model, reasoning high'
+        : role(c.critique);
   const lines = [row('Review', role(c.review)), row('Critique', critique)];
   if (scope === 'project') {
     lines.push(row('Base', c.base));

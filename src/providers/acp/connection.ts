@@ -472,6 +472,7 @@ export class AcpConnection {
             outputTokens: u.outputTokens,
             reasoningTokens: u.thoughtTokens ?? undefined,
             cachedInputTokens: u.cachedReadTokens ?? undefined,
+            cacheWriteTokens: u.cachedWriteTokens ?? undefined,
           };
         }
         return;

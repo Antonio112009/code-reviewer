@@ -147,13 +147,14 @@ export function applyRoleFlags(config: Config, f: ReviewFlags): void {
   if (reasoning) review.reasoning = reasoning;
   config.roles.review = review;
 
-  // --provider switches the critic too, unless --critique-provider is given.
+  // --provider switches the critic too, unless --critique-provider is given. `--model` is the review's:
+  // without --critique-model the critic keeps the provider's critique model (see resolveRouting).
   const critiqueProvider = f.critiqueProvider ?? f.provider;
   if (critiqueProvider || f.critiqueModel || critiqueReasoning) {
-    const critique = config.roles.critique ?? { provider: review.provider, model: review.model };
+    const critique = config.roles.critique ?? { provider: review.provider };
     if (critiqueProvider) {
       critique.provider = critiqueProvider;
-      critique.model = f.critiqueModel ?? (f.critiqueProvider ? undefined : f.model);
+      critique.model = f.critiqueModel;
     } else if (f.critiqueModel) critique.model = f.critiqueModel;
     if (critiqueReasoning) critique.reasoning = critiqueReasoning;
     config.roles.critique = critique;

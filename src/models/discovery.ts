@@ -102,6 +102,8 @@ async function discover(
       return listAcpModels(providerId, cfg, opts);
     case 'bedrock':
       return listBedrockModels(providerId, cfg, opts);
+    case 'anthropic':
+      return catalogListing(providerId, cfg);
   }
 }
 

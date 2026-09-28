@@ -117,11 +117,12 @@ flowchart LR
 
 | Provider | Uses | Notes |
 |---|---|---|
-| `claude` | Claude Code over [ACP](https://agentclientprotocol.com) | your Claude Code login; Sonnet by default (1M context), `--model opus` for a deeper pass |
+| `claude` | Claude Code over [ACP](https://agentclientprotocol.com) | your Claude Code login; reviews with Sonnet (1M context) and critiques with Opus by default; `--model opus` for a deeper review |
 | `codex` | OpenAI Codex over ACP | experimental; can run commands, so it is never picked as an automatic fallback |
 | `copilot` | GitHub Copilot CLI over ACP | experimental |
 | `gemini` | Gemini CLI over ACP | experimental |
-| `bedrock` | AWS Bedrock (Converse API) | AWS credential chain (profile, SSO, role) or `AWS_BEARER_TOKEN_BEDROCK` |
+| `anthropic` | the Anthropic API directly | `ANTHROPIC_API_KEY`; `claude-sonnet-5` by default. No agent in between: a task carries only our prompt (Claude Code adds ~25× more context per task), with prompt caching — the cheaper choice for CI |
+| `bedrock` | AWS Bedrock (Converse API) | AWS credential chain (profile, SSO, role) or `AWS_BEARER_TOKEN_BEDROCK`; prompt caching for Anthropic models |
 
 ```bash
 code-reviewer providers list                   # what is installed and logged in
@@ -153,7 +154,7 @@ project:
   focus: [security, data-integrity, concurrency]
 roles:
   review:   { provider: claude, model: sonnet, reasoning: high }   # the defaults
-  critique: { provider: claude, model: opus, reasoning: high }
+  critique: { provider: claude, model: opus, reasoning: high }     # the defaults too
 review:
   depth: essential          # or full
   minConfidence: 0.7

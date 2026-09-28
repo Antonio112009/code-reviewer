@@ -163,12 +163,20 @@ The depth also affects:
 
 ## Providers
 
-### Bedrock (`providers/bedrock.ts`)
-- Uses Vercel AI SDK v7 `generateText` with `tools` and
-  `stopWhen: [isStepCount(maxSteps), hasToolCall(submit)]`.
-- The portable `reasoning` level is mapped to Bedrock `reasoningConfig`.
-- The region is validated. Credentials come from the AWS provider chain unless
+### Direct APIs (`providers/ai-sdk-agent.ts`: Bedrock, Anthropic)
+- One tool loop for both: Vercel AI SDK v7 `generateText` with `tools` and
+  `stopWhen: [isStepCount(maxSteps), hasToolCall(submit)]`; the last step (or one after 80% of the time)
+  offers only the submit tool. The portable `reasoning` level maps to the provider's reasoning settings.
+- **Prompt caching.** Every step of the loop sends the whole conversation again, so the prefix is cached:
+  the Anthropic API gets request-level `cache_control` (it places the breakpoint itself); Bedrock gets a
+  `cachePoint` on the instructions and on the newest message of each step (moved, not piled up: at most
+  four per request), for Anthropic models only. Cache reads and writes are recorded in `Usage`.
+- **Bedrock** (`bedrock.ts`): the region is validated; credentials come from the AWS provider chain unless
   `AWS_BEARER_TOKEN_BEDROCK` is set.
+- **Anthropic** (`anthropic.ts`): `ANTHROPIC_API_KEY`, no configurable base URL. Compared with Claude Code
+  over ACP a task carries only our instructions, prompt and tools: in the eval corpus Claude Code read
+  ~143k input tokens per review task for a ~5k-token prompt (its own system prompt and tools, re-read every
+  turn).
 
 ### ACP (`providers/acp/`)
 - **`presets.ts`** — for each agent: how to launch it, its read-only lever, and whether model/effort are
@@ -186,6 +194,10 @@ The depth also affects:
 - **`provider.ts`** — a pool of up to `concurrency` processes. Broken connections are replaced.
 
 ### Model routing (`review/execute.ts`, `models/*`)
+- **Routes** (`pipeline.ts#resolveRouting`): the review uses its role's model, else the provider's
+  `defaultModel`. The critic runs on the review provider unless a critique role names another; without a
+  model of its own it takes the provider's `critiqueModel` (claude: `opus`), else the review's model on the
+  same provider, else that provider's default. `--model` sets the review model only.
 - **Preflight.** It discovers the models of each provider and classifies them (tier, vendor). If a
   configured model is missing, it runs `resolveFallback` (`ask | fallback | fail`) before the run
   starts.
@@ -402,8 +414,9 @@ The code under review, and therefore model output, is treated as untrusted.
 
 ## Extension points
 
-- **New provider type:** implement `Provider`, add a schema variant in `config/schema.ts`, and wire it in
-  `providers/registry.ts` and `providers/detect.ts`.
+- **New provider type:** implement `Provider` (an AI SDK model: reuse `runAiSdkTask`), add a schema variant
+  in `config/schema.ts`, and wire it in `providers/registry.ts`, `providers/detect.ts`,
+  `models/discovery.ts` and the model catalog.
 - **New ACP agent:** add a preset in `providers/acp/presets.ts` (or use `preset: custom` in the global
   config).
 - **New tool:** add a `ToolDef` in `tools/definitions.ts`. Both the AI SDK and MCP adapters pick it up.
@@ -427,5 +440,5 @@ The code under review, and therefore model output, is treated as untrusted.
 - Resolving PR/MR threads of fixed findings; Bitbucket / Azure DevOps comments; GitHub/GitLab username
   resolution.
 - An LLM run summary (`roles.summary` is reserved); a cost budget that stops a run.
-- Anthropic/OpenAI direct API providers.
+- An OpenAI direct API provider.
 - The Codex, Copilot and Gemini presets need more live verification.

@@ -254,6 +254,7 @@ export function renderSummary(run: RunRecord, ctx: SummaryContext): string {
     [
       `in ${approx}${formatNumber(u.inputTokens)}`,
       u.cachedInputTokens ? `cached ${formatNumber(u.cachedInputTokens)}` : '',
+      u.cacheWriteTokens ? `cache write ${formatNumber(u.cacheWriteTokens)}` : '',
       `out ${approx}${formatNumber(u.outputTokens)}`,
       u.reasoningTokens ? `reasoning ${formatNumber(u.reasoningTokens)}` : '',
       u.requests ? `${formatNumber(u.requests)} request${u.requests === 1 ? '' : 's'}` : '',

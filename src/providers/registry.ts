@@ -1,6 +1,7 @@
 import type { Config, ProviderConfig } from '../config/schema';
 import type { Logger } from '../util/logger';
 import { AcpProvider } from './acp/provider';
+import { AnthropicProvider } from './anthropic';
 import { BedrockProvider } from './bedrock';
 import { MockProvider } from './mock';
 import { type Provider, ProviderError } from './types';
@@ -45,6 +46,8 @@ export function createProvider(
   switch (cfg.type) {
     case 'bedrock':
       return new BedrockProvider(id, cfg);
+    case 'anthropic':
+      return new AnthropicProvider(id, cfg);
     case 'acp':
       return new AcpProvider(id, cfg, logger, concurrency);
     case 'mock':
