@@ -1,8 +1,10 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { clusterFiles } from '../src/chunking/cluster';
 import {
   calledNames,
+  changedCalls,
   changedSymbols,
   declaredName,
   type ExpandSource,
@@ -11,6 +13,7 @@ import {
   type Match,
   refersTo,
 } from '../src/chunking/expand';
+import { callEdges } from '../src/chunking/graph';
 import { runReview } from '../src/review/pipeline';
 import type { Chunk, DiffLine, ReviewUnit } from '../src/types';
 import { silentLogger } from '../src/util/logger';
@@ -358,5 +361,66 @@ describe('runReview with review.expand', () => {
     expect(contracts.instructions).toContain('Focus of this pass: contracts');
     expect(contracts.prompt).toContain('## Changed declarations (check the consumers of each)');
     expect(contracts.prompt).toContain('- `total` — declaration changed in src/lib.ts');
+  });
+});
+
+describe('call edges between changed files', () => {
+  const callee = unit(
+    'pay/transfer.go',
+    'package pay\n\nfunc Transfer(from, to string, cents int64) error {\n\treturn nil\n}\n',
+    [
+      ['ctx', 'package pay'],
+      ['ctx', ''],
+      ['del', 'func Transfer(from, to string, cents int) error {'],
+      ['add', 'func Transfer(from, to string, cents int64) error {'],
+    ],
+  );
+  const sameDir = unit('pay/api.go', 'package pay\n\nfunc handle() { Transfer("a", "b", 5) }\n', [
+    ['ctx', 'package pay'],
+    ['add', 'func handle() { Transfer("a", "b", 5) }'],
+  ]);
+  const qualified = unit(
+    'web/h.go',
+    'package web\n\nimport "acme/pay"\n\nfunc h() { pay.Transfer(x, y, 1) }\n',
+    [
+      ['del', 'func h() { pay.Transfer(x, y) }'],
+      ['add', 'func h() { pay.Transfer(x, y, 1) }'],
+    ],
+  );
+  // Calls a function of the same name that it cannot reach: no module reference.
+  const unrelated = unit('other/x.go', 'package other\n\nfunc g() { Transfer() }\n', [
+    ['add', 'func g() { Transfer() }'],
+  ]);
+  // Declares its own Transfer: its calls are its own.
+  const own = unit('bank/t.go', 'package bank\n\nfunc Transfer() {}\nfunc k() { Transfer() }\n', [
+    ['add', 'func k() { Transfer() }'],
+  ]);
+
+  it('finds the calls on changed lines, minus names the file declares', () => {
+    expect([...changedCalls(qualified)]).toEqual(['Transfer']);
+    expect(changedCalls(own).has('Transfer')).toBe(false);
+  });
+
+  it('links a changed function with the changed files that call it', () => {
+    const edges = callEdges([callee, sameDir, qualified, unrelated, own]);
+    expect(edges.map((e) => [e.a, e.b, e.reason])).toEqual([
+      ['pay/api.go', 'pay/transfer.go', 'call'],
+      ['pay/transfer.go', 'web/h.go', 'call'],
+    ]);
+    const files = [callee, sameDir, qualified, unrelated].map((u) => u.path);
+    const groups = clusterFiles(files, new Map(files.map((f) => [f, 100])), edges, 10_000);
+    expect(groups.map((g) => g.files)).toEqual([
+      ['other/x.go'],
+      ['pay/api.go', 'pay/transfer.go', 'web/h.go'],
+    ]);
+    expect(groups[1]!.reasons).toEqual(['calls']);
+  });
+
+  it('ignores names changed or called in too many files', () => {
+    const callers = Array.from({ length: 9 }, (_, i) =>
+      unit(`pay/c${i}.go`, 'package pay\n', [['add', `func c${i}() { Transfer("a", "b", 5) }`]]),
+    );
+    expect(callEdges([callee, ...callers])).toEqual([]);
+    expect(callEdges([callee, ...callers.slice(0, 8)])).toHaveLength(8);
   });
 });

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Changed functions and their changed callers share a chunk.** When one changed file calls a function
+  whose declaration another changed file modifies, the two are grouped like importing files (`calls` in the
+  plan), also where imports do not resolve: files of one Go package, C/C++ headers, dynamic imports.
 - **More time while the model is working.** A review task that is still calling tools when its time runs out
   is extended in steps, up to `review.activeExtension` × its timeout (default 0.5; 0 turns it off). About 8%
   of review tasks were cut off by the time limit, and they were the most thorough ones.

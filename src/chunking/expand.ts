@@ -203,6 +203,30 @@ export function calledNames(units: readonly ReviewUnit[]): string[] {
   return [...counts].sort((a, b) => b[1] - a[1] || cmp(a[0], b[0])).map(([n]) => n);
 }
 
+/**
+ * Names called on the changed lines (added and removed) of a source unit, minus names the file declares
+ * itself: the functions whose call sites this change touches.
+ */
+export function changedCalls(unit: ReviewUnit): Set<string> {
+  const out = new Set<string>();
+  if (unit.status === 'deleted' || !sourceKind(unit.path)) return out;
+  const own = new Set<string>();
+  for (const l of (unit.content ?? '').split('\n')) {
+    const n = declaredName(l);
+    if (n) own.add(n);
+  }
+  for (const h of unit.hunks) {
+    for (const l of h.lines) {
+      if (l.type === 'ctx' || l.text.length > MAX_LINE) continue;
+      for (const m of l.text.matchAll(CALL)) {
+        const n = m[1]!;
+        if (n.length >= MIN_NAME && !NOT_NAMES.has(n) && !own.has(n)) out.add(n);
+      }
+    }
+  }
+  return out;
+}
+
 /** Whether `text` contains `name` as a whole identifier. */
 function mentions(text: string, name: string): boolean {
   let i = text.indexOf(name);

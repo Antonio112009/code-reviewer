@@ -133,8 +133,12 @@ The depth also affects:
 1. **`imports.ts` / `graph.ts`** — a regex-level import scanner per language. It resolves relative imports,
    tsconfig `paths`, Go modules, PSR-4 and similar. It reads only small config files of the reviewed
    revision.
-2. **`cluster.ts`** — groups changed files by import edges, test ↔ source pairs and same-directory
-   siblings, deterministically. Each chunk records its `groupReasons`.
+2. **`cluster.ts`** — groups changed files by import edges, call edges, test ↔ source pairs and
+   same-directory siblings, deterministically. Each chunk records its `groupReasons`. A call edge
+   (`graph.ts#callEdges`) links a file whose changed lines call a function with the file that changes that
+   function's declaration, when the caller can refer to it (same directory, or it names the module): the
+   changed function and its changed call sites land in one chunk even when imports do not resolve (a Go
+   package, C headers). Names changed in more than 3 files or called from more than 8 are skipped.
 3. **`chunker.ts` / `pack.ts`** — packs clusters into chunks within the budget. The budget is the context
    window minus output, instructions, the skill budget and hints.
    - Large files are split into windows around the changed hunks.

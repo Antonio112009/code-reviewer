@@ -6,12 +6,13 @@ export const STRONG_EDGE_WEIGHT = 0.5;
 /** Human-readable group reasons, as shown in the plan (`Chunk.groupReasons`). */
 export const REASON_LABELS: Readonly<Record<EdgeReason, string>> = {
   import: 'imports',
+  call: 'calls',
   test: 'test pair',
   cochange: 'co-change',
   directory: 'directory',
   package: 'package',
 };
-const REASON_ORDER: readonly EdgeReason[] = ['import', 'test', 'cochange', 'directory', 'package'];
+const REASON_ORDER: readonly EdgeReason[] = ['import', 'call', 'test', 'cochange', 'directory', 'package'];
 
 function cmp(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
