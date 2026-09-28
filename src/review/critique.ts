@@ -3,6 +3,7 @@ import pLimit from 'p-limit';
 import { estimateTokens } from '../chunking/tokens';
 import type { ReviewDepth } from '../config/schema';
 import type { AgentResult, AgentTask, Provider } from '../providers/types';
+import type { DependencyRoot } from '../tools/dependencies';
 import type { FailureKind, Finding, ReasoningLevel, ReportedVerdict, RunTarget } from '../types';
 import { resolveInside } from '../util/paths';
 import { failureKindOf, type Spend, spendOf, spendOfResult } from './execute';
@@ -22,6 +23,8 @@ export interface CritiqueOptions {
   root: string;
   git: boolean;
   readTools: boolean;
+  /** Installed dependency sources the critic may read (see `tools/dependencies.ts`). */
+  dependencies?: DependencyRoot[];
   maxSteps: number;
   timeoutMs: number;
   concurrency: number;
@@ -94,13 +97,14 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
     const task: AgentTask = {
       kind: 'verdicts',
       label: `critique-${label}`,
-      instructions: critiqueInstructions(opts.mode, opts.depth),
+      instructions: critiqueInstructions(opts.mode, opts.depth, opts.dependencies),
       prompt: critiquePrompt(batch, excerpts),
       model: opts.model,
       reasoning: opts.reasoning,
       readTools: opts.readTools,
       root: opts.root,
       git: opts.git,
+      ...(opts.dependencies?.length ? { dependencyRoots: opts.dependencies.map((d) => d.dir) } : {}),
       maxSteps: opts.maxSteps,
       timeoutMs: opts.timeoutMs,
       signal: opts.signal,

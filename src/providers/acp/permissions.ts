@@ -5,6 +5,7 @@ import type {
   RequestPermissionResponse,
 } from '@agentclientprotocol/sdk';
 import { TOOL_NAMES } from '../../tools/definitions';
+import { resolveDependencyPath } from '../../tools/dependencies';
 import { MCP_SERVER_NAME } from '../../tools/mcp-server';
 import { isInsideDir } from '../../util/executables';
 
@@ -51,7 +52,12 @@ function requestedPaths(call: RequestPermissionRequest['toolCall']): string[] {
  * outside it (`~/.aws/credentials`, the user's checkout): it is allowed only when every path it names
  * lies inside `root`.
  */
-export function decidePermission(req: RequestPermissionRequest, root?: string): PermissionDecision {
+export function decidePermission(
+  req: RequestPermissionRequest,
+  root?: string,
+  /** Installed dependency sources (real paths): reads of existing files inside them are allowed too. */
+  dependencyRoots: readonly string[] = [],
+): PermissionDecision {
   const call = req.toolCall;
   const label = [call.title, call.name, call.kind].filter(Boolean).join(' / ') || call.toolCallId;
   const dangerous = call.kind != null && DANGEROUS_KINDS.has(call.kind);
@@ -60,7 +66,14 @@ export function decidePermission(req: RequestPermissionRequest, root?: string): 
   let allowed = !dangerous && (safeKind || own);
   if (allowed && !own && call.kind !== 'think' && root !== undefined) {
     const paths = requestedPaths(call);
-    allowed = paths.length > 0 && paths.every((p) => isInsideDir(root, path.resolve(root, p)));
+    allowed =
+      paths.length > 0 &&
+      paths.every(
+        (p) =>
+          isInsideDir(root, path.resolve(root, p)) ||
+          (call.kind === 'read' &&
+            resolveDependencyPath(dependencyRoots, path.resolve(root, p)) !== undefined),
+      );
   }
   const option = pick(
     req.options,

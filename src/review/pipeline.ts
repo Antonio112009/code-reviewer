@@ -58,6 +58,7 @@ import {
 import { loadSkills, type Skill } from '../skills/loader';
 import { changedPaths, collectDiffUnits, type SkippedFile } from '../sources/diff-source';
 import { collectFileUnits } from '../sources/files-source';
+import { dependencyRoots } from '../tools/dependencies';
 import type {
   CacheUse,
   Chunk,
@@ -902,6 +903,12 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       }
     }
     const git = repo !== undefined;
+    // Installed dependencies of the user's checkout and caches (read-only, real paths checked per read).
+    const dependencies =
+      config.review.tools && config.review.dependencySources && repo ? dependencyRoots(repoRoot) : [];
+    if (dependencies.length) {
+      logger.debug(`dependency sources: ${dependencies.map((d) => `${d.label} ${d.dir}`).join('; ')}`);
+    }
 
     // Answers for code (and every file the model read) reviewed before with the same instructions and model.
     const opened = chunks.length ? await openResultCache({ config, repoRoot, warn, logger }) : undefined;
@@ -933,6 +940,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           skills: chunkSkills.get(chunk.id) ?? [],
           project: config.project,
           readTools: config.review.tools,
+          ...(dependencies.length ? { dependencies } : {}),
         });
       const promptOptions = (chunk: Chunk, part: Chunk, hints: StaticHit[]) => ({
         target,
@@ -956,6 +964,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         readTools: config.review.tools,
         root,
         git,
+        ...(dependencies.length ? { dependencyRoots: dependencies.map((d) => d.dir) } : {}),
         maxSteps: limits.maxSteps,
         timeoutMs: limits.timeoutMs,
         stallTimeoutMs: config.review.stallTimeoutMs,
@@ -1417,13 +1426,14 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           root,
           git,
           readTools: config.review.tools,
+          ...(dependencies.length ? { dependencies } : {}),
           maxSteps: config.review.maxSteps,
           timeoutMs: taskTimeoutMs(config.review, Math.max(8_000, Math.floor(budget / 2))),
           concurrency: config.review.concurrency,
           batchTokenBudget: Math.max(8_000, Math.floor(budget / 2)),
           signal: req.signal,
           onBatchDone: ({ batch, total }) => emit({ type: 'critique-progress', batch, total }),
-          ...(cache ? { cache: critiqueCache(cache, critiqueInstructions(mode, depth)) } : {}),
+          ...(cache ? { cache: critiqueCache(cache, critiqueInstructions(mode, depth, dependencies)) } : {}),
         });
         if (cacheUse) {
           cacheUse.critiqueHits += outcome.cachedVerdicts;

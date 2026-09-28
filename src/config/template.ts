@@ -156,6 +156,10 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           example: D.review.minConfidence,
         },
         concurrency: { doc: 'Review tasks running in parallel.', example: D.review.concurrency },
+        dependencySources: {
+          doc: 'Let the model read installed dependency sources (Go module cache, node_modules, virtualenv, Cargo), read-only.',
+          example: D.review.dependencySources,
+        },
         maxCost: {
           doc: 'Most a run may spend, in USD (priced by `pricing` or reported by the provider). Unset = no limit.',
         },

@@ -134,6 +134,11 @@ export const ReviewSettingsSchema = z.object({
    * count. Unset = no limit.
    */
   maxCost: z.number().positive().optional(),
+  /**
+   * Let the model read installed dependency sources (Go module cache, Cargo registry, the checkout's
+   * `node_modules` and virtualenv) by absolute path, read-only (`tools/dependencies.ts`).
+   */
+  dependencySources: z.boolean(),
   projectRules: z.boolean(),
   authors: z.boolean(),
   tools: z.boolean(),
@@ -421,6 +426,7 @@ export const DEFAULT_CONFIG: Config = {
     maxChunkTokens: 40_000,
     maxChunks: 60,
     concurrency: 3,
+    dependencySources: true,
     projectRules: true,
     authors: false,
     tools: true,

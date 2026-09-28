@@ -14,8 +14,10 @@ export interface AgentTask {
   reasoning: ReasoningLevel;
   /** Expose read-only exploration tools (read_file, grep, ...). The submit tool is always exposed. */
   readTools: boolean;
-  /** Review root: every file access is confined to it. */
+  /** Review root: every file access is confined to it (installed dependencies aside). */
   root: string;
+  /** Installed dependency sources the model may also read, by absolute path (`tools/dependencies.ts`). */
+  dependencyRoots?: string[];
   git: boolean;
   maxSteps: number;
   timeoutMs: number;
