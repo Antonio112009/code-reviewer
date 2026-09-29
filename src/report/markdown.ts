@@ -128,6 +128,15 @@ function renderFinding(f: Finding, n: number): string {
   if (f.lowered) lines.push('', `*Lowered from ${f.lowered.from}: no failure path given.*`);
   if (f.evidence) lines.push('', '**Evidence**', '', fence(f.evidence));
   if (f.suggestion) lines.push('', `**Suggestion:** ${mdText(f.suggestion.trim())}`);
+  if (f.replacement !== undefined) {
+    const checked = f.replacementOk === true ? 'checked by the critic' : 'not checked';
+    lines.push(
+      '',
+      `**Suggested change** (lines ${f.startLine}–${f.endLine}, ${checked})`,
+      '',
+      fence(f.replacement),
+    );
+  }
   if (f.critique?.reason) lines.push('', `> **Critic:** ${mdLine(f.critique.reason)}`);
   const source = [
     f.skills.length ? `skills: ${f.skills.map(mdLine).join(', ')}` : '',

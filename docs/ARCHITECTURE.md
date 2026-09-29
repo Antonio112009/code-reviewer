@@ -331,6 +331,10 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
     side) and splits findings into inline comments (whole range inside one hunk, `publish.minSeverity`,
     `publish.maxInlineComments`, worst first) and summary entries. Fingerprints already posted by the same
     account are skipped. When the PR/MR head is not the reviewed commit, nothing goes inline unless `--force`.
+  - One-click changes (`render.ts#suggestionBlock`): a finding's `replacement` (the fixed text of exactly its
+    lines) becomes a ```` ```suggestion ```` block (GitLab: `suggestion:-N+M` around its single anchor line)
+    only when validation kept it (≤ 30 lines replaced, ≤ 60 written, differs from the code, no fence) and the
+    critic set `replacementOk`; never on a `--force`d publication to a moved head.
   - `github.ts` / `gitlab.ts` implement `ForgeAdapter` (`load` → head + posted fingerprints, `postInline`,
     `upsertSummary`, `openThreads`, `resolveThread`). GitHub: one `COMMENT` review, single comments after a
     422, the summary as an issue comment edited in place, review threads through GraphQL

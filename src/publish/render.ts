@@ -3,7 +3,7 @@ import { code, mdLine, mdText } from '../report/markdown';
 import { FINGERPRINT_RE } from '../review/fingerprint';
 import { CATEGORIES, type Finding, type RunRecord, SEVERITIES, type Severity } from '../types';
 import { packageVersion } from '../util/paths';
-import { type PlannedInline, SUMMARY_REASON_LABELS, type SummaryReason } from './plan';
+import { type InlineAnchor, type PlannedInline, SUMMARY_REASON_LABELS, type SummaryReason } from './plan';
 
 /*
  * Pull request comments. Everything from a model or the repository is untrusted: it is clipped, escaped like
@@ -104,8 +104,33 @@ function location(f: Finding): string {
   return `${f.file}:${range}`;
 }
 
+/**
+ * A one-click change for an inline comment: only a replacement the critic approved, for exactly the lines the
+ * comment is anchored on. GitHub anchors on the whole range; GitLab on one line, with the range given as
+ * offsets from it (`suggestion:-2+1`).
+ */
+export function suggestionBlock(
+  f: Finding,
+  anchor: InlineAnchor,
+  forge: 'github' | 'gitlab',
+): string | undefined {
+  if (f.replacement === undefined || f.replacementOk !== true) return undefined;
+  if (anchor.startLine !== f.startLine || anchor.endLine !== f.endLine) return undefined;
+  const text = f.replacement.replace(/\n$/, '');
+  if (text.includes('```')) return undefined;
+  const fence =
+    forge === 'gitlab'
+      ? `\`\`\`suggestion:-${anchor.line - anchor.startLine}+${anchor.endLine - anchor.line}`
+      : '```suggestion';
+  return `${fence}\n${text}\n\`\`\``;
+}
+
 /** Body of one inline comment: severity, title, failure scenario, suggestion, confidence, critic verdict. */
-export function renderInlineComment(f: Finding, fingerprint: string): string {
+export function renderInlineComment(
+  f: Finding,
+  fingerprint: string,
+  place?: { anchor: InlineAnchor; forge: 'github' | 'gitlab' },
+): string {
   const lines = [
     `**${severityOf(f).toUpperCase()}** · ${categoryOf(f)} · **${forgeLine(f.title, MAX_TITLE)}**`,
     '',
@@ -113,6 +138,8 @@ export function renderInlineComment(f: Finding, fingerprint: string): string {
   ];
   if (f.failurePath?.trim()) lines.push('', `**Failure path:** ${forgeText(f.failurePath, MAX_SUGGESTION)}`);
   if (f.suggestion?.trim()) lines.push('', `**Suggestion:** ${forgeText(f.suggestion, MAX_SUGGESTION)}`);
+  const change = place && suggestionBlock(f, place.anchor, place.forge);
+  if (change) lines.push('', change);
   const meta = [`confidence ${confidenceOf(f)}`];
   if (f.critique?.verdict) meta.push(`critic: ${forgeLine(f.critique.verdict, 20)}`);
   if (f.origin === 'static' && f.tool)

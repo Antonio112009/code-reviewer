@@ -20,7 +20,7 @@ export function validateFindings(
   opts: { root: string; units: ReviewUnit[]; mode: 'diff' | 'files' },
 ): ValidationResult {
   const units = new Map(opts.units.map((u) => [u.path, u]));
-  const lineCounts = new Map<string, number>();
+  const fileLines = new Map<string, string[]>();
   const kept: Finding[] = [];
   const dropped: Finding[] = [];
   const drop = (f: Finding, reason: string) => dropped.push({ ...f, droppedReason: reason });
@@ -36,17 +36,18 @@ export function validateFindings(
       continue;
     }
     const f = { ...reported, file: toPosix(path.relative(opts.root, abs)) };
-    let count = lineCounts.get(f.file);
-    if (count === undefined) {
-      const content = units.get(f.file)?.content ?? readFileSync(abs, 'utf8');
-      count = content.split('\n').length;
-      lineCounts.set(f.file, count);
+    let lines = fileLines.get(f.file);
+    if (lines === undefined) {
+      lines = (units.get(f.file)?.content ?? readFileSync(abs, 'utf8')).split('\n');
+      fileLines.set(f.file, lines);
     }
+    const count = lines.length;
     if (f.startLine > count) {
       drop(f, 'line-out-of-range');
       continue;
     }
-    const finding = f.endLine > count ? { ...f, endLine: count } : f;
+    const clamped = f.endLine > count ? { ...f, endLine: count } : f;
+    const finding = usableReplacement(clamped, lines) ? clamped : withoutReplacement(clamped);
 
     const unit = units.get(f.file);
     if (opts.mode === 'diff' && unit && unit.focusRanges.length > 0) {
@@ -80,4 +81,29 @@ export function requireFailurePath(findings: Finding[]): { findings: Finding[]; 
     return { ...f, severity: to, lowered: { from: f.severity, reason: 'no-failure-path' as const } };
   });
   return { findings: out, lowered };
+}
+
+/** Most lines a one-click replacement may cover or contain. */
+const MAX_REPLACED_LINES = 30;
+const MAX_REPLACEMENT_LINES = 60;
+
+function withoutReplacement(f: Finding): Finding {
+  if (f.replacement === undefined) return f;
+  const { replacement: _dropped, ...rest } = f;
+  return rest;
+}
+
+/**
+ * A replacement can be offered as a one-click change when it covers a few whole lines, differs from them,
+ * and cannot break out of the suggestion fence.
+ */
+function usableReplacement(f: Finding, lines: readonly string[]): boolean {
+  const r = f.replacement;
+  if (r === undefined) return true;
+  const span = f.endLine - f.startLine + 1;
+  if (span < 1 || span > MAX_REPLACED_LINES) return false;
+  const text = r.replace(/\n$/, '');
+  if (text.includes('```') || text.includes('\r') || text.split('\n').length > MAX_REPLACEMENT_LINES)
+    return false;
+  return text !== lines.slice(f.startLine - 1, f.endLine).join('\n');
 }
