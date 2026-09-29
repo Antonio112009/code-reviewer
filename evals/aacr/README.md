@@ -201,6 +201,28 @@ no checklist targets, and two runs of 30 PRs cannot resolve a difference this sm
   functions, yet reported fewer findings; recall stayed at 7.2% and the two runs spread by four points. It
   stays experimental and off.
 
+#### Sonnet 5.5 as the review model (2026-09-29)
+
+Same pinned 0.4.0 build, only the review model changed (Opus 5.5 critique; Claude Code 2.1.284 maps `sonnet`
+to Sonnet 5.5; both cost $2 / $10 per MTok):
+
+| | AACR ctx30 F1 (two runs) | Precision | Recall | Cost / run | Review time | Output tokens |
+|---|---|---|---|---|---|---|
+| Sonnet 5 | 12.2% (12.0, 12.4) | 41.0% | 7.2% | $15.2 | 68 min | ~314k |
+| Sonnet 5.5 | 12.2% (12.0, 12.4) | 40.8% | 7.2% | $10.0 | 26 min | ~127k |
+
+| Eval corpus | Recall | Precision | Clean false positives | "Duplicates" | Cost |
+|---|---|---|---|---|---|
+| Sonnet 5 (one run) | 27/27 | 96% | 0 of 8 | 4 | $7.19 |
+| Sonnet 5.5 (two runs) | 27/27, 26/27 | 84%, 90% | 1 of 8 both times (`go/invoice-list-sorting`) | 8, 7 | $5.70, $4.98 |
+
+- Same quality on AACR for a third less cost, in less than half the time.
+- The eval corpus's lower precision comes mostly from "duplicates" that are other defects next to the planted
+  one, several of them real: a random idempotency key per retry (double charge), a TTL passed in
+  milliseconds to a seconds-based cache, N+1 queries in the CSV export. The corpus counts any extra finding
+  near a labelled defect as a duplicate. The consistent clean false positive ("invalid order value silently
+  treated as descending") is a robustness remark on a change labelled clean.
+
 The eval corpus (`code-reviewer eval --full`, 33 cases: 16 hard, 2 from real repositories, 8 clean; one run per
 variant, main at 23c6948) is where skills are aimed:
 
