@@ -1,11 +1,23 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-09-29
 
-- **Eval matching tells issues apart.** When several findings sit next to a labelled defect, the one about the
-  defect (its `note`, else the case title) is credited rather than the closest one, and the rest are split into
-  duplicates (the same defect again) and other issues next to it, listed for labelling. Sonnet 5.5 reported
-  several real bugs next to planted ones that used to show up as "duplicates".
+Pull request comments can be applied with one click and say what changed since the previous review; findings
+name the skill that led to them; ten structural checks run through ast-grep; and Claude Sonnet 5.5 is supported
+— it reviews at the same quality as Sonnet 5 for about a third less per run, in less than half the time.
+
+### Pull requests
+
+- **One-click fixes in pull request comments.** When a fix changes only the lines a finding is about, the model
+  gives the exact replacement, the self-critique checks that it compiles and fixes the defect, and the inline
+  comment carries it as a suggested change ("Commit suggestion" on GitHub, "Apply suggestion" on GitLab).
+  Reports show it too, marked checked or not; an unchecked one is never offered in a comment.
+- **What changed since the previous review.** After a new push, the pull request summary lists the findings
+  that were fixed, those no longer reported, the new ones, and how many are still open. The previous review
+  is remembered in a hidden marker of our own summary comment.
+
+### Review quality
+
 - **Claude Sonnet 5.5.** The Anthropic API provider reviews with `claude-sonnet-5-5` by default (was
   `claude-sonnet-5`); the Claude Code, API and Bedrock model lists include it. Claude Code 2.1.284 already
   maps its `sonnet` alias to it. Same price per token as Sonnet 5; on AACR-Bench ctx30 it matched Sonnet 5
@@ -21,19 +33,22 @@
 - **JNI skill** (`c-cpp/jni`): unchecked NULL results and pending exceptions, a cached `JNIEnv*`, local
   references kept or piling up in loops, unreleased buffers, critical regions and 32-bit lengths. On
   AACR-Bench the reviewer found 1 of 5 such defects in one opencv change.
-- **Function audit (experimental, `--audit`).** The prompt lists every changed function and the model audits
-  each one — early returns restoring state, edge-case and parsed inputs, calls, callers — instead of stopping
-  at the first defect of a function. On AACR-Bench the reviewer often reported one defect where the reference
-  named several.
 - **Two more traps in the general checklist**: flags where any non-empty string (`"false"`) means on, and
   in-progress flags or counters not restored on an early return.
-- **What changed since the previous review.** After a new push, the pull request summary lists the findings
-  that were fixed, those no longer reported, the new ones, and how many are still open. The previous review
-  is remembered in a hidden marker of our own summary comment.
-- **One-click fixes in pull request comments.** When a fix changes only the lines a finding is about, the model
-  gives the exact replacement, the self-critique checks that it compiles and fixes the defect, and the inline
-  comment carries it as a suggested change ("Commit suggestion" on GitHub, "Apply suggestion" on GitLab).
-  Reports show it too, marked checked or not; an unchecked one is never offered in a comment.
+
+### Experimental
+
+- **Function audit (experimental, `--audit`).** The prompt lists every changed function and the model audits
+  each one — early returns restoring state, edge-case and parsed inputs, calls, callers — instead of stopping
+  at the first defect of a function. Measured on AACR-Bench ctx30 it did not raise recall (7.2% either way), so
+  it stays off.
+
+### Measuring
+
+- **Eval matching tells issues apart.** When several findings sit next to a labelled defect, the one about the
+  defect (its `note`, else the case title) is credited rather than the closest one, and the rest are split into
+  duplicates (the same defect again) and other issues next to it, listed for labelling. Sonnet 5.5 reported
+  several real bugs next to planted ones that used to show up as "duplicates".
 
 ## 0.4.0 — 2026-09-29
 
