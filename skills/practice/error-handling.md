@@ -42,6 +42,23 @@ activation:
     - 'if err != nil { return fmt.Errorf("save: %w", err) }'
     - 'let value = result.map_err(|e| AppError::from(e))?;'
     - 'await retry(() => fetchWithBackoff(url), { retries: 3 });'
+checks:
+  - id: empty-catch
+    language: [Java, TypeScript, Tsx, JavaScript, CSharp]
+    message: empty catch block — the error disappears without a trace and the code continues as if the call succeeded (a comment saying why would make the intent visible)
+    severity: minor
+    category: error-handling
+    confidence: 0.5
+    rule:
+      kind: catch_clause
+      has:
+        field: body
+        regex: '^\{\s*\}$'
+    examples:
+      - "class Sync { void run() { try { upload(); } catch (IOException e) {} } }"
+    counterexamples:
+      - "class Sync { void run() { try { upload(); } catch (IOException e) { /* best effort: retried next tick */ } } }"
+      - "class Sync { void run() { try { upload(); } catch (IOException e) { log.warn(e); } } }"
 ---
 - **Swallowed error**: empty `catch`, `except: pass`, `_ = err`, or a handler that only logs and returns `null`/`[]`/defaults → callers continue on bad data; outages look like "no results". Fix: handle or rethrow.
 - **Over-broad catch**: `except Exception`, `rescue => e` or `catch (Throwable)` around large blocks, mapping every failure to one outcome ("not found", retry, 400) → bugs misreported, retried or hidden. Fix: narrow types near the call.

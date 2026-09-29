@@ -14,6 +14,31 @@ activation:
     - 'Parallel.ForEach(items, async item => await ProcessAsync(item));'
     - 'var timer = new Timer(async _ => await PollAsync(), null, 0, 1000);'
     - 'button.Click += async (s, e) => await SaveAsync();'
+checks:
+  - id: async-void-method
+    language: CSharp
+    message: async void method that is not an event handler — callers cannot await it and its exceptions crash the process instead of reaching them
+    severity: major
+    category: error-handling
+    confidence: 0.7
+    rule:
+      kind: method_declaration
+      all:
+        - has:
+            kind: modifier
+            regex: ^async$
+        - has:
+            field: returns
+            regex: ^void$
+        - not:
+            has:
+              field: parameters
+              regex: EventArgs
+    examples:
+      - "class Sync { public async void Refresh() { await client.PullAsync(); } }"
+    counterexamples:
+      - "class Page { private async void OnClick(object sender, EventArgs e) { await Save(); } }"
+      - "class Sync { public async Task Refresh() { await client.PullAsync(); } }"
 sources:
   - https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios
   - https://github.com/davidfowl/AspNetCoreDiagnosticScenarios/blob/master/AsyncGuidance.md

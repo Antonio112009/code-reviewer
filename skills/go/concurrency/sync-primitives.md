@@ -14,6 +14,30 @@ activation:
     - 'mu.Lock()'
     - 'wg.Add(1)'
     - 'actual, loaded := m.LoadOrStore(key, val)'
+checks:
+  - id: waitgroup-add-in-goroutine
+    language: Go
+    message: WaitGroup.Add inside the goroutine it counts — Wait can return before the goroutine has called Add
+    severity: major
+    category: concurrency
+    confidence: 0.75
+    rule:
+      kind: call_expression
+      has:
+        field: function
+        kind: selector_expression
+        regex: ^(?:wg|\w*[wW]ait[gG]roup|\w*[wW][gG])\.Add$
+      inside:
+        kind: func_literal
+        stopBy: end
+        inside:
+          kind: go_statement
+          stopBy: end
+    examples:
+      - "func run(jobs []int) {\n\tvar wg sync.WaitGroup\n\tfor _, j := range jobs {\n\t\tgo func(j int) {\n\t\t\twg.Add(1)\n\t\t\tdefer wg.Done()\n\t\t\twork(j)\n\t\t}(j)\n\t}\n\twg.Wait()\n}"
+    counterexamples:
+      - "func run(jobs []int) {\n\tvar wg sync.WaitGroup\n\tfor _, j := range jobs {\n\t\twg.Add(1)\n\t\tgo func(j int) {\n\t\t\tdefer wg.Done()\n\t\t\twork(j)\n\t\t}(j)\n\t}\n\twg.Wait()\n}"
+      - "func count(n *atomic.Int64) {\n\tgo func() { n.Add(1) }()\n}"
 sources:
   - https://pkg.go.dev/sync
   - https://go.dev/doc/go1.25

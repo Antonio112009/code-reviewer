@@ -7,6 +7,41 @@ activation:
   content: ["\\buse(?:Layout|Insertion)?Effect\\s*\\("]
   examples:
     - "useEffect(() => { const id = setInterval(tick, 1000); return () => clearInterval(id); }, []);"
+checks:
+  - id: effect-subscription-without-cleanup
+    language: [Tsx, JavaScript]
+    message: useEffect starts an interval, listener or subscription but returns no cleanup — it keeps running after unmount and piles up on every re-run
+    severity: major
+    category: resource-leak
+    confidence: 0.65
+    rule:
+      kind: call_expression
+      all:
+        - has:
+            field: function
+            regex: ^(?:React\.)?use(?:Layout)?Effect$
+        - has:
+            field: arguments
+            has:
+              kind: arrow_function
+              nthChild: 1
+              all:
+                - has:
+                    stopBy: end
+                    kind: call_expression
+                    has:
+                      field: function
+                      regex: (?:^|\.)(?:setInterval|addEventListener|subscribe|observe)$
+                - not:
+                    has:
+                      stopBy: end
+                      kind: return_statement
+    examples:
+      - "useEffect(() => {\n  const id = setInterval(refresh, 1000);\n}, []);"
+      - "useEffect(() => {\n  window.addEventListener('resize', onResize);\n});"
+    counterexamples:
+      - "useEffect(() => {\n  window.addEventListener('resize', onResize);\n  return () => window.removeEventListener('resize', onResize);\n}, []);"
+      - "useEffect(() => {\n  load(id);\n}, [id]);"
 sources:
   - https://react.dev/reference/react/useEffect
   - https://react.dev/learn/you-might-not-need-an-effect

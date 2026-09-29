@@ -20,6 +20,23 @@ activation:
     - 'Matcher m = Pattern.compile(userRegex).matcher(input);'
     - 'NumberFormat currency = NumberFormat.getCurrencyInstance();'
     - 'if (status == "ACTIVE") { ... }'
+checks:
+  - id: string-reference-comparison
+    language: Java
+    message: String compared with == against a literal — compares references, so equal text from input, parsing or concatenation is not equal
+    severity: major
+    confidence: 0.75
+    rule:
+      any:
+        - pattern: $A == "$S"
+        - pattern: '"$S" == $A'
+        - pattern: $A != "$S"
+        - pattern: '"$S" != $A'
+    examples:
+      - "class Auth { boolean admin(String role) { return role == \"admin\"; } }"
+    counterexamples:
+      - "class Auth { boolean admin(String role) { return \"admin\".equals(role); } }"
+      - "class Auth { boolean none(String role) { return role == null; } }"
 sources:
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html
   - https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/regex/Matcher.html#quoteReplacement(java.lang.String)

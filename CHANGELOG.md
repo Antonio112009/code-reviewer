@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Six more structural checks** (ast-grep, when it is on PATH): `realloc` result written over the pointer it
+  frees on failure (C/C++), `WaitGroup.Add` inside the goroutine it counts (Go), `useEffect` starting an
+  interval or listener without a cleanup (React), strings compared with `==` (Java), empty `catch` blocks
+  (Java, JavaScript/TypeScript, C#), `async void` methods that are not event handlers (C#). Every check now
+  also lists `counterexamples` — correct code it must not flag — and the library test runs both.
 - **Function audit (experimental, `--audit`).** The prompt lists every changed function and the model audits
   each one — early returns restoring state, edge-case and parsed inputs, calls, callers — instead of stopping
   at the first defect of a function. On AACR-Bench the reviewer often reported one defect where the reference
