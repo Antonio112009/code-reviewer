@@ -48,6 +48,13 @@ export const ReportedFindingSchema = z.object({
       'How the defect is reached, as steps: input or state → code path → failure (e.g. "empty cart from POST /checkout → total() divides by items.length → NaN is charged"). Required for critical and major findings.',
     ),
   suggestion: z.string().optional().describe('How to fix it (short, optional)'),
+  replacement: z
+    .string()
+    .max(4000)
+    .optional()
+    .describe(
+      'The fixed code for lines startLine–endLine of the NEW file: whole lines, original indentation, nothing else. Only when the fix changes just those lines; it becomes a one-click suggestion on the pull request.',
+    ),
   evidence: z.string().optional().describe('The exact offending code (a few lines at most)'),
   confidence: z
     .number()
@@ -76,6 +83,12 @@ export const ReportedVerdictSchema = z.object({
   confidence: z.number().min(0).max(1).describe('Your confidence (0..1) that the finding is a real defect'),
   reason: z.string().min(3).describe('Short justification referencing the code'),
   severity: z.enum(SEVERITIES).optional().describe('Corrected severity, only if the original is wrong'),
+  replacementOk: z
+    .boolean()
+    .optional()
+    .describe(
+      'For a finding with a "replacement": true only if applying it fixes the defect and keeps the code valid',
+    ),
 });
 export type ReportedVerdict = z.infer<typeof ReportedVerdictSchema>;
 
@@ -194,6 +207,8 @@ export interface Finding extends ReportedFinding {
   source: { chunkIds: string[]; provider: string; model?: string };
   critique?: CritiqueInfo;
   author?: AuthorInfo;
+  /** The critic checked `replacement`: true = safe to offer as a one-click suggestion. */
+  replacementOk?: boolean;
   /** Severity lowered before critique because the finding gave no failure path (`review.requireFailurePath`). */
   lowered?: { from: Severity; reason: 'no-failure-path' };
   /** Set when a validation step rejected the finding (hallucinated path, lines out of range, ...). */

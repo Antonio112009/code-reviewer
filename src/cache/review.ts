@@ -201,6 +201,7 @@ export const CachedVerdictSchema = z.object({
   confidence: z.number().min(0).max(1),
   reason: z.string().min(1).max(4_000),
   severity: z.enum(SEVERITIES).optional(),
+  replacementOk: z.boolean().optional(),
   reads: z.record(z.string(), z.string()),
 });
 export type CachedVerdict = z.infer<typeof CachedVerdictSchema>;

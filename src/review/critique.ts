@@ -67,7 +67,10 @@ const SPLITTABLE: ReadonlySet<FailureKind> = new Set([
  */
 export async function critiqueFindings(findings: Finding[], opts: CritiqueOptions): Promise<CritiqueOutcome> {
   const excerpts = new Map(findings.map((f) => [f.id, excerpt(opts.root, f)]));
-  const verdicts = new Map<string, { verdict: Finding['critique']; severity?: Finding['severity'] }>();
+  const verdicts = new Map<
+    string,
+    { verdict: Finding['critique']; severity?: Finding['severity']; replacementOk?: boolean }
+  >();
   const record = (original: Finding, v: Omit<ReportedVerdict, 'id'>) =>
     verdicts.set(original.id, {
       verdict: {
@@ -78,6 +81,7 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
         originalSeverity: v.severity && v.severity !== original.severity ? original.severity : undefined,
       },
       severity: v.severity,
+      ...(v.replacementOk !== undefined ? { replacementOk: v.replacementOk } : {}),
     });
   let cachedVerdicts = 0;
   const pending: Finding[] = [];
@@ -173,6 +177,7 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
       confidence: v.verdict.confidence,
       severity: v.severity ?? f.severity,
       critique: v.verdict,
+      ...(f.replacement !== undefined ? { replacementOk: v.replacementOk === true } : {}),
     };
     if (v.verdict.verdict === 'rejected' && f.nonRejectable) {
       // Secrets / vulnerable dependencies: the critic may downgrade them, never drop them.
