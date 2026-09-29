@@ -67,8 +67,11 @@ export function toFinding(
   const file = completePath(normalizePath(reported.file, ctx.root), ctx.files ?? []);
   const startLine = Math.min(reported.startLine, reported.endLine);
   const endLine = Math.max(reported.startLine, reported.endLine);
+  // A checklist the chunk did not have is a guess: dropped rather than trusted.
+  const { checklist, ...rest } = reported;
   return {
-    ...reported,
+    ...rest,
+    ...(checklist && ctx.skills.includes(checklist) ? { checklist } : {}),
     file,
     startLine,
     endLine,

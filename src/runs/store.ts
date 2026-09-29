@@ -118,6 +118,19 @@ export class RunStore {
     return out;
   }
 
+  /** The most recent runs, newest first; unreadable ones are skipped. */
+  async recent(limit = 50): Promise<RunRecord[]> {
+    const out: RunRecord[] = [];
+    for (const id of (await this.ids()).slice(0, limit)) {
+      try {
+        out.push(await this.load(id));
+      } catch {
+        // unreadable run: skip
+      }
+    }
+    return out;
+  }
+
   async remove(idOrPrefix: string): Promise<string> {
     const id = await this.resolveId(idOrPrefix);
     await rm(this.runDir(id), { recursive: true, force: true });

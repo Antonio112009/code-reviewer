@@ -5,7 +5,7 @@ import type { SkillMatch } from '../skills/detector';
 import type { DependencyRoot } from '../tools/dependencies';
 import { CATEGORIES, type Chunk, type Finding, type RunTarget, SEVERITIES, type StaticHit } from '../types';
 
-const FINDING_FIELDS = `{"findings": [{"file": string, "startLine": int, "endLine": int, "severity": ${SEVERITIES.map((s) => `"${s}"`).join('|')}, "category": ${CATEGORIES.map((c) => `"${c}"`).join('|')}, "title": string, "description": string, "failurePath"?: string, "suggestion"?: string, "replacement"?: string, "evidence"?: string, "confidence": number 0..1, "hint"?: string}]}`;
+const FINDING_FIELDS = `{"findings": [{"file": string, "startLine": int, "endLine": int, "severity": ${SEVERITIES.map((s) => `"${s}"`).join('|')}, "category": ${CATEGORIES.map((c) => `"${c}"`).join('|')}, "title": string, "description": string, "failurePath"?: string, "suggestion"?: string, "replacement"?: string, "checklist"?: string, "evidence"?: string, "confidence": number 0..1, "hint"?: string}]}`;
 
 const VERDICT_FIELDS = `{"verdicts": [{"id": string, "verdict": "confirmed"|"rejected"|"uncertain", "confidence": number 0..1, "reason": string, "severity"?: ${SEVERITIES.map((s) => `"${s}"`).join('|')}}]}`;
 
@@ -117,8 +117,8 @@ Output: call the \`submit_findings\` tool as soon as you have verified a finding
   }
   if (opts.skills.length) {
     sections.push(
-      `## Technology checklists\nChecklists selected for the technologies in this chunk. Use them as hints about where bugs hide — every finding still needs evidence in the code.\n\n${opts.skills
-        .map((s) => `### ${s.skill.name}\n${s.skill.body}`)
+      `## Technology checklists\nChecklists selected for the technologies in this chunk. Use them as hints about where bugs hide — every finding still needs evidence in the code. When an item of a checklist led you to a finding, put that checklist's id (in brackets) in the finding's "checklist" field.\n\n${opts.skills
+        .map((s) => `### ${s.skill.name} [${s.skill.id}]\n${s.skill.body}`)
         .join('\n\n')}`,
     );
   }
