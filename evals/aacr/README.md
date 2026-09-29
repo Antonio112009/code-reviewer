@@ -179,6 +179,28 @@ Code sessions without user settings), `--full`, two runs each, the variants side
 AACR-Bench is a weak test of skills. 42% of its references are maintainability and readability comments that
 no checklist targets, and two runs of 30 PRs cannot resolve a difference this small.
 
+#### 0.4.0 and the function audit (2026-09-29)
+
+| ctx30, two runs each | Findings | Precision | Recall | F1 | Cost / run |
+|---|---|---|---|---|---|
+| 0.4.0 (impact map, `find_references`, call chunks, failure paths) | 50 | 41.0% | 7.2% (20, 21) | 12.2% (12.0, 12.4) | $15.2 |
+| 0.4.0 + `--audit` | 43 | 47.4% | 7.2% (17, 24) | 12.5% (10.4, 14.5) | $14.8 |
+
+- **More context did not raise recall.** 0.4.0 matches the skills baseline above (11.9%) within noise; runs
+  are more consistent.
+- **Where the 135 code-defect references go** (0.4.0, both runs, a finding within ±5 lines counts as nearby):
+  20 found, 5 dropped by us (critique or unconfirmed hints), 32 with a finding nearby that the judge counted as
+  another issue, 78 with nothing nearby. The critique is not the bottleneck.
+  - Nearby but different: some are judge misses (the same NameError, the same copied error message at another
+    line); mostly the reviewer reports one defect where the reference names several (opencv JNI: 4, found 1).
+  - Nothing nearby (read by hand): about 30 speculative robustness remarks ("could be nil if a caller…"),
+    about 8 style or design, several references that are wrong for this PR (ComfyUI: bugs the PR fixes;
+    timescale: `ts_update_placeholder` is the project's required convention), and about 35 concrete misses,
+    e.g. a flag not reset on an error path (SDL) or `"false"` enabling an opt-in header (LocalAI).
+- **`--audit`** (list every changed function, audit each one): the model recorded 125 of 145 listed
+  functions, yet reported fewer findings; recall stayed at 7.2% and the two runs spread by four points. It
+  stays experimental and off.
+
 The eval corpus (`code-reviewer eval --full`, 33 cases: 16 hard, 2 from real repositories, 8 clean; one run per
 variant, main at 23c6948) is where skills are aimed:
 
