@@ -97,7 +97,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
         },
         anthropic: {
           doc: 'The Anthropic API directly (ANTHROPIC_API_KEY): no agent overhead per task, cheaper in CI.',
-          example: { type: 'anthropic', defaultModel: 'claude-sonnet-5', critiqueModel: 'claude-opus-5-5' },
+          example: { type: 'anthropic', defaultModel: 'claude-sonnet-5-5', critiqueModel: 'claude-opus-5-5' },
         },
         'my-agent': {
           doc: 'Any other ACP agent, launched with your own command.',

@@ -416,7 +416,7 @@ export const DEFAULT_CONFIG: Config = {
     copilot: { type: 'acp', preset: 'copilot' },
     gemini: { type: 'acp', preset: 'gemini' },
     bedrock: { type: 'bedrock' },
-    anthropic: { type: 'anthropic', defaultModel: 'claude-sonnet-5', critiqueModel: 'claude-opus-5-5' },
+    anthropic: { type: 'anthropic', defaultModel: 'claude-sonnet-5-5', critiqueModel: 'claude-opus-5-5' },
     // OpenAI-compatible APIs: no default model (pass --model or set roles.review.model / defaultModel).
     openai: { type: 'openai' },
     openrouter: { type: 'openai', baseUrl: 'https://openrouter.ai/api/v1', apiKeyEnv: 'OPENROUTER_API_KEY' },

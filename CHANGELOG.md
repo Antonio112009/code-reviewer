@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Claude Sonnet 5.5.** The Anthropic API provider reviews with `claude-sonnet-5-5` by default (was
+  `claude-sonnet-5`); the Claude Code, API and Bedrock model lists include it. Claude Code 2.1.284 already
+  maps its `sonnet` alias to it. Same price per token as Sonnet 5; on AACR-Bench ctx30 it matched Sonnet 5
+  (F1 12.2%) for a third less cost per run (fewer output tokens) in under half the time.
 - **Six more structural checks** (ast-grep, when it is on PATH): `realloc` result written over the pointer it
   frees on failure (C/C++), `WaitGroup.Add` inside the goroutine it counts (Go), `useEffect` starting an
   interval or listener without a cleanup (React), strings compared with `==` (Java), empty `catch` blocks

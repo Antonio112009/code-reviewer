@@ -63,6 +63,15 @@ export const MODEL_CATALOG: Record<CatalogKey, CatalogModel[]> = {
       note: 'needs the data-retention opt-in; higher refusal rate on security content',
     },
     {
+      id: 'global.anthropic.claude-sonnet-5-5',
+      tier: 'balanced',
+      label: 'Claude Sonnet 5.5',
+      contextWindow: M,
+      maxOutputTokens: 128_000,
+      // The docs list `anthropic.claude-sonnet-5-5`; the global profile id follows Sonnet 5's.
+      unverified: true,
+    },
+    {
       id: 'global.anthropic.claude-sonnet-5',
       tier: 'balanced',
       label: 'Claude Sonnet 5',
@@ -141,6 +150,13 @@ export const MODEL_CATALOG: Record<CatalogKey, CatalogModel[]> = {
       maxOutputTokens: 128_000,
     },
     {
+      id: 'claude-sonnet-5-5',
+      tier: 'balanced',
+      label: 'Claude Sonnet 5.5',
+      contextWindow: M,
+      maxOutputTokens: 128_000,
+    },
+    {
       id: 'claude-sonnet-5',
       tier: 'balanced',
       label: 'Claude Sonnet 5',
@@ -190,6 +206,13 @@ export const MODEL_CATALOG: Record<CatalogKey, CatalogModel[]> = {
       id: 'claude-opus-5-5',
       tier: 'frontier',
       label: 'Claude Opus 5.5',
+      contextWindow: M,
+      maxOutputTokens: 128_000,
+    },
+    {
+      id: 'claude-sonnet-5-5',
+      tier: 'balanced',
+      label: 'Claude Sonnet 5.5',
       contextWindow: M,
       maxOutputTokens: 128_000,
     },
