@@ -122,6 +122,8 @@ function card(f, rejected, worth) {
     f.failurePath ? el('div', { class: 'desc' }, el('strong', {}, 'Failure path: '), f.failurePath) : null,
     f.lowered ? el('div', { class: 'desc' }, el('em', {}, 'Lowered from ' + f.lowered.from + ': no failure path given.')) : null,
     f.evidence ? el('pre', {}, f.evidence) : null,
+    f.replacement !== undefined ? el('div', { class: 'desc' }, el('strong', {}, 'Suggested change'), ' (lines ' + f.startLine + '–' + f.endLine + ', ' + (f.replacementOk ? 'checked by the critic' : 'not checked') + ')') : null,
+    f.replacement !== undefined ? el('pre', {}, f.replacement) : null,
     f.suggestion ? el('div', {}, el('b', {}, 'Suggestion: '), f.suggestion) : null,
     f.critique && f.critique.reason ? el('div', { class: 'critic' }, 'Critic: ' + f.critique.reason) : null);
 }

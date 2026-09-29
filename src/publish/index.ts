@@ -155,7 +155,10 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
 
   if (opts.dryRun) {
     const plan = planPublication(findings, { ...settings, posted: new Set(), stale: false });
-    const inline = plan.inline.map((p) => ({ ...p, body: renderInlineComment(p.finding, p.fingerprint) }));
+    const inline = plan.inline.map((p) => ({
+      ...p,
+      body: renderInlineComment(p.finding, p.fingerprint, { anchor: p.anchor, forge: target.forge }),
+    }));
     const summaryBody = renderSummary({
       run,
       forge: target.forge,
@@ -199,7 +202,15 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
     logger.debug(`publish: head ${state.headSha} ≠ reviewed ${t.headSha}${opts.force ? ' (--force)' : ''}`);
   }
   const plan = planPublication(findings, { ...settings, posted: state.posted, stale: stale && !opts.force });
-  const planned = plan.inline.map((p) => ({ ...p, body: renderInlineComment(p.finding, p.fingerprint) }));
+  // A forced publication on a moved head: lines may have shifted, so no one-click changes.
+  const planned = plan.inline.map((p) => ({
+    ...p,
+    body: renderInlineComment(
+      p.finding,
+      p.fingerprint,
+      stale ? undefined : { anchor: p.anchor, forge: target.forge },
+    ),
+  }));
   const listed = [...plan.summary];
   let inline: InlineComment[] = [];
   if (planned.length) {

@@ -5,6 +5,10 @@
 - **What changed since the previous review.** After a new push, the pull request summary lists the findings
   that were fixed, those no longer reported, the new ones, and how many are still open. The previous review
   is remembered in a hidden marker of our own summary comment.
+- **One-click fixes in pull request comments.** When a fix changes only the lines a finding is about, the model
+  gives the exact replacement, the self-critique checks that it compiles and fixes the defect, and the inline
+  comment carries it as a suggested change ("Commit suggestion" on GitHub, "Apply suggestion" on GitLab).
+  Reports show it too, marked checked or not; an unchecked one is never offered in a comment.
 
 ## 0.4.0 — 2026-09-29
 

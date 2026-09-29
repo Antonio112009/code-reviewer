@@ -335,6 +335,10 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
     findings: fingerprint, file:line, severity, title). The next publication reads it back from our own
     summary only, validates it with a strict schema, and renders "Since the previous review": fixed (thread
     resolved), no longer reported, new, still open. Nothing is shown when the same commit is published again.
+  - One-click changes (`render.ts#suggestionBlock`): a finding's `replacement` (the fixed text of exactly its
+    lines) becomes a ```` ```suggestion ```` block (GitLab: `suggestion:-N+M` around its single anchor line)
+    only when validation kept it (≤ 30 lines replaced, ≤ 60 written, differs from the code, no fence) and the
+    critic set `replacementOk`; never on a `--force`d publication to a moved head.
   - `github.ts` / `gitlab.ts` implement `ForgeAdapter` (`load` → head + posted fingerprints, `postInline`,
     `upsertSummary`, `openThreads`, `resolveThread`). GitHub: one `COMMENT` review, single comments after a
     422, the summary as an issue comment edited in place, review threads through GraphQL

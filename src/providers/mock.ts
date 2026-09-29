@@ -52,14 +52,17 @@ function scanFindings(prompt: string): ReportedFinding[] {
     const key = `${file}:${lineNo}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    // `BUG: title FIX: code` also proposes `code` as the replacement of the line.
+    const [title, fix] = m[3]!.split(/\s+FIX:\s*/, 2) as [string, string | undefined];
     findings.push({
       file,
       startLine: lineNo,
       endLine: lineNo,
       severity: (m[2] as Severity | undefined) ?? 'minor',
       category: 'bug',
-      title: m[3]!,
-      description: `Mock finding: ${m[3]} (marker comment on line ${lineNo}).`,
+      title,
+      description: `Mock finding: ${title} (marker comment on line ${lineNo}).`,
+      ...(fix ? { replacement: fix } : {}),
       failurePath: `marker comment on ${file}:${lineNo} → mock provider → reported`,
       confidence: 0.85,
     });
@@ -76,6 +79,8 @@ function judge(prompt: string): ReportedVerdict[] {
       verdict: falsePositive ? 'rejected' : 'confirmed',
       confidence: falsePositive ? 0.1 : 0.9,
       reason: falsePositive ? 'Mock critic: marked as false positive.' : 'Mock critic: confirmed.',
+      // A title mentioning a bad fix gets its replacement refused.
+      replacementOk: !/bad fix/i.test(m[2]!),
     });
   }
   return verdicts;
