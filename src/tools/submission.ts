@@ -18,6 +18,8 @@ export interface Submission {
   findings?: ReportedFinding[];
   verdicts?: ReportedVerdict[];
   notes?: string[];
+  /** Functions the model reported as audited (`review.audit`). */
+  audit?: Array<{ name: string; result: 'defects' | 'clean' | 'unsure' }>;
   calls: number;
   /** Files the model read through our tools (root-relative): a cached result is valid while they are unchanged. */
   reads?: string[];
@@ -49,6 +51,7 @@ export class SubmissionCollector {
       const p = payload as SubmitFindings;
       this.state.findings = [...(this.state.findings ?? []), ...p.findings];
       if (p.notes) this.state.notes = [...(this.state.notes ?? []), p.notes];
+      if (p.audit?.length) this.state.audit = [...(this.state.audit ?? []), ...p.audit];
     } else {
       const byId = new Map((this.state.verdicts ?? []).map((v) => [v.id, v]));
       for (const v of (payload as SubmitVerdicts).verdicts) byId.set(v.id, v);

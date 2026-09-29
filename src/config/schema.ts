@@ -184,6 +184,11 @@ export const ReviewSettingsSchema = z.object({
    */
   passes: z.array(z.enum(REVIEW_PASSES)).min(1),
   /**
+   * Audit every changed function one by one (listed in the prompt, recorded through `submit_findings.audit`):
+   * against the reviewer stopping at the first defect of a function. Experimental; off by default.
+   */
+  audit: z.boolean(),
+  /**
    * Where agents read code: `auto` = isolated snapshot for ACP agents, in place for API providers when the
    * checkout is clean and at head; `always` = always an isolated snapshot.
    */
@@ -455,6 +460,7 @@ export const DEFAULT_CONFIG: Config = {
     contextShare: 0.1,
     expand: 'map',
     passes: ['general'],
+    audit: false,
     isolation: 'auto',
   },
   git: {

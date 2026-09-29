@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Function audit (experimental, `--audit`).** The prompt lists every changed function and the model audits
+  each one — early returns restoring state, edge-case and parsed inputs, calls, callers — instead of stopping
+  at the first defect of a function. On AACR-Bench the reviewer often reported one defect where the reference
+  named several.
+- **Two more traps in the general checklist**: flags where any non-empty string (`"false"`) means on, and
+  in-progress flags or counters not restored on an early return.
 - **What changed since the previous review.** After a new push, the pull request summary lists the findings
   that were fixed, those no longer reported, the new ones, and how many are still open. The previous review
   is remembered in a hidden marker of our own summary comment.

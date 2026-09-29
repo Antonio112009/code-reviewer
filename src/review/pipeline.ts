@@ -16,7 +16,7 @@ import {
 } from '../cache/review';
 import type { ResultCache } from '../cache/store';
 import { buildChunks, scheduleOrder, splitChunk } from '../chunking/chunker';
-import { expandChunks, revisionSource } from '../chunking/expand';
+import { changedSymbols, expandChunks, revisionSource } from '../chunking/expand';
 import { buildFileGraph, type FileGraph } from '../chunking/graph';
 import { estimateTokens } from '../chunking/tokens';
 import type { Config } from '../config/schema';
@@ -244,6 +244,8 @@ type PartOutcome = { id: string; files: string[]; spend: Spend[] } & (
       toolUsage?: Record<string, number>;
       /** Why the model was asked for an early answer: a partial review, never cached. */
       salvaged?: string;
+      /** Distinct functions the model recorded as audited (`review.audit`). */
+      audited?: number;
       /** Answered from the result cache; `saved` is what that answer took when it was made. */
       cached?: { saved?: { inputTokens: number; outputTokens: number } };
     }
@@ -634,6 +636,18 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           );
         }
       }
+      // The audit lists the changed functions: computed here when expand did not already.
+      if (config.review.audit) {
+        const unitOf = new Map(units.map((u) => [u.path, u]));
+        for (const c of result.chunks) {
+          if (c.declarations) continue;
+          const symbols = c.files.flatMap((f) => {
+            const u = unitOf.get(f);
+            return u ? changedSymbols(u) : [];
+          });
+          if (symbols.length) c.declarations = symbols.map(({ name, file, kind }) => ({ name, file, kind }));
+        }
+      }
       return { ...result, baseChunks };
     },
   );
@@ -958,6 +972,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           project: config.project,
           readTools: config.review.tools,
           ...(dependencies.length ? { dependencies } : {}),
+          ...(config.review.audit ? { audit: true } : {}),
         });
       const promptOptions = (chunk: Chunk, part: Chunk, hints: StaticHit[]) => ({
         target,
@@ -966,6 +981,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         otherFiles: allFiles,
         hints,
         stack: chunkStack.get(chunk.id),
+        ...(config.review.audit ? { audit: true } : {}),
       });
       const buildTask = (
         chunk: Chunk,
@@ -1132,6 +1148,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           attempts: result.attempts,
           ...(result.toolUsage ? { toolUsage: result.toolUsage } : {}),
           ...(result.salvaged ? { salvaged: result.salvaged } : {}),
+          ...(result.submission.audit?.length
+            ? { audited: new Set(result.submission.audit.map((a) => a.name)).size }
+            : {}),
         };
       };
 
@@ -1375,6 +1394,14 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
               ...(last ? { provider: last.provider, model: last.model } : {}),
               attempts: done.reduce((n, d) => n + d.attempts, 0) + outcomes.length - done.length,
               ...(notes.length ? { recovery: notes } : {}),
+              ...(config.review.audit
+                ? {
+                    audit: {
+                      listed: (chunk.declarations ?? []).filter((d) => d.kind !== 'removed').length,
+                      audited: done.reduce((n, d) => n + (d.audited ?? 0), 0),
+                    },
+                  }
+                : {}),
               ...(fromCacheCount
                 ? { cached: fromCacheCount === outcomes.length ? ('all' as const) : ('partial' as const) }
                 : {}),

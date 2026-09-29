@@ -191,6 +191,10 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           doc: 'Passes per chunk: [general] (one review), or [local, contracts]: the changed lines, then the changed declarations and their consumers (about twice the cost).',
           example: D.review.passes,
         },
+        audit: {
+          doc: 'Experimental: audit every changed function one by one (listed in the prompt) instead of stopping at the first defect of a function.',
+          example: D.review.audit,
+        },
         expand: {
           doc: 'Related unchanged code per chunk: off; map = impact map (file:line of the usages of the changed declarations and of the definitions the new code calls); refs = the map plus excerpts of that code; deep = also the callers of those usages.',
           example: D.review.expand,

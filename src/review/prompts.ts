@@ -27,6 +27,8 @@ export interface ReviewInstructionOptions {
   pass?: 'local' | 'contracts';
   /** Installed dependency sources `read_file` can read by absolute path. */
   dependencies?: DependencyRoot[];
+  /** Audit the changed functions listed in the prompt one by one (`review.audit`). */
+  audit?: boolean;
 }
 
 /** Where the installed dependencies are, when the model can read them. */
@@ -35,6 +37,9 @@ export function dependencyLine(deps: readonly DependencyRoot[] | undefined): str
   const where = deps.map((d) => `${d.label}: ${d.dir}`).join('; ');
   return `\n- Installed dependency sources can be read with read_file by absolute path (read-only), e.g. to check what a called library function really does: ${where}.`;
 }
+
+/** `review.audit`: one function at a time, and not only its first defect. */
+const AUDIT_RULE = `- Audit every function listed under "Changed functions to audit", one at a time, and any other changed function you notice. For each, check: every early return and error path restores what the function set before it (flags, counters, locks, open handles, half-built state); empty, null, zero, negative, duplicate and oversized inputs; each value it parses or receives (strings like "false" or "0", null JSON fields, missing keys); each call it makes (return values and errors checked, resources released); and its contract with its callers. A function often has more than one defect: after you find one, keep checking the same function. Record every audited function in the "audit" field of submit_findings with its result (defects, clean or unsure).`;
 
 /** What a focused pass looks for; the other pass covers the rest. */
 function passRules(pass: ReviewInstructionOptions['pass']): string {
@@ -88,7 +93,7 @@ export function reviewInstructions(opts: ReviewInstructionOptions): string {
 
 Rules:
 ${scope}
-${depthRules(opts.depth ?? 'full')}${opts.pass ? `\n${passRules(opts.pass)}` : ''}
+${depthRules(opts.depth ?? 'full')}${opts.pass ? `\n${passRules(opts.pass)}` : ''}${opts.audit ? `\n${AUDIT_RULE}` : ''}
 - Review the files under "Files to review". "Related files" are read-only context owned by another reviewer: use them to understand the code, but report defects only in the files you review.
 - Do NOT report style, naming, formatting, missing comments/tests/docs, refactoring ideas, or anything a compiler, type checker or linter would catch.
 - When the fix changes only the reported lines, also give "replacement": the exact fixed text of lines startLine–endLine (whole lines, original indentation, no fences or line numbers). It is offered as a one-click change, so it must compile and fix the defect; leave it out when the fix belongs elsewhere or spans more code.
@@ -139,6 +144,8 @@ export function reviewPrompt(opts: {
   hints?: StaticHit[];
   /** Technologies of the chunk's files with detected versions (`Next.js 15.1.0 · React 19.0.0`). */
   stack?: string;
+  /** List the changed functions to audit (`review.audit`). */
+  audit?: boolean;
 }): string {
   const { target, chunk } = opts;
   const header =
@@ -170,6 +177,10 @@ In "__new code__" blocks, lines marked "+" were added or modified by the change;
     );
   }
   if (chunk.mentions.length) lines.push(`Files deleted by the change: ${chunk.mentions.join(', ')}`);
+  const auditList = opts.audit && chunk.pass !== 'contracts' ? auditTargets(chunk) : [];
+  if (auditList.length) {
+    lines.push('', '## Changed functions to audit (each one)', ...auditList);
+  }
   if (chunk.pass === 'contracts' && chunk.declarations?.length) {
     const what = { removed: 'removed', signature: 'declaration changed', body: 'body changed' } as const;
     lines.push(
@@ -226,6 +237,7 @@ export function reviewPromptIdentity(opts: Parameters<typeof reviewPrompt>[0]): 
     related: chunkTextFor(chunk, 'related'),
     pass: chunk.pass ?? null,
     declarations: chunk.declarations ?? [],
+    audit: opts.audit === true,
     impact: chunk.impact ?? [],
     hints: (opts.hints ?? []).map((h) => [
       h.analyzer,
@@ -308,4 +320,12 @@ export function critiquePrompt(findings: Finding[], excerpts: Map<string, string
     .filter(Boolean)
     .join('\n\n');
   return `# Findings to verify\n\`\`\`json\n${JSON.stringify(items, null, 2)}\n\`\`\`\n\n# Code excerpts (current version)\n${code}\n\nVerify each finding and submit your verdicts.`;
+}
+
+/** The changed functions and types of a chunk to audit one by one (removed ones have nothing left to audit). */
+function auditTargets(chunk: Chunk): string[] {
+  const what = { signature: 'declaration changed', body: 'body changed' } as const;
+  return (chunk.declarations ?? [])
+    .filter((d): d is typeof d & { kind: 'signature' | 'body' } => d.kind !== 'removed')
+    .map((d) => `- \`${d.name}\` — ${what[d.kind]} in ${d.file}`);
 }

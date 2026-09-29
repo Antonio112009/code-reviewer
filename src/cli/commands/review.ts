@@ -66,6 +66,7 @@ export interface ReviewFlags {
   chunking?: string;
   expand?: string;
   passes?: string;
+  audit?: boolean;
   /** Post the finished review to its pull / merge request (`--post`, with the publish target flags). */
   post?: boolean;
 }
@@ -240,6 +241,7 @@ export function applyRunFlags(config: Config, f: ReviewFlags): void {
     ];
     config.review.passes = passes.map((p) => parseEnum(p, REVIEW_PASSES, '--passes')!);
   }
+  if (f.audit) config.review.audit = true;
   if (f.analyzers === false) {
     config.analyzers.builtin = false;
     config.analyzers.external = 'off';
@@ -429,6 +431,7 @@ export function addRunLimitOptions(cmd: Command): Command {
       '--passes <list>',
       'review passes per chunk: general | local,contracts (changed lines, then consumers)',
     )
+    .option('--audit', 'experimental: audit every changed function one by one')
     .option(
       '--expand <level>',
       'related unchanged code per chunk: off | map (file:line of usages and called definitions, default) | refs (plus excerpts) | deep',
