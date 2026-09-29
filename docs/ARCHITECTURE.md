@@ -172,6 +172,14 @@ The depth also affects:
      sites per file, within 15% (`refs`) or 25% (`deep`) of the chunk budget. The reviewer is told to report
      a defect the change causes there on the changed line that causes it. A split drops them, like context.
 
+### Function audit (`review.audit`, `--audit`; experimental, off)
+
+The prompt lists the chunk's changed functions (`chunk.declarations` without removed ones, computed even with
+`expand: off`) under "Changed functions to audit", and the instructions ask to check each one — early returns
+restoring state, edge-case inputs, parsed values, calls, callers — and to keep checking a function after its
+first defect. The model records each function in `submit_findings.audit`; the chunk record keeps
+`audit: { listed, audited }`. Aimed at the reviewer reporting one defect per place where several exist.
+
 ### Review passes (`review.passes`, `--passes`)
 
 `[general]` (the default) reviews each chunk once. A list of focused passes reviews every chunk once per

@@ -71,6 +71,16 @@ export type ReportedFinding = z.infer<typeof ReportedFindingSchema>;
 export const SubmitFindingsSchema = z.object({
   findings: z.array(ReportedFindingSchema).describe('All defects found; empty array if none'),
   notes: z.string().optional().describe('Optional short remark about the reviewed code'),
+  audit: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(200),
+        result: z.enum(['defects', 'clean', 'unsure']),
+      }),
+    )
+    .max(300)
+    .optional()
+    .describe('When asked to audit the changed functions: each function you checked and what you concluded'),
 });
 export type SubmitFindings = z.infer<typeof SubmitFindingsSchema>;
 
@@ -473,6 +483,8 @@ export interface ChunkRecord {
   timeoutMs?: number;
   /** Tool calls by tool name (read_file, grep, …) made while reviewing this chunk. */
   toolCalls?: Record<string, number>;
+  /** `review.audit`: changed functions listed in the prompt and how many the model recorded as audited. */
+  audit?: { listed: number; audited: number };
   /** Provider/model that actually reviewed the chunk (after any fallback). */
   provider?: string;
   model?: string;

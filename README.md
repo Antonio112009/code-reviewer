@@ -236,6 +236,8 @@ Useful flags:
 - `--analyzers eslint,tsc`: opt-in project linters;
 - `--passes local,contracts`: review each chunk twice — once for defects in the changed lines, once for the
   changed declarations and their consumers (about twice the cost);
+- `--audit` (experimental): the prompt lists every changed function and the model audits each one, instead
+  of stopping at the first defect of a function;
 - `--expand off|map|refs|deep`: related unchanged code per chunk — `map` (the default) lists where unchanged
   code uses the changed declarations and where the functions the new code calls are defined; `refs` adds
   excerpts of that code; `deep` also who calls those usages;
