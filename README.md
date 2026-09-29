@@ -134,7 +134,7 @@ flowchart LR
 | `codex` | OpenAI Codex over ACP | experimental; can run commands, so it is never picked as an automatic fallback |
 | `copilot` | GitHub Copilot CLI over ACP | experimental |
 | `gemini` | Gemini CLI over ACP | experimental |
-| `anthropic` | the Anthropic API directly | `ANTHROPIC_API_KEY`; `claude-sonnet-5` by default. No agent in between: a task carries only our prompt (Claude Code adds ~25× more context per task), with prompt caching — the cheaper choice for CI |
+| `anthropic` | the Anthropic API directly | `ANTHROPIC_API_KEY`; `claude-sonnet-5-5` by default. No agent in between: a task carries only our prompt (Claude Code adds ~25× more context per task), with prompt caching — the cheaper choice for CI |
 | `bedrock` | AWS Bedrock (Converse API) | AWS credential chain (profile, SSO, role) or `AWS_BEARER_TOKEN_BEDROCK`; prompt caching for Anthropic models |
 | `openai` | the OpenAI API | `OPENAI_API_KEY`; no default model: `--model gpt-5` |
 | `openrouter` | [OpenRouter](https://openrouter.ai) | `OPENROUTER_API_KEY`; `--model` any OpenRouter id, e.g. `qwen/qwen3-coder` |
