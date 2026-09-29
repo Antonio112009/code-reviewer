@@ -186,6 +186,7 @@ variant, main at 23c6948) is where skills are aimed:
 |---|---|---|---|---|---|---|
 | Skills (default) | 100% (27/27) | 96% | 98% | 0 of 8 | 4 | $6.95 |
 | `--skills none` | 100% (27/27) | 93% | 96% | 1 of 8 | 8 | $6.11 |
+| 0.4.0 (impact map, failure paths; 2026-09-29) | 100% (27/27) | 96% | 98% | 0 of 8 | 4 | $7.19 |
 
 - **Recall is saturated** either way: every planted defect was found.
 - **Without skills the review is noisier.** It flagged one clean change (an unvalidated `order` parameter in

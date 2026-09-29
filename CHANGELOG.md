@@ -1,7 +1,44 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 2026-09-29
 
+Reviews see further than the diff: every chunk gets an impact map of the unchanged code the change reaches, a
+`find_references` tool lists a function's callers, installed dependencies can be read, and changed functions
+share a chunk with their changed callers. Findings name their failure path, reports show which changed files
+were really reviewed, and skills can carry ast-grep checks. On the eval corpus (33 cases) the results match
+0.3.0 — recall 27/27, precision 96%, no false positives on the 8 clean changes — for about 3% more cost; all 38
+findings came with a failure path.
+
+### Changed defaults
+
+- **Impact map.** Every chunk now lists where unchanged code uses the declarations the change modifies
+  (file:line and the enclosing function, nearest first) and where the functions the new code calls are
+  defined; a removed or redeclared name with no remaining uses says so. It costs a few hundred tokens at
+  most and replaces the excerpts as the default: `review.expand` is now `map` (was `off`); `refs` and `deep`
+  add the code as before. C++ classes declared with an export macro (`class MYLIB_API Name`) are now read
+  by their name.
+- **Findings name their failure path.** `submit_findings` asks for a `failurePath` — the input or state, the
+  code path it takes, the failure (`empty cart from POST /checkout → total() divides by items.length → NaN
+  is charged`). The critic checks it step by step, and reports and pull request comments show it. A critical
+  or major finding without one is lowered a level before critique (`review.requireFailurePath: false` turns
+  that off).
+
+### New
+
+- **`find_references` tool.** Every use of a function, method, class, field or variable, grouped by file and
+  by the enclosing function, with definitions marked: the callers of a changed function in one call. Cross-file
+  (repository-level) defects were the weakest spot on AACR-Bench: 6 of 45 such references were ever found.
+- **The model can read installed dependencies.** `read_file` (and Claude Code's own reads) accept absolute
+  paths into the Go module cache, the Cargo registry, and the checkout's `node_modules` and virtualenv, read
+  only, so a review can check what a called library function really does. On AACR-Bench, models tried and
+  were refused 7 times. Only real directories count, and a file must resolve inside one (no symlink out);
+  `review.dependencySources: false` turns it off.
+- **Changed functions and their changed callers share a chunk.** When one changed file calls a function
+  whose declaration another changed file modifies, the two are grouped like importing files (`calls` in the
+  plan), also where imports do not resolve: files of one Go package, C/C++ headers, dynamic imports.
+- **More time while the model is working.** A review task that is still calling tools when its time runs out
+  is extended in steps, up to `review.activeExtension` × its timeout (default 0.5; 0 turns it off). About 8%
+  of review tasks were cut off by the time limit, and they were the most thorough ones.
 - **Coverage map.** Reports show which changed files the review really covered: reviewed in full, cut short
   (the model gave an early answer), partly or not reviewed (failed chunks), or skipped (and why), with the
   changed lines, whether the model opened the file with a tool, and the findings in it. The terminal summary
@@ -11,36 +48,16 @@
   `async` callbacks passed to `forEach` and `async` Promise executors (JavaScript/TypeScript), `defer`
   inside a loop (Go, not inside a closure) and mutable default arguments (Python). The repository's
   `sgconfig.yml` and ignore files are never used; `fix` and `transform` are refused.
-- **Findings name their failure path.** `submit_findings` asks for a `failurePath` — the input or state, the
-  code path it takes, the failure (`empty cart from POST /checkout → total() divides by items.length → NaN
-  is charged`). The critic checks it step by step, and reports and pull request comments show it. A critical
-  or major finding without one is lowered a level before critique (`review.requireFailurePath: false` turns
-  that off).
-- **Impact map.** Every chunk now lists where unchanged code uses the declarations the change modifies
-  (file:line and the enclosing function, nearest first) and where the functions the new code calls are
-  defined; a removed or redeclared name with no remaining uses says so. It costs a few hundred tokens at
-  most and replaces the excerpts as the default: `review.expand` is now `map` (was `off`); `refs` and `deep`
-  add the code as before. C++ classes declared with an export macro (`class MYLIB_API Name`) are now read
-  by their name.
 - **Skill signals are tested.** Every `content` regex of a skill or group now comes with `examples` of code it
   must match, and every example must match one of them (`test/skills-library.test.ts`); project skills may
   declare them too. Signals that fired on most code were narrowed: Go nil values (on 78% of Go samples from
   AACR-Bench, now 10%), C/C++ integer conversions (30% → 6%), Go `defer`, Go parallel tests and Rust
   secrets in `Debug`.
-- **Changed functions and their changed callers share a chunk.** When one changed file calls a function
-  whose declaration another changed file modifies, the two are grouped like importing files (`calls` in the
-  plan), also where imports do not resolve: files of one Go package, C/C++ headers, dynamic imports.
-- **More time while the model is working.** A review task that is still calling tools when its time runs out
-  is extended in steps, up to `review.activeExtension` × its timeout (default 0.5; 0 turns it off). About 8%
-  of review tasks were cut off by the time limit, and they were the most thorough ones.
-- **The model can read installed dependencies.** `read_file` (and Claude Code's own reads) accept absolute
-  paths into the Go module cache, the Cargo registry, and the checkout's `node_modules` and virtualenv, read
-  only, so a review can check what a called library function really does. On AACR-Bench, models tried and
-  were refused 7 times. Only real directories count, and a file must resolve inside one (no symlink out);
-  `review.dependencySources: false` turns it off.
-- **`find_references` tool.** Every use of a function, method, class, field or variable, grouped by file and
-  by the enclosing function, with definitions marked: the callers of a changed function in one call. Cross-file
-  (repository-level) defects were the weakest spot on AACR-Bench: 6 of 45 such references were ever found.
+
+### Fixes
+
+- **Regex escaping in `find_references`.** The fallback without git escapes every regex metacharacter (the
+  name was already limited to identifier characters; flagged by CodeQL).
 
 ## 0.3.0 — 2026-09-28
 
