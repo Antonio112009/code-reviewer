@@ -123,6 +123,8 @@ export interface ForgeState {
   headSha: string;
   /** Fingerprints of inline comments this tool already posted there (de-duplication). */
   posted: Set<string>;
+  /** Body of our summary comment from an earlier publication (what that review reported). */
+  summary?: string;
 }
 
 export interface InlineResult {

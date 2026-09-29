@@ -151,7 +151,10 @@ export function githubAdapter(target: PublishTarget, client: ApiClient, logger: 
       const posted = new Set(
         comments.filter((c) => isOwn(c.user)).flatMap((c) => extractFingerprints(c.body)),
       );
-      return { headSha: headSha.toLowerCase(), posted };
+      const summary = (await client.paginate<GithubComment>(`${repoPath}/issues/${n}/comments`))
+        .filter((c) => isOwn(c.user) && typeof c.body === 'string' && c.body.startsWith(SUMMARY_MARKER))
+        .at(-1)?.body;
+      return { headSha: headSha.toLowerCase(), posted, ...(typeof summary === 'string' ? { summary } : {}) };
     },
 
     async postInline(comments, commitSha): Promise<InlineResult> {

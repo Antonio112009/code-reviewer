@@ -3,6 +3,7 @@ import { code, mdLine, mdText } from '../report/markdown';
 import { FINGERPRINT_RE } from '../review/fingerprint';
 import { CATEGORIES, type Finding, type RunRecord, SEVERITIES, type Severity } from '../types';
 import { packageVersion } from '../util/paths';
+import { type RememberedFinding, type SinceLastReview, stateMarker } from './history';
 import { type InlineAnchor, type PlannedInline, SUMMARY_REASON_LABELS, type SummaryReason } from './plan';
 
 /*
@@ -87,7 +88,7 @@ function forgeCode(s: unknown, max: number): string {
   return code(clipText(String(s ?? ''), max));
 }
 
-function severityOf(f: Finding): Severity {
+function severityOf(f: Pick<Finding, 'severity'>): Severity {
   return SEVERITIES.includes(f.severity) ? f.severity : 'info';
 }
 
@@ -180,6 +181,8 @@ export interface SummaryInput {
   resolved?: number;
   /** Extra notes (diff not available, …). */
   notes?: string[];
+  /** What changed since the previous review on this pull request. */
+  since?: SinceLastReview;
 }
 
 function plural(n: number, word: string): string {
@@ -206,12 +209,14 @@ export function renderSummary(input: SummaryInput): string {
   const request = input.forge === 'gitlab' ? 'merge request' : 'pull request';
   const counts = severityCounts(run.findings);
   const total = run.findings.length;
+  const target = run.target;
   const out: string[] = [
     SUMMARY_MARKER,
+    // what this review reported, for the next publication's "since the previous review"
+    ...(target.kind === 'diff' ? [stateMarker(target.headSha, run.findings)] : []),
     `### Code review: ${total === 0 ? 'no findings' : plural(total, 'finding')}`,
     '',
   ];
-  const target = run.target;
   const reviewed =
     target.kind === 'diff'
       ? `reviewed ${code(clipText(target.head, 120))} at ${code(shortSha(target.headSha))} against ${code(clipText(target.base, 120))}`
@@ -259,6 +264,7 @@ export function renderSummary(input: SummaryInput): string {
     input.resolved ? `${input.resolved} resolved (fixed)` : '',
   ].filter(Boolean);
   if (inlineParts.length) out.push(`Inline comments: ${inlineParts.join(', ')}.`, '');
+  if (input.since) out.push(...renderSince(input.since), '');
 
   const footer = `<sub>code-reviewer ${packageVersion()} · run ${code(clipText(run.id, 128))} · ${forgeLine(summaryLine(run), 400)}</sub>`;
   if (input.listed.length) {
@@ -278,4 +284,40 @@ export function renderSummary(input: SummaryInput): string {
   }
   out.push(footer);
   return clipText(out.join('\n'), MAX_COMMENT_CHARS);
+}
+
+/** Most entries listed per group of the "since the previous review" section. */
+const MAX_SINCE_ENTRIES = 10;
+
+function rememberedEntry(f: RememberedFinding): string {
+  return `  - **${severityOf(f).toUpperCase()}** ${forgeCode(`${f.file}:${f.line}`, 300)} · ${forgeLine(f.title, MAX_TITLE)}`;
+}
+
+function sinceGroup(label: string, entries: string[]): string[] {
+  if (!entries.length) return [];
+  const shown = entries.slice(0, MAX_SINCE_ENTRIES);
+  return [
+    `- ${label} (${entries.length}):`,
+    ...shown,
+    ...(entries.length > shown.length ? [`  - … and ${entries.length - shown.length} more`] : []),
+  ];
+}
+
+/** What was fixed, dropped and added since the previous review on the pull request. */
+export function renderSince(since: SinceLastReview): string[] {
+  const out = [`#### Since the previous review (${code(shortSha(since.previousHead))})`, ''];
+  const lines = [
+    ...sinceGroup('Fixed', since.fixed.map(rememberedEntry)),
+    ...sinceGroup('No longer reported', since.gone.map(rememberedEntry)),
+    ...sinceGroup(
+      'New',
+      since.added.map(
+        (f) =>
+          `  - **${severityOf(f).toUpperCase()}** ${forgeCode(location(f), 300)} · ${forgeLine(f.title, MAX_TITLE)}`,
+      ),
+    ),
+  ];
+  if (since.open) lines.push(`- Still open: ${since.open}`);
+  if (!lines.length) lines.push('- Nothing changed in the findings.');
+  return [...out, ...lines];
 }

@@ -366,7 +366,9 @@ findings, unreviewed code) that later runs update in place. When the fix only ch
 and the self-critique checked it, the comment carries a one-click suggested change ("Commit suggestion" on
 GitHub, "Apply suggestion" on GitLab). Re-runs do not repeat comments that are already
 there, and resolve the threads of findings that were fixed: the commented code changed and the new review
-did not report the finding again (`publish.resolveFixed`; a thread someone reopened stays open).
+did not report the finding again (`publish.resolveFixed`; a thread someone reopened stays open). After a new
+push, the summary also lists what changed since the previous review: fixed, no longer reported, new, and how
+many are still open.
 `code-reviewer runs publish latest --dry-run` shows what would be posted.
 
 ```bash
