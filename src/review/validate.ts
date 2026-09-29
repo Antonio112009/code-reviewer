@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from 'node:fs';
+import { closeSync, fstatSync, openSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Finding, ReviewUnit, Severity } from '../types';
 import { resolveInside, toPosix } from '../util/paths';
@@ -28,17 +28,22 @@ export function validateFindings(
   for (const reported of findings) {
     // Model output is untrusted: the path must name a regular file inside the review root.
     let abs: string;
+    let content: string | undefined;
     try {
       abs = resolveInside(opts.root, reported.file);
-      if (!statSync(abs).isFile()) throw new Error('not a file');
+      // Checked and read through one descriptor: the file cannot be swapped in between.
+      content = readRegularFile(abs);
     } catch {
+      content = undefined;
+    }
+    if (content === undefined) {
       drop(reported, 'unknown-file');
       continue;
     }
-    const f = { ...reported, file: toPosix(path.relative(opts.root, abs)) };
+    const f = { ...reported, file: toPosix(path.relative(opts.root, abs!)) };
     let lines = fileLines.get(f.file);
     if (lines === undefined) {
-      lines = (units.get(f.file)?.content ?? readFileSync(abs, 'utf8')).split('\n');
+      lines = (units.get(f.file)?.content ?? content).split('\n');
       fileLines.set(f.file, lines);
     }
     const count = lines.length;
@@ -106,4 +111,14 @@ function usableReplacement(f: Finding, lines: readonly string[]): boolean {
   if (text.includes('```') || text.includes('\r') || text.split('\n').length > MAX_REPLACEMENT_LINES)
     return false;
   return text !== lines.slice(f.startLine - 1, f.endLine).join('\n');
+}
+
+/** The content of `abs` when it is a regular file, checked and read through the same descriptor. */
+function readRegularFile(abs: string): string | undefined {
+  const fd = openSync(abs, 'r');
+  try {
+    return fstatSync(fd).isFile() ? readFileSync(fd, 'utf8') : undefined;
+  } finally {
+    closeSync(fd);
+  }
 }
