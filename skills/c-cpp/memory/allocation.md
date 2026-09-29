@@ -8,6 +8,23 @@ activation:
     - '\b(?:malloc|calloc|realloc|reallocarray|aligned_alloc|posix_memalign|strn?dup)\s*\('
   examples:
     - 'int *p = malloc(n * sizeof *p);'
+checks:
+  - id: realloc-overwrites-pointer
+    language: [C, Cpp]
+    message: realloc result assigned to the same pointer — when realloc fails it returns NULL and the original block leaks (and the pointer is lost)
+    severity: major
+    category: resource-leak
+    confidence: 0.7
+    rule:
+      any:
+        - pattern: $P = realloc($P, $$$)
+        - pattern: $P = ($T)realloc($P, $$$)
+    examples:
+      - "void grow(char **buf, size_t n) {\n  *buf = realloc(*buf, n);\n}"
+      - "void grow(struct vec *v) {\n  v->items = realloc(v->items, v->cap * 2);\n}"
+      - "void grow(char **buf, size_t n) {\n  *buf = (char *)realloc(*buf, n);\n}"
+    counterexamples:
+      - "int grow(char **buf, size_t n) {\n  char *tmp = realloc(*buf, n);\n  if (!tmp) return -1;\n  *buf = tmp;\n  return 0;\n}"
 sources:
   - https://man7.org/linux/man-pages/man3/malloc.3.html
   - https://en.cppreference.com/w/c/memory/realloc

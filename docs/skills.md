@@ -81,8 +81,8 @@ sources:
   files before the review when `ast-grep` is on PATH; a match on a changed line becomes a hint the model
   confirms or rejects. Up to 10 per skill, each with `id`, `language` (one or a list: `[TypeScript, Tsx,
   JavaScript]`), `rule` (plus optional `constraints`/`utils`), `message`, optional `severity`, `category`
-  and `confidence` (default 0.5), and `examples` it must match (tested with the bundled dev copy of
-  ast-grep). `fix`, `transform` and custom languages are refused; the repository's `sgconfig.yml` and
+  and `confidence` (default 0.5), `examples` it must match and `counterexamples` of correct code it must not
+  match (both tested with the bundled dev copy of ast-grep). `fix`, `transform` and custom languages are refused; the repository's `sgconfig.yml` and
   ignore files are never read. A check pays off where a regex cannot tell: an `async` callback passed to
   `forEach`, a `defer` inside a loop but not inside a closure.
 

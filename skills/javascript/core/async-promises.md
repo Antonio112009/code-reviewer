@@ -28,6 +28,9 @@ checks:
     examples:
       - 'items.forEach(async (item) => { await save(item); });'
       - 'ids.forEach(async id => remove(id));'
+    counterexamples:
+      - 'for (const item of items) { await save(item); }'
+      - 'await Promise.all(items.map(async (item) => save(item)));'
   - id: async-promise-executor
     language: [TypeScript, Tsx, JavaScript]
     message: async Promise executor — an error thrown inside becomes a separate unhandled rejection and the outer promise never settles
@@ -39,6 +42,8 @@ checks:
         - pattern: new Promise(async function ($$$P) { $$$B })
     examples:
       - 'const p = new Promise(async (resolve) => { resolve(await load()); });'
+    counterexamples:
+      - 'const p = new Promise((resolve) => setTimeout(resolve, 10));'
 sources:
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function

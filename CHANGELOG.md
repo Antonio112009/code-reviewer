@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Six more structural checks** (ast-grep, when it is on PATH): `realloc` result written over the pointer it
+  frees on failure (C/C++), `WaitGroup.Add` inside the goroutine it counts (Go), `useEffect` starting an
+  interval or listener without a cleanup (React), strings compared with `==` (Java), empty `catch` blocks
+  (Java, JavaScript/TypeScript, C#), `async void` methods that are not event handlers (C#). Every check now
+  also lists `counterexamples` — correct code it must not flag — and the library test runs both.
 - **Which skills find bugs.** A finding names the checklist that led to it ("from checklist: …" in the
   reports), and `code-reviewer skills usage` shows, over the saved runs, how many chunks each skill was in and
   how many findings it led to — the skills that never help become visible.

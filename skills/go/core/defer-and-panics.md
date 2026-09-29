@@ -37,6 +37,9 @@ checks:
             - kind: method_declaration
     examples:
       - "func f(names []string) {\n\tfor _, n := range names {\n\t\tfile, _ := os.Open(n)\n\t\tdefer file.Close()\n\t}\n}"
+    counterexamples:
+      - "func f(names []string) {\n\tfor _, n := range names {\n\t\tfunc() {\n\t\t\tfile, _ := os.Open(n)\n\t\t\tdefer file.Close()\n\t\t}()\n\t}\n}"
+      - "func g() {\n\tdefer done()\n}"
 sources:
   - https://go.dev/ref/spec#Handling_panics
   - https://go.dev/ref/spec#Defer_statements

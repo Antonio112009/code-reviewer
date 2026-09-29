@@ -91,7 +91,7 @@ function trustedBin(): string {
 }
 
 describe.skipIf(!HAS_AST_GREP)('with ast-grep', () => {
-  it('every check in the library matches its examples', async () => {
+  it('every check in the library matches its examples and none of its counterexamples', async () => {
     const skills = await loadSkills(undefined, () => {});
     const checks = skills.flatMap((s) => s.checks ?? []);
     expect(checks.length).toBeGreaterThan(0);
@@ -100,6 +100,8 @@ describe.skipIf(!HAS_AST_GREP)('with ast-grep', () => {
       mkdirSync(dir, { recursive: true });
       const ext = AST_GREP_LANGUAGES[c.language[0]!][0];
       for (const [j, e] of c.examples.entries()) writeFileSync(path.join(dir, `ex${j}${ext}`), `${e}\n`);
+      for (const [j, e] of (c.counterexamples ?? []).entries())
+        writeFileSync(path.join(dir, `ok${j}${ext}`), `${e}\n`);
       writeFileSync(
         path.join(dir, 'rules.yml'),
         ruleDocuments({ ...c, language: [c.language[0]!] }, 0).join('\n---\n'),
@@ -121,6 +123,9 @@ describe.skipIf(!HAS_AST_GREP)('with ast-grep', () => {
       );
       for (const j of c.examples.keys()) {
         expect(matched.has(`ex${j}${ext}`), `${c.skill}#${c.id} example ${j + 1}`).toBe(true);
+      }
+      for (const j of (c.counterexamples ?? []).keys()) {
+        expect(matched.has(`ok${j}${ext}`), `${c.skill}#${c.id} counterexample ${j + 1}`).toBe(false);
       }
     }
   });

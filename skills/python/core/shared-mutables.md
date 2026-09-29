@@ -37,6 +37,8 @@ checks:
     examples:
       - "def add(item, into=[]):\n    into.append(item)"
       - "def configure(opts: dict = {}):\n    pass"
+    counterexamples:
+      - "def add(item, into=None):\n    into = [] if into is None else into"
 sources:
   - https://docs.python.org/3/faq/programming.html#why-are-default-values-shared-between-objects
   - https://docs.python.org/3/faq/programming.html#how-do-i-create-a-multidimensional-list

@@ -66,6 +66,8 @@ export const StructuralCheckSchema = z
     confidence: z.number().min(0).max(1).optional(),
     /** Code the rule must match (checked by the library test when ast-grep is installed). */
     examples: z.array(z.string().min(1)).min(1).max(10),
+    /** Correct code the rule must NOT match (checked like `examples`): the check's precision guard. */
+    counterexamples: z.array(z.string().min(1)).max(10).optional(),
   })
   .refine(
     (c) => JSON.stringify([c.rule, c.constraints ?? {}, c.utils ?? {}]).length <= MAX_RULE_CHARS,
