@@ -1,4 +1,5 @@
 import { SEVERITY_ORDER } from '../report/common';
+import { titleSimilarity } from '../review/dedupe';
 import type { Finding, RunRecord } from '../types';
 import type {
   AggregateMetrics,
@@ -18,7 +19,12 @@ export const DEFAULT_TOLERANCE = 3;
 /** Drop reasons of the filters after the review: self-critique and the confidence / severity thresholds. */
 export const FILTER_REASONS: readonly string[] = ['critique', 'below-threshold', 'below-severity'];
 
-type Located = Pick<Finding, 'file' | 'startLine' | 'endLine'> & { confidence?: number };
+/** A finding about the defect's topic: title similarity to its note (or the case title) at least this. */
+const TOPIC_SIMILARITY = 0.15;
+/** A leftover finding this similar to the matched one reports the same defect again. */
+const REPEAT_SIMILARITY = 0.3;
+
+type Located = Pick<Finding, 'file' | 'startLine' | 'endLine'> & { confidence?: number; title?: string };
 
 /** `./src\\a.ts` → `src/a.ts`: posix separators, no `.` segments, no leading `./` or `/`. */
 export function normalizePath(p: string): string {
@@ -69,6 +75,8 @@ function fitOf(f: Located, d: ExpectedDefect, tolerance: number): Fit | undefine
 
 interface Pair {
   fit: Fit;
+  /** Title similarity to the defect's description (0 without one). */
+  topic: number;
   confidence: number;
   finding: number;
   defect: number;
@@ -82,16 +90,23 @@ function candidatePairs(
   expected: readonly ExpectedDefect[],
   findings: readonly Located[],
   tolerance: number,
+  topics: readonly (string | undefined)[] = [],
 ): Pair[] {
   const pairs: Pair[] = [];
   findings.forEach((f, finding) => {
     expected.forEach((d, defect) => {
       const r = fitOf(f, d, tolerance);
-      if (r) pairs.push({ fit: r, confidence: f.confidence ?? 0, finding, defect });
+      const about = topics[defect];
+      const topic = about && f.title ? titleSimilarity(f.title, about) : 0;
+      if (r) pairs.push({ fit: r, topic, confidence: f.confidence ?? 0, finding, defect });
     });
   });
+  // Among the findings within tolerance of a defect, one about the defect's topic beats a closer one about
+  // something else (several real issues often sit next to a planted one).
+  const onTopic = (p: Pair) => (p.topic >= TOPIC_SIMILARITY ? 1 : 0);
   return pairs.sort(
     (a, b) =>
+      onTopic(b) - onTopic(a) ||
       a.fit.gap - b.fit.gap ||
       b.fit.iou - a.fit.iou ||
       b.confidence - a.confidence ||
@@ -103,8 +118,10 @@ function candidatePairs(
 export interface MatchResult {
   /** One finding per matched defect (indices into the inputs). */
   matched: Array<{ defect: number; finding: number }>;
-  /** Further findings on an already matched defect. */
+  /** Further reports of an already matched defect (a title like the matched finding's). */
   duplicates: Array<{ defect: number; finding: number }>;
+  /** Other findings next to a matched defect that name a different issue. */
+  nearby: Array<{ defect: number; finding: number }>;
   /** Findings near no expected defect. */
   unmatched: number[];
 }
@@ -118,8 +135,9 @@ export function matchFindings(
   expected: readonly ExpectedDefect[],
   findings: readonly Located[],
   tolerance = DEFAULT_TOLERANCE,
+  topics: readonly (string | undefined)[] = expected.map((d) => d.note),
 ): MatchResult {
-  const pairs = candidatePairs(expected, findings, tolerance);
+  const pairs = candidatePairs(expected, findings, tolerance, topics);
   const defectOf = new Map<number, number>();
   const findingOf = new Map<number, number>();
   for (const p of pairs) {
@@ -131,15 +149,25 @@ export function matchFindings(
     .map(([defect, finding]) => ({ defect, finding }))
     .sort((a, b) => a.defect - b.defect);
   const duplicates: MatchResult['duplicates'] = [];
+  const nearby: MatchResult['nearby'] = [];
   const unmatched: number[] = [];
-  findings.forEach((_, fi) => {
+  findings.forEach((f, fi) => {
     if (defectOf.has(fi)) return;
     // Pairs are sorted: the first one of this finding is its best fit (every defect it fits is taken).
     const best = pairs.find((p) => p.finding === fi);
-    if (best) duplicates.push({ defect: best.defect, finding: fi });
-    else unmatched.push(fi);
+    if (!best) {
+      unmatched.push(fi);
+      return;
+    }
+    const kept = findings[findingOf.get(best.defect)!]!;
+    const same =
+      (f.startLine === kept.startLine && f.endLine === kept.endLine) ||
+      (f.title !== undefined &&
+        kept.title !== undefined &&
+        titleSimilarity(f.title, kept.title) >= REPEAT_SIMILARITY);
+    (same ? duplicates : nearby).push({ defect: best.defect, finding: fi });
   });
-  return { matched, duplicates, unmatched };
+  return { matched, duplicates, nearby, unmatched };
 }
 
 export function findingRef(f: Finding): FindingRef {
@@ -163,6 +191,7 @@ const ZERO: Omit<Metrics, 'recall' | 'precision' | 'f1' | 'rawRecall' | 'rawPrec
   missed: 0,
   unexpected: 0,
   duplicates: 0,
+  nearby: 0,
   falsePositives: 0,
   underrated: 0,
   lost: 0,
@@ -227,12 +256,17 @@ export type RunScore = Omit<CaseRun, 'repeat' | 'status' | 'error' | 'runId' | '
 export function scoreRun(
   expected: readonly ExpectedDefect[],
   run: ScoredRun,
-  opts: { tolerance?: number; durationMs?: number } = {},
+  opts: { tolerance?: number; durationMs?: number; title?: string } = {},
 ): RunScore {
   const tolerance = opts.tolerance ?? DEFAULT_TOLERANCE;
   const clean = expected.length === 0;
   const findings = run.findings;
-  const match = matchFindings(expected, findings, tolerance);
+  const match = matchFindings(
+    expected,
+    findings,
+    tolerance,
+    expected.map((d) => d.note ?? opts.title),
+  );
   const matched = match.matched.map(({ defect, finding }) => {
     const f = findings[finding]!;
     const floor = expected[defect]!.severity;
@@ -265,6 +299,7 @@ export function scoreRun(
     unexpected: clean ? 0 : leftover.length,
     falsePositives: clean ? leftover.length : 0,
     duplicates: match.duplicates.length,
+    nearby: match.nearby.length,
     underrated: matched.filter((m) => m.underrated).length,
     lost: lost.length,
     saved: saved.length,
@@ -285,6 +320,10 @@ export function scoreRun(
     unexpected: clean ? [] : leftover,
     falsePositives: clean ? leftover : [],
     duplicates: match.duplicates.map(({ defect, finding }) => ({
+      defect,
+      finding: findingRef(findings[finding]!),
+    })),
+    nearby: match.nearby.map(({ defect, finding }) => ({
       defect,
       finding: findingRef(findings[finding]!),
     })),
@@ -309,6 +348,7 @@ export function erroredRun(expected: readonly ExpectedDefect[], durationMs = 0):
     unexpected: [],
     falsePositives: [],
     duplicates: [],
+    nearby: [],
     lost: [],
     saved: [],
   };

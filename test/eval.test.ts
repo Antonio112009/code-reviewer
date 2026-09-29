@@ -868,3 +868,33 @@ describe('code-reviewer eval (CLI)', () => {
     expect(none.stderr).toMatch(/No case matches/);
   });
 });
+
+describe('matching next to a planted defect', () => {
+  const defect = {
+    file: 'src/auth/permissions.ts',
+    startLine: 17,
+    endLine: 18,
+    note: 'TTL passed in milliseconds to a cache that takes seconds',
+  };
+  const at = (startLine: number, endLine: number, title: string) => ({
+    file: 'src/auth/permissions.ts',
+    startLine,
+    endLine,
+    title,
+  });
+
+  it('credits the finding about the defect, not the closest one, and tells repeats from other issues', () => {
+    const findings = [
+      at(17, 18, 'Cache failures break the permission check; empty result cached'),
+      at(7, 27, 'TTL passed in milliseconds to a seconds-based cache; revoked permissions persist'),
+      at(16, 18, 'TTL in milliseconds given to a seconds-based cache helper'),
+    ];
+    const m = matchFindings([defect], findings);
+    expect(m.matched).toEqual([{ defect: 0, finding: 2 }]); // on topic, and the closest of those
+    expect(m.duplicates).toEqual([{ defect: 0, finding: 1 }]);
+    expect(m.nearby).toEqual([{ defect: 0, finding: 0 }]);
+    // without a description, the closest finding wins as before
+    const { note: _note, ...bare } = defect;
+    expect(matchFindings([bare], findings).matched).toEqual([{ defect: 0, finding: 0 }]);
+  });
+});

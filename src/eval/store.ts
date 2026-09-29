@@ -30,6 +30,8 @@ const MetricsSchema = z.object({
   missed: count,
   unexpected: count,
   duplicates: count,
+  // results saved before the split have none
+  nearby: count.default(0),
   falsePositives: count,
   underrated: count,
   lost: count,

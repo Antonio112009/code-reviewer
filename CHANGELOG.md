@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Eval matching tells issues apart.** When several findings sit next to a labelled defect, the one about the
+  defect (its `note`, else the case title) is credited rather than the closest one, and the rest are split into
+  duplicates (the same defect again) and other issues next to it, listed for labelling. Sonnet 5.5 reported
+  several real bugs next to planted ones that used to show up as "duplicates".
 - **Claude Sonnet 5.5.** The Anthropic API provider reviews with `claude-sonnet-5-5` by default (was
   `claude-sonnet-5`); the Claude Code, API and Bedrock model lists include it. Claude Code 2.1.284 already
   maps its `sonnet` alias to it. Same price per token as Sonnet 5; on AACR-Bench ctx30 it matched Sonnet 5

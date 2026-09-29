@@ -152,7 +152,11 @@ export async function runEval(opts: EvalOptions): Promise<EvalResult> {
       });
       const run = outcome.run!;
       if (run.cost?.basis.length) costCurrency ??= run.cost.currency;
-      const score = scoreRun(c.expect, run, { tolerance, durationMs: Date.now() - runStarted });
+      const score = scoreRun(c.expect, run, {
+        tolerance,
+        durationMs: Date.now() - runStarted,
+        title: c.title,
+      });
       // Every chunk failed: nothing was reviewed, which is an error rather than a clean result.
       if (run.status === 'failed') score.metrics.errors = 1;
       return {
