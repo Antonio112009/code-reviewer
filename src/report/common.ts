@@ -307,14 +307,19 @@ export function analyzersSummary(
 
 /** Skills with the number of chunks that used them, most used first. */
 export function skillUsage(
-  run: Pick<RunRecord, 'chunks' | 'skillsUsed'>,
-): Array<{ id: string; chunks: number }> {
+  run: Pick<RunRecord, 'chunks' | 'skillsUsed'> & Partial<Pick<RunRecord, 'findings' | 'advisory'>>,
+): Array<{ id: string; chunks: number; findings: number }> {
   const counts = new Map<string, number>();
   for (const c of run.chunks) for (const s of new Set(c.skills)) counts.set(s, (counts.get(s) ?? 0) + 1);
   for (const s of run.skillsUsed ?? []) if (!counts.has(s)) counts.set(s, 0);
+  // Kept findings the model attributed to a checklist (`checklist`).
+  const cited = new Map<string, number>();
+  for (const f of [...(run.findings ?? []), ...(run.advisory ?? [])]) {
+    if (f.checklist) cited.set(f.checklist, (cited.get(f.checklist) ?? 0) + 1);
+  }
   return [...counts]
-    .map(([id, chunks]) => ({ id, chunks }))
-    .sort((a, b) => b.chunks - a.chunks || a.id.localeCompare(b.id));
+    .map(([id, chunks]) => ({ id, chunks, findings: cited.get(id) ?? 0 }))
+    .sort((a, b) => b.findings - a.findings || b.chunks - a.chunks || a.id.localeCompare(b.id));
 }
 
 /** Tool calls by tool name across the run (run.toolUsage, else summed over chunks), most used first. */
@@ -434,4 +439,22 @@ export function coverageRows(run: RunRecord): Array<[string, number, string, boo
     f.opened === true,
     findings.get(f.path) ?? 0,
   ]);
+}
+
+/** Per skill across runs: chunks it was loaded into and kept findings the model attributed to it. */
+export function skillUsageAcross(
+  runs: ReadonlyArray<Parameters<typeof skillUsage>[0]>,
+): Array<{ id: string; chunks: number; findings: number }> {
+  const total = new Map<string, { chunks: number; findings: number }>();
+  for (const run of runs) {
+    for (const s of skillUsage(run)) {
+      const t = total.get(s.id) ?? { chunks: 0, findings: 0 };
+      t.chunks += s.chunks;
+      t.findings += s.findings;
+      total.set(s.id, t);
+    }
+  }
+  return [...total]
+    .map(([id, t]) => ({ id, ...t }))
+    .sort((a, b) => b.findings - a.findings || b.chunks - a.chunks || a.id.localeCompare(b.id));
 }

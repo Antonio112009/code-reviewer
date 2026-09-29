@@ -139,6 +139,7 @@ function renderFinding(f: Finding, n: number): string {
   }
   if (f.critique?.reason) lines.push('', `> **Critic:** ${mdLine(f.critique.reason)}`);
   const source = [
+    f.checklist ? `from checklist: ${mdLine(f.checklist)}` : '',
     f.skills.length ? `skills: ${f.skills.map(mdLine).join(', ')}` : '',
     `chunks: ${f.source.chunkIds.map(mdLine).join(', ')}`,
     f.source.model ? `model: ${mdLine(`${f.source.provider}:${f.source.model}`)}` : '',
@@ -201,7 +202,15 @@ function renderSkillsAndTools(run: RunRecord, out: string[]): void {
   const skills = skillUsage(run);
   if (skills.length) {
     out.push('## Skills used', '');
-    out.push(skills.map((s) => `${code(s.id)} ×${s.chunks}`).join(' · '), '');
+    out.push(
+      skills
+        .map(
+          (s) =>
+            `${code(s.id)} ×${s.chunks}${s.findings ? ` (${s.findings} finding${s.findings === 1 ? '' : 's'})` : ''}`,
+        )
+        .join(' · '),
+      '',
+    );
   }
   const tools = toolUsage(run);
   if (tools.length) {

@@ -192,6 +192,9 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
 
 ## Skills (`src/skills/`, `skills/`)
 
+- **Attribution.** Checklists are shown to the model as `### Name [id]`; a finding may name the one that led to
+  it (`checklist`), kept only when the chunk had that skill (`review/findings.ts#toFinding`). Reports count
+  findings per skill, and `skills usage` sums chunks and findings over the saved runs (`RunStore.recent`).
 - **Tree.** The skill id is its path (`javascript/react/effects`). Every folder has a `_group.yaml` with
   `name`, `description`, `category`, `priority`, `tier` and `detect`. Category, priority and tier are
   inherited by the skills below. A bullet marked `[full]` is left out at essential depth (see Review

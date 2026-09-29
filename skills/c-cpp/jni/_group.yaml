@@ -1,0 +1,11 @@
+name: JNI
+description: C/C++ code that talks to a JVM through the Java Native Interface (jni.h) — Android NDK, OpenCV and other Java bindings. Detected by a jni.h include or JNIEnv in the file.
+priority: 72
+detect:
+  languages: [c, cpp]
+  content:
+    - '#\s*include\s*[<"]jni\.h[>"]'
+    - '\bJNIEnv\b'
+  examples:
+    - '#include <jni.h>'
+    - 'JNIEXPORT void JNICALL Java_org_opencv_Core_run(JNIEnv *env, jclass cls)'

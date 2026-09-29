@@ -65,6 +65,13 @@ export const ReportedFindingSchema = z.object({
     .string()
     .optional()
     .describe('Id of the static-analysis hint (e.g. "H3") this finding confirms, if it is based on one'),
+  checklist: z
+    .string()
+    .max(200)
+    .optional()
+    .describe(
+      'Id of the technology checklist (shown in brackets) whose item led to this finding, if one did',
+    ),
 });
 export type ReportedFinding = z.infer<typeof ReportedFindingSchema>;
 
