@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **What changed since the previous review.** After a new push, the pull request summary lists the findings
+  that were fixed, those no longer reported, the new ones, and how many are still open. The previous review
+  is remembered in a hidden marker of our own summary comment.
+
 ## 0.4.0 — 2026-09-29
 
 Reviews see further than the diff: every chunk gets an impact map of the unchanged code the change reaches, a

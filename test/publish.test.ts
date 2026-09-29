@@ -8,6 +8,7 @@ import { DEFAULT_CONFIG, type PublishSettings } from '../src/config/schema';
 import { projectConfigViolations } from '../src/config/template';
 import { GitRepo } from '../src/git/repo';
 import { ApiClient, type FetchLike, publishRun } from '../src/publish';
+import { parseState, sinceLastReview, stateMarker } from '../src/publish/history';
 import { anchorFor, commentableLines, loadCommentableDiff, planPublication } from '../src/publish/plan';
 import {
   extractFingerprints,
@@ -757,6 +758,49 @@ describe('GitHub publisher', () => {
         run: makeRun({ command: 'files', target: { kind: 'files', paths: ['src'] } }),
       }),
     ).rejects.toThrow(/Only branch reviews/);
+  });
+});
+
+describe('since the previous review', () => {
+  const OLD_HEAD = 'a'.repeat(40);
+  const FP_GONE = 'e'.repeat(32);
+  const previous = (): string =>
+    stateMarker(OLD_HEAD, [
+      finding({ id: 'x', title: 'Old defect that went away', fingerprint: FP_GONE, startLine: 3 }),
+      finding({ id: 'y', title: 'Still here', fingerprint: FP.f3 }),
+    ]);
+
+  it('records what a review reported and reads it back, refusing anything malformed', () => {
+    const state = parseState(`${SUMMARY_MARKER}\n${previous()}\nbody`);
+    expect(state).toMatchObject({ head: OLD_HEAD, findings: [{ fp: FP_GONE }, { fp: FP.f3 }] });
+    expect(parseState('<!-- code-reviewer:state !!! -->')).toBeUndefined();
+    const bad = Buffer.from(
+      JSON.stringify({ head: OLD_HEAD, findings: [{ fp: 'zz', file: 'a', line: 1 }] }),
+    ).toString('base64');
+    expect(parseState(`<!-- code-reviewer:state ${bad} -->`)).toBeUndefined();
+    expect(sinceLastReview(state, OLD_HEAD, [], new Set())).toBeUndefined(); // same commit: nothing to compare
+  });
+
+  it('lists what was fixed, dropped and added on the next publication', async () => {
+    const forge = fakeForge(
+      githubRoutes({
+        'GET /repos/acme/shop/issues/1/comments': () =>
+          json([
+            // someone else's comment carrying a state marker is ignored
+            comment('mallory', `${SUMMARY_MARKER}\n${stateMarker(OLD_HEAD, [])}`, 'User', 5),
+            comment('review-bot', `${SUMMARY_MARKER}\n${previous()}\nold summary`, 'User', 77),
+          ]),
+      }),
+    );
+    await publishGithub(forge);
+    const body = forge.find('PATCH /repos/acme/shop/issues/comments/77')[0]!.body.body as string;
+    expect(body).toContain('#### Since the previous review (`aaaaaaaa`)');
+    expect(body).toContain('- No longer reported (1):');
+    expect(body).toContain('Old defect that went away');
+    expect(body).toMatch(/- New \(\d+\):/);
+    expect(body).toContain('- Still open: 1');
+    // and it records this review for the next one
+    expect(parseState(body)?.head).toBe(headSha.toLowerCase());
   });
 });
 

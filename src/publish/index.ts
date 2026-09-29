@@ -8,6 +8,7 @@ import type { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
 import { githubAdapter, githubHeaders } from './github';
 import { gitlabAdapter, gitlabHeaders } from './gitlab';
+import { parseState, sinceLastReview } from './history';
 import { ApiClient, ApiError, type FetchLike, type SleepLike } from './http';
 import {
   type CommentableDiff,
@@ -219,6 +220,12 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
       ? await resolveFixed(adapter, opts.repo, run, findings, state.posted, notes, logger)
       : [];
   const staleInfo = stale ? { prHead: state.headSha, forced: opts.force === true } : undefined;
+  const since = sinceLastReview(
+    parseState(state.summary),
+    t.headSha,
+    findings,
+    new Set(resolved.map((r) => r.thread.fingerprint)),
+  );
   const summaryBody = renderSummary({
     run,
     forge: target.forge,
@@ -228,6 +235,7 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
     staleHead: staleInfo,
     resolved: resolved.length,
     notes,
+    ...(since ? { since } : {}),
   });
   const summary = await adapter.upsertSummary(summaryBody);
   return {

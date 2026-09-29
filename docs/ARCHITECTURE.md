@@ -331,6 +331,10 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
     side) and splits findings into inline comments (whole range inside one hunk, `publish.minSeverity`,
     `publish.maxInlineComments`, worst first) and summary entries. Fingerprints already posted by the same
     account are skipped. When the PR/MR head is not the reviewed commit, nothing goes inline unless `--force`.
+  - `history.ts`: the summary comment carries a hidden, base64-encoded state marker (head and up to 100
+    findings: fingerprint, file:line, severity, title). The next publication reads it back from our own
+    summary only, validates it with a strict schema, and renders "Since the previous review": fixed (thread
+    resolved), no longer reported, new, still open. Nothing is shown when the same commit is published again.
   - `github.ts` / `gitlab.ts` implement `ForgeAdapter` (`load` → head + posted fingerprints, `postInline`,
     `upsertSummary`, `openThreads`, `resolveThread`). GitHub: one `COMMENT` review, single comments after a
     422, the summary as an issue comment edited in place, review threads through GraphQL

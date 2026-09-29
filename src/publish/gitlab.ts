@@ -97,7 +97,12 @@ export function gitlabAdapter(target: PublishTarget, client: ApiClient, logger: 
           .filter(isOwn)
           .flatMap((note) => extractFingerprints(note.body)),
       );
-      return { headSha: headSha.toLowerCase(), posted };
+      const summary = (await client.paginate<GitlabNote>(`${mrPath}/notes?sort=asc&order_by=created_at`))
+        .filter(
+          (note) => isOwn(note) && typeof note.body === 'string' && note.body.startsWith(SUMMARY_MARKER),
+        )
+        .at(-1)?.body;
+      return { headSha: headSha.toLowerCase(), posted, ...(typeof summary === 'string' ? { summary } : {}) };
     },
 
     async postInline(comments): Promise<InlineResult> {
