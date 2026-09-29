@@ -563,7 +563,10 @@ The code under review, and therefore model output, is treated as untrusted.
   `ProviderRegistry`, runs saved in the eval directory; `project.*` and opt-in project analyzers
   dropped). Progress goes out as `EvalEvent`s; Ctrl+C yields an `interrupted` result.
 - **`metrics.ts`** (pure) — matches findings to expected defects one to one (same file, line ranges
-  within a tolerance, best fit first); duplicates, unexpected findings, false positives on clean cases;
+  within a tolerance, best fit first; a finding whose title matches the defect's `note` or the case title
+  beats a closer one about something else); duplicates (a title like the matched finding's) apart from other
+  issues next to a labelled defect (listed for labelling, not counted), unexpected findings, false positives on
+  clean cases;
   the self-critique effect from the run's removed findings; micro-averaged totals per pass.
 - **`compare.ts`** (pure) — deltas against a previous result over the common cases. **`store.ts`** —
   `result.json`, validated when loaded for `--compare`.

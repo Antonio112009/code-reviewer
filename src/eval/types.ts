@@ -60,7 +60,9 @@ export interface FindingRef {
  * - `found` / `missed`: expected defects matched / not matched by a reported finding;
  * - `unexpected`: findings on a case with expectations that match no expected defect (possibly real
  *   but unlabelled bugs); `falsePositives`: findings on a clean case;
- * - `duplicates`: further findings on an already matched defect (neither right nor wrong);
+ * - `duplicates`: further reports of an already matched defect (a similar title; neither right nor wrong);
+ * - `nearby`: other findings next to a matched defect that name a different issue (possibly real but
+ *   unlabelled, like `unexpected`, but not counted against precision so results stay comparable);
  * - `lost`: missed defects that a finding removed by self-critique or a threshold had matched;
  *   `saved`: removed findings that matched no expected defect (would-be unexpected / false positives);
  * - `rawRecall` / `rawPrecision`: the same ratios without those filters.
@@ -73,6 +75,7 @@ export interface Metrics {
   missed: number;
   unexpected: number;
   duplicates: number;
+  nearby: number;
   falsePositives: number;
   /** Matched findings below the expected severity. */
   underrated: number;
@@ -116,6 +119,7 @@ export interface CaseRun {
   unexpected: FindingRef[];
   falsePositives: FindingRef[];
   duplicates: Array<{ defect: number; finding: FindingRef }>;
+  nearby: Array<{ defect: number; finding: FindingRef }>;
   /** Missed defects that a removed finding had matched. */
   lost: Array<{ defect: number; finding: FindingRef }>;
   /** Removed findings that matched no expected defect. */

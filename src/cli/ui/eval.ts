@@ -118,12 +118,20 @@ function findingLine(caseId: string, f: FindingRef, times: number, theme: Theme)
   return `  ${clean(caseId)}  ${theme.c.cyan(location(f))}  ${truncate(clean(f.title), 80)}${count}`;
 }
 
-/** Unexpected findings or false positives of every case, the same finding of several runs once. */
-function noiseLines(result: EvalResult, pick: 'unexpected' | 'falsePositives', theme: Theme): string[] {
+/** Unexpected findings, false positives or other findings next to a labelled defect, each finding once. */
+function noiseLines(
+  result: EvalResult,
+  pick: 'unexpected' | 'falsePositives' | 'nearby',
+  theme: Theme,
+): string[] {
   const lines: string[] = [];
   for (const c of result.cases) {
     const seen = new Map<string, { f: FindingRef; times: number }>();
-    for (const f of c.runs.flatMap((r) => r[pick])) {
+    const refs =
+      pick === 'nearby'
+        ? c.runs.flatMap((r) => (r.nearby ?? []).map((n) => n.finding))
+        : c.runs.flatMap((r) => r[pick]);
+    for (const f of refs) {
       const key = `${location(f)} ${f.title}`;
       const entry = seen.get(key);
       if (entry) entry.times++;
@@ -176,7 +184,7 @@ export function renderEvalSummary(result: EvalResult, theme: Theme): string {
   const lines = table(result, theme);
   lines.push('');
   lines.push(
-    `F1 ${pct(agg.f1)} ${theme.sym.dot} precision ${pct(agg.precision)} ${theme.sym.dot} ${plural(agg.duplicates, 'duplicate')} ${theme.sym.dot} ${plural(agg.failedChunks, 'failed chunk')} ${theme.sym.dot} ${formatTokens(agg.inputTokens)} in${agg.cachedInputTokens ? ` (+${formatTokens(agg.cachedInputTokens)} cached)` : ''}${agg.cacheWriteTokens ? ` · ${formatTokens(agg.cacheWriteTokens)} cache write` : ''} / ${formatTokens(agg.outputTokens)} out tokens${costText(agg, theme)}`,
+    `F1 ${pct(agg.f1)} ${theme.sym.dot} precision ${pct(agg.precision)} ${theme.sym.dot} ${plural(agg.duplicates, 'duplicate')} ${theme.sym.dot} ${agg.nearby ? `${agg.nearby} other next to labelled defects ${theme.sym.dot} ` : ''} ${plural(agg.failedChunks, 'failed chunk')} ${theme.sym.dot} ${formatTokens(agg.inputTokens)} in${agg.cachedInputTokens ? ` (+${formatTokens(agg.cachedInputTokens)} cached)` : ''}${agg.cacheWriteTokens ? ` · ${formatTokens(agg.cacheWriteTokens)} cache write` : ''} / ${formatTokens(agg.outputTokens)} out tokens${costText(agg, theme)}`,
   );
   const critique = critiqueLine(agg, theme);
   if (critique) lines.push(critique);
@@ -198,6 +206,13 @@ export function renderEvalSummary(result: EvalResult, theme: Theme): string {
     ...capped(
       'Unexpected (possibly real but unlabelled — add them to `expect` if they are)',
       noiseLines(result, 'unexpected', theme),
+      theme,
+    ),
+  );
+  lines.push(
+    ...capped(
+      'Other issues next to labelled defects (not counted — add them to `expect` if they are real)',
+      noiseLines(result, 'nearby', theme),
       theme,
     ),
   );
