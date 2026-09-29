@@ -5,7 +5,9 @@ import type { Command } from 'commander';
 import pc from 'picocolors';
 import { detectStack } from '../../context/stack';
 import type { GitRepo } from '../../git/repo';
+import { skillUsageAcross } from '../../report/common';
 import { chunkStackLine, techVersionsForChunk } from '../../review/planning';
+import { RunStore } from '../../runs/store';
 import type { SkillActivation } from '../../skills/activation';
 import {
   classifySkills,
@@ -147,6 +149,44 @@ export function registerSkillCommands(program: Command): void {
       process.stdout.write(
         pc.dim(
           `\nPer chunk, only skills matching that chunk's files, languages and code are used, within review.skillTokenBudget = ${config.review.skillTokenBudget} tokens.\n`,
+        ),
+      );
+    });
+
+  skills
+    .command('usage')
+    .description('which skills the saved runs loaded and how many findings each led to (the checklist field)')
+    .option('--runs <n>', 'how many recent runs to read', '50')
+    .option('--json', 'machine-readable output')
+    .action(async (opts: { runs: string; json?: boolean }, cmd: Command) => {
+      const globals = cmd.optsWithGlobals<GlobalOptions>();
+      const { repo, cwd, config } = await loadCliConfig(globals);
+      const limit = Number.parseInt(opts.runs, 10);
+      const runs = await new RunStore(path.resolve(repo?.root ?? cwd, config.output.dir)).recent(
+        Number.isFinite(limit) && limit > 0 ? limit : 50,
+      );
+      const rows = skillUsageAcross(runs);
+      if (opts.json) {
+        process.stdout.write(`${JSON.stringify({ runs: runs.length, skills: rows }, null, 2)}\n`);
+        return;
+      }
+      if (!rows.length) {
+        process.stdout.write(`No skills in ${runs.length} saved run(s).\n`);
+        return;
+      }
+      const width = Math.max(...rows.map((r) => r.id.length));
+      process.stdout.write(
+        `${pc.bold(`${'skill'.padEnd(width)}  chunks  findings  per chunk`)}\n${rows
+          .map(
+            (r) =>
+              `${r.id.padEnd(width)}  ${String(r.chunks).padStart(6)}  ${String(r.findings).padStart(8)}  ${r.chunks ? (r.findings / r.chunks).toFixed(2).padStart(9) : '        -'}`,
+          )
+          .join('\n')}\n`,
+      );
+      const idle = rows.filter((r) => r.chunks > 0 && r.findings === 0).length;
+      process.stdout.write(
+        pc.dim(
+          `\n${runs.length} run(s). ${idle} skill(s) were loaded but led to no finding; runs before this version carry no attribution.\n`,
         ),
       );
     });

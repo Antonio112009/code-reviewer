@@ -308,7 +308,11 @@ touches its topic, optionally gated on versions (`framework.react: ">=19"`).
 ```bash
 code-reviewer skills list javascript/react     # the tree, detection rules and sizes
 code-reviewer skills detect                    # your stack, versions and the skills that apply
+code-reviewer skills usage                     # over saved runs: chunks each skill was in, findings it led to
 ```
+
+A finding names the checklist that led to it (`from checklist: go/core/json` in the report), so `skills usage`
+shows which skills earn their place in the prompt and which never lead to anything.
 
 Add your own skills in `~/.code-reviewer/skills/` or `<repo>/.code-reviewer/skills/`. See
 [docs/skills.md](docs/skills.md) for the format.

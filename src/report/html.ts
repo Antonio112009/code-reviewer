@@ -112,6 +112,7 @@ function card(f, rejected, worth) {
     f.critique ? el('span', {}, 'critic: ' + f.critique.verdict + ' (reviewer ' + f.critique.originalConfidence.toFixed(2) + ')') : null,
     rule ? el('span', {}, (isStatic ? 'rule ' : 'confirms ') + rule) : null,
     f.author ? el('span', {}, 'author: ' + f.author.name + ' ', safeUrl(f.author.commitUrl) ? el('a', { href: safeUrl(f.author.commitUrl), target: '_blank', rel: 'noopener noreferrer' }, f.author.commit.slice(0, 8)) : f.author.commit.slice(0, 8)) : null,
+    f.checklist ? el('span', {}, 'from checklist: ' + f.checklist) : null,
     f.skills && f.skills.length ? el('span', {}, 'skills: ' + f.skills.join(', ')) : null,
     rejected ? el('span', {}, 'dropped: ' + (f.droppedReason || '')) : null,
     worth ? el('span', {}, 'worth a look: not posted, not gated') : null);
@@ -347,7 +348,7 @@ ${section('Rejected', rejected.length ? `<p class="muted">${esc(rejected.map((r)
 ${section('Refs', refsSection(run))}
 ${section('Detected stack', chips(stack.map((t) => [t.name, `${t.category} · ${t.score.toFixed(2)}`])))}
 ${section('Static analysis', analyzersSection(run))}
-${section('Skills used', chips(skills.map((s) => [s.id, `×${s.chunks}`])))}
+${section('Skills used', chips(skills.map((s) => [s.id, `×${s.chunks}${s.findings ? ` · ${s.findings} found` : ''}`])))}
 ${section('Tool usage', chips(tools.map((t) => [t.tool, `×${t.calls}`])))}
 ${section('Model fallbacks', fallbacks)}
 ${section('Coverage', coverageSection(run))}
