@@ -102,6 +102,9 @@ export const DEFAULT_TIMEOUTS: AcpTimeouts = {
   closeMs: 5_000,
 };
 
+/** npm's answer when `npm_config_offline` is set and the package (or one of its dependencies) is not cached. */
+const NOT_IN_NPM_CACHE = /\bENOTCACHED\b|only-if-cached/;
+
 export class AbortedError extends Error {
   constructor() {
     super('aborted');
@@ -136,6 +139,18 @@ export class AcpConnection {
     timeouts: AcpTimeouts = DEFAULT_TIMEOUTS,
     cfg: AcpProviderConfig = { type: 'acp', preset: preset.id },
   ): Promise<AcpConnection> {
+    if (endpoint.kind === 'process' && endpoint.spec.offlineFirst) {
+      // An adapter that npx has installed before starts from the cache, without asking the registry.
+      const offline = { ...endpoint.spec, env: { ...endpoint.spec.env, npm_config_offline: 'true' } };
+      const cached = new AcpConnection(preset, logger, timeouts, cfg);
+      try {
+        await cached.start({ kind: 'process', spec: offline });
+        return cached;
+      } catch (err) {
+        if (!NOT_IN_NPM_CACHE.test(err instanceof Error ? err.message : String(err))) throw err;
+        logger.debug('[acp] the adapter is not in the npm cache yet: fetching it');
+      }
+    }
     const c = new AcpConnection(preset, logger, timeouts, cfg);
     await c.start(endpoint);
     return c;
@@ -249,7 +264,12 @@ export class AcpConnection {
       );
     } catch (err) {
       await this.close();
-      throw new Error(`ACP initialize failed: ${describeError(err)}${this.stderrHint()}`);
+      // A silent npx is usually waiting for the npm registry (the first start of an adapter downloads it).
+      const waiting =
+        endpoint.kind === 'process' && endpoint.spec.via === 'npx' && this.stderrTail.length === 0
+          ? ' (npx printed nothing: it may be waiting for the npm registry)'
+          : '';
+      throw new Error(`ACP initialize failed: ${describeError(err)}${waiting}${this.stderrHint()}`);
     }
   }
 

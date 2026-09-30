@@ -11,6 +11,12 @@ export interface LaunchSpec {
   env: Record<string, string>;
   /** Human readable origin of the command (PATH binary, npx, config). */
   via: string;
+  /**
+   * `npx` launches: start from npm's cache first (`npm_config_offline`), so an adapter that is already
+   * installed starts without waiting for the registry (a slow registry otherwise stalls every start); when
+   * it is not in the cache yet, the start is repeated online.
+   */
+  offlineFirst?: boolean;
 }
 
 export interface ProcessOptions {
@@ -50,9 +56,9 @@ export function findExecutable(name: string): string | undefined {
 }
 
 /** `npx -y <pkg>` with npx resolved like any other program; undefined when npx is not installed. */
-function npx(pkg: string): Pick<LaunchSpec, 'command' | 'args'> | undefined {
+function npx(pkg: string): Pick<LaunchSpec, 'command' | 'args' | 'offlineFirst'> | undefined {
   const command = findTrustedExecutable('npx');
-  return command ? { command, args: ['-y', pkg] } : undefined;
+  return command ? { command, args: ['-y', pkg], offlineFirst: true } : undefined;
 }
 
 function fromConfig(cfg: AcpProviderConfig, extraEnv: Record<string, string> = {}): LaunchSpec | undefined {

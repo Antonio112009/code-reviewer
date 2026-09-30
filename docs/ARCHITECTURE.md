@@ -328,6 +328,11 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
 - **`presets.ts`** — for each agent: how to launch it, its read-only lever, and whether model/effort are
   set per session (config options) or per process (Copilot flags).
 - **`connection.ts`** — one agent process (its own process group, neutral cwd) plus an ACP client.
+  - An adapter launched through `npx` (`LaunchSpec.offlineFirst`) is started from npm's cache first
+    (`npm_config_offline=true`): `npx -y pkg@range` otherwise asks the registry at every start, and a slow
+    registry stalled starts until `initialize` timed out. Only when npm answers `ENOTCACHED` (the first use
+    of an adapter version) is the start repeated online. The adapter therefore changes version when the
+    preset's range changes or the cache is cleared, not on every patch release.
   - Each task gets a **fresh session** with our MCP server attached:
     `code-reviewer mcp-serve --root <snapshot> --kind findings --submit-file <tmp>`.
   - Model, effort and read-only mode are applied with `session/set_config_option`. The option list
