@@ -218,8 +218,12 @@ overstated headline over a verified defect is kept with a corrected `title` (`cr
 the reviewer's); a "not handled / not checked" claim needs the next layer read (callee, wrapper, callers); a
 claim resting on an external system's schema, limits or API that the repository does not show is `uncertain`
 with confidence at most 0.4 (below `advisoryConfidence`, so "worth a look" rather than a main finding);
-"probably false" is `rejected`, not `uncertain`; formally undefined but working behaviour, hardening advice
-without a failure path, test-only hygiene and harmless leftover logging are not defects.
+"probably false" is `rejected`, not `uncertain`; test-only hygiene and harmless leftover logging are not
+listed at all. At full depth the critic has three outcomes, not two: a claim that is wrong about the code is
+rejected; a true observation with no realistic way to fail (a redundant check, formally undefined but working
+behaviour, hardening advice) is confirmed as `info` with a confidence of at most 0.5 and lands under "worth a
+look"; everything else is a defect, with a lower severity when its impact is small. At essential depth the
+middle kind is rejected.
 
 Second opinion (`review.secondOpinion`, `--second-opinion`; on at full depth through `DEPTH_PRESETS`, off at
 essential): findings the critic kept with a confidence

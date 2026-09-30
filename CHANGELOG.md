@@ -2,11 +2,13 @@
 
 ## Unreleased
 
-- **The critic sees where the called functions are defined.** Under each finding's code, the critic now gets
-  the definitions of the functions its lines call. Verifiers did not look them up themselves, so a claim like
-  "the panic is not recovered" was confirmed although the handler behind the call recovers it. On the audited
-  AACR findings the three wrong findings that survived every earlier critic left the main report in both runs,
-  and its share of real findings went from 82-84% to 85-91%.
+- **The critic sees where the called functions are defined, and has a third outcome.** Under each finding's
+  code, the critic now gets the definitions of the functions its lines call; verifiers did not look them up
+  themselves, so "the panic is not recovered" was confirmed although the handler behind the call recovers it.
+  At full depth a finding that is true about the code but has no realistic way to fail (a redundant check,
+  hardening advice) is no longer rejected: it is listed as "worth a look". On the audited AACR findings the
+  three wrong findings that survived every earlier critic left the main report, no real finding was rejected,
+  and the main report is 90-93% real (82-84% before). The main report gets shorter and "worth a look" longer.
 - **Agent starts no longer wait for the npm registry.** The Claude and Codex adapters run through `npx`, which
   asked the registry at every start; when it answered slowly, reviews failed with "ACP initialize timed out
   after 60s" (one review in 30 in our benchmark runs). An adapter that is already installed now starts from
