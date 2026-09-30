@@ -4,6 +4,11 @@
 
 Fixes the install size of 0.5.1 (635 MB → about 200 MB) and makes skill attribution work on Claude.
 
+- **`code-reviewer upgrade`.** Updates an npm global install in place (retrying while a just-published version
+  is still reaching the registry) and prints the CHANGELOG sections between the old and the new version.
+  `--check` / `--json` only report, `--to <version>` installs an exact version. For pnpm, yarn, bun, npx, a
+  project dependency or a source checkout it prints the command to run. Interactive reviews say once a day
+  when a newer version exists (off in CI, with `--json`/`--quiet`, and with `CODE_REVIEWER_NO_UPDATE_CHECK=1`).
 - **Install size back to about 200 MB.** 0.5.1 installed 635 MB: npm installs every platform's optional
   package listed in a dependency's `npm-shrinkwrap.json`, so all eight ast-grep binaries were downloaded. The
   package no longer ships a shrinkwrap; its direct dependencies are pinned to the tested versions instead, and

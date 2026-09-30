@@ -45,6 +45,11 @@
                                        a summary comment, after the run and its reports are saved
 
  eval (cli/commands/eval.ts)   YAML cases → per case × --repeat: temp repo → runReview → score → result.json
+ upgrade (cli/commands/upgrade.ts, util/upgrade.ts)
+                               install kind (npm global / pnpm / yarn / bun / npx / project / source) →
+                               npm view → npm install --global (npm only; others get the command) →
+                               CHANGELOG sections in between. Interactive reviews ask the registry for the
+                               latest version once a day (cached in the OS cache dir) and print a notice.
 ```
 
 ## Key contracts
