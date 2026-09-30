@@ -8,17 +8,21 @@ interface Pkg {
 }
 
 describe('package metadata', () => {
-  it('ships the tested dependency tree (npm-shrinkwrap.json), which npm installs from the registry as is', () => {
-    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as Pkg;
-    const shrinkwrap = JSON.parse(readFileSync('npm-shrinkwrap.json', 'utf8')) as {
-      version: string;
+  it('ships no shrinkwrap and pins its direct dependencies to the tested versions', () => {
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as Pkg & {
+      dependencies: Record<string, string>;
+      optionalDependencies: Record<string, string>;
+    };
+    const lock = JSON.parse(readFileSync('package-lock.json', 'utf8')) as {
       packages: Record<string, { version?: string }>;
     };
-    expect(pkg.files).toContain('npm-shrinkwrap.json');
-    expect(shrinkwrap.version).toBe(pkg.version);
-    expect(shrinkwrap.packages['']?.version).toBe(pkg.version);
-    // npm ignores package-lock.json next to a shrinkwrap: a second lockfile would only drift
-    expect(existsSync('package-lock.json')).toBe(false);
+    // npm installs every platform's optional package listed in a dependency's shrinkwrap (os/cpu are
+    // ignored there): with the bundled ast-grep, 0.5.1 installed 635 MB instead of 200 MB.
+    expect(existsSync('npm-shrinkwrap.json')).toBe(false);
+    expect(pkg.files).not.toContain('npm-shrinkwrap.json');
+    for (const [name, version] of Object.entries({ ...pkg.dependencies, ...pkg.optionalDependencies })) {
+      expect(version, name).toBe(lock.packages[`node_modules/${name}`]?.version);
+    }
   });
 
   it('points repository.url at the exact GitHub repository (npm provenance compares it case-sensitively)', () => {

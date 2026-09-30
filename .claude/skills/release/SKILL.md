@@ -29,7 +29,7 @@ yourself.
    - Minor: new features.
    - If the user did not say which, ask.
 
-3. **Bump** without tagging, so `package.json` and `npm-shrinkwrap.json` stay in sync:
+3. **Bump** without tagging, so `package.json` and `package-lock.json` stay in sync:
    ```bash
    npm version X.Y.Z --no-git-tag-version
    ```
@@ -66,10 +66,15 @@ yourself.
    npm view @antonio112009/code-reviewer version --prefer-online
    gh release view vX.Y.Z
    ```
-   The package ships `npm-shrinkwrap.json`, so an install from the registry gets exactly the tested
-   dependency tree. The registry marks such versions: `npm view @antonio112009/code-reviewer@X.Y.Z
-   _hasShrinkwrap` must print `true`. npm applies a shrinkwrap only to packages from the registry, so an
-   install from a local or URL tarball resolves the ranges afresh: that is no test of it.
+   Then install it the way users do and check its size: one ast-grep platform package, about 200 MB.
+   ```bash
+   P=$(mktemp -d) && npm install -g @antonio112009/code-reviewer@X.Y.Z --prefix "$P" --prefer-online
+   ls "$P"/lib/node_modules/@antonio112009/code-reviewer/node_modules/@ast-grep   # cli + one cli-<platform>
+   du -sh "$P"/lib/node_modules/@antonio112009/code-reviewer && "$P"/bin/code-reviewer --version
+   ```
+   The package ships no `npm-shrinkwrap.json`: npm installs every platform's optional package listed in a
+   dependency's shrinkwrap (0.5.1 installed 635 MB). Direct dependencies are pinned to exact versions in
+   `package.json` instead; keep them exact when updating them.
 
 ## If something fails
 
