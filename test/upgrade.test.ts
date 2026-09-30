@@ -140,10 +140,11 @@ describe('update notice', () => {
     expect(
       await updateNotice('0.5.0', file, {}, answer('9.9.9\u001b]8;;https://evil.example\u0007')),
     ).toBeUndefined();
-    expect(existsSync(file)).toBe(false);
-    mkdirSync(path.dirname(file), { recursive: true });
-    writeFileSync(file, JSON.stringify({ checkedAt: Date.now(), latest: '9.9.9\u001b[2J' }));
-    expect(await readUpdateCheck(file)).toBeUndefined();
+    expect(() => readFileSync(file)).toThrow(/ENOENT/); // nothing cached
+    const cached = path.join(scratch, `notice${n++}`, 'update-check.json');
+    mkdirSync(path.dirname(cached), { recursive: true });
+    writeFileSync(cached, JSON.stringify({ checkedAt: Date.now(), latest: '9.9.9\u001b[2J' }));
+    expect(await readUpdateCheck(cached)).toBeUndefined();
   });
 
   it('runs only in an interactive terminal outside CI, unless turned off', () => {
@@ -236,6 +237,17 @@ describe.skipIf(process.platform === 'win32')('code-reviewer upgrade', () => {
     expect(await upgrade()).toBe(0);
     expect(existsSync(env.FAKE_LOG!)).toBe(false);
     expect(logs.join('\n')).toContain('Already on 0.5.0');
+    out = '';
+    await upgrade({ check: true });
+    expect(out).toBe('Already on 0.5.0, the latest version.\n');
+  });
+
+  it('says when this copy is ahead of the latest release', async () => {
+    env.FAKE_LATEST = '0.4.0';
+    expect(await upgrade({ check: true })).toBe(0);
+    expect(out).toBe('0.5.0 is newer than the latest release (0.4.0).\n');
+    expect(await upgrade()).toBe(0);
+    expect(existsSync(env.FAKE_LOG!)).toBe(false);
   });
 
   it('explains a permission error instead of retrying', async () => {
