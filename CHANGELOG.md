@@ -10,10 +10,10 @@
   changed code but never judged as defects. They have their own section in the reports and a short list in
   the pull request summary comment; they are never posted inline, exported to SARIF / Code Quality or
   counted by `--fail-on`, and `review.maxNotes` (5) caps them. `--no-notes` / `review.notes: false` turns
-  them off; at `essential` depth they are off. On AACR-Bench the review then matches 40% more of the human
-  reviewers' comments on ctx30 (F1 12.9% → 16.6%) and 20% more on 82 held-out pull requests (10.6% → 12.8%)
-  for the same cost; in a blind audit 60% of the notes were useful to a maintainer and 9% wrong before the
-  critic's check.
+  them off; at `essential` depth they are off. Measured with the critic's check in place: on AACR-Bench ctx30
+  F1 12.9% → 15.3% (two runs each) and on 82 held-out pull requests 10.6% → 13.9% (paired: +3.4 points, 95%
+  interval +1.2..+5.6), at the same cost and precision; in a blind audit 60% of the notes were useful to a
+  maintainer and 9% wrong before the critic's check.
 
 ### Evaluation
 
