@@ -17,6 +17,7 @@ package, and `code-reviewer eval` ignores it (it only reads `*.yaml` cases).
 | `harness.patch` | changes to the harness (below) |
 | `subsets/*.txt` | named subsets (one PR URL per line) for `run.sh --subset` |
 | `report.py` | recall by context level (Diff / File / Repo) and category, averaged over repeated runs |
+| `recritique.mts` | re-runs only the self-critique on the findings of a finished run: compares critic prompts on the same findings for about $1.5 |
 
 ## Running
 
@@ -271,7 +272,7 @@ findings are real: about 73% rather than the 36% the benchmark reports; 84% amon
 among "worth a look". The benchmark missed, for example, a fail-open login CSRF (cline), an SQL argument the
 C code never reads (timescaledb) and `mcp remove` no longer removing the server (gemini-cli).
 
-The critic was then re-run on the same 55 findings (`scratchpad prec/recritique.mts`, two runs per variant):
+The critic was then re-run on the same 55 findings (`evals/aacr/recritique.mts`, two runs per variant):
 
 | Critic | Real kept (of 40) | Noise kept (of 15) | Real share | Titles corrected |
 |---|---|---|---|---|
