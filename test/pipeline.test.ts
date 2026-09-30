@@ -105,6 +105,13 @@ describe('runReview (diff mode, mock provider)', () => {
     ]);
   });
 
+  it('records why each skill was picked', () => {
+    expect(run.chunks[0]!.skillReasons?.['practice/general-bugs']).toContain('always-on');
+    expect(
+      run.chunks[0]!.skillReasons?.['javascript/react/effects']?.some((r) => r.startsWith('content:')),
+    ).toBe(true);
+  });
+
   it('attributes authors via git blame', () => {
     expect(run.findings[0]!.author).toMatchObject({ name: 'Dev Two', email: 'two@example.com' });
   });

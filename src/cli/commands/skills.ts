@@ -176,10 +176,10 @@ export function registerSkillCommands(program: Command): void {
       }
       const width = Math.max(...rows.map((r) => r.id.length));
       process.stdout.write(
-        `${pc.bold(`${'skill'.padEnd(width)}  chunks  findings  per chunk`)}\n${rows
+        `${pc.bold(`${'skill'.padEnd(width)}  chunks  findings  per chunk  over budget`)}\n${rows
           .map(
             (r) =>
-              `${r.id.padEnd(width)}  ${String(r.chunks).padStart(6)}  ${String(r.findings).padStart(8)}  ${r.chunks ? (r.findings / r.chunks).toFixed(2).padStart(9) : '        -'}`,
+              `${r.id.padEnd(width)}  ${String(r.chunks).padStart(6)}  ${String(r.findings).padStart(8)}  ${r.chunks ? (r.findings / r.chunks).toFixed(2).padStart(9) : '        -'}  ${String(r.dropped).padStart(11)}`,
           )
           .join('\n')}\n`,
       );

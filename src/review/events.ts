@@ -40,6 +40,8 @@ export interface PlannedChunk {
   impact?: ImpactEntry[];
   tokens: number;
   skills: Array<{ id: string; reasons: string[] }>;
+  /** Skills that matched but did not fit the skill budget. */
+  skillsDropped?: string[];
   /** Why the files are grouped together. */
   groupReasons: string[];
   hints: number;

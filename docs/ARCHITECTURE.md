@@ -195,6 +195,11 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
 - **Attribution.** Checklists are shown to the model as `### Name [id]`; a finding may name the one that led to
   it (`checklist`), kept only when the chunk had that skill (`review/findings.ts#toFinding`). Reports count
   findings per skill, and `skills usage` sums chunks and findings over the saved runs (`RunStore.recent`).
+- **Selection record.** Each chunk record keeps why every skill was picked (`skillReasons`: `content:/re/`,
+  `stack:…`, `file:…`, `always-on`, …) and which matching skills did not fit `review.skillTokenBudget`
+  (`skillsDropped`). The plan, the markdown report ("Skills per chunk") and `skills usage` ("over budget")
+  show them. `test/skill-selection.test.ts` holds golden cases: a small change per technology must pick the
+  skills about it and none about other technologies.
 - **Tree.** The skill id is its path (`javascript/react/effects`). Every folder has a `_group.yaml` with
   `name`, `description`, `category`, `priority`, `tier` and `detect`. Category, priority and tier are
   inherited by the skills below. A bullet marked `[full]` is left out at essential depth (see Review

@@ -206,9 +206,9 @@ describe('report/common', () => {
     expect(stackSummary([{ id: 'lang.go', name: 'Go', category: 'language', score: 1 }])).toBe('Go');
     expect(analyzersSummary(analyzers)).toBe('secretlint ✓ 2 hints · patterns ✓ 5 hints · shellcheck –');
     expect(skillUsage(run)).toEqual([
-      { id: 'sql', chunks: 2, findings: 0 },
-      { id: 'react', chunks: 1, findings: 0 },
-      { id: 'unused-skill', chunks: 0, findings: 0 },
+      { id: 'sql', chunks: 2, findings: 0, dropped: 0 },
+      { id: 'react', chunks: 1, findings: 0, dropped: 0 },
+      { id: 'unused-skill', chunks: 0, findings: 0, dropped: 0 },
     ]);
     expect(toolUsage(run)).toEqual([
       { tool: 'read_file', calls: 14 },

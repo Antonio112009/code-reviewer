@@ -345,7 +345,8 @@ export function compareSkills(a: Skill, b: Skill): number {
  * 2. greedy fill by score (ties: id), skipping skills that do not fit;
  * 3. `extends` closure: parents of picked skills are added while the budget allows (`extends:<id>`).
  * Skills in `exclude` are never picked. The result is in a deterministic, cache-friendly order
- * (see {@link compareSkills}), independent of scores.
+ * (see {@link compareSkills}), independent of scores. Candidates that matched but did not fit the budget
+ * are pushed to `dropped` (best first), when given.
  */
 export function selectSkills(
   skills: Skill[],
@@ -353,6 +354,7 @@ export function selectSkills(
   selection: SkillSelection,
   budget: number,
   exclude: string[] = [],
+  dropped?: SkillMatch[],
 ): SkillMatch[] {
   if (selection === 'none') return [];
   const excluded = new Set(exclude);
@@ -375,7 +377,10 @@ export function selectSkills(
   const picked = new Map<string, SkillMatch>();
   let used = 0;
   for (const c of candidates) {
-    if (used + c.skill.tokens > budget) continue;
+    if (used + c.skill.tokens > budget) {
+      dropped?.push(c);
+      continue;
+    }
     picked.set(c.skill.id, c);
     used += c.skill.tokens;
   }

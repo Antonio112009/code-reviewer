@@ -308,9 +308,16 @@ export function analyzersSummary(
 /** Skills with the number of chunks that used them, most used first. */
 export function skillUsage(
   run: Pick<RunRecord, 'chunks' | 'skillsUsed'> & Partial<Pick<RunRecord, 'findings' | 'advisory'>>,
-): Array<{ id: string; chunks: number; findings: number }> {
+): Array<{ id: string; chunks: number; findings: number; dropped: number }> {
   const counts = new Map<string, number>();
+  const dropped = new Map<string, number>();
   for (const c of run.chunks) for (const s of new Set(c.skills)) counts.set(s, (counts.get(s) ?? 0) + 1);
+  for (const c of run.chunks) {
+    for (const s of new Set(c.skillsDropped ?? [])) {
+      dropped.set(s, (dropped.get(s) ?? 0) + 1);
+      if (!counts.has(s)) counts.set(s, 0);
+    }
+  }
   for (const s of run.skillsUsed ?? []) if (!counts.has(s)) counts.set(s, 0);
   // Kept findings the model attributed to a checklist (`checklist`).
   const cited = new Map<string, number>();
@@ -318,7 +325,7 @@ export function skillUsage(
     if (f.checklist) cited.set(f.checklist, (cited.get(f.checklist) ?? 0) + 1);
   }
   return [...counts]
-    .map(([id, chunks]) => ({ id, chunks, findings: cited.get(id) ?? 0 }))
+    .map(([id, chunks]) => ({ id, chunks, findings: cited.get(id) ?? 0, dropped: dropped.get(id) ?? 0 }))
     .sort((a, b) => b.findings - a.findings || b.chunks - a.chunks || a.id.localeCompare(b.id));
 }
 
@@ -444,17 +451,41 @@ export function coverageRows(run: RunRecord): Array<[string, number, string, boo
 /** Per skill across runs: chunks it was loaded into and kept findings the model attributed to it. */
 export function skillUsageAcross(
   runs: ReadonlyArray<Parameters<typeof skillUsage>[0]>,
-): Array<{ id: string; chunks: number; findings: number }> {
-  const total = new Map<string, { chunks: number; findings: number }>();
+): Array<{ id: string; chunks: number; findings: number; dropped: number }> {
+  const total = new Map<string, { chunks: number; findings: number; dropped: number }>();
   for (const run of runs) {
     for (const s of skillUsage(run)) {
-      const t = total.get(s.id) ?? { chunks: 0, findings: 0 };
+      const t = total.get(s.id) ?? { chunks: 0, findings: 0, dropped: 0 };
       t.chunks += s.chunks;
       t.findings += s.findings;
+      t.dropped += s.dropped;
       total.set(s.id, t);
     }
   }
   return [...total]
     .map(([id, t]) => ({ id, ...t }))
     .sort((a, b) => b.findings - a.findings || b.chunks - a.chunks || a.id.localeCompare(b.id));
+}
+
+/** Selection reasons from most to least telling: what the changed code matched before inherited detection. */
+const REASON_ORDER = [
+  'content:',
+  'file:',
+  'version:',
+  'static-hint',
+  'explicit',
+  'stack:',
+  'extends:',
+  'always-on',
+  'group:',
+  'language:',
+];
+
+/** The most telling reason a skill was selected (clipped), for one-line displays. */
+export function primaryReason(reasons: readonly string[]): string | undefined {
+  for (const prefix of REASON_ORDER) {
+    const hit = reasons.find((r) => r.startsWith(prefix));
+    if (hit) return hit.length > 48 ? `${hit.slice(0, 47)}…` : hit;
+  }
+  return reasons[0];
 }

@@ -490,6 +490,10 @@ export interface ChunkRecord {
   timeoutMs?: number;
   /** Tool calls by tool name (read_file, grep, …) made while reviewing this chunk. */
   toolCalls?: Record<string, number>;
+  /** Why each skill was picked (`content:/…/`, `stack:…`, `file:…`, `always-on`, …), by skill id. */
+  skillReasons?: Record<string, string[]>;
+  /** Skills that matched the chunk but did not fit `review.skillTokenBudget`. */
+  skillsDropped?: string[];
   /** `review.audit`: changed functions listed in the prompt and how many the model recorded as audited. */
   audit?: { listed: number; audited: number };
   /** Provider/model that actually reviewed the chunk (after any fallback). */

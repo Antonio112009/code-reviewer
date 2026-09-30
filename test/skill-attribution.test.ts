@@ -52,12 +52,12 @@ describe('skill attribution', () => {
       findings: [finding('go/core/json'), finding('go/core/json'), finding()],
     };
     expect(skillUsage(run)).toEqual([
-      { id: 'go/core/json', chunks: 1, findings: 2 },
-      { id: 'practice/general-bugs', chunks: 2, findings: 0 },
+      { id: 'go/core/json', chunks: 1, findings: 2, dropped: 0 },
+      { id: 'practice/general-bugs', chunks: 2, findings: 0, dropped: 0 },
     ]);
     expect(skillUsageAcross([run, { chunks: [chunk(['go/core/json'])], findings: [] }])).toEqual([
-      { id: 'go/core/json', chunks: 2, findings: 2 },
-      { id: 'practice/general-bugs', chunks: 2, findings: 0 },
+      { id: 'go/core/json', chunks: 2, findings: 2, dropped: 0 },
+      { id: 'practice/general-bugs', chunks: 2, findings: 0, dropped: 0 },
     ]);
   });
 });
