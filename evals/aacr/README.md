@@ -305,6 +305,9 @@ to a second verifier that reads further and decides):
 - On the audited findings (re-critique with `--first`, two runs) the second verifier rejected nothing and
   raised the main report from 25+7 and 24+4 (real + noise) to 27+6 and 26+5: what it adds is reading further,
   not refuting. The panic recovered behind `handler.ServeHTTP` (gofr) survives it too.
+- Eval corpus with a second opinion (34 cases, one run): 28/28 found, precision 97% (one unlabelled finding
+  about a cache error failing a permission check), 0 of 8 clean changes flagged, 9 second opinions, $4.64
+  against $4.15. It is on by default at full depth since then; essential depth was not measured.
 - A third pair (`c2-2`, `c2so-2`) is void: half its reviews failed on a network outage ("SSL certificate
   hostname mismatch", agent start timeouts). Check the run statuses before trusting a run with few findings.
 

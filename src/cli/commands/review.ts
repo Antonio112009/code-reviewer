@@ -440,7 +440,10 @@ export function addRunLimitOptions(cmd: Command): Command {
     )
     .option('--audit', 'experimental: audit every changed function one by one')
     .option('--deepen', 'experimental: a second look at chunks with findings, for other defects nearby')
-    .option('--second-opinion', 'a second verifier tries to refute findings the critic was not sure about')
+    .option(
+      '--second-opinion',
+      'a second verifier re-checks findings the critic was not sure about (default at full depth)',
+    )
     .option('--no-second-opinion', 'one verifier only')
     .option(
       '--expand <level>',
