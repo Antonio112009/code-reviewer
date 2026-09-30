@@ -5,7 +5,7 @@
 //   node scripts/ci/package-smoke.mjs                     # no build for this platform (musl): the review
 //                                                         # must still work, with ast-grep left out
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -35,6 +35,13 @@ try {
     ? path.join(prefix, 'node_modules', '@antonio112009', 'code-reviewer')
     : path.join(prefix, 'lib', 'node_modules', '@antonio112009', 'code-reviewer');
   const cli = path.join(pkg, 'dist', 'cli.js');
+  // npm must install one ast-grep platform package, never all of them (0.5.1 shipped a shrinkwrap that
+  // made npm install every platform's binary: 635 MB).
+  const scope = path.join(pkg, 'node_modules', '@ast-grep');
+  const platforms = (existsSync(scope) ? readdirSync(scope) : []).filter((n) => n.startsWith('cli-'));
+  console.log(`ast-grep platform packages: ${platforms.join(', ') || 'none'}`);
+  if (platforms.length > 1)
+    throw new Error(`more than one ast-grep platform package installed: ${platforms}`);
 
   const repo = path.join(work, 'repo');
   const git = (...args) =>

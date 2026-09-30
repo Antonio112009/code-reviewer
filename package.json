@@ -48,7 +48,6 @@
     "!evals/aacr",
     "README.md",
     "CHANGELOG.md",
-    "npm-shrinkwrap.json",
     "docs/assets/logo.svg",
     "LICENSE"
   ],
@@ -69,29 +68,29 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@agentclientprotocol/sdk": "^1.5.0",
-    "@ai-sdk/amazon-bedrock": "^5.0.97",
-    "@ai-sdk/anthropic": "^4.0.65",
-    "@ai-sdk/openai-compatible": "^3.0.57",
-    "@aws-sdk/credential-providers": "^3.1141.0",
-    "@clack/prompts": "^1.8.1",
-    "@modelcontextprotocol/server": "^2.1.0",
-    "@secretlint/core": "^13.0.6",
-    "@secretlint/secretlint-rule-preset-recommend": "^13.0.6",
-    "ai": "^7.0.118",
-    "aws4fetch": "^1.0.20",
-    "commander": "^15.0.0",
-    "es-module-lexer": "^3.0.2",
-    "execa": "^10.0.1",
-    "gpt-tokenizer": "^4.0.0",
-    "log-update": "^8.0.0",
-    "p-limit": "^7.3.3",
-    "picocolors": "^1.1.1",
-    "picomatch": "^4.0.7",
-    "smol-toml": "^1.9.0",
-    "terminal-link": "^5.0.0",
-    "yaml": "^2.9.1",
-    "zod": "^4.6.5"
+    "@agentclientprotocol/sdk": "1.5.0",
+    "@ai-sdk/amazon-bedrock": "5.0.97",
+    "@ai-sdk/anthropic": "4.0.65",
+    "@ai-sdk/openai-compatible": "3.0.57",
+    "@aws-sdk/credential-providers": "3.1141.0",
+    "@clack/prompts": "1.8.1",
+    "@modelcontextprotocol/server": "2.1.0",
+    "@secretlint/core": "13.0.6",
+    "@secretlint/secretlint-rule-preset-recommend": "13.0.6",
+    "ai": "7.0.118",
+    "aws4fetch": "1.0.20",
+    "commander": "15.0.0",
+    "es-module-lexer": "3.0.2",
+    "execa": "10.0.1",
+    "gpt-tokenizer": "4.0.0",
+    "log-update": "8.0.0",
+    "p-limit": "7.3.3",
+    "picocolors": "1.1.1",
+    "picomatch": "4.0.7",
+    "smol-toml": "1.9.0",
+    "terminal-link": "5.0.0",
+    "yaml": "2.9.1",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",
@@ -103,6 +102,6 @@
     "vitest": "^5.0.2"
   },
   "optionalDependencies": {
-    "@ast-grep/cli": "^0.45.3"
+    "@ast-grep/cli": "0.45.3"
   }
 }

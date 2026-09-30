@@ -7,6 +7,10 @@
   `--check` / `--json` only report, `--to <version>` installs an exact version. For pnpm, yarn, bun, npx, a
   project dependency or a source checkout it prints the command to run. Interactive reviews say once a day
   when a newer version exists (off in CI, with `--json`/`--quiet`, and with `CODE_REVIEWER_NO_UPDATE_CHECK=1`).
+- **Install size back to about 200 MB.** 0.5.1 installed 635 MB: npm installs every platform's optional
+  package listed in a dependency's `npm-shrinkwrap.json`, so all eight ast-grep binaries were downloaded. The
+  package no longer ships a shrinkwrap; its direct dependencies are pinned to the tested versions instead, and
+  CI checks that an install gets a single ast-grep binary.
 - **Skill attribution works with Claude.** Reviews on Claude Sonnet never filled a finding's `checklist`, so
   `skills usage` credited no findings to any skill. The prompt now asks for the id without its brackets (and
   brackets are stripped when a model copies them), and a finding that confirms a skill's ast-grep check is
