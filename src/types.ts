@@ -70,7 +70,7 @@ export const ReportedFindingSchema = z.object({
     .max(200)
     .optional()
     .describe(
-      'Id of the technology checklist (shown in brackets) whose item led to this finding, if one did',
+      'Id of the technology checklist (shown in brackets after its title, given without the brackets) with an item covering this defect; leave out only when no checklist covers it',
     ),
 });
 export type ReportedFinding = z.infer<typeof ReportedFindingSchema>;

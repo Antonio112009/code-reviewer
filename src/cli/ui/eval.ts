@@ -158,7 +158,8 @@ function missedLines(result: EvalResult, theme: Theme): string[] {
   for (const c of result.cases) {
     const runs = c.metrics.runs;
     for (const d of c.defects) {
-      if (runs === 0 || d.found >= runs) continue;
+      // An optional defect is a right answer when reported, never a miss when not.
+      if (runs === 0 || d.optional || d.found >= runs) continue;
       const rate = runs > 1 ? theme.c.dim(` (missed in ${runs - d.found}/${runs} runs)`) : '';
       const lost = d.lost > 0 ? theme.c.yellow(` ${theme.sym.dot} removed by critique/threshold`) : '';
       const note = d.note ? `  ${truncate(clean(d.note), 70)}` : '';

@@ -1060,6 +1060,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           if (hint && claimsHint(f, hint)) {
             claimed.add(hint.id);
             f.tool = { analyzer: hint.analyzer, ruleId: hint.ruleId };
+            // A skill's structural check (ruleId `skill#check`) that the model confirmed is that skill's find.
+            if (!f.checklist && hint.analyzer === 'ast-grep') f.checklist = hint.ruleId.split('#')[0];
             if (hint.nonRejectable) {
               f.nonRejectable = true;
               mustReport.get(hint.id)?.claimedBy.add(f.id);

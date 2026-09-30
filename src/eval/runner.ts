@@ -213,7 +213,7 @@ export async function runEval(opts: EvalOptions): Promise<EvalResult> {
     if (runs.length === 0) return undefined;
     const defects: DefectResult[] = c.expect.map((d) => ({ ...d, found: 0, lost: 0 }));
     for (const run of runs.filter((r) => isCounted(r.status))) {
-      for (const m of run.matched) defects[m.defect]!.found++;
+      for (const m of [...run.matched, ...run.acceptable]) defects[m.defect]!.found++;
       for (const l of run.lost) defects[l.defect]!.lost++;
     }
     return {

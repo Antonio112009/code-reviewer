@@ -67,8 +67,13 @@ export function toFinding(
   const file = completePath(normalizePath(reported.file, ctx.root), ctx.files ?? []);
   const startLine = Math.min(reported.startLine, reported.endLine);
   const endLine = Math.max(reported.startLine, reported.endLine);
-  // A checklist the chunk did not have is a guess: dropped rather than trusted.
-  const { checklist, ...rest } = reported;
+  // A checklist the chunk did not have is a guess: dropped rather than trusted. Models often copy the
+  // brackets the prompt shows around the id.
+  const { checklist: raw, ...rest } = reported;
+  const checklist = raw
+    ?.trim()
+    .replace(/^\[(.*)\]$/, '$1')
+    .trim();
   return {
     ...rest,
     ...(checklist && ctx.skills.includes(checklist) ? { checklist } : {}),
