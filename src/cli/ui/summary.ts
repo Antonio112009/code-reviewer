@@ -5,6 +5,7 @@ import {
   costLabel,
   coverageLabel,
   coverageStatus,
+  deepenAdviceText,
   failureAdvice,
   fallbackLabel,
   formatDuration,
@@ -210,6 +211,8 @@ export function renderSummary(run: RunRecord, ctx: SummaryContext): string {
       ...findingLines(run.advisory, ctx),
     );
   }
+  const tip = deepenAdviceText(run);
+  if (tip) out.push('', c.cyan(`${sym.arrow} ${clean(tip)}`));
   out.push('');
 
   const items = (name: string, list: string[]) => {
@@ -246,6 +249,12 @@ export function renderSummary(run: RunRecord, ctx: SummaryContext): string {
       section(theme, '', c.dim(`${sym.ellipsis} ${failed.length - maxFailed} more in the report`), width),
     );
   }
+  items(
+    'Second look',
+    run.chunks
+      .filter((ch) => ch.deepened !== undefined)
+      .map((ch) => `${clean(ch.id)} ${c.dim(`+${ch.deepened}`)}`),
+  );
   const recovered = run.chunks.flatMap((ch) => ch.recovery ?? []);
   items(
     'Recovered',

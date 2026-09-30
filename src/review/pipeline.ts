@@ -78,6 +78,7 @@ import type {
 import { newRunId, shortHash } from '../util/ids';
 import type { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
+import { deepenAdvice } from './advice';
 import { attributeFindings } from './attribution';
 import { coverageMap, type PartResult } from './coverage';
 import { type CritiqueCache, critiqueFindings } from './critique';
@@ -247,6 +248,8 @@ type PartOutcome = { id: string; files: string[]; spend: Spend[] } & (
       salvaged?: string;
       /** Distinct functions the model recorded as audited (`review.audit`). */
       audited?: number;
+      /** Findings a second look added (`review.deepen`; set when one ran). */
+      deepened?: number;
       /** Answered from the result cache; `saved` is what that answer took when it was made. */
       cached?: { saved?: { inputTokens: number; outputTokens: number } };
     }
@@ -993,7 +996,6 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         hints,
         stack: chunkStack.get(chunk.id),
         ...(config.review.audit ? { audit: true } : {}),
-        ...(config.review.deepen ? { deepen: true } : {}),
       });
       const buildTask = (
         chunk: Chunk,
@@ -1027,11 +1029,16 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         part: Chunk,
         hints: StaticHit[],
         route: CacheRoute,
+        /** A second look (`review.deepen`): what it was told was already found. */
+        secondLook?: unknown,
       ) =>
         reviewCacheKey({
           route,
           instructions: task.instructions,
-          prompt: reviewPromptIdentity(promptOptions(chunk, part, hints)),
+          prompt:
+            secondLook === undefined
+              ? reviewPromptIdentity(promptOptions(chunk, part, hints))
+              : { firstLook: reviewPromptIdentity(promptOptions(chunk, part, hints)), secondLook },
           readTools: task.readTools,
           git: task.git,
           maxOutputTokens: task.maxOutputTokens,
@@ -1179,20 +1186,30 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         part: Chunk,
         hints: StaticHit[],
         task: AgentTask,
-        notes: string[],
       ): Promise<void> => {
         const items = out.items ?? [];
         emit({ type: 'chunk-activity', chunkId: chunk.id, note: 'second look' });
         const id = `${part.id}-deepen`;
         const second: AgentTask = { ...task, label: id, prompt: `${task.prompt}\n\n${deepenSection(items)}` };
+        // Cached on its own: a first look reused from a run without --deepen still gets its second look.
+        const secondLook = items.map((i) => [i.file, i.startLine, i.endLine, i.title]);
+        const key = cache
+          ? cacheKeyFor(task, chunk, part, hints, currentRoute('review'), secondLook)
+          : undefined;
+        const entry = key ? await getReview(cache!, key, root) : undefined;
         let more: DoneOutcome;
-        try {
-          more = await reviewOnce(chunk, { ...part, id }, hints, second);
-        } catch (err) {
-          out.spend.push(...spendOf(err));
-          if (isAbort(err, req.signal)) throw err;
-          warn(`${id}: second look failed (${errorMessage(err)}); keeping the first review`);
-          return;
+        if (entry?.kind === 'result') {
+          more = await fromCache(entry, chunk, { ...part, id }, hints);
+        } else {
+          try {
+            more = await reviewOnce(chunk, { ...part, id }, hints, second);
+          } catch (err) {
+            out.spend.push(...spendOf(err));
+            if (isAbort(err, req.signal)) throw err;
+            warn(`${id}: second look failed (${errorMessage(err)}); keeping the first review`);
+            return;
+          }
+          await remember(more, second, chunk, part, secondLook);
         }
         out.spend.push(...more.spend);
         // A finding the second look repeats (same place, similar title) is dropped.
@@ -1212,11 +1229,17 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         for (const h of more.claimed) out.claimed.add(h);
         out.reads = [...new Set([...(out.reads ?? []), ...(more.reads ?? [])])];
         if (more.salvaged) out.salvaged = more.salvaged;
-        notes.push(`${part.id}: second look added ${fresh.length} finding(s)`);
+        out.deepened = (out.deepened ?? 0) + fresh.length;
       };
 
       /** Remembers a complete answer (an early, salvaged one is partial: never cached). */
-      const remember = async (out: DoneOutcome, task: AgentTask, chunk: Chunk, part: Chunk) => {
+      const remember = async (
+        out: DoneOutcome,
+        task: AgentTask,
+        chunk: Chunk,
+        part: Chunk,
+        secondLook?: unknown,
+      ) => {
         if (!cache || out.salvaged || out.cached) return;
         const reads = await hashReads(root, out.reads ?? []);
         if (!reads) return;
@@ -1224,7 +1247,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         const route = currentRoute('review');
         const usage = sumUsage(out.spend.map((x) => x.usage));
         const identities = new Map(out.hints.map((h) => [h.id, hintIdentity(h)]));
-        await cache.set('review', cacheKeyFor(task, chunk, part, out.hints, route), {
+        await cache.set('review', cacheKeyFor(task, chunk, part, out.hints, route, secondLook), {
           kind: 'result',
           items: mapHints(out.items ?? [], identities),
           provider: out.provider,
@@ -1310,7 +1333,11 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             cacheUse!.hits++;
             cacheUse!.saved.inputTokens += entry.usage?.inputTokens ?? 0;
             cacheUse!.saved.outputTokens += entry.usage?.outputTokens ?? 0;
-            return [await fromCache(entry, chunk, part, hints)];
+            const cached = await fromCache(entry, chunk, part, hints);
+            if (config.review.deepen && cached.findings.length > 0) {
+              await deepen(cached, chunk, part, hints, task);
+            }
+            return [cached];
           }
           const halves = entry?.kind === 'split' && level < MAX_SPLIT_LEVEL ? splitChunk(part) : undefined;
           if (halves) {
@@ -1323,10 +1350,11 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         }
         try {
           const out = await reviewOnce(chunk, part, hints, task);
-          if (config.review.deepen && out.findings.length > 0 && !out.salvaged) {
-            await deepen(out, chunk, part, hints, task, notes);
-          }
+          // The first look is cached alone (shared with runs without --deepen); the second look on its own.
           await remember(out, task, chunk, part);
+          if (config.review.deepen && out.findings.length > 0 && !out.salvaged) {
+            await deepen(out, chunk, part, hints, task);
+          }
           return [out];
         } catch (err) {
           const failure = failureKindOf(err, req.signal);
@@ -1458,6 +1486,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
               ...(last ? { provider: last.provider, model: last.model } : {}),
               attempts: done.reduce((n, d) => n + d.attempts, 0) + outcomes.length - done.length,
               ...(notes.length ? { recovery: notes } : {}),
+              ...(done.some((d) => d.deepened !== undefined)
+                ? { deepened: done.reduce((n, d) => n + (d.deepened ?? 0), 0) }
+                : {}),
               ...(config.review.audit
                 ? {
                     audit: {
@@ -1641,6 +1672,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     run.durationMs = Date.now() - startedAt;
     const cost = meter.summary();
     if (cost) run.cost = cost;
+    const deepenTip = deepenAdvice(run, config.review.deepen);
+    if (deepenTip) run.advice = { deepen: deepenTip };
     if (cacheUse) run.cache = cacheUse;
     await cache
       ?.autoPrune({

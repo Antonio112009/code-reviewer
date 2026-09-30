@@ -227,6 +227,9 @@ early return, code that must change together.
 - **Noise:** precision on real PRs held (37.2% vs 36.7%), but it reports more findings overall, minor ones and
   remarks about what the diff does not show (a missing lockfile) among them; on the eval corpus of planted
   defects precision fell from 100% to 87%.
+- **Suggested, not automatic:** after a review with findings, the summary and the markdown report suggest
+  `--deepen` with its estimated cost (also `advice.deepen` in the JSON). With the result cache on (the
+  default), the re-run takes its first looks from the cache and pays only for the second looks.
 - Off by default. `review.deepen: true` in `.code-reviewer/config.yaml` turns it on for a repository.
 
 ## Before you commit

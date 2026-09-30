@@ -496,6 +496,8 @@ export interface ChunkRecord {
   skillsDropped?: string[];
   /** `review.audit`: changed functions listed in the prompt and how many the model recorded as audited. */
   audit?: { listed: number; audited: number };
+  /** `review.deepen`: findings the second look added (set when one ran). */
+  deepened?: number;
   /** Provider/model that actually reviewed the chunk (after any fallback). */
   provider?: string;
   model?: string;
@@ -528,6 +530,14 @@ export interface FileCoverage {
   reason?: string;
   /** The model opened the file with a tool, beyond the code in its prompt. */
   opened?: boolean;
+}
+
+/** `advice.deepen`: a second look (`--deepen`) at the chunks that had findings, suggested after a run. */
+export interface DeepenAdvice {
+  /** Chunks a second look would review again. */
+  chunks: string[];
+  /** What it would add, estimated from the first looks' cost; absent when unknown. */
+  estimatedCost?: Money;
 }
 
 export interface RunRecord {
@@ -564,6 +574,8 @@ export interface RunRecord {
   chunks: ChunkRecord[];
   /** Which changed files the review covered, problem files first. */
   coverage?: FileCoverage[];
+  /** Suggested follow-ups (`--deepen`); advice only. */
+  advice?: { deepen?: DeepenAdvice };
   findings: Finding[];
   /**
    * Kept findings of lower confidence (below `review.advisoryConfidence`) or `info` severity: shown in the

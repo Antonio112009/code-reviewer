@@ -156,8 +156,6 @@ export function reviewPrompt(opts: {
   stack?: string;
   /** List the changed functions to audit (`review.audit`). */
   audit?: boolean;
-  /** A second look follows when the chunk has findings (`review.deepen`); only part of the cache identity. */
-  deepen?: boolean;
 }): string {
   const { target, chunk } = opts;
   const header =
@@ -250,7 +248,6 @@ export function reviewPromptIdentity(opts: Parameters<typeof reviewPrompt>[0]): 
     pass: chunk.pass ?? null,
     declarations: chunk.declarations ?? [],
     audit: opts.audit === true,
-    deepen: opts.deepen === true,
     impact: chunk.impact ?? [],
     hints: (opts.hints ?? []).map((h) => [
       h.analyzer,
