@@ -400,12 +400,14 @@ async function execute(
 /** Models, depth, critique, skills and thresholds: shared by `review`, `files` and `eval`. */
 export function addTuningOptions(cmd: Command): Command {
   return cmd
+    .optionsGroup('Models:')
     .option('--provider <id>', 'provider for the review (and critique, unless --critique-provider)')
     .option('--model <id>', 'model for the review role')
     .option('--reasoning <level>', `reasoning effort: ${REASONING_LEVELS.join('|')}`)
     .option('--critique-provider <id>', 'provider for the self-critique pass')
     .option('--critique-model <id>', 'model for the self-critique pass')
     .option('--critique-reasoning <level>', 'reasoning effort for the self-critique pass')
+    .optionsGroup('Depth and filters:')
     .option(
       '--depth <depth>',
       'essential (serious production issues only, fewer tokens) | full (every real defect)',
@@ -424,6 +426,7 @@ export function addTuningOptions(cmd: Command): Command {
 /** Chunk size, timeouts, chunking, the static pre-pass and model fallback: shared by `review`, `files` and `eval`. */
 export function addRunLimitOptions(cmd: Command): Command {
   return cmd
+    .optionsGroup('Advanced:')
     .option('--max-chunk-tokens <n>', 'token budget of code per chunk')
     .option('--timeout <seconds>', 'fixed timeout per LLM task (default: auto, scales with chunk size)')
     .option('--chunking <mode>', 'smart (related files together) | directory')
@@ -442,33 +445,58 @@ export function addRunLimitOptions(cmd: Command): Command {
 
 function addReviewOptions(cmd: Command): Command {
   const tuned = addTuningOptions(cmd)
-    .option('--authors', 'attribute findings to authors via git blame')
-    .option('--no-authors', 'do not attribute authors')
+    .optionsGroup('Output and CI:')
     .option('--format <list>', `report formats: ${REPORT_FORMATS.join(',')}`)
     .option('--out <dir>', 'also copy the reports into this directory')
-    .option('--concurrency <n>', 'parallel LLM calls')
-    .option('--max-cost <usd>', 'stop starting model calls once the run has spent this much (review.maxCost)')
     .option(
       '--fail-on <severity>',
       `exit with code 1 if a finding of this severity or worse remains (${SEVERITIES.join('|')})`,
     )
+    .option('--json', 'print the run (or the plan with --dry-run) as JSON on stdout')
+    .option('--dry-run', 'show files, chunks, skills and hints without calling any model')
+    .option('--plain', 'plain progress lines instead of the live dashboard')
+    .option('-y, --yes', 'never prompt interactively')
+    .option('--authors', 'attribute findings to authors via git blame')
+    .option('--no-authors', 'do not attribute authors')
+    .optionsGroup('Cost and speed:')
+    .option('--max-cost <usd>', 'stop starting model calls once the run has spent this much (review.maxCost)')
+    .option('--concurrency <n>', 'parallel LLM calls')
+    .option('--no-cache', 'review everything again: do not reuse or store cached model answers')
+    .optionsGroup('Advanced:')
     .option(
       '--analyzers <ids>',
       'also run these opt-in project analyzers (eslint,tsc,golangci-lint,phpstan,semgrep,osv-scanner)',
     );
-  return addRunLimitOptions(tuned)
-    .option('--no-cache', 'review everything again: do not reuse or store cached model answers')
-    .option('--plain', 'plain progress lines instead of the live dashboard')
-    .option('--dry-run', 'show files, chunks, skills and hints without calling any model')
-    .option('--json', 'print the run (or the plan with --dry-run) as JSON on stdout')
-    .option('-y, --yes', 'never prompt interactively');
+  return addRunLimitOptions(tuned);
 }
+
+/** Shown under `review --help`. */
+const REVIEW_EXAMPLES = `
+Examples:
+  Compare two branches, like a pull request (the changes of feature/login since it left main):
+    $ code-reviewer review --base main --head feature/login
+  The settings we measure with — every real defect; Sonnet reviews, Opus double-checks (the defaults):
+    $ code-reviewer review --base main --head feature/login --full
+  A release branch against the previous one, with reports written to a folder:
+    $ code-reviewer review --base origin/release/2.3 --head origin/release/2.4 --full --format md,html --out reports
+  What you are about to commit:
+    $ code-reviewer review --staged
+  CI gate that fails on major findings, capped at $5 of model spend:
+    $ code-reviewer review --base origin/main --fail-on major --max-cost 5
+  Comment on the branch's pull request:
+    $ code-reviewer review --base main --full --post
+  See the plan — files, chunks, skills, hints — without calling a model:
+    $ code-reviewer review --base main --head feature/login --dry-run
+
+A bare base name (main) means the freshly fetched remote branch; --head defaults to HEAD with unpushed commits.
+`;
 
 export function registerReviewCommands(program: Command): void {
   const review = addReviewOptions(
     program
       .command('review')
       .description('review the changes between two refs (like a pull request: merge-base(base, head)..head)')
+      .optionsGroup('What to review:')
       .option(
         '-b, --base <ref>',
         'base branch; a bare name means the freshly fetched remote branch (default: auto)',
@@ -491,11 +519,11 @@ export function registerReviewCommands(program: Command): void {
     process.exitCode = await execute('review', [], opts, cmd.optsWithGlobals());
   });
   addPublishTargetOptions(
-    review.option(
-      '--post',
-      'post the review to its GitHub pull request / GitLab merge request (see docs/ci.md)',
-    ),
+    review
+      .optionsGroup('Pull request comments:')
+      .option('--post', 'post the review to its GitHub pull request / GitLab merge request (see docs/ci.md)'),
   );
+  review.addHelpText('after', REVIEW_EXAMPLES);
 
   addReviewOptions(
     program

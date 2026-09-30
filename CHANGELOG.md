@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Clearer help.** `code-reviewer --help` groups the commands (review, results, setup, measure quality) and
+  shows examples; `review --help` groups its options (what to review, models, depth and filters, output and
+  CI, cost and speed, advanced, pull request comments) and ends with examples, starting with comparing two
+  branches. The README has a "Compare two branches" section.
+- **README badge.** The Node.js badge rendered as broken text on GitHub (a `>` in its alt text).
+
 ## 0.5.1 — 2026-09-30
 
 The skills' structural checks now work out of the box: ast-grep is installed with the package.
