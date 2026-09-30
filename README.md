@@ -269,6 +269,8 @@ Useful flags:
   changed declarations and their consumers (about twice the cost);
 - `--audit` (experimental): the prompt lists every changed function and the model audits each one, instead
   of stopping at the first defect of a function;
+- `--deepen` (experimental): a second look at every chunk with findings, for other defects in the same
+  functions — more defects found (AACR recall 6.6% → 8.4%), lower precision, about 50% more cost;
 - `--expand off|map|refs|deep`: related unchanged code per chunk — `map` (the default) lists where unchanged
   code uses the changed declarations and where the functions the new code calls are defined; `refs` adds
   excerpts of that code; `deep` also who calls those usages;

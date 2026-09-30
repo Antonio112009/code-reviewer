@@ -185,6 +185,17 @@ restoring state, edge-case inputs, parsed values, calls, callers — and to keep
 first defect. The model records each function in `submit_findings.audit`; the chunk record keeps
 `audit: { listed, audited }`. Aimed at the reviewer reporting one defect per place where several exist.
 
+### Second look (`review.deepen`, `--deepen`; experimental, off)
+
+After a chunk (or split part) is reviewed with at least one finding, `deepen` in `review/pipeline.ts` runs the
+same task again with `deepenSection` appended to its prompt: the findings so far ("do NOT report them again")
+and a checklist for the functions that hold them — calls that can fail, resources on every path, state on
+early returns, code that must change together. The prompt extends the first one, so its prefix comes from the
+prompt cache. New findings that repeat one (same file, overlapping lines, title similarity ≥ 0.5) are
+dropped; the rest join the part's findings and cached answer (`deepen` is part of the cache identity). A
+failed second look keeps the first review and its usage. Aimed at the reviewer reporting one defect per spot;
+AACR ctx30 numbers are in `evals/aacr/README.md`.
+
 ### Review passes (`review.passes`, `--passes`)
 
 `[general]` (the default) reviews each chunk once. A list of focused passes reviews every chunk once per
