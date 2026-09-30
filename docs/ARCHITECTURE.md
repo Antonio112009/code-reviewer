@@ -208,7 +208,11 @@ AACR ctx30 numbers are in `evals/aacr/README.md`.
 
 Every kept finding goes to the critic in batches per file with a code excerpt around its lines; in a diff
 review the excerpt marks the lines the change added or modified with `+`, so a pre-existing problem can be
-told apart. The critic's instructions (`critiqueInstructions`) come from a hand audit of AACR-Bench findings
+told apart. Under the excerpt, `calleeNotes` lists where the functions called on the reported lines are
+defined (`findDefinitions`, the search behind `find_symbol`; product code before tests, up to three per name,
+nothing for library calls or names defined in more than six places): verifiers did not look these up
+themselves, and a claim about what happens behind an interface or handler call can only be checked there.
+The critic's instructions (`critiqueInstructions`) come from a hand audit of AACR-Bench findings
 that matched no reference (`evals/aacr/README.md`): a finding is judged by its headline claim, but an
 overstated headline over a verified defect is kept with a corrected `title` (`critique.originalTitle` keeps
 the reviewer's); a "not handled / not checked" claim needs the next layer read (callee, wrapper, callers); a

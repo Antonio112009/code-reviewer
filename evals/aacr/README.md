@@ -280,8 +280,20 @@ The critic was then re-run on the same 55 findings (`evals/aacr/recritique.mts`,
 | + headline / callee / pre-existing rules | 36, 38 | 10, 11 | 78% | — |
 | + corrected titles, external claims ≤ 0.4 | 35, 37 | 10, 10 | 78-79% | 10, 12 |
 
-The three wrong findings survive most runs: two rest on HANA facts the repository does not show (the last
-variant lowers them to "worth a look" in one run of two), one on a panic recovered inside `handler.ServeHTTP`
+The main report (confidence ≥ 0.6) after a second opinion, two runs per variant:
+
+| Critic | Real in the main report | Noise in the main report | Real share |
+|---|---|---|---|
+| reworked critic + second opinion | 27, 26 | 6, 5 | 82-84% |
+| + callee definitions under each excerpt | 29, 29 | 3, 5 | 85-91% |
+
+With the definitions of the called functions listed under each excerpt, all three wrong findings left the main report in both runs:
+the critic read `handler.ServeHTTP` and refuted the lost panic recovery (the finding keeps its true part, a
+missing header, as "worth a look"), and both HANA claims became `uncertain` at 0.35-0.4 ("my recollection
+does not count as verification"). Real findings rejected: 7 and 3, against 5 and 3 before.
+
+Before that, the three wrong findings survived most runs: two rest on HANA facts the repository does not
+show (the last variant of the first table lowers them to "worth a look" in one run of two), one on a panic recovered inside `handler.ServeHTTP`
 that the critic never opened. The real findings lost are a formally undefined `reinterpret_cast` the project
 uses in twenty places and two the critic judged pre-existing.
 
