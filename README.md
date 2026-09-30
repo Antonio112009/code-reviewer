@@ -205,6 +205,7 @@ code-reviewer providers test claude --model sonnet
 | Skills | essential ones, 3.5k tokens per chunk | all, 6k tokens per chunk |
 | Fix required | yes, for every finding | when possible |
 | Self-critique | also drops real but low-impact findings; keeps confidence ≥ 0.7 | drops only claims it can refute (low impact lowers the severity); keeps confidence ≥ 0.3 |
+| Corrected titles | an overstated headline over a real defect is kept with a corrected title (the report shows the original) | same |
 | "Worth a look" | — | findings below confidence 0.6 and `info` findings: in the reports, not in PR comments, SARIF / Code Quality or `--fail-on` |
 
 ### A second look for important changes (`--deepen`, experimental)

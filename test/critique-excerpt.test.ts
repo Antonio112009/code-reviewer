@@ -71,3 +71,72 @@ describe('critique excerpts', () => {
     expect(prompt).toMatch(/^3 > export const x = a \/ 0;/m);
   });
 });
+
+describe('critic verdicts', () => {
+  it('apply a corrected title and keep the original in the critique', async () => {
+    const { critiqueFindings } = await import('../src/review/critique');
+    const finding = {
+      id: 'f1',
+      file: 'src/a.ts',
+      startLine: 3,
+      endLine: 3,
+      severity: 'major',
+      category: 'bug',
+      title: 'Parse failure silently drops the settings update',
+      description: 'A parse error skips the write.',
+      confidence: 0.8,
+      skills: [],
+      source: { chunkIds: ['c1'], provider: 'mock' },
+    } as never;
+    const scripted: Provider = {
+      id: 'mock',
+      kind: 'mock',
+      async run(task: AgentTask): Promise<AgentResult> {
+        expect(task.kind).toBe('verdicts');
+        return {
+          submission: {
+            calls: 1,
+            verdicts: [
+              {
+                id: 'f1',
+                verdict: 'confirmed',
+                confidence: 0.7,
+                reason: 'Not silent (the error is logged), but the update is dropped.',
+                severity: 'minor',
+                title: 'Parse failure drops the settings update',
+              },
+            ],
+          },
+          text: '',
+          toolCalls: 0,
+          warnings: [],
+        };
+      },
+      async dispose() {},
+    };
+    const out = await critiqueFindings([finding], {
+      provider: scripted,
+      reasoning: 'high',
+      mode: 'diff',
+      depth: 'full',
+      root: repo.root,
+      git: false,
+      readTools: false,
+      maxSteps: 5,
+      timeoutMs: 10_000,
+      concurrency: 1,
+      batchTokenBudget: 10_000,
+    });
+    expect(out.kept).toHaveLength(1);
+    expect(out.kept[0]).toMatchObject({
+      title: 'Parse failure drops the settings update',
+      severity: 'minor',
+      confidence: 0.7,
+      critique: {
+        verdict: 'confirmed',
+        originalTitle: 'Parse failure silently drops the settings update',
+        originalSeverity: 'major',
+      },
+    });
+  });
+});

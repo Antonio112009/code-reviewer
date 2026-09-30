@@ -139,8 +139,10 @@ describe('depth prompts', () => {
     for (const depth of ['essential', 'full'] as const) {
       const text = critiqueInstructions('diff', depth);
       expect(text).toMatch(/by its headline claim/);
+      expect(text).toMatch(/corrected "title"/);
       expect(text).toMatch(/probably false, the verdict is "rejected", not "uncertain"/);
-      expect(text).toMatch(/already handled by the function called/);
+      expect(text).toMatch(/open the function called/);
+      expect(text).toMatch(/confidence at most 0.4/);
       expect(text).toMatch(/only formally undefined/);
       expect(text).toMatch(/reject it as pre-existing/);
     }

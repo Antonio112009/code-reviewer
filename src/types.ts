@@ -100,6 +100,14 @@ export const ReportedVerdictSchema = z.object({
   confidence: z.number().min(0).max(1).describe('Your confidence (0..1) that the finding is a real defect'),
   reason: z.string().min(3).describe('Short justification referencing the code'),
   severity: z.enum(SEVERITIES).optional().describe('Corrected severity, only if the original is wrong'),
+  title: z
+    .string()
+    .min(3)
+    .max(200)
+    .optional()
+    .describe(
+      'Corrected one-line title, only when the original headline is wrong or overstated but a verified defect remains',
+    ),
   replacementOk: z
     .boolean()
     .optional()
@@ -208,6 +216,8 @@ export interface CritiqueInfo {
   reason: string;
   originalConfidence: number;
   originalSeverity?: Severity;
+  /** The reviewer's title when the critic corrected it (a wrong or overstated headline over a real defect). */
+  originalTitle?: string;
 }
 
 export type FindingOrigin = 'llm' | 'static';

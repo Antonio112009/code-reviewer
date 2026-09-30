@@ -202,6 +202,19 @@ findings and an estimate of 1.1 × their review cost, left out when a cost is un
 the markdown report print it as a tip. Aimed at the reviewer reporting one defect per spot;
 AACR ctx30 numbers are in `evals/aacr/README.md`.
 
+### Self-critique (`review/critique.ts`)
+
+Every kept finding goes to the critic in batches per file with a code excerpt around its lines; in a diff
+review the excerpt marks the lines the change added or modified with `+`, so a pre-existing problem can be
+told apart. The critic's instructions (`critiqueInstructions`) come from a hand audit of AACR-Bench findings
+that matched no reference (`evals/aacr/README.md`): a finding is judged by its headline claim, but an
+overstated headline over a verified defect is kept with a corrected `title` (`critique.originalTitle` keeps
+the reviewer's); a "not handled / not checked" claim needs the next layer read (callee, wrapper, callers); a
+claim resting on an external system's schema, limits or API that the repository does not show is `uncertain`
+with confidence at most 0.4 (below `advisoryConfidence`, so "worth a look" rather than a main finding);
+"probably false" is `rejected`, not `uncertain`; formally undefined but working behaviour, hardening advice
+without a failure path, test-only hygiene and harmless leftover logging are not defects.
+
 ### Review passes (`review.passes`, `--passes`)
 
 `[general]` (the default) reviews each chunk once. A list of focused passes reviews every chunk once per

@@ -73,7 +73,7 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
   );
   const verdicts = new Map<
     string,
-    { verdict: Finding['critique']; severity?: Finding['severity']; replacementOk?: boolean }
+    { verdict: Finding['critique']; severity?: Finding['severity']; title?: string; replacementOk?: boolean }
   >();
   const record = (original: Finding, v: Omit<ReportedVerdict, 'id'>) =>
     verdicts.set(original.id, {
@@ -83,8 +83,10 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
         reason: v.reason,
         originalConfidence: original.confidence,
         originalSeverity: v.severity && v.severity !== original.severity ? original.severity : undefined,
+        ...(v.title?.trim() && v.title.trim() !== original.title ? { originalTitle: original.title } : {}),
       },
       severity: v.severity,
+      ...(v.title?.trim() && v.title.trim() !== original.title ? { title: v.title.trim() } : {}),
       ...(v.replacementOk !== undefined ? { replacementOk: v.replacementOk } : {}),
     });
   let cachedVerdicts = 0;
@@ -180,6 +182,7 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
       ...f,
       confidence: v.verdict.confidence,
       severity: v.severity ?? f.severity,
+      ...(v.title ? { title: v.title } : {}),
       critique: v.verdict,
       ...(f.replacement !== undefined ? { replacementOk: v.replacementOk === true } : {}),
     };

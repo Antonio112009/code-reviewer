@@ -260,6 +260,30 @@ Pinned builds of main after 0.5.2 (4e302bf) and of the branch with `--deepen` an
 - **Skill attribution** (who led to a finding) is still sparse: 22% of kept findings name a checklist; the
   JNI checklist led to 4 in opencv, the always-on general checklist was named by none.
 
+#### What the unmatched findings are (2026-09-30)
+
+Benchmark precision counts a finding as noise when no reference matches it, but the references are
+incomplete. Three audits read the code behind the 35 findings of `csn-1` (the Sonnet-critic default) that
+matched no reference: 7 real, 13 real but minor, 8 debatable, 4 not defects (test hygiene, leftover logging,
+lines the change did not touch), 3 wrong (a HANA row limit the reviewer did not know, a panic already
+recovered one layer down, a schema column it could not see). With the 20 matched ones, 40 of the 55 kept
+findings are real: about 73% rather than the 36% the benchmark reports; 84% among the main findings and 57%
+among "worth a look". The benchmark missed, for example, a fail-open login CSRF (cline), an SQL argument the
+C code never reads (timescaledb) and `mcp remove` no longer removing the server (gemini-cli).
+
+The critic was then re-run on the same 55 findings (`scratchpad prec/recritique.mts`, two runs per variant):
+
+| Critic | Real kept (of 40) | Noise kept (of 15) | Real share | Titles corrected |
+|---|---|---|---|---|
+| 0.6.0 | 39, 40 | 13, 14 | 74-75% | — |
+| + headline / callee / pre-existing rules | 36, 38 | 10, 11 | 78% | — |
+| + corrected titles, external claims ≤ 0.4 | 35, 37 | 10, 10 | 78-79% | 10, 12 |
+
+The three wrong findings survive most runs: two rest on HANA facts the repository does not show (the last
+variant lowers them to "worth a look" in one run of two), one on a panic recovered inside `handler.ServeHTTP`
+that the critic never opened. The real findings lost are a formally undefined `reinterpret_cast` the project
+uses in twenty places and two the critic judged pre-existing.
+
 The eval corpus (`code-reviewer eval --full`, 33 cases: 16 hard, 2 from real repositories, 8 clean; one run per
 variant, main at 23c6948) is where skills are aimed:
 
