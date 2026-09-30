@@ -237,29 +237,27 @@ were nits and 9% wrong before the critic's check; with the notes the review matc
 reviewers' comments (F1 12.9% → 16.6%) for the same price. `review.notes: false` or `--no-notes` turns them
 off; `review.maxNotes` (5) caps them.
 
-### A second look for important changes (`--deepen`, experimental)
+### A second pass for important changes (`--deepen`)
 
-A reviewer tends to report one defect in a place and move on, while the same function often holds more: the
-cached handle is found, the unchecked call next to it is not. With `--deepen`, every chunk that had findings is
-reviewed once more. The model gets what was found so far and is asked only for *other* defects in the same
-functions: calls whose failure is not handled, resources not released on every path, state left behind by an
-early return, code that must change together.
+One review pass misses about a quarter of the real defects a second one finds: on 30 real pull requests a
+blind audit counted 43 real findings in one pass, 52 in a pass at high reasoning, and 56 in the two together,
+mostly different ones. With `--deepen`, every chunk is reviewed a second time, independently — the same task,
+told nothing about the first pass, reasoning harder. What either pass found goes to the critic; a finding both
+reported is marked so (`passes` in the JSON), and the critic is told, since agreement is evidence: such
+findings were real three times in four, findings of one pass one time in three.
 
-| AACR-Bench ctx30 (30 real PRs, two runs each) | Recall | Code-defect recall | Precision | Cost per run |
+| AACR-Bench ctx30 (30 real PRs) | Recall | Precision | F1 | Cost per run |
 |---|---|---|---|---|
-| default | 7.7% | 12.2% | 46.3% | $7.6 |
-| `--deepen` | 9.4% | 13.7% | 38.3% | $13.1 |
+| one pass, medium reasoning, no critic | 9.1% | 36.6% | 14.6% | $5.25 |
+| one pass, high reasoning, no critic | 10.1% | 33.0% | 15.5% | $6.77 |
+| both passes merged, no critic | 12.9% | 31.6% | 18.4% | $12.0 |
 
 - **When:** changes where a missed defect is expensive: payments, authentication, migrations, a release
   branch. For everyday pull requests the default is the better trade.
-- **Cost:** chunks with findings are reviewed twice; the repeat reuses the cached prompt, so it adds about
-  70% rather than doubling the price.
-- **Noise:** it reports half as many findings again (70 against 47 on these PRs), most of them minor, and a
-  smaller share of them match what human reviewers wrote (38% against 46%). The references matched go from
-  22 to 27: a fifth more real defects for a lot more to read.
+- **Cost:** about twice the price (the second pass reasons harder), plus the critic's look at what it adds.
 - **Suggested, not automatic:** after a review with findings, the summary and the markdown report suggest
   `--deepen` with its estimated cost (also `advice.deepen` in the JSON). With the result cache on (the
-  default), the re-run takes its first looks from the cache and pays only for the second looks.
+  default), the re-run takes its first pass from the cache and pays only for the second.
 - Off by default. `review.deepen: true` in `.code-reviewer/config.yaml` turns it on for a repository.
 
 ## Before you commit
@@ -324,8 +322,8 @@ Useful flags:
   changed declarations and their consumers (about twice the cost);
 - `--audit` (experimental): the prompt lists every changed function and the model audits each one, instead
   of stopping at the first defect of a function;
-- `--deepen` (experimental): a second look at every chunk with findings, for other defects in the same
-  functions ([when to use it](#a-second-look-for-important-changes---deepen-experimental));
+- `--deepen`: an independent second review pass over every chunk at high reasoning, about twice the
+  price ([when to use it](#a-second-pass-for-important-changes---deepen));
 - `--second-opinion` / `--no-second-opinion`: findings the critic was not sure about (confidence around the
   bar of the main report) go to a second verifier that reads further — callers, implementations, what
   produces the value — and decides. On by default at full depth (precision 40% → 46% on AACR-Bench for 10%

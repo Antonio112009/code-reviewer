@@ -144,16 +144,16 @@ export function costLabel(run: Pick<RunRecord, 'cost'>): string | undefined {
  * `4 of 5 chunks and 3 of 3 verdicts from the cache, ≈ 120k tokens saved`; undefined when the cache was off.
  */
 /**
- * The `--deepen` suggestion (`run.advice.deepen`) as one sentence: how many chunks a second look would review,
- * what it would cost, and that the first looks come from the cache when it is on.
+ * The `--deepen` suggestion (`run.advice.deepen`) as one sentence: how many chunks a second pass would review,
+ * what it would cost, and that the first pass comes from the cache when it is on.
  */
 export function deepenAdviceText(run: Pick<RunRecord, 'advice' | 'cache'>): string | undefined {
   const a = run.advice?.deepen;
   if (!a) return undefined;
   const n = a.chunks.length;
   const cost = a.estimatedCost ? ` (about ${formatMoney(a.estimatedCost)} more)` : '';
-  const reuse = run.cache ? '; the first looks come from the cache' : '';
-  return `Code with one defect often has more: re-run with --deepen for a second look at the ${n} chunk${n === 1 ? '' : 's'} with findings${cost}${reuse}.`;
+  const reuse = run.cache ? '; the first pass comes from the cache' : '';
+  return `One pass misses about a quarter of the real defects a second one finds: re-run with --deepen for an independent second pass over the ${n} chunk${n === 1 ? '' : 's'}${cost}${reuse}.`;
 }
 
 export function cacheLabel(run: Pick<RunRecord, 'cache'>): string | undefined {

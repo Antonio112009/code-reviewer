@@ -442,7 +442,10 @@ export function addRunLimitOptions(cmd: Command): Command {
       'review passes per chunk: general | local,contracts (changed lines, then consumers)',
     )
     .option('--audit', 'experimental: audit every changed function one by one')
-    .option('--deepen', 'experimental: a second look at chunks with findings, for other defects nearby')
+    .option(
+      '--deepen',
+      'an independent second review pass over every chunk at high reasoning (about twice the price, a third more real defects)',
+    )
     .option(
       '--second-opinion',
       'a second verifier re-checks findings the critic was not sure about (default at full depth)',

@@ -6,20 +6,20 @@ import type { DeepenAdvice, RunRecord } from '../types';
  */
 
 /**
- * A second look costs about as much as the first look at the same chunks, plus checking what it finds
- * (AACR-Bench ctx30: $4.7 more for $3.9 of first looks at chunks with findings).
+ * A second pass at high reasoning costs about 1.3× the first pass at medium, plus the critic's look at what it
+ * adds (AACR-Bench ctx30: the reviewer's part of a run is $5.25 at medium and $6.77 at high).
  */
-export const DEEPEN_COST_FACTOR = 1.1;
+export const DEEPEN_COST_FACTOR = 1.45;
 
 /**
- * Whether `--deepen` is worth suggesting: the run reviewed chunks that reported findings, and it did not take
- * a second look already. The estimate is left out when some of those chunks have no known cost (answered from
- * the cache, or an unpriced model).
+ * Whether `--deepen` is worth suggesting: the run reviewed chunks and reported at least one finding (a change
+ * worth a second pass), and it did not take one already. The estimate covers every reviewed chunk; it is
+ * left out when some have no known cost (answered from the cache, or an unpriced model).
  */
 export function deepenAdvice(run: RunRecord, deepened: boolean): DeepenAdvice | undefined {
   if (deepened || run.status === 'failed') return undefined;
-  const chunks = run.chunks.filter((c) => c.status === 'done' && c.findings > 0);
-  if (chunks.length === 0) return undefined;
+  const chunks = run.chunks.filter((c) => c.status === 'done');
+  if (chunks.length === 0 || !chunks.some((c) => c.findings > 0)) return undefined;
   const costs = chunks.map((c) => c.cost);
   const currency = costs[0]?.currency;
   const known = costs.every((c) => c !== undefined && c.amount > 0 && c.currency === currency);

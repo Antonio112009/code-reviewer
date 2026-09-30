@@ -15,6 +15,14 @@
   for the same cost; in a blind audit 60% of the notes were useful to a maintainer and 9% wrong before the
   critic's check.
 
+- **`--deepen` is an independent second pass.** Instead of a second look at the chunks with findings, told
+  what was found, every chunk is reviewed a second time at high reasoning without knowing the first pass's
+  result; what either pass found goes to the critic, and a finding both passes reported is marked so
+  (`passes` in the JSON) and shown to the critic as evidence. In a blind audit on 30 real pull requests one
+  pass held 43 real findings, the union of two 56, and a finding both passes reported was real three times in
+  four against one time in three for a finding of one pass. About twice the price; the suggestion after a run
+  now covers every chunk.
+
 ### Evaluation
 
 - `evals/aacr` gains what deciding on a benchmark needs: `stats.py` compares two variants with paired,

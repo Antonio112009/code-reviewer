@@ -65,6 +65,7 @@ import type {
   ExpandLevel,
   FailureKind,
   Finding,
+  ReasoningLevel,
   RefsInfo,
   ReportedFinding,
   ReviewPass,
@@ -115,7 +116,6 @@ import {
 import {
   critiqueFindingIdentity,
   critiqueInstructions,
-  deepenSection,
   notesInstructions,
   repairPrompt,
   reviewInstructions,
@@ -250,7 +250,7 @@ type PartOutcome = { id: string; files: string[]; spend: Spend[] } & (
       salvaged?: string;
       /** Distinct functions the model recorded as audited (`review.audit`). */
       audited?: number;
-      /** Findings a second look added (`review.deepen`; set when one ran). */
+      /** Findings the second pass added (`review.deepen`; set when one ran). */
       deepened?: number;
       /** Answered from the result cache; `saved` is what that answer took when it was made. */
       cached?: { saved?: { inputTokens: number; outputTokens: number } };
@@ -259,6 +259,11 @@ type PartOutcome = { id: string; files: string[]; spend: Spend[] } & (
   | { kind: 'spent' }
 );
 type DoneOutcome = PartOutcome & { kind: 'done' };
+
+/** The second pass of `review.deepen` reasons harder than the first (measured: a fifth more real findings). */
+const SECOND_PASS_REASONING = 'high' as const;
+/** Cache identity of the second pass, next to the first pass's. */
+const SECOND_PASS = { pass: 2, reasoning: SECOND_PASS_REASONING };
 
 /** Failures a smaller chunk can fix: out of time, steps, output or context window. */
 const SPLITTABLE: ReadonlySet<FailureKind> = new Set([
@@ -1056,16 +1061,16 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         part: Chunk,
         hints: StaticHit[],
         route: CacheRoute,
-        /** A second look (`review.deepen`): what it was told was already found. */
-        secondLook?: unknown,
+        /** The second pass (`review.deepen`): its identity beyond the first pass's. */
+        secondPass?: unknown,
       ) =>
         reviewCacheKey({
           route,
           instructions: task.instructions,
           prompt:
-            secondLook === undefined
+            secondPass === undefined
               ? reviewPromptIdentity(promptOptions(chunk, part, hints))
-              : { firstLook: reviewPromptIdentity(promptOptions(chunk, part, hints)), secondLook },
+              : { firstLook: reviewPromptIdentity(promptOptions(chunk, part, hints)), secondPass },
           readTools: task.readTools,
           git: task.git,
           maxOutputTokens: task.maxOutputTokens,
@@ -1114,8 +1119,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         part: Chunk,
         hints: StaticHit[],
         task: AgentTask,
+        opts: { reasoning?: ReasoningLevel } = {},
       ): Promise<DoneOutcome> => {
-        const result = await runRouted('review', task, router, registry);
+        const result = await runRouted('review', task, router, registry, opts);
         const spend: Spend[] = [...result.spend];
         let resolved = resolveFindings(result);
         let replyText = result.text;
@@ -1203,9 +1209,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       };
 
       /**
-       * `review.deepen`: a second look at a part that had findings — the same task, plus the findings so far
-       * and a request for other defects in the same functions. What it adds (minus repeats) joins `out`; a
-       * failed second look only costs its usage.
+       * `review.deepen`: an independent second pass over the part at high reasoning — the same task, told
+       * nothing about the first pass — whose findings join the first's. A finding both passes report is kept
+       * once and marked as reported by two passes (`passes`); a failed second pass only costs its usage.
        */
       const deepen = async (
         out: DoneOutcome,
@@ -1214,14 +1220,12 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         hints: StaticHit[],
         task: AgentTask,
       ): Promise<void> => {
-        const items = out.items ?? [];
-        emit({ type: 'chunk-activity', chunkId: chunk.id, note: 'second look' });
+        emit({ type: 'chunk-activity', chunkId: chunk.id, note: 'second pass' });
         const id = `${part.id}-deepen`;
-        const second: AgentTask = { ...task, label: id, prompt: `${task.prompt}\n\n${deepenSection(items)}` };
-        // Cached on its own: a first look reused from a run without --deepen still gets its second look.
-        const secondLook = items.map((i) => [i.file, i.startLine, i.endLine, i.title]);
+        const second: AgentTask = { ...task, label: id };
+        // Cached on its own: a first pass reused from a run without --deepen still gets its second pass.
         const key = cache
-          ? cacheKeyFor(task, chunk, part, hints, currentRoute('review'), secondLook)
+          ? cacheKeyFor(task, chunk, part, hints, currentRoute('review'), SECOND_PASS)
           : undefined;
         const entry = key ? await getReview(cache!, key, root) : undefined;
         let more: DoneOutcome;
@@ -1229,30 +1233,36 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           more = await fromCache(entry, chunk, { ...part, id }, hints);
         } else {
           try {
-            more = await reviewOnce(chunk, { ...part, id }, hints, second);
+            more = await reviewOnce(chunk, { ...part, id }, hints, second, {
+              reasoning: SECOND_PASS_REASONING,
+            });
           } catch (err) {
             out.spend.push(...spendOf(err));
             if (isAbort(err, req.signal)) throw err;
-            warn(`${id}: second look failed (${errorMessage(err)}); keeping the first review`);
+            warn(`${id}: second pass failed (${errorMessage(err)}); keeping the first`);
             return;
           }
-          await remember(more, second, chunk, part, secondLook);
+          await remember(more, second, chunk, part, SECOND_PASS);
         }
         out.spend.push(...more.spend);
-        // A finding the second look repeats (same place, similar title) is dropped.
-        const repeats = (f: Finding) =>
-          out.findings.some(
-            (o) =>
-              o.file === f.file &&
-              o.startLine <= f.endLine &&
-              f.startLine <= o.endLine &&
-              titleSimilarity(o.title, f.title) >= 0.5,
-          );
-        const fresh = more.findings
-          .map((f, i) => ({ f, item: more.items?.[i] }))
-          .filter(({ f }) => !repeats(f));
-        out.findings.push(...fresh.map(({ f }) => f));
-        out.items = [...items, ...fresh.flatMap(({ item }) => (item ? [item] : []))];
+        // The same finding from both passes (same place, similar title) is kept once, as reported twice.
+        const same = (o: Finding, f: Finding) =>
+          o.file === f.file &&
+          o.startLine <= f.endLine &&
+          f.startLine <= o.endLine &&
+          titleSimilarity(o.title, f.title) >= 0.5;
+        const twice = new Set<Finding>();
+        const fresh: { f: Finding; item: ReportedFinding | undefined }[] = [];
+        more.findings.forEach((f, i) => {
+          const twin = out.findings.find((o) => same(o, f));
+          if (twin) twice.add(twin);
+          else fresh.push({ f: { ...f, passes: 1 }, item: more.items?.[i] });
+        });
+        out.findings = [
+          ...out.findings.map((f) => ({ ...f, passes: twice.has(f) ? 2 : 1 })),
+          ...fresh.map(({ f }) => f),
+        ];
+        out.items = [...(out.items ?? []), ...fresh.flatMap(({ item }) => (item ? [item] : []))];
         for (const h of more.claimed) out.claimed.add(h);
         out.reads = [...new Set([...(out.reads ?? []), ...(more.reads ?? [])])];
         if (more.salvaged) out.salvaged = more.salvaged;
@@ -1265,7 +1275,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         task: AgentTask,
         chunk: Chunk,
         part: Chunk,
-        secondLook?: unknown,
+        secondPass?: unknown,
       ) => {
         if (!cache || out.salvaged || out.cached) return;
         const reads = await hashReads(root, out.reads ?? []);
@@ -1274,7 +1284,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         const route = currentRoute('review');
         const usage = sumUsage(out.spend.map((x) => x.usage));
         const identities = new Map(out.hints.map((h) => [h.id, hintIdentity(h)]));
-        await cache.set('review', cacheKeyFor(task, chunk, part, out.hints, route, secondLook), {
+        await cache.set('review', cacheKeyFor(task, chunk, part, out.hints, route, secondPass), {
           kind: 'result',
           items: mapHints(out.items ?? [], identities),
           provider: out.provider,
@@ -1361,9 +1371,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             cacheUse!.saved.inputTokens += entry.usage?.inputTokens ?? 0;
             cacheUse!.saved.outputTokens += entry.usage?.outputTokens ?? 0;
             const cached = await fromCache(entry, chunk, part, hints);
-            if (config.review.deepen && cached.findings.length > 0) {
-              await deepen(cached, chunk, part, hints, task);
-            }
+            if (config.review.deepen) await deepen(cached, chunk, part, hints, task);
             return [cached];
           }
           const halves = entry?.kind === 'split' && level < MAX_SPLIT_LEVEL ? splitChunk(part) : undefined;
@@ -1377,11 +1385,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         }
         try {
           const out = await reviewOnce(chunk, part, hints, task);
-          // The first look is cached alone (shared with runs without --deepen); the second look on its own.
+          // The first pass is cached alone (shared with runs without --deepen); the second pass on its own.
           await remember(out, task, chunk, part);
-          if (config.review.deepen && out.findings.length > 0 && !out.salvaged) {
-            await deepen(out, chunk, part, hints, task);
-          }
+          if (config.review.deepen && !out.salvaged) await deepen(out, chunk, part, hints, task);
           return [out];
         } catch (err) {
           const failure = failureKindOf(err, req.signal);
