@@ -36,12 +36,16 @@ beforeAll(async () => {
   cases = await loadCases([], process.cwd());
 });
 
+/** The defects a case requires (optional ones are acceptable findings, not requirements). */
+const required = (c: { expect: Array<{ optional?: boolean }> }) => c.expect.filter((d) => !d.optional);
+
 describe('built-in eval corpus', () => {
   it('has enough cases, including clean ones', () => {
     expect(cases.length).toBeGreaterThanOrEqual(MIN_CASES);
-    expect(cases.filter((c) => c.expect.length === 0).length).toBeGreaterThanOrEqual(MIN_CLEAN);
+    expect(cases.filter((c) => required(c).length === 0).length).toBeGreaterThanOrEqual(MIN_CLEAN);
     for (const c of cases) {
-      if (c.expect.length === 0) expect(c.tags, `${c.id}: clean cases are tagged "clean"`).toContain('clean');
+      if (required(c).length === 0)
+        expect(c.tags, `${c.id}: clean cases are tagged "clean"`).toContain('clean');
       else expect(c.tags, `${c.id}: only clean cases are tagged "clean"`).not.toContain('clean');
     }
   });
@@ -52,7 +56,7 @@ describe('built-in eval corpus', () => {
       if (c.tags.includes('hard'))
         expect(categories, `${c.id}: one of ${HARD_CATEGORIES.join(', ')}`).toHaveLength(1);
       else expect(categories, `${c.id}: category tags belong to hard cases`).toEqual([]);
-      if (c.tags.includes('tempting')) expect(c.expect, `${c.id}: tempting cases are clean`).toEqual([]);
+      if (c.tags.includes('tempting')) expect(required(c), `${c.id}: tempting cases are clean`).toEqual([]);
     }
   });
 
@@ -73,7 +77,7 @@ describe('built-in eval corpus', () => {
         );
       }
       expect(c.tags.length, `${c.id}: tags`).toBeGreaterThan(0);
-      expect(c.expect.length, `${c.id}: one or two defects per case`).toBeLessThanOrEqual(2);
+      expect(required(c).length, `${c.id}: one or two required defects per case`).toBeLessThanOrEqual(2);
       for (const d of c.expect) expect(d.note, `${c.id}: every expected defect explains itself`).toBeTruthy();
       const lines = readFileSync(c.file, 'utf8').split('\n').length;
       const maxLines = c.tags.includes('large') ? MAX_LARGE_CASE_LINES : MAX_CASE_LINES;

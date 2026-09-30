@@ -184,7 +184,7 @@ export function renderEvalSummary(result: EvalResult, theme: Theme): string {
   const lines = table(result, theme);
   lines.push('');
   lines.push(
-    `F1 ${pct(agg.f1)} ${theme.sym.dot} precision ${pct(agg.precision)} ${theme.sym.dot} ${plural(agg.duplicates, 'duplicate')} ${theme.sym.dot} ${agg.nearby ? `${agg.nearby} other next to labelled defects ${theme.sym.dot} ` : ''} ${plural(agg.failedChunks, 'failed chunk')} ${theme.sym.dot} ${formatTokens(agg.inputTokens)} in${agg.cachedInputTokens ? ` (+${formatTokens(agg.cachedInputTokens)} cached)` : ''}${agg.cacheWriteTokens ? ` · ${formatTokens(agg.cacheWriteTokens)} cache write` : ''} / ${formatTokens(agg.outputTokens)} out tokens${costText(agg, theme)}`,
+    `F1 ${pct(agg.f1)} ${theme.sym.dot} precision ${pct(agg.precision)} ${theme.sym.dot} ${plural(agg.duplicates, 'duplicate')} ${theme.sym.dot} ${agg.nearby ? `${agg.nearby} other next to labelled defects ${theme.sym.dot} ` : ''}${agg.acceptable ? `${agg.acceptable} optional defects found ${theme.sym.dot} ` : ''} ${plural(agg.failedChunks, 'failed chunk')} ${theme.sym.dot} ${formatTokens(agg.inputTokens)} in${agg.cachedInputTokens ? ` (+${formatTokens(agg.cachedInputTokens)} cached)` : ''}${agg.cacheWriteTokens ? ` · ${formatTokens(agg.cacheWriteTokens)} cache write` : ''} / ${formatTokens(agg.outputTokens)} out tokens${costText(agg, theme)}`,
   );
   const critique = critiqueLine(agg, theme);
   if (critique) lines.push(critique);

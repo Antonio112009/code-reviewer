@@ -107,3 +107,11 @@ expect:
     also: [24]
     severity: major
     note: two extra queries per order (customer without select_related, items.count()) — an N+1 over every order of the shop
+  - file: shop/views.py
+    lines: [34, 35]
+    optional: true
+    note: CSV formula injection — customer-controlled full_name and email are written unescaped, so a value starting with = + - @ runs as a formula when staff open the file
+  - file: shop/views.py
+    lines: [25, 29]
+    optional: true
+    note: the whole export is built in memory (HttpResponse over the full queryset) instead of streamed with StreamingHttpResponse and .iterator()

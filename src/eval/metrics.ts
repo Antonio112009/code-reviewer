@@ -192,6 +192,7 @@ const ZERO: Omit<Metrics, 'recall' | 'precision' | 'f1' | 'rawRecall' | 'rawPrec
   unexpected: 0,
   duplicates: 0,
   nearby: 0,
+  acceptable: 0,
   falsePositives: 0,
   underrated: 0,
   lost: 0,
@@ -259,7 +260,8 @@ export function scoreRun(
   opts: { tolerance?: number; durationMs?: number; title?: string } = {},
 ): RunScore {
   const tolerance = opts.tolerance ?? DEFAULT_TOLERANCE;
-  const clean = expected.length === 0;
+  // Optional defects take part in matching, but not in recall; a case with only optional ones is clean.
+  const clean = expected.every((d) => d.optional);
   const findings = run.findings;
   const match = matchFindings(
     expected,
@@ -267,14 +269,19 @@ export function scoreRun(
     tolerance,
     expected.map((d) => d.note ?? opts.title),
   );
-  const matched = match.matched.map(({ defect, finding }) => {
-    const f = findings[finding]!;
-    const floor = expected[defect]!.severity;
-    const underrated = floor !== undefined && SEVERITY_ORDER[f.severity] > SEVERITY_ORDER[floor];
-    return { defect, finding: findingRef(f), ...(underrated ? { underrated: true } : {}) };
-  });
+  const acceptable = match.matched
+    .filter(({ defect }) => expected[defect]!.optional)
+    .map(({ defect, finding }) => ({ defect, finding: findingRef(findings[finding]!) }));
+  const matched = match.matched
+    .filter(({ defect }) => !expected[defect]!.optional)
+    .map(({ defect, finding }) => {
+      const f = findings[finding]!;
+      const floor = expected[defect]!.severity;
+      const underrated = floor !== undefined && SEVERITY_ORDER[f.severity] > SEVERITY_ORDER[floor];
+      return { defect, finding: findingRef(f), ...(underrated ? { underrated: true } : {}) };
+    });
   const matchedDefects = new Set(match.matched.map((m) => m.defect));
-  const missed = expected.map((_, i) => i).filter((i) => !matchedDefects.has(i));
+  const missed = expected.map((_, i) => i).filter((i) => !matchedDefects.has(i) && !expected[i]!.optional);
   const leftover = match.unmatched.map((i) => findingRef(findings[i]!));
 
   // Findings that self-critique or a threshold removed: the missed defects they had caught (matched one to
@@ -293,13 +300,14 @@ export function scoreRun(
   const counts: Counts = {
     ...ZERO,
     runs: 1,
-    expected: expected.length,
+    expected: expected.filter((d) => !d.optional).length,
     found: matched.length,
     missed: missed.length,
     unexpected: clean ? 0 : leftover.length,
     falsePositives: clean ? leftover.length : 0,
     duplicates: match.duplicates.length,
     nearby: match.nearby.length,
+    acceptable: acceptable.length,
     underrated: matched.filter((m) => m.underrated).length,
     lost: lost.length,
     saved: saved.length,
@@ -327,6 +335,7 @@ export function scoreRun(
       defect,
       finding: findingRef(findings[finding]!),
     })),
+    acceptable,
     lost,
     saved,
   };
@@ -349,6 +358,7 @@ export function erroredRun(expected: readonly ExpectedDefect[], durationMs = 0):
     falsePositives: [],
     duplicates: [],
     nearby: [],
+    acceptable: [],
     lost: [],
     saved: [],
   };

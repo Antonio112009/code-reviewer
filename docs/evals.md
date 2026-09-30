@@ -37,6 +37,10 @@ expect:                    # the defects the change introduces; [] = a clean cha
                            #   lines of this file, or { file: src/app.js, lines: [3, 5] } in another
     severity: major        # optional: the lowest severity a reviewer should give it
     note: req.query.sort is interpolated into ORDER BY unvalidated
+  - file: src/routes/products.js
+    lines: 31
+    optional: true         # a real but lesser defect: reporting it is right, missing it is not counted
+    note: LIMIT has no upper bound
 ```
 
 | Field | |
@@ -137,11 +141,15 @@ A finding matches an expected defect when it names the same file (paths normalis
 is within `--tolerance` lines (default 3) of the defect's `lines` or one of its `also` ranges.
 
 - Every expected defect is matched by at most one finding, and every finding matches at most one
-  defect: the closest pairs first (smallest gap, then largest overlap, then highest confidence).
-- A further finding on an already matched defect is a **duplicate**: neither right nor wrong.
+  defect. A finding whose title matches the defect's `note` (or the case title) comes first, then the closest
+  pairs (smallest gap, then largest overlap, then highest confidence).
+- A further finding on an already matched defect is a **duplicate** when it reports the same defect again,
+  otherwise an **other issue next to a labelled defect** (listed for labelling). Neither counts.
+- A finding on an `optional` defect is **acceptable**: right, but outside recall and precision. Missing an
+  optional defect is not counted, and a case whose defects are all optional is still clean.
 - On a case with expectations, a finding that matches nothing is **unexpected**: possibly a real bug the
   case does not label. Read them; if one is real, add it to `expect`.
-- On a clean case (`expect: []`), every finding is a **false positive**.
+- On a clean case (no required defects), every other finding is a **false positive**.
 - A match below the expected `severity` counts as found, and as **underrated**.
 
 **Self-critique effect.** The run record keeps the findings that self-critique or the confidence /

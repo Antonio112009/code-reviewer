@@ -898,3 +898,71 @@ describe('matching next to a planted defect', () => {
     expect(matchFindings([bare], findings).matched).toEqual([{ defect: 0, finding: 0 }]);
   });
 });
+
+describe('optional defects', () => {
+  const run = (findings: Array<{ file: string; startLine: number; title: string }>) =>
+    scoreRun(
+      [
+        { file: 'a.go', startLine: 10, endLine: 10, note: 'nil map write' },
+        { file: 'a.go', startLine: 30, endLine: 31, note: 'order value not validated', optional: true },
+      ],
+      {
+        findings: findings.map((f) => ({
+          ...f,
+          endLine: f.startLine,
+          severity: 'major',
+          category: 'bug',
+          confidence: 0.9,
+        })),
+        rejected: [],
+        chunks: [],
+        usage: { inputTokens: 0, outputTokens: 0 },
+      } as never,
+    );
+
+  it('credits a finding on an optional defect as acceptable, and does not count it when missed', () => {
+    const both = run([
+      { file: 'a.go', startLine: 10, title: 'nil map write' },
+      { file: 'a.go', startLine: 30, title: 'order value not validated' },
+    ]);
+    expect(both.metrics).toMatchObject({
+      expected: 1,
+      found: 1,
+      missed: 0,
+      unexpected: 0,
+      acceptable: 1,
+      precision: 1,
+    });
+    const one = run([{ file: 'a.go', startLine: 10, title: 'nil map write' }]);
+    expect(one.metrics).toMatchObject({ expected: 1, found: 1, missed: 0, acceptable: 0, recall: 1 });
+  });
+
+  it('keeps a case with only optional defects clean', () => {
+    const clean = scoreRun([{ file: 'a.go', startLine: 30, endLine: 31, optional: true }], {
+      findings: [
+        {
+          file: 'a.go',
+          startLine: 30,
+          endLine: 30,
+          title: 'order',
+          severity: 'minor',
+          category: 'bug',
+          confidence: 0.6,
+        },
+        {
+          file: 'a.go',
+          startLine: 90,
+          endLine: 90,
+          title: 'other',
+          severity: 'minor',
+          category: 'bug',
+          confidence: 0.6,
+        },
+      ],
+      rejected: [],
+      chunks: [],
+      usage: { inputTokens: 0, outputTokens: 0 },
+    } as never);
+    expect(clean.metrics).toMatchObject({ expected: 0, acceptable: 1, falsePositives: 1, unexpected: 0 });
+  });
+});

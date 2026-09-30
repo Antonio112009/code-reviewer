@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Optional defects in eval cases.** `optional: true` marks a real but lesser defect: finding it counts as
+  acceptable, missing it is not counted, and a case with only optional defects stays clean. The built-in
+  corpus labels five such issues that reviews kept reporting (CSV formula injection and an in-memory export,
+  unhandled interruption of part downloads, an error left on screen, an unvalidated `order` parameter that was
+  counted as a false positive on a clean case) and one more place for the click regression.
+- **Which skills each chunk used, and why.** Runs record for every chunk why each skill was picked (a regex on
+  the changed lines, the stack, a file pattern, always-on) and which matching skills the skill budget left out.
+  The dry-run plan and the markdown report ("Skills per chunk") show both, and `skills usage` counts how often
+  each skill was left out. Golden tests check that small changes in React, Go, Django, JNI and plain docs pick
+  the right skills and none of other technologies.
 - **Clearer help.** `code-reviewer --help` groups the commands (review, results, setup, measure quality) and
   shows examples; `review --help` groups its options (what to review, models, depth and filters, output and
   CI, cost and speed, advanced, pull request comments) and ends with examples, starting with comparing two
