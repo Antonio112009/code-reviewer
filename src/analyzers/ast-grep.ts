@@ -1,4 +1,5 @@
 import { writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { z } from 'zod';
 import { CATEGORIES, SEVERITIES } from '../types';
@@ -146,6 +147,44 @@ export function parseAstGrep(
   return hits;
 }
 
+/** `@ast-grep/cli`'s prebuilt binary packages by platform (glibc Linux only; musl has none). */
+const PLATFORM_PACKAGES: Readonly<Record<string, string>> = {
+  'darwin-arm64': '@ast-grep/cli-darwin-arm64',
+  'darwin-x64': '@ast-grep/cli-darwin-x64',
+  'linux-arm64': '@ast-grep/cli-linux-arm64-gnu',
+  'linux-x64': '@ast-grep/cli-linux-x64-gnu',
+  'win32-arm64': '@ast-grep/cli-win32-arm64-msvc',
+  'win32-ia32': '@ast-grep/cli-win32-ia32-msvc',
+  'win32-x64': '@ast-grep/cli-win32-x64-msvc',
+};
+
+/** Linux with musl (Alpine): the glibc builds do not run there. */
+function isMusl(): boolean {
+  if (process.platform !== 'linux') return false;
+  const report = process.report?.getReport() as { header?: { glibcVersionRuntime?: string } } | undefined;
+  return !report?.header?.glibcVersionRuntime;
+}
+
+/**
+ * The ast-grep binary installed with this package (an optional dependency), read straight from its
+ * platform package so it works without install scripts; undefined when it is not installed here.
+ */
+export function bundledAstGrep(
+  platform: NodeJS.Platform = process.platform,
+  arch: string = process.arch,
+): string | undefined {
+  const pkg = PLATFORM_PACKAGES[`${platform}-${arch}`];
+  if (!pkg || (platform === process.platform && isMusl())) return undefined;
+  try {
+    const require = createRequire(import.meta.url);
+    const cli = path.dirname(require.resolve('@ast-grep/cli/package.json'));
+    const dir = path.dirname(require.resolve(`${pkg}/package.json`, { paths: [cli] }));
+    return path.join(dir, platform === 'win32' ? 'ast-grep.exe' : 'ast-grep');
+  } catch {
+    return undefined;
+  }
+}
+
 /** The checks that apply to some of `files`. */
 function applicable(checks: readonly StructuralCheck[], files: readonly SourceFile[]): StructuralCheck[] {
   const languages = new Set(files.map((f) => languageOfFile(f.path)));
@@ -166,8 +205,13 @@ export const astGrepAnalyzer: AnalyzerDef = {
       return l !== undefined && langs.has(l) && !f.content.includes('\u0000');
     });
   },
+  // The user's own ast-grep on PATH first, else the copy that ships with this package; either must lie
+  // outside the reviewed code.
   locate: async (ctx) => {
-    const command = await findExecutable('ast-grep', ctx.env, ctx.repoRoot);
+    const bundled = bundledAstGrep();
+    const command =
+      (await findExecutable('ast-grep', ctx.env, ctx.repoRoot)) ??
+      (bundled ? await findExecutable(bundled, ctx.env, ctx.repoRoot) : undefined);
     return command ? { command, prefixArgs: [], trusted: true } : undefined;
   },
   async run(ctx) {

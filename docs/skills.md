@@ -78,7 +78,7 @@ sources:
 - **`[full]` bullets.** A bullet marked `[full]` is left out at the essential depth.
 - **`alwaysOn`.** Reserved for `practice/general-bugs` and `security/core`.
 - **`checks`.** Structural checks: [ast-grep](https://ast-grep.github.io) rules that run on the changed
-  files before the review when `ast-grep` is on PATH; a match on a changed line becomes a hint the model
+  files before the review (ast-grep ships with the package; your own on PATH is preferred); a match on a changed line becomes a hint the model
   confirms or rejects. Up to 10 per skill, each with `id`, `language` (one or a list: `[TypeScript, Tsx,
   JavaScript]`), `rule` (plus optional `constraints`/`utils`), `message`, optional `severity`, `category`
   and `confidence` (default 0.5), `examples` it must match and `counterexamples` of correct code it must not

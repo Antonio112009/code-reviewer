@@ -1,7 +1,7 @@
 {
   "name": "@antonio112009/code-reviewer",
   "version": "0.5.0",
-  "description": "Next-level LLM code review: version-aware skills, static hints and self-critique for fewer false positives. Works with Claude Code, Codex, Copilot, Gemini, the Anthropic API, AWS Bedrock and OpenAI-compatible APIs (Ollama, OpenRouter, …).",
+  "description": "Next-level LLM code review: version-aware skills, static hints and self-critique for fewer false positives. Works with Claude Code, Codex, Copilot, Gemini, the Anthropic API, AWS Bedrock and OpenAI-compatible APIs (Ollama, OpenRouter, \u2026).",
   "keywords": [
     "code-review",
     "code-reviewer",
@@ -94,7 +94,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@ast-grep/cli": "^0.45.3",
     "@biomejs/biome": "^2.5.14",
     "@modelcontextprotocol/client": "^2.1.0",
     "@types/node": "^26.6.3",
@@ -102,5 +101,8 @@
     "tsdown": "^0.23.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"
+  },
+  "optionalDependencies": {
+    "@ast-grep/cli": "^0.45.3"
   }
 }
