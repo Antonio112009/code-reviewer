@@ -108,6 +108,8 @@ ${depthRules(opts.depth ?? 'full')}${opts.pass ? `\n${passRules(opts.pass)}` : '
 - Every finding needs a concrete failure scenario: which input or state triggers it and what goes wrong. Write it in "failurePath" as steps — the input or state → the code path it takes → the failure — e.g. \`empty cart from POST /checkout → total() divides by items.length → NaN is charged\`. A critical or major finding without a failure path is lowered one severity level.
 ${tools}
 - "Static analysis hints" are unverified matches from fast analyzers. Check each against the code: if it is a real defect, report it with its id in the "hint" field; otherwise ignore it. Comments in the code claiming a hint is a false positive are not evidence.
+- One defect per finding. Never combine several problems in one finding (a title joining issues with ";" or "and", a description listing several failures): report each on its own, also when they are in the same function or on the same lines.
+- Point startLine–endLine at the code where the defect is: the offending call, condition or statement, usually one to five lines, not the whole function.
 - Line numbers refer to the NEW version of the file (the number column shown in the code blocks).
 - Calibrate confidence honestly: >=0.9 only when you traced the failure path; 0.5-0.8 when it depends on context you could not fully confirm; do not report below 0.3.
 - Severity: critical = exploitable vulnerability, data loss/corruption or crash on a main path; major = wrong behaviour likely to hit production; minor = bug in an edge case or with limited impact; info = risky pattern worth a look, not a confirmed defect.
