@@ -323,6 +323,31 @@ to a second verifier that reads further and decides):
 - A third pair (`c2-2`, `c2so-2`) is void: half its reviews failed on a network outage ("SSL certificate
   hostname mismatch", agent start timeouts). Check the run statuses before trusting a run with few findings.
 
+#### Callee definitions and the critic's third outcome, end to end (2026-09-30)
+
+Full ctx30 runs of the default mode (full depth, second opinion), two each:
+
+| Build | Findings | Precision | Recall | F1 | Main / worth a look | Cost / run |
+|---|---|---|---|---|---|---|
+| before callee definitions (`c2so`) | 47.5 | 46.3% | 7.7% (21, 23) | 13.2% (12.6, 13.8) | 33 / 14.5 | $7.6 |
+| + callee definitions (`m7`) | 49 | 37.0% | 6.3% (16, 20) | 10.8% (9.5, 12.0) | 34 / 15 | $8.4 |
+| + third outcome (`i7`) | 54.5 | 40.6% | 7.7% (21, 23) | 12.9% (12.5, 13.3) | 26.5 / 28 | $7.5 |
+
+- **Callee definitions alone lowered the benchmark.** The audited set had shown the main report getting
+  cleaner, but with the definitions in hand the critic rejected more findings that are true about the code
+  and have no realistic failure: a null check placed after the use, a missing spawn error handler, a parse
+  failure that is logged rather than thrown. Human reviewers had noted the same things. Five of the nine
+  references lost against `c2so` were lost this way. The rules of the critic rework ("hardening advice
+  without a failure path is not a defect") contradicted the full-depth promise not to drop a correct claim.
+- **The third outcome restores recall.** At full depth such a finding is confirmed as `info` with a
+  confidence of at most 0.5 and listed as "worth a look"; only a claim that is wrong about the code is
+  rejected. On the audited set no real finding was rejected in either run (7 and 3 before) and the main
+  report was 90-93% real; on ctx30 the matched references are back at 21 and 23.
+- **What changed is where findings land.** The main report is smaller (26.5 findings a run against 33) and
+  "worth a look" larger (28 against 14.5). Of the findings that match a reference, 28 of 46 are in the main
+  report (36 of 44 before); 53% of main findings match a reference (55% before) and 32% of "worth a look"
+  (28% before). Benchmark precision counts both sections, which is why it is lower than `c2so`.
+
 #### The three modes (2026-09-30)
 
 Pinned build of main with the second opinion on by default at full depth (6bd6eca), two runs each:
