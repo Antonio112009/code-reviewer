@@ -152,9 +152,18 @@ describe('depth prompts', () => {
       expect(text).toMatch(/probably false, the verdict is "rejected", not "uncertain"/);
       expect(text).toMatch(/open the function called/);
       expect(text).toMatch(/confidence at most 0.4/);
-      expect(text).toMatch(/only formally undefined/);
+      expect(text).toMatch(/formally undefined/);
       expect(text).toMatch(/reject it as pre-existing/);
     }
+    // full depth keeps a true observation without a failure path as "worth a look"; essential drops it
+    expect(critiqueInstructions('diff', 'full')).toMatch(/severity "info" and a confidence of at most 0\.5/);
+    expect(critiqueInstructions('diff', 'full')).toMatch(
+      /Not worth listing at all \(reject\): test-only hygiene/,
+    );
+    expect(critiqueInstructions('diff', 'essential')).toMatch(
+      /Not defects: behaviour that is only formally undefined/,
+    );
+    expect(critiqueInstructions('diff', 'essential')).not.toMatch(/worth a look/);
     // whole files: nothing is pre-existing
     expect(critiqueInstructions('files', 'full')).not.toMatch(/reject it as pre-existing/);
   });
