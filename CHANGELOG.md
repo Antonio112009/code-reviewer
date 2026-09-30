@@ -1,11 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.5.1 — 2026-09-30
+
+The skills' structural checks now work out of the box: ast-grep is installed with the package.
+
+### Packaging
 
 - **ast-grep ships with the package.** The skills' structural checks now run for everyone, without installing
   ast-grep: `@ast-grep/cli` is an optional dependency (macOS, glibc Linux and Windows; not musl Linux), found
   even when install scripts are disabled. An ast-grep on PATH still takes precedence. The installed package
   grows by about 100 MB.
+- **The package is tested as users install it.** CI packs it, installs it globally and reviews a planted
+  defect on Linux, macOS and Windows (the bundled ast-grep must flag it) and on Alpine (the install and review
+  must work without ast-grep).
 
 ## 0.5.0 — 2026-09-29
 
