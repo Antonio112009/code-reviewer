@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import * as acp from '@agentclientprotocol/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { claudeAuthSettings, PRESETS } from '../src/providers/acp/presets';
+import { claudeAuthSettings, type LaunchSpec, PRESETS } from '../src/providers/acp/presets';
 import { AcpProvider } from '../src/providers/acp/provider';
 import type { AgentTask } from '../src/providers/types';
 import { resolveFindings } from '../src/review/findings';
@@ -431,11 +431,11 @@ describe('Claude preset', () => {
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'fake-agent.mjs');
 
-function processProvider(mode: string, timeouts = {}) {
+function processProvider(mode: string, timeouts = {}, spec: Partial<LaunchSpec> = {}) {
   return new AcpProvider('fixture', { type: 'acp', preset: 'custom' }, silentLogger, 1, {
     endpoint: () => ({
       kind: 'process',
-      spec: { command: process.execPath, args: [FIXTURE, mode], env: {}, via: 'test' },
+      spec: { command: process.execPath, args: [FIXTURE, mode], env: {}, via: 'test', ...spec },
     }),
     timeouts,
   });
@@ -450,6 +450,31 @@ describe('AcpProvider with a real agent process', () => {
     } finally {
       await provider.dispose();
     }
+  });
+
+  it('starts an npx adapter from the npm cache, and online only when it is not cached', async () => {
+    // cached: the offline start works, and nothing is started online
+    const cached = processProvider('cached-only', {}, { offlineFirst: true });
+    try {
+      expect(resolveFindings(await cached.run(task())).items).toHaveLength(1);
+    } finally {
+      await cached.dispose();
+    }
+    // not cached: npm answers ENOTCACHED at once, and the start is repeated online
+    const fresh = processProvider('not-cached', {}, { offlineFirst: true });
+    try {
+      expect(resolveFindings(await fresh.run(task())).items).toHaveLength(1);
+    } finally {
+      await fresh.dispose();
+    }
+    // without offlineFirst nothing changes: the agent starts online
+    const plain = processProvider('cached-only');
+    await expect(plain.run(task())).rejects.toThrow(/initialize failed[\s\S]*started online/);
+    await plain.dispose();
+    // any other failure of the offline start is a real failure: not retried online
+    const broken = processProvider('offline-broken', {}, { offlineFirst: true });
+    await expect(broken.run(task())).rejects.toThrow(/initialize failed[\s\S]*boom/);
+    await broken.dispose();
   });
 
   it('survives an agent killed by a signal: the task fails and dispose() does not hang', async () => {

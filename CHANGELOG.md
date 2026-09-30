@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Agent starts no longer wait for the npm registry.** The Claude and Codex adapters run through `npx`, which
+  asked the registry at every start; when it answered slowly, reviews failed with "ACP initialize timed out
+  after 60s" (one review in 30 in our benchmark runs). An adapter that is already installed now starts from
+  npm's cache, in 0.4 s instead of 2 s, and the registry is asked only the first time.
 - **`full` is the default depth.** On 30 real pull requests (AACR-Bench ctx30) `essential` reported about one
   finding per three pull requests and found 2% of what human reviewers noted; `full` found four times as much
   for half as much again ($0.25 against $0.17 a pull request). A review without flags now reports every real
