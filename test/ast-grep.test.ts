@@ -14,6 +14,7 @@ import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
   AST_GREP_LANGUAGES,
+  bundledAstGrep,
   parseAstGrep,
   ruleDocuments,
   type StructuralCheck,
@@ -161,5 +162,16 @@ describe.skipIf(!HAS_AST_GREP)('with ast-grep', () => {
         severity: 'major',
       }),
     ]);
+  });
+});
+
+describe('bundled ast-grep', () => {
+  it('finds the binary of this platform in the optional dependency, and none for unknown platforms', () => {
+    const bin = bundledAstGrep();
+    if (HAS_AST_GREP) {
+      expect(bin).toMatch(/@ast-grep[\\/]cli-[\w-]+[\\/]ast-grep(?:\.exe)?$/);
+      expect(existsSync(bin!)).toBe(true);
+    }
+    expect(bundledAstGrep('freebsd', 'x64')).toBeUndefined();
   });
 });

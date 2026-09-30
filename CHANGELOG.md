@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **ast-grep ships with the package.** The skills' structural checks now run for everyone, without installing
+  ast-grep: `@ast-grep/cli` is an optional dependency (macOS, glibc Linux and Windows; not musl Linux), found
+  even when install scripts are disabled. An ast-grep on PATH still takes precedence. The installed package
+  grows by about 100 MB.
+
 ## 0.5.0 — 2026-09-29
 
 Pull request comments can be applied with one click and say what changed since the previous review; findings
