@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Sonnet checks the findings by default.** With Sonnet 5.5 reviewing, an Opus critic measured the same
+  AACR-Bench F1 for 41% more cost; the eval corpus kept every planted defect at 100% precision with Sonnet.
+  `--critique-model opus` brings Opus back. Combined with `--deepen`, the Sonnet critic gave the best result
+  measured (F1 15.7%, recall 10.0%, $11.5 a run on ctx30).
+- **README:** when to use `--deepen`, and what it costs.
 - **`--deepen` (experimental).** A second look at each chunk with findings, asking for other defects in the
   same functions. On AACR ctx30 it is the first change that raised recall (6.6% → 8.4%, code defects
   9.6% → 13.7%, F1 11.4% → 13.5%), at lower precision and about 50% more cost; off by default.

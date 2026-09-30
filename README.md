@@ -207,6 +207,28 @@ code-reviewer providers test claude --model sonnet
 | Self-critique | also drops real but low-impact findings; keeps confidence ≥ 0.7 | drops only claims it can refute (low impact lowers the severity); keeps confidence ≥ 0.3 |
 | "Worth a look" | — | findings below confidence 0.6 and `info` findings: in the reports, not in PR comments, SARIF / Code Quality or `--fail-on` |
 
+### A second look for important changes (`--deepen`, experimental)
+
+A reviewer tends to report one defect in a place and move on, while the same function often holds more: the
+cached handle is found, the unchecked call next to it is not. With `--deepen`, every chunk that had findings is
+reviewed once more. The model gets what was found so far and is asked only for *other* defects in the same
+functions: calls whose failure is not handled, resources not released on every path, state left behind by an
+early return, code that must change together.
+
+| AACR-Bench ctx30 (30 real PRs, two runs each) | Recall | Code-defect recall | Precision | Cost per run |
+|---|---|---|---|---|
+| `--full` | 7.0% | 11.5% | 36.7% | $6.8 |
+| `--full --deepen` | 10.0% | 14.1% | 37.2% | $11.5 |
+
+- **When:** changes where a missed defect is expensive: payments, authentication, migrations, a release
+  branch. For everyday pull requests the default is the better trade.
+- **Cost:** chunks with findings are reviewed twice; the repeat reuses the cached prompt, so it adds about
+  70% rather than doubling the price.
+- **Noise:** precision on real PRs held (37.2% vs 36.7%), but it reports more findings overall, minor ones and
+  remarks about what the diff does not show (a missing lockfile) among them; on the eval corpus of planted
+  defects precision fell from 100% to 87%.
+- Off by default. `review.deepen: true` in `.code-reviewer/config.yaml` turns it on for a repository.
+
 ## Before you commit
 
 `review` compares commits. To review changes that are not committed yet:
@@ -270,7 +292,7 @@ Useful flags:
 - `--audit` (experimental): the prompt lists every changed function and the model audits each one, instead
   of stopping at the first defect of a function;
 - `--deepen` (experimental): a second look at every chunk with findings, for other defects in the same
-  functions — more defects found (AACR recall 6.6% → 8.4%), lower precision, about 50% more cost;
+  functions ([when to use it](#a-second-look-for-important-changes---deepen-experimental));
 - `--expand off|map|refs|deep`: related unchanged code per chunk — `map` (the default) lists where unchanged
   code uses the changed declarations and where the functions the new code calls are defined; `refs` adds
   excerpts of that code; `deep` also who calls those usages;
