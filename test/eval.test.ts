@@ -3,6 +3,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { buildProgram } from '../src/cli/index';
+import { renderEvalSummary } from '../src/cli/ui/eval';
+import { createTheme } from '../src/cli/ui/theme';
 import { CaseError, casePathProblem, filterCases, lineCount, loadCases, parseCase } from '../src/eval/cases';
 import { compareResults } from '../src/eval/compare';
 import {
@@ -751,6 +753,20 @@ describe('real-repository cases', () => {
         cacheDir,
       }),
     ).rejects.toThrow(/outside lib\/a\.py/);
+
+    // `also` ranges in other files are checked against those files
+    const withAlso = (file: string) =>
+      parseCase(
+        text.replace(head, later).replace('lines: 6', `lines: 6\n    also: [{ file: ${file}, lines: 1 }]`),
+        {
+          id: 'real',
+          file: caseFile,
+        },
+      );
+    await expect(materializeCase(withAlso('lib/b.py'), { cacheDir })).resolves.toBeDefined();
+    await expect(materializeCase(withAlso('lib/missing.py'), { cacheDir })).rejects.toThrow(
+      /lib\/missing\.py does not exist/,
+    );
   });
 });
 
@@ -964,5 +980,48 @@ describe('optional defects', () => {
       usage: { inputTokens: 0, outputTokens: 0 },
     } as never);
     expect(clean.metrics).toMatchObject({ expected: 0, acceptable: 1, falsePositives: 1, unexpected: 0 });
+  });
+
+  it('marks a reported optional defect as found and never lists one as missed', async () => {
+    const work = mkdtempSync(path.join(tmpdir(), 'cr-eval-optional-'));
+    try {
+      const c = parseCase(
+        `title: Optional
+base:
+  a.js: |
+    export const a = 1;
+head:
+  a.js: |
+    export const a = 1;
+    export const b = a / 0; // BUG(major): division by zero
+    export const c = a.x.y; // BUG(minor): property of undefined
+    export const d = a;
+expect:
+  - file: a.js
+    lines: 2
+  - file: a.js
+    lines: 3
+    optional: true
+  - file: a.js
+    lines: 4
+    note: never reported
+    optional: true
+`,
+        { id: 'optional', file: path.join(work, 'optional.yaml') },
+      );
+      const result = await runEval({
+        cases: [c],
+        config: testConfig(),
+        logger: silentLogger,
+        id: 'o1',
+        dir: path.join(work, 'o1'),
+      });
+      expect(result.cases[0]!.defects.map((d) => d.found)).toEqual([1, 1, 0]);
+      const text = renderEvalSummary(result, createTheme(false));
+      expect(text).not.toContain('Missed');
+      expect(text).not.toContain('never reported');
+    } finally {
+      rmSync(work, { recursive: true, force: true });
+    }
   });
 });

@@ -117,7 +117,7 @@ Output: call the \`submit_findings\` tool as soon as you have verified a finding
   }
   if (opts.skills.length) {
     sections.push(
-      `## Technology checklists\nChecklists selected for the technologies in this chunk. Use them as hints about where bugs hide — every finding still needs evidence in the code. When an item of a checklist led you to a finding, put that checklist's id (in brackets) in the finding's "checklist" field.\n\n${opts.skills
+      `## Technology checklists\nChecklists selected for the technologies in this chunk. Use them as hints about where bugs hide — every finding still needs evidence in the code. Whenever a checklist item covers a defect you report — even one you would have spotted anyway — set the finding's "checklist" field to that checklist's id: the text in brackets after its title, without the brackets (e.g. \`${opts.skills[0]!.skill.id}\`).\n\n${opts.skills
         .map((s) => `### ${s.skill.name} [${s.skill.id}]\n${s.skill.body}`)
         .join('\n\n')}`,
     );
