@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **A more careful critic.** A hand audit of the findings no AACR-Bench reference matched (a third of all
+  findings; 20 of 35 were real defects the benchmark misses) showed where the critic went wrong: it kept
+  findings whose headline it had refuted, took its own recollection of a database schema or a server's limits
+  as verification, confirmed "not handled" claims without reading the callee, and could not tell code the
+  change did not touch. Now an overstated headline over a real defect gets a corrected title instead of a
+  rejection (reports show the reviewer's original), "not handled" claims need the next layer read, claims
+  about an external system the repository does not show stay "worth a look" at most, and diff critiques mark
+  the changed lines. On the audited set the kept findings went from 74% real to 78%, with 10-12 titles per run
+  corrected.
 - **`--deepen` is suggested after a review.** When a review has findings and ran without `--deepen`, the summary
   and the markdown report suggest a second look at the chunks with findings, with its estimated cost
   (`advice.deepen` in the JSON). First and second looks are cached apart, so the re-run takes the first looks

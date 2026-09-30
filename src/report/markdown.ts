@@ -140,6 +140,8 @@ function renderFinding(f: Finding, n: number): string {
     );
   }
   if (f.critique?.reason) lines.push('', `> **Critic:** ${mdLine(f.critique.reason)}`);
+  if (f.critique?.originalTitle)
+    lines.push(`> Title corrected by the critic; the reviewer wrote: ${mdLine(f.critique.originalTitle)}`);
   const source = [
     f.checklist ? `from checklist: ${mdLine(f.checklist)}` : '',
     f.skills.length ? `skills: ${f.skills.map(mdLine).join(', ')}` : '',

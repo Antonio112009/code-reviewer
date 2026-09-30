@@ -15,7 +15,7 @@ import {
 
 const FINDING_FIELDS = `{"findings": [{"file": string, "startLine": int, "endLine": int, "severity": ${SEVERITIES.map((s) => `"${s}"`).join('|')}, "category": ${CATEGORIES.map((c) => `"${c}"`).join('|')}, "title": string, "description": string, "failurePath"?: string, "suggestion"?: string, "replacement"?: string, "checklist"?: string, "evidence"?: string, "confidence": number 0..1, "hint"?: string}]}`;
 
-const VERDICT_FIELDS = `{"verdicts": [{"id": string, "verdict": "confirmed"|"rejected"|"uncertain", "confidence": number 0..1, "reason": string, "severity"?: ${SEVERITIES.map((s) => `"${s}"`).join('|')}}]}`;
+const VERDICT_FIELDS = `{"verdicts": [{"id": string, "verdict": "confirmed"|"rejected"|"uncertain", "confidence": number 0..1, "reason": string, "severity"?: ${SEVERITIES.map((s) => `"${s}"`).join('|')}, "title"?: string}]}`;
 
 /** Max characters of user-supplied project text placed in prompts. */
 const MAX_PROJECT_TEXT = 4_000;
@@ -318,14 +318,19 @@ export function critiqueInstructions(
       ? `- "rejected": the claim is wrong, speculative, already handled elsewhere, a style/naming/documentation remark, something a compiler or linter catches${preExisting}.
 - This is an ESSENTIAL-depth review: also reject real findings without a serious production impact (security, data loss, crashes/outages, leaks/OOM, overload, races/deadlocks, costly performance) — e.g. minor edge cases, accessibility or best-practice remarks.`
       : `- "rejected": the claim is factually wrong about the code — it misreads what the code does, the case is already handled, or the scenario cannot happen at all — or it is a pure style/naming/documentation remark, something a compiler or linter catches${preExisting}. Name the code that refutes it.
-- This is a FULL-depth review, which keeps every real defect. Do not reject a correct claim because its impact is small, the trigger is unlikely, current callers happen to avoid it, or similar code elsewhere has the same gap: missing error handling, unchecked inputs and robustness gaps are defects. Confirm such a finding, lower its severity (minor or info) and say why.`;
+- This is a FULL-depth review, which keeps every real defect. Do not reject a correct claim because its impact is small, the trigger is unlikely, current callers happen to avoid it, or similar code elsewhere has the same gap: missing error handling, unchecked inputs and robustness gaps are defects when the bad input or state can really occur. Confirm such a finding, lower its severity (minor or info) and say why.`;
   return `You are a skeptical staff engineer verifying findings produced by an automated code reviewer and by static analyzers. Automated tools produce many false positives; your job is to keep only real, relevant defects.
 
 For every finding:
 - Open the referenced code (read_file, grep, find_symbol) and check the claim against the actual code, its callers and invariants.
 ${rejected}
-- "uncertain": plausible, but it depends on context you cannot verify.
+- "uncertain": plausible, but it depends on context you cannot verify. When your own analysis says the claim is probably false, the verdict is "rejected", not "uncertain".
 - "confirmed": you can trace the concrete failure scenario. When a finding gives a "failurePath", check each step against the code: a step that cannot happen refutes the finding.
+- Judge the finding by its headline claim (the title). When the headline is wrong or overstated ("silently", "crashes", "invalid") but a concrete defect you verified remains in the finding, confirm it with a corrected "title" that says only what holds and the severity that part justifies; reject only when nothing in it holds. Name the parts that do not hold.
+- A claim that something is not handled, checked, recovered, released or validated needs the next layer: open the function called, its wrapper or framework layer, and the callers (read_file, find_symbol, find_references), and say in the reason which of them you read and where the handling is or is not. Do not confirm such a claim from the flagged lines alone. Code nothing calls yet cannot fail in production: lower it to minor or info.
+- A claim resting on what an external system does — the columns of a database view, a server's limits, a library's or protocol's behaviour, whether a value can reach a range — must be checked in the repository or its dependency sources (schemas, docs, tests, types at the source). If you cannot check it there, the verdict is "uncertain" with confidence at most 0.4, and the reason names what is unverified; your own recollection is not verification.
+- The same pattern elsewhere in the repository, or a project convention, does not refute a claim: it argues for a lower severity at most.
+- Not defects: behaviour that is only formally undefined or non-portable but works on every platform the code targets; hardening advice without a failure path; test-only hygiene that does not make a test pass wrongly; leftover logging that leaks nothing.${mode === 'diff' ? '\n- In a diff review the defect must be introduced or exposed by this change. If none of the flagged code was changed by it ("+" in the excerpts marks the changed lines) and the change does not make it reachable in a new way, reject it as pre-existing.' : ''}
 - A finding with a "replacement" (new text for its lines) needs "replacementOk": true only if applying it exactly as written fixes the defect and keeps the code valid (syntax, names, indentation); otherwise false.
 - Findings from a static analyzer ("origin": "static") are pattern matches: confirm them only when the flagged code is really reachable with harmful input or state.
 - Give your own calibrated confidence (0..1) that the claim is correct (how likely it is a real defect, not how severe it is), a short reason citing the code, and a corrected severity only if the original is clearly wrong.

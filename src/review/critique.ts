@@ -33,6 +33,8 @@ export interface CritiqueOptions {
   onBatchDone?: (info: { batch: number; total: number }) => void;
   /** Verdicts of earlier runs: findings with one are not sent to the critic again. */
   cache?: CritiqueCache;
+  /** Diff reviews: the lines of each file the change added or modified, marked `+` in the excerpts. */
+  changedLines?: ReadonlyMap<string, ReadonlySet<number>>;
 }
 
 /** Verdict store keyed by a finding and its code excerpt (see the result cache in `src/cache/`). */
@@ -66,10 +68,12 @@ const SPLITTABLE: ReadonlySet<FailureKind> = new Set([
  * A batch that runs out of time, steps or output is retried once as two smaller batches.
  */
 export async function critiqueFindings(findings: Finding[], opts: CritiqueOptions): Promise<CritiqueOutcome> {
-  const excerpts = new Map(findings.map((f) => [f.id, excerpt(opts.root, f)]));
+  const excerpts = new Map(
+    findings.map((f) => [f.id, excerpt(opts.root, f, opts.changedLines?.get(f.file))]),
+  );
   const verdicts = new Map<
     string,
-    { verdict: Finding['critique']; severity?: Finding['severity']; replacementOk?: boolean }
+    { verdict: Finding['critique']; severity?: Finding['severity']; title?: string; replacementOk?: boolean }
   >();
   const record = (original: Finding, v: Omit<ReportedVerdict, 'id'>) =>
     verdicts.set(original.id, {
@@ -79,8 +83,10 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
         reason: v.reason,
         originalConfidence: original.confidence,
         originalSeverity: v.severity && v.severity !== original.severity ? original.severity : undefined,
+        ...(v.title?.trim() && v.title.trim() !== original.title ? { originalTitle: original.title } : {}),
       },
       severity: v.severity,
+      ...(v.title?.trim() && v.title.trim() !== original.title ? { title: v.title.trim() } : {}),
       ...(v.replacementOk !== undefined ? { replacementOk: v.replacementOk } : {}),
     });
   let cachedVerdicts = 0;
@@ -176,6 +182,7 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
       ...f,
       confidence: v.verdict.confidence,
       severity: v.severity ?? f.severity,
+      ...(v.title ? { title: v.title } : {}),
       critique: v.verdict,
       ...(f.replacement !== undefined ? { replacementOk: v.replacementOk === true } : {}),
     };
@@ -197,7 +204,7 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
   return { kept, rejected, spend, warnings, cachedVerdicts };
 }
 
-function excerpt(root: string, f: Finding): string {
+function excerpt(root: string, f: Finding, changed?: ReadonlySet<number>): string {
   let lines: string[];
   try {
     lines = readFileSync(resolveInside(root, f.file), 'utf8').split('\n');
@@ -212,10 +219,14 @@ function excerpt(root: string, f: Finding): string {
     .map((l, i) => {
       const n = start + i;
       const mark = n >= f.startLine && n <= f.endLine ? '>' : ' ';
-      return `${String(n).padStart(width)} ${mark} ${l}`;
+      const plus = changed ? (changed.has(n) ? '+' : ' ') : '';
+      return `${String(n).padStart(width)} ${plus}${mark} ${l}`;
     })
     .join('\n');
-  return `### ${f.id} — ${f.file}:${f.startLine}-${f.endLine} (">" marks the reported lines)\n\`\`\`\n${body}\n\`\`\``;
+  const legend = changed
+    ? '">" marks the reported lines, "+" the lines this change added or modified'
+    : '">" marks the reported lines';
+  return `### ${f.id} — ${f.file}:${f.startLine}-${f.endLine} (${legend})\n\`\`\`\n${body}\n\`\`\``;
 }
 
 /** Groups findings by file into batches bounded by count and prompt size. */
