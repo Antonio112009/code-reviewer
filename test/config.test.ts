@@ -63,8 +63,8 @@ describe('loadConfig', () => {
     const at = async (overrides: Record<string, unknown>) =>
       (await loadConfig({ cwd: dir, stopDir: dir, ignoreGlobal: true, overrides })).config.review
         .secondOpinion;
-    expect(await at({})).toBe(false);
-    expect(await at({ review: { depth: 'full' } })).toBe(true);
+    expect(await at({})).toBe(true); // full is the default depth
+    expect(await at({ review: { depth: 'essential' } })).toBe(false);
     expect(await at({ review: { depth: 'full', secondOpinion: false } })).toBe(false);
     expect(await at({ review: { depth: 'essential', secondOpinion: true } })).toBe(true);
   });

@@ -60,7 +60,7 @@ Inputs:
 | Input | Default | Meaning |
 |---|---|---|
 | `provider`, `model` | configured default | Review provider and model (`claude`, `bedrock`, …). |
-| `depth` | `essential` | `essential` (serious production issues) or `full` (every real defect). |
+| `depth` | configured depth (`full`) | `full` (every real defect) or `essential` (serious production issues only: about a third cheaper, far fewer findings). |
 | `fail-on` | empty | Fail the job on findings of this severity or worse, or when part of the change was not reviewed. |
 | `post` | `true` | Post inline comments and the summary comment. |
 | `sarif` | `true` | Upload `report.sarif` to code scanning (category `code-reviewer`). |

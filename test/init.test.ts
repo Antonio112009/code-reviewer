@@ -216,10 +216,24 @@ describe('runInit', () => {
       focus: ['security', 'correctness'],
     });
     expect(config.git.base.default).toBe('auto');
-    expect(config.review).toMatchObject({ selfCritique: true, minConfidence: 0.7 });
+    // full depth by default, with its own threshold (findings below 0.6 are "worth a look")
+    expect(config.review).toMatchObject({ depth: 'full', selfCritique: true, minConfidence: 0.3 });
     expect(Object.keys(DEFAULT_CONFIG.providers)).toContain(config.roles.review!.provider);
     expect(config.roles.critique).toBeUndefined(); // follows the review model with high reasoning
     expect(readFileSync(path.join(r.root, '.gitignore'), 'utf8')).toBe('.code-reviewer/runs/\n');
+  });
+
+  it('gives a depth its own confidence threshold unless one is set', async () => {
+    const written = async (answers: Record<string, unknown>) => {
+      const r = repo();
+      r.write({ 'a.py': 'x = 1\n' });
+      r.commit('init');
+      await runInit({ cwd: r.root, yes: true, logger: silentLogger, answers });
+      return (await loadConfig({ cwd: r.root, ignoreGlobal: true })).config.review;
+    };
+    expect(await written({ depth: 'essential' })).toMatchObject({ depth: 'essential', minConfidence: 0.7 });
+    expect(await written({ depth: 'essential', minConfidence: 0.5 })).toMatchObject({ minConfidence: 0.5 });
+    expect(await written({ depth: 'full' })).toMatchObject({ depth: 'full', minConfidence: 0.3 });
   });
 
   it('refuses to overwrite without --force and keeps .gitignore free of duplicates', async () => {
@@ -563,7 +577,8 @@ describe('init wizard', () => {
     await term.answer('Model for the review role', 'opus', ENTER);
     await term.answer('Reasoning effort for the review role', ENTER);
     await term.answer('Self-critique', DOWN, DOWN, ENTER); // same -> other -> off
-    await term.answer('Review depth', DOWN, ENTER); // essential -> full
+    await term.answer('Review depth', DOWN, ENTER); // full -> essential
+    // the threshold follows the depth: essential suggests 0.7
     await term.answer('Report findings with confidence', DOWN, ENTER); // 0.7 -> 0.8
     await term.answer('Enable the built-in analyzers', ENTER);
     await term.answer('External analyzers', DOWN, ENTER); // auto -> off
@@ -585,9 +600,9 @@ describe('init wizard', () => {
     });
     expect(config.git.base.default).toBe('main');
     expect(config.roles.review).toMatchObject({ model: 'opus', reasoning: 'medium' });
-    expect(config.review).toMatchObject({ depth: 'full', selfCritique: false, minConfidence: 0.8 });
-    // the full preset applies unless a value is set explicitly
-    expect(config.review).toMatchObject({ minSeverity: 'info', skillTokenBudget: 6_000 });
+    expect(config.review).toMatchObject({ depth: 'essential', selfCritique: false, minConfidence: 0.8 });
+    // the essential preset applies unless a value is set explicitly
+    expect(config.review).toMatchObject({ minSeverity: 'major', skillTokenBudget: 3_500 });
     expect(config.analyzers).toMatchObject({ builtin: true, external: 'off' });
     expect(readFileSync(path.join(r.root, '.gitignore'), 'utf8')).toContain('.code-reviewer/runs/');
   });

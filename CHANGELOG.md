@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **`full` is the default depth.** On 30 real pull requests (AACR-Bench ctx30) `essential` reported about one
+  finding per three pull requests and found 2% of what human reviewers noted; `full` found four times as much
+  for half as much again ($0.25 against $0.17 a pull request). A review without flags now reports every real
+  defect, with a second opinion on borderline findings; `--essential` or `review.depth: essential` brings the
+  old behaviour back. The GitHub Action's `depth` input now defaults to the configured depth instead of
+  forcing `essential`. `init` writes the confidence threshold of the chosen depth (0.3 at full, where
+  findings below 0.6 are "worth a look"; 0.7 at essential).
 - **README: what each depth gives on real pull requests.** Measured on AACR-Bench ctx30: `essential` reports
   about one finding per three pull requests (63% match a human comment), `--full` five times as many for half
   as much again, `--full --deepen` the most.

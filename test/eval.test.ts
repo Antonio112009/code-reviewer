@@ -872,7 +872,7 @@ describe('code-reviewer eval (CLI)', () => {
 
   it('drops minor findings at essential depth and rejects bad flags', async () => {
     const essential = JSON.parse(
-      (await cli('--json', '--filter', 'javascript', '--min-precision', '0.5')).stdout,
+      (await cli('--json', '--essential', '--filter', 'javascript', '--min-precision', '0.5')).stdout,
     ) as EvalResult;
     expect(essential.settings.depth).toBe('essential');
     expect(essential.cases.map((c) => c.id)).toEqual(['labelled']);

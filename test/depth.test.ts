@@ -21,13 +21,22 @@ describe('review depth config', () => {
   };
   const load = (overrides = {}) => loadConfig({ cwd: dir, stopDir: dir, ignoreGlobal: true, overrides });
 
-  it('defaults to essential with its preset', async () => {
+  it('defaults to full with its preset', async () => {
     const { config } = await load();
-    expect(config.review).toMatchObject({ depth: 'essential', ...DEPTH_PRESETS.essential.review });
-    expect(DEFAULT_CONFIG.review).toMatchObject(DEPTH_PRESETS.essential.review);
+    expect(config.review).toMatchObject({ depth: 'full', ...DEPTH_PRESETS.full.review });
+    expect(DEFAULT_CONFIG.review).toMatchObject(DEPTH_PRESETS.full.review);
+    // each preset names every depth-dependent setting: switching never keeps the other depth's values
+    expect(Object.keys(DEPTH_PRESETS.essential.review).sort()).toEqual(
+      Object.keys(DEPTH_PRESETS.full.review).sort(),
+    );
   });
 
   it('switches every preset value with the depth, but explicit values win', async () => {
+    project('review:\n  depth: essential\n');
+    expect((await load()).config.review).toMatchObject({
+      depth: 'essential',
+      ...DEPTH_PRESETS.essential.review,
+    });
     project('review:\n  depth: full\n');
     expect((await load()).config.review).toMatchObject({ depth: 'full', ...DEPTH_PRESETS.full.review });
     project('review:\n  depth: full\n  skillTokenBudget: 8000\n  minSeverity: minor\n');

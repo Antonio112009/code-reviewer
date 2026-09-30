@@ -414,10 +414,10 @@ export function addTuningOptions(cmd: Command): Command {
     .optionsGroup('Depth and filters:')
     .option(
       '--depth <depth>',
-      'essential (serious production issues only, fewer tokens) | full (every real defect)',
+      'full (every real defect; the default) | essential (serious production issues only, fewer tokens)',
     )
     .option('--essential', 'same as --depth essential')
-    .option('--full', 'same as --depth full')
+    .option('--full', 'same as --depth full (the default)')
     .option('--min-severity <severity>', `drop findings below this severity (${SEVERITIES.join('|')})`)
     .option('--self-critique', 'verify findings with a second pass (default from config)')
     .option('--no-self-critique', 'skip the verification pass')
@@ -485,16 +485,16 @@ const REVIEW_EXAMPLES = `
 Examples:
   Compare two branches, like a pull request (the changes of feature/login since it left main):
     $ code-reviewer review --base main --head feature/login
-  The settings we measure with — every real defect; Sonnet reviews, Opus double-checks (the defaults):
-    $ code-reviewer review --base main --head feature/login --full
+  Only what can seriously hurt production (about a third cheaper, far fewer findings):
+    $ code-reviewer review --base main --head feature/login --essential
   A release branch against the previous one, with reports written to a folder:
-    $ code-reviewer review --base origin/release/2.3 --head origin/release/2.4 --full --format md,html --out reports
+    $ code-reviewer review --base origin/release/2.3 --head origin/release/2.4 --format md,html --out reports
   What you are about to commit:
     $ code-reviewer review --staged
   CI gate that fails on major findings, capped at $5 of model spend:
     $ code-reviewer review --base origin/main --fail-on major --max-cost 5
   Comment on the branch's pull request:
-    $ code-reviewer review --base main --full --post
+    $ code-reviewer review --base main --post
   See the plan — files, chunks, skills, hints — without calling a model:
     $ code-reviewer review --base main --head feature/login --dry-run
 
