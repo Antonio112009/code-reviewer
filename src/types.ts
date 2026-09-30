@@ -218,6 +218,8 @@ export interface CritiqueInfo {
   originalSeverity?: Severity;
   /** The reviewer's title when the critic corrected it (a wrong or overstated headline over a real defect). */
   originalTitle?: string;
+  /** The first verifier's verdict when a second one decided (`review.secondOpinion`). */
+  firstOpinion?: { verdict: Verdict; confidence: number; reason: string };
 }
 
 export type FindingOrigin = 'llm' | 'static';

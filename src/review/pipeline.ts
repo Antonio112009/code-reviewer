@@ -19,7 +19,7 @@ import { buildChunks, scheduleOrder, splitChunk } from '../chunking/chunker';
 import { changedSymbols, expandChunks, revisionSource } from '../chunking/expand';
 import { buildFileGraph, type FileGraph } from '../chunking/graph';
 import { estimateTokens } from '../chunking/tokens';
-import type { Config } from '../config/schema';
+import type { Config, ReviewSettings } from '../config/schema';
 import {
   commitReader,
   loadProjectRules,
@@ -120,6 +120,7 @@ import {
   reviewInstructions,
   reviewPrompt,
   reviewPromptIdentity,
+  secondOpinionInstructions,
 } from './prompts';
 import { taskTimeoutMs } from './timeouts';
 import { requireFailurePath, validateFindings } from './validate';
@@ -280,6 +281,18 @@ function errorMessage(err: unknown): string {
 
 function isAbort(err: unknown, signal?: AbortSignal): boolean {
   return signal?.aborted === true || (err instanceof Error && err.name === 'AbortError');
+}
+
+/**
+ * Confidence range that gets a second verifier: around the bar a finding must clear for the main report
+ * (`advisoryConfidence`, else `minConfidence`), where one verdict decides whether a developer sees it.
+ */
+export function secondOpinionRange(review: Pick<ReviewSettings, 'minConfidence' | 'advisoryConfidence'>): {
+  min: number;
+  max: number;
+} {
+  const bar = Math.max(review.minConfidence, review.advisoryConfidence);
+  return { min: Math.max(0, bar - 0.1), max: Math.min(1, bar + 0.15) };
 }
 
 /** The new-version lines each changed file added or modified: marked for the critic. */
@@ -1605,7 +1618,20 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           ...(mode === 'diff' ? { changedLines: changedLinesOf(units) } : {}),
           onBatchDone: ({ batch, total }) => emit({ type: 'critique-progress', batch, total }),
           ...(cache ? { cache: critiqueCache(cache, critiqueInstructions(mode, depth, dependencies)) } : {}),
+          ...(config.review.secondOpinion
+            ? {
+                secondOpinion: {
+                  ...secondOpinionRange(config.review),
+                  ...(cache
+                    ? { cache: critiqueCache(cache, secondOpinionInstructions(mode, depth, dependencies)) }
+                    : {}),
+                },
+              }
+            : {}),
         });
+        if (outcome.secondOpinions) {
+          logger.debug(`second opinion on ${outcome.secondOpinions} finding(s)`);
+        }
         if (cacheUse) {
           cacheUse.critiqueHits += outcome.cachedVerdicts;
           cacheUse.critiqueMisses += final.length - outcome.cachedVerdicts;

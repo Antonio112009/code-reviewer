@@ -195,6 +195,12 @@ export const ReviewSettingsSchema = z.object({
    */
   deepen: z.boolean(),
   /**
+   * A second verifier for findings the critic kept just around the bar of the main report (from 0.1 below
+   * `advisoryConfidence` / `minConfidence` to 0.15 above it): asked to refute each one with code the first
+   * did not read; its verdict replaces the first.
+   */
+  secondOpinion: z.boolean(),
+  /**
    * Where agents read code: `auto` = isolated snapshot for ACP agents, in place for API providers when the
    * checkout is clean and at head; `always` = always an isolated snapshot.
    */
@@ -468,6 +474,7 @@ export const DEFAULT_CONFIG: Config = {
     passes: ['general'],
     audit: false,
     deepen: false,
+    secondOpinion: false,
     isolation: 'auto',
   },
   git: {

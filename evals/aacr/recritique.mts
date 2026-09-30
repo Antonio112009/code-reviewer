@@ -2,6 +2,11 @@
 // cheap way to compare critic prompts on the same findings (about $1.5 for ctx30, against $7 for a full run).
 //
 //   npx tsx evals/aacr/recritique.mts <run-dir>/runs <out.json> [--repos <dir>] [--no-marks]
+//                                      [--second-opinion] [--first <verdicts.json>]
+//
+// --second-opinion adds the second verifier for borderline findings (full-depth range). --first takes the
+// first verdicts from an earlier output of this script instead of asking the critic again, so only the
+// second opinions cost anything.
 //
 // <run-dir> is $AACR_DIR/aacr-bench/evaluation/results/<dataset>/code-reviewer/<run-id>. Every finding the
 // critic saw in that run (kept, "worth a look" and rejected by critique) is restored to the reviewer's
@@ -14,20 +19,26 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { DEFAULT_CONFIG } from '../../src/config/schema';
 import { ProviderRegistry } from '../../src/providers/registry';
-import { critiqueFindings } from '../../src/review/critique';
-import type { Finding, RunRecord } from '../../src/types';
+import { type CritiqueCache, critiqueFindings } from '../../src/review/critique';
+import { secondOpinionRange } from '../../src/review/pipeline';
+import type { Finding, ReportedVerdict, RunRecord } from '../../src/types';
 import { silentLogger } from '../../src/util/logger';
 
 const args = process.argv.slice(2);
 const [runsDir, outFile] = args;
 if (!runsDir || !outFile) {
-  console.error('usage: recritique.mts <run-dir>/runs <out.json> [--repos <dir>] [--no-marks]');
+  console.error(
+    'usage: recritique.mts <run-dir>/runs <out.json> [--repos <dir>] [--no-marks] [--second-opinion] [--first <verdicts.json>]',
+  );
   process.exit(2);
 }
 const reposFlag = args.indexOf('--repos');
 const repos =
   reposFlag >= 0 ? args[reposFlag + 1]! : path.join(homedir(), '.cache', 'code-reviewer-aacr', 'repos');
 const marks = !args.includes('--no-marks');
+const secondOpinion = args.includes('--second-opinion');
+const firstFlag = args.indexOf('--first');
+const firstRows: VerdictRow[] = firstFlag >= 0 ? JSON.parse(readFileSync(args[firstFlag + 1]!, 'utf8')) : [];
 
 interface VerdictRow {
   inst: string;
@@ -39,6 +50,27 @@ interface VerdictRow {
   confidence?: number;
   severity: string;
   reason?: string;
+  /** The first verifier's verdict when a second one decided. */
+  first?: { verdict: string; confidence: number; reason: string };
+}
+
+/** First verdicts of an earlier run, served like cached ones. */
+function earlierVerdicts(inst: string): CritiqueCache {
+  const byId = new Map(firstRows.filter((r) => r.inst === inst).map((r) => [r.id, r]));
+  return {
+    get: async (f) => {
+      const r = byId.get(f.id);
+      if (!r?.verdict || r.confidence === undefined) return undefined;
+      return {
+        verdict: r.verdict,
+        confidence: r.confidence,
+        reason: r.reason ?? '',
+        title: r.correctedTitle ?? r.title,
+        ...(r.severity ? { severity: r.severity } : {}),
+      } as Omit<ReportedVerdict, 'id'>;
+    },
+    set: async () => {},
+  };
 }
 
 /** New-version lines each file of `base..head` added or modified. */
@@ -108,6 +140,10 @@ for (const inst of readdirSync(runsDir)
       concurrency: 3,
       batchTokenBudget: 20_000,
       ...(marks ? { changedLines: changedLines(repo, target.base, target.head) } : {}),
+      ...(firstRows.length ? { cache: earlierVerdicts(inst) } : {}),
+      ...(secondOpinion
+        ? { secondOpinion: secondOpinionRange({ minConfidence: 0.3, advisoryConfidence: 0.6 }) }
+        : {}),
     });
     const titles = new Map(findings.map((f) => [f.id, f.title]));
     for (const f of [...outcome.kept, ...outcome.rejected]) {
@@ -121,6 +157,7 @@ for (const inst of readdirSync(runsDir)
         confidence: f.critique?.confidence,
         severity: f.severity,
         reason: f.critique?.reason,
+        ...(f.critique?.firstOpinion ? { first: f.critique.firstOpinion } : {}),
       });
     }
     writeFileSync(outFile, JSON.stringify(rows, null, 1));

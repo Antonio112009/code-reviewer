@@ -68,6 +68,7 @@ export interface ReviewFlags {
   passes?: string;
   audit?: boolean;
   deepen?: boolean;
+  secondOpinion?: boolean;
   /** Post the finished review to its pull / merge request (`--post`, with the publish target flags). */
   post?: boolean;
 }
@@ -244,6 +245,7 @@ export function applyRunFlags(config: Config, f: ReviewFlags): void {
   }
   if (f.audit) config.review.audit = true;
   if (f.deepen) config.review.deepen = true;
+  if (f.secondOpinion !== undefined) config.review.secondOpinion = f.secondOpinion;
   if (f.analyzers === false) {
     config.analyzers.builtin = false;
     config.analyzers.external = 'off';
@@ -438,6 +440,8 @@ export function addRunLimitOptions(cmd: Command): Command {
     )
     .option('--audit', 'experimental: audit every changed function one by one')
     .option('--deepen', 'experimental: a second look at chunks with findings, for other defects nearby')
+    .option('--second-opinion', 'a second verifier tries to refute findings the critic was not sure about')
+    .option('--no-second-opinion', 'one verifier only')
     .option(
       '--expand <level>',
       'related unchanged code per chunk: off | map (file:line of usages and called definitions, default) | refs (plus excerpts) | deep',

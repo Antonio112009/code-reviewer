@@ -8,9 +8,17 @@ import type { FailureKind, Finding, ReasoningLevel, ReportedVerdict, RunTarget }
 import { resolveInside } from '../util/paths';
 import { failureKindOf, type Spend, spendOf, spendOfResult } from './execute';
 import { resolveVerdicts } from './findings';
-import { critiqueInstructions, critiquePrompt } from './prompts';
+import {
+  critiqueInstructions,
+  critiquePrompt,
+  secondOpinionInstructions,
+  secondOpinionPrompt,
+} from './prompts';
 
 const MAX_FINDINGS_PER_BATCH = 8;
+/** A second opinion digs deeper: few findings per task, each with the full step budget. */
+const MAX_FINDINGS_PER_SECOND_OPINION = 2;
+const NOT_VERIFIED = 'not verified (critic returned no verdict)';
 const EXCERPT_CONTEXT = 15;
 
 export interface CritiqueOptions {
@@ -35,6 +43,22 @@ export interface CritiqueOptions {
   cache?: CritiqueCache;
   /** Diff reviews: the lines of each file the change added or modified, marked `+` in the excerpts. */
   changedLines?: ReadonlyMap<string, ReadonlySet<number>>;
+  /**
+   * A second verifier for findings the first one kept with a confidence in [min, max): it is asked to refute
+   * each one with code the first did not read, and its verdict replaces the first (`critique.firstOpinion`).
+   */
+  secondOpinion?: { min: number; max: number; cache?: CritiqueCache };
+}
+
+/** One verification pass: what the verifier is told and how findings are grouped. */
+interface Pass {
+  label: string;
+  instructions: string;
+  prompt: (findings: Finding[], excerpts: Map<string, string>) => string;
+  maxPerBatch: number;
+  cache?: CritiqueCache;
+  /** Reports batch progress (the first pass). */
+  progress: boolean;
 }
 
 /** Verdict store keyed by a finding and its code excerpt (see the result cache in `src/cache/`). */
@@ -52,6 +76,8 @@ export interface CritiqueOutcome {
   warnings: string[];
   /** Findings whose verdict came from the cache. */
   cachedVerdicts: number;
+  /** Findings that went to a second verifier (`secondOpinion`). */
+  secondOpinions?: number;
 }
 
 /** Failures a smaller batch can fix: out of time, steps, output or context. */
@@ -68,6 +94,49 @@ const SPLITTABLE: ReadonlySet<FailureKind> = new Set([
  * A batch that runs out of time, steps or output is retried once as two smaller batches.
  */
 export async function critiqueFindings(findings: Finding[], opts: CritiqueOptions): Promise<CritiqueOutcome> {
+  const first = await runPass(findings, opts, {
+    label: 'critique',
+    instructions: critiqueInstructions(opts.mode, opts.depth, opts.dependencies),
+    prompt: critiquePrompt,
+    maxPerBatch: MAX_FINDINGS_PER_BATCH,
+    cache: opts.cache,
+    progress: true,
+  });
+  const range = opts.secondOpinion;
+  if (!range || opts.signal?.aborted) return first;
+  // Secrets and vulnerable dependencies cannot be dismissed, unverified findings have no first opinion.
+  const borderline = first.kept.filter(
+    (f) =>
+      !f.nonRejectable &&
+      f.critique !== undefined &&
+      f.critique.reason !== NOT_VERIFIED &&
+      f.confidence >= range.min &&
+      f.confidence < range.max,
+  );
+  if (borderline.length === 0) return first;
+  const second = await runPass(borderline, opts, {
+    label: 'second-opinion',
+    instructions: secondOpinionInstructions(opts.mode, opts.depth, opts.dependencies),
+    prompt: secondOpinionPrompt,
+    maxPerBatch: MAX_FINDINGS_PER_SECOND_OPINION,
+    cache: range.cache,
+    progress: false,
+  });
+  const again = new Map([...second.kept, ...second.rejected].map((f) => [f.id, f]));
+  return {
+    kept: first.kept.flatMap((f) => {
+      const s = again.get(f.id);
+      return s ? (s.droppedReason ? [] : [s]) : [f];
+    }),
+    rejected: [...first.rejected, ...second.rejected],
+    spend: [...first.spend, ...second.spend],
+    warnings: [...first.warnings, ...second.warnings],
+    cachedVerdicts: first.cachedVerdicts,
+    secondOpinions: borderline.length,
+  };
+}
+
+async function runPass(findings: Finding[], opts: CritiqueOptions, pass: Pass): Promise<CritiqueOutcome> {
   const excerpts = new Map(
     findings.map((f) => [f.id, excerpt(opts.root, f, opts.changedLines?.get(f.file))]),
   );
@@ -81,9 +150,26 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
         verdict: v.verdict,
         confidence: v.confidence,
         reason: v.reason,
-        originalConfidence: original.confidence,
-        originalSeverity: v.severity && v.severity !== original.severity ? original.severity : undefined,
-        ...(v.title?.trim() && v.title.trim() !== original.title ? { originalTitle: original.title } : {}),
+        // A second opinion keeps what the reviewer wrote (the first verifier may have corrected it).
+        originalConfidence: original.critique?.originalConfidence ?? original.confidence,
+        originalSeverity:
+          v.severity && v.severity !== original.severity
+            ? (original.critique?.originalSeverity ?? original.severity)
+            : original.critique?.originalSeverity,
+        ...(v.title?.trim() && v.title.trim() !== original.title
+          ? { originalTitle: original.critique?.originalTitle ?? original.title }
+          : original.critique?.originalTitle
+            ? { originalTitle: original.critique.originalTitle }
+            : {}),
+        ...(original.critique
+          ? {
+              firstOpinion: {
+                verdict: original.critique.verdict,
+                confidence: original.critique.confidence,
+                reason: original.critique.reason,
+              },
+            }
+          : {}),
       },
       severity: v.severity,
       ...(v.title?.trim() && v.title.trim() !== original.title ? { title: v.title.trim() } : {}),
@@ -92,13 +178,13 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
   let cachedVerdicts = 0;
   const pending: Finding[] = [];
   for (const f of findings) {
-    const known = await opts.cache?.get(f, excerpts.get(f.id)!).catch(() => undefined);
+    const known = await pass.cache?.get(f, excerpts.get(f.id)!).catch(() => undefined);
     if (known) {
       record(f, known);
       cachedVerdicts++;
     } else pending.push(f);
   }
-  const batches = makeBatches(pending, excerpts, opts.batchTokenBudget);
+  const batches = makeBatches(pending, excerpts, opts.batchTokenBudget, pass.maxPerBatch);
   const limit = pLimit(opts.concurrency);
   const spend: Spend[] = [];
   const warnings: string[] = [];
@@ -106,9 +192,9 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
   const runBatch = async (batch: Finding[], label: string, canSplit: boolean): Promise<void> => {
     const task: AgentTask = {
       kind: 'verdicts',
-      label: `critique-${label}`,
-      instructions: critiqueInstructions(opts.mode, opts.depth, opts.dependencies),
-      prompt: critiquePrompt(batch, excerpts),
+      label: `${pass.label}-${label}`,
+      instructions: pass.instructions,
+      prompt: pass.prompt(batch, excerpts),
       model: opts.model,
       reasoning: opts.reasoning,
       readTools: opts.readTools,
@@ -127,16 +213,16 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
       const kind = failureKindOf(err, opts.signal);
       if (canSplit && batch.length > 1 && SPLITTABLE.has(kind)) {
         const half = Math.ceil(batch.length / 2);
-        warnings.push(`critique ${label}: ${kind} — retrying as two smaller batches`);
+        warnings.push(`${pass.label} ${label}: ${kind} — retrying as two smaller batches`);
         await runBatch(batch.slice(0, half), `${label}.1`, false);
         await runBatch(batch.slice(half), `${label}.2`, false);
         return;
       }
-      warnings.push(`critique batch ${label} failed: ${(err as Error).message}`);
+      warnings.push(`${pass.label} batch ${label} failed: ${(err as Error).message}`);
       return;
     }
     spend.push(...spendOfResult(result, opts.provider.id));
-    warnings.push(...result.warnings.map((w) => `critique ${label}: ${w}`));
+    warnings.push(...result.warnings.map((w) => `${pass.label} ${label}: ${w}`));
     const resolved = resolveVerdicts(result);
     for (const v of resolved.items) {
       const original = batch.find((f) => f.id === v.id);
@@ -144,7 +230,7 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
       record(original, v);
       // An early (salvaged) answer may be a guess made in a hurry: not remembered.
       if (!result.salvaged) {
-        await opts.cache
+        await pass.cache
           ?.set(original, excerpts.get(original.id)!, v, result.reads ?? [])
           .catch(() => undefined);
       }
@@ -156,7 +242,7 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
       limit(async () => {
         if (opts.signal?.aborted) return; // leave these findings unverified
         await runBatch(batch, String(i + 1), true);
-        opts.onBatchDone?.({ batch: i + 1, total: batches.length });
+        if (pass.progress) opts.onBatchDone?.({ batch: i + 1, total: batches.length });
       }),
     ),
   );
@@ -165,6 +251,11 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
   const rejected: Finding[] = [];
   for (const f of findings) {
     const v = verdicts.get(f.id);
+    if (!v?.verdict && f.critique) {
+      // A second opinion that did not arrive: the first verdict stands.
+      kept.push(f);
+      continue;
+    }
     if (!v?.verdict) {
       // No verdict (batch failed or id omitted): keep the reviewer's view, but flag it.
       kept.push({
@@ -172,7 +263,7 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
         critique: {
           verdict: 'uncertain',
           confidence: f.confidence,
-          reason: 'not verified (critic returned no verdict)',
+          reason: NOT_VERIFIED,
           originalConfidence: f.confidence,
         },
       });
@@ -230,7 +321,12 @@ function excerpt(root: string, f: Finding, changed?: ReadonlySet<number>): strin
 }
 
 /** Groups findings by file into batches bounded by count and prompt size. */
-function makeBatches(findings: Finding[], excerpts: Map<string, string>, budget: number): Finding[][] {
+function makeBatches(
+  findings: Finding[],
+  excerpts: Map<string, string>,
+  budget: number,
+  maxPerBatch: number,
+): Finding[][] {
   const byFile = new Map<string, Finding[]>();
   for (const f of findings) byFile.set(f.file, [...(byFile.get(f.file) ?? []), f]);
   const batches: Finding[][] = [];
@@ -239,7 +335,7 @@ function makeBatches(findings: Finding[], excerpts: Map<string, string>, budget:
   for (const group of byFile.values()) {
     for (const f of group) {
       const t = estimateTokens(excerpts.get(f.id) ?? '') + estimateTokens(f.description) + 100;
-      if (current.length && (current.length >= MAX_FINDINGS_PER_BATCH || tokens + t > budget)) {
+      if (current.length && (current.length >= maxPerBatch || tokens + t > budget)) {
         batches.push(current);
         current = [];
         tokens = 0;
