@@ -293,8 +293,8 @@ missing header, as "worth a look"), and both HANA claims became `uncertain` at 0
 does not count as verification"). Real findings rejected: 7 and 3, against 5 and 3 before.
 
 Before that, the three wrong findings survived most runs: two rest on HANA facts the repository does not
-show (the last variant of the first table lowers them to "worth a look" in one run of two), one on a panic recovered inside `handler.ServeHTTP`
-that the critic never opened. The real findings lost are a formally undefined `reinterpret_cast` the project
+show (the last variant of the first table lowers them to "worth a look" in one run of two), one on a panic
+recovered inside `handler.ServeHTTP` that the critic never opened. The real findings lost are a formally undefined `reinterpret_cast` the project
 uses in twenty places and two the critic judged pre-existing.
 
 #### The reworked critic end to end, and a second opinion (2026-09-30)
