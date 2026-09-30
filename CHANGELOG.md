@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **`--second-opinion`.** Findings the critic kept without being sure (confidence around the bar of the main
+  report) go to a second verifier, which reads further and decides. On AACR-Bench ctx30 it was better in both
+  runs on every measure (precision 40.2% → 46.3%, F1 11.7% → 13.2%) for 10% more cost. Off by default.
+- **Less test and logging noise.** The reviewer reports tests only when they cannot fail, never run, pass for
+  the wrong reason or break other tests, and leftover logging only when it exposes data or costs on a hot
+  path.
 - **A more careful critic.** A hand audit of the findings no AACR-Bench reference matched (a third of all
   findings; 20 of 35 were real defects the benchmark misses) showed where the critic went wrong: it kept
   findings whose headline it had refuted, took its own recollection of a database schema or a server's limits

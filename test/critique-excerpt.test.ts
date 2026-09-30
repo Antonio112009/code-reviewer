@@ -140,3 +140,133 @@ describe('critic verdicts', () => {
     });
   });
 });
+
+describe('second opinion', () => {
+  const finding = (id: string, line: number) =>
+    ({
+      id,
+      file: 'src/a.ts',
+      startLine: line,
+      endLine: line,
+      severity: 'major',
+      category: 'bug',
+      title: `Finding ${id}`,
+      description: 'A description long enough.',
+      confidence: 0.8,
+      skills: [],
+      source: { chunkIds: ['c1'], provider: 'mock' },
+    }) as never;
+  const verdict = (id: string, v: 'confirmed' | 'rejected', confidence: number) => ({
+    id,
+    verdict: v,
+    confidence,
+    reason: `${v} ${id}`,
+  });
+  const options = (provider: Provider) => ({
+    provider,
+    reasoning: 'high' as const,
+    mode: 'diff' as const,
+    depth: 'full' as const,
+    root: repo.root,
+    git: false,
+    readTools: false,
+    maxSteps: 5,
+    timeoutMs: 10_000,
+    concurrency: 1,
+    batchTokenBudget: 10_000,
+    secondOpinion: { min: 0.5, max: 0.75 },
+  });
+  const scripted = (second: (task: AgentTask) => AgentResult | Error) => {
+    const tasks: AgentTask[] = [];
+    const provider: Provider = {
+      id: 'mock',
+      kind: 'mock',
+      async run(task: AgentTask): Promise<AgentResult> {
+        tasks.push(task);
+        if (task.label.startsWith('second-opinion')) {
+          const out = second(task);
+          if (out instanceof Error) throw out;
+          return out;
+        }
+        return {
+          submission: {
+            calls: 1,
+            verdicts: [
+              verdict('f1', 'confirmed', 0.65),
+              verdict('f2', 'confirmed', 0.9),
+              verdict('f3', 'confirmed', 0.6),
+            ],
+          },
+          text: '',
+          toolCalls: 0,
+          warnings: [],
+        };
+      },
+      async dispose() {},
+    };
+    return { provider, tasks };
+  };
+
+  it('asks a second verifier about borderline findings only; its verdict replaces the first', async () => {
+    const { critiqueFindings } = await import('../src/review/critique');
+    const { provider, tasks } = scripted(() => ({
+      submission: { calls: 1, verdicts: [verdict('f1', 'rejected', 0.2), verdict('f3', 'confirmed', 0.85)] },
+      text: '',
+      toolCalls: 0,
+      warnings: [],
+    }));
+    const out = await critiqueFindings(
+      [finding('f1', 1), finding('f2', 2), finding('f3', 3)],
+      options(provider),
+    );
+    const second = tasks.filter((t) => t.label.startsWith('second-opinion'));
+    expect(second).toHaveLength(1);
+    expect(second[0]!.instructions).toContain('## Second opinion');
+    expect(second[0]!.prompt).toContain('"firstVerdict"');
+    expect(second[0]!.prompt).toContain('Finding f1');
+    expect(second[0]!.prompt).not.toContain('Finding f2'); // 0.9: not borderline
+    expect(out.secondOpinions).toBe(2);
+    expect(out.kept.map((f) => [f.id, f.confidence])).toEqual([
+      ['f2', 0.9],
+      ['f3', 0.85],
+    ]);
+    expect(out.kept[1]!.critique).toMatchObject({
+      verdict: 'confirmed',
+      originalConfidence: 0.8, // the reviewer's, not the first verifier's
+      firstOpinion: { verdict: 'confirmed', confidence: 0.6, reason: 'confirmed f3' },
+    });
+    expect(out.kept[0]!.critique?.firstOpinion).toBeUndefined();
+    expect(out.rejected.map((f) => [f.id, f.droppedReason, f.critique?.firstOpinion?.confidence])).toEqual([
+      ['f1', 'critique', 0.65],
+    ]);
+  });
+
+  it('keeps the first verdicts when the second verifier fails', async () => {
+    const { critiqueFindings } = await import('../src/review/critique');
+    const { provider } = scripted(() => new Error('agent crashed'));
+    const out = await critiqueFindings(
+      [finding('f1', 1), finding('f2', 2), finding('f3', 3)],
+      options(provider),
+    );
+    expect(out.kept.map((f) => [f.id, f.confidence])).toEqual([
+      ['f1', 0.65],
+      ['f2', 0.9],
+      ['f3', 0.6],
+    ]);
+    expect(out.rejected).toEqual([]);
+    expect(out.warnings.join(' ')).toContain('second-opinion batch 1 failed');
+  });
+
+  it('covers the confidence range around the bar of the main report', async () => {
+    const { secondOpinionRange } = await import('../src/review/pipeline');
+    const round = (r: { min: number; max: number }) => [r.min.toFixed(2), r.max.toFixed(2)];
+    expect(round(secondOpinionRange({ minConfidence: 0.3, advisoryConfidence: 0.6 }))).toEqual([
+      '0.50',
+      '0.75',
+    ]);
+    expect(round(secondOpinionRange({ minConfidence: 0.7, advisoryConfidence: 0 }))).toEqual([
+      '0.60',
+      '0.85',
+    ]);
+  });
+});

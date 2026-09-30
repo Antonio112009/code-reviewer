@@ -285,6 +285,29 @@ variant lowers them to "worth a look" in one run of two), one on a panic recover
 that the critic never opened. The real findings lost are a formally undefined `reinterpret_cast` the project
 uses in twenty places and two the critic judged pre-existing.
 
+#### The reworked critic end to end, and a second opinion (2026-09-30)
+
+Pinned build of the branch with the critic of the section above, the reviewer rule against test hygiene and
+harmless leftover logging, and `--second-opinion` (borderline findings, confidence 0.5-0.75 at full depth, go
+to a second verifier that reads further and decides):
+
+| ctx30, two runs each | Findings | Precision | Recall | F1 | Code-defect recall | Cost / run |
+|---|---|---|---|---|---|---|
+| 0.6.0 (Sonnet critic) | 54.5 | 36.7% | 7.0% (20, 20) | 11.7% (11.7, 11.8) | 11.5% | $6.8 |
+| reworked critic + reviewer rule | 48.5 | 40.2% | 6.8% (20, 19) | 11.7% (11.9, 11.4) | 10.0% | $6.9 |
+| + `--second-opinion` | 47.5 | 46.3% | 7.7% (21, 23) | 13.2% (12.6, 13.8) | 12.2% | $7.6 |
+
+- **The reworked critic reports fewer findings at the same recall:** six fewer per run, precision 36.7% →
+  40.2%, 5-7 titles corrected per run, findings in test files 4 → 2, same cost.
+- **A second opinion is better in both runs on every measure** (precision 43.8% and 48.9% against 40.8% and
+  39.6%; 21 and 23 matched references against 20 and 19) for 10% more cost. It looked at 16-18 findings per
+  run: 11-13 stayed in or moved into the main report, 2-5 went to "worth a look", 1-2 were rejected.
+- On the audited findings (re-critique with `--first`, two runs) the second verifier rejected nothing and
+  raised the main report from 25+7 and 24+4 (real + noise) to 27+6 and 26+5: what it adds is reading further,
+  not refuting. The panic recovered behind `handler.ServeHTTP` (gofr) survives it too.
+- A third pair (`c2-2`, `c2so-2`) is void: half its reviews failed on a network outage ("SSL certificate
+  hostname mismatch", agent start timeouts). Check the run statuses before trusting a run with few findings.
+
 The eval corpus (`code-reviewer eval --full`, 33 cases: 16 hard, 2 from real repositories, 8 clean; one run per
 variant, main at 23c6948) is where skills are aimed:
 

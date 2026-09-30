@@ -104,6 +104,7 @@ ${scope}
 ${depthRules(opts.depth ?? 'full')}${opts.pass ? `\n${passRules(opts.pass)}` : ''}${opts.audit ? `\n${AUDIT_RULE}` : ''}
 - Review the files under "Files to review". "Related files" are read-only context owned by another reviewer: use them to understand the code, but report defects only in the files you review.
 - Do NOT report style, naming, formatting, missing comments/tests/docs, refactoring ideas, or anything a compiler, type checker or linter would catch.
+- In test code, report only a test that cannot fail, never runs, passes for the wrong reason or breaks other tests — not teardown order, a missing try/finally around cleanup, or leftover output. Leftover debug logging anywhere is a defect only when it exposes secrets or personal data or does real work on a hot path.
 - When the fix changes only the reported lines, also give "replacement": the exact fixed text of lines startLine–endLine (whole lines, original indentation, no fences or line numbers). It is offered as a one-click change, so it must compile and fix the defect; leave it out when the fix belongs elsewhere or spans more code.
 - Every finding needs a concrete failure scenario: which input or state triggers it and what goes wrong. Write it in "failurePath" as steps — the input or state → the code path it takes → the failure — e.g. \`empty cart from POST /checkout → total() divides by items.length → NaN is charged\`. A critical or major finding without a failure path is lowered one severity level.
 ${tools}
@@ -339,6 +340,25 @@ ${rejected}
 Call \`submit_verdicts\` once with a verdict for EVERY finding id. If you cannot call tools, reply with a single \`\`\`json block of the form ${VERDICT_FIELDS}.`;
 }
 
+/**
+ * Instructions of the second verifier (`review.secondOpinion`): the critic's rules, plus the task of
+ * refuting findings the first verifier kept without being sure, with code it did not read.
+ */
+export function secondOpinionInstructions(
+  mode: RunTarget['kind'],
+  depth: ReviewDepth = 'full',
+  dependencies?: readonly DependencyRoot[],
+): string {
+  return `${critiqueInstructions(mode, depth, dependencies)}
+
+## Second opinion
+A first verifier kept these findings but was not sure; its verdict, confidence and reason are given as "firstVerdict". You decide. Take each finding on its own and try to refute it with code the first verifier did not read:
+- the implementation behind the call where the failure would surface — for an interface, callback or handler, find its implementations (find_symbol, grep) and read them — the wrapper or framework layer around it, and every caller (find_references);
+- whether the input or state the finding needs can occur: who produces the value, what validates it, what the platform, protocol or data source guarantees;
+- whether the behaviour is visible at all (what a user, caller or operator would observe), and whether this change introduced it or it was there before.
+If what you read refutes the finding, reject it and name that code. If the failure path still holds after you looked, confirm it with your own confidence: it replaces the first verifier's, so raise it when you traced the path and lower it when a step rests on an assumption. "uncertain" is only for a deciding fact that is outside the repository.`;
+}
+
 /** A finding as the critic sees it (without its id): also the critique cache key material. */
 export function critiqueFindingIdentity(f: Finding) {
   return {
@@ -366,6 +386,22 @@ export function critiquePrompt(findings: Finding[], excerpts: Map<string, string
     .filter(Boolean)
     .join('\n\n');
   return `# Findings to verify\n\`\`\`json\n${JSON.stringify(items, null, 2)}\n\`\`\`\n\n# Code excerpts (current version)\n${code}\n\nVerify each finding and submit your verdicts.`;
+}
+
+/** The second verifier's prompt: each finding with the first verdict it has to go beyond. */
+export function secondOpinionPrompt(findings: Finding[], excerpts: Map<string, string>): string {
+  const items = findings.map((f) => ({
+    id: f.id,
+    ...critiqueFindingIdentity(f),
+    firstVerdict: f.critique
+      ? { verdict: f.critique.verdict, confidence: f.critique.confidence, reason: f.critique.reason }
+      : undefined,
+  }));
+  const code = findings
+    .map((f) => excerpts.get(f.id))
+    .filter(Boolean)
+    .join('\n\n');
+  return `# Findings for a second opinion\n\`\`\`json\n${JSON.stringify(items, null, 2)}\n\`\`\`\n\n# Code excerpts (current version)\n${code}\n\nTry to refute each finding, then submit your verdicts.`;
 }
 
 /** The changed functions and types of a chunk to audit one by one (removed ones have nothing left to audit). */
