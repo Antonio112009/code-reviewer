@@ -1,6 +1,12 @@
 import path from 'node:path';
 import { formatMoney } from '../../models/pricing';
-import { analyzersSummary, formatDuration, formatNumber, stackEntries } from '../../report/common';
+import {
+  analyzersSummary,
+  formatDuration,
+  formatNumber,
+  primaryReason,
+  stackEntries,
+} from '../../report/common';
 import type { ReviewPlan } from '../../review/events';
 import { clean, join, padEnd, padStart, plural } from './format';
 import { routingText, targetText } from './lines';
@@ -29,29 +35,6 @@ export function depthText(plan: Pick<ReviewPlan, 'depth' | 'minSeverity'>, theme
     return `essential ${c.dim(`— serious production issues only (≥ ${plan.minSeverity}) · --full for everything`)}`;
   }
   return `full ${c.dim(`— every real defect (≥ ${plan.minSeverity})`)}`;
-}
-
-/** Selection reasons from most to least telling: what the changed code matched before inherited detection. */
-const REASON_ORDER = [
-  'content:',
-  'file:',
-  'version:',
-  'static-hint',
-  'explicit',
-  'stack:',
-  'extends:',
-  'always-on',
-  'group:',
-  'language:',
-];
-
-/** The most telling reason a skill was selected (clipped), for one-line displays. */
-export function primaryReason(reasons: readonly string[]): string | undefined {
-  for (const prefix of REASON_ORDER) {
-    const hit = reasons.find((r) => r.startsWith(prefix));
-    if (hit) return hit.length > 48 ? `${hit.slice(0, 47)}…` : hit;
-  }
-  return reasons[0];
 }
 
 /** Human-readable `--dry-run` plan (refs, stack, analyzers, chunks with files, context, skills, timeouts). */
@@ -160,6 +143,9 @@ export function renderPlanText(
         return reason ? `${clean(s.id)} ${c.dim(`(${clean(reason)})`)}` : clean(s.id);
       });
       out.push(`${pad}${c.dim('skills ')}  ${skills.join(', ')}`);
+    }
+    if (ch.skillsDropped?.length) {
+      out.push(`${pad}${c.dim('over budget')}  ${c.dim(ch.skillsDropped.map(clean).join(', '))}`);
     }
   }
   if (plan.chunks.length === 0) out.push(c.dim('  nothing to review'));

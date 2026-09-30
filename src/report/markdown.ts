@@ -10,6 +10,7 @@ import {
   fallbackLabel,
   formatDuration,
   formatNumber,
+  primaryReason,
   rejectedByReason,
   rejectionLabel,
   routingLabel,
@@ -240,6 +241,23 @@ function renderCoverage(run: RunRecord, out: string[]): void {
   out.push('');
 }
 
+/** Per chunk: each skill with the most telling reason it was picked, and the skills the budget left out. */
+function renderChunkSkills(run: RunRecord, out: string[]): void {
+  const rows = run.chunks.filter((c) => c.skills.length || c.skillsDropped?.length);
+  if (!rows.length) return;
+  out.push('## Skills per chunk', '');
+  for (const c of rows) {
+    const picked = c.skills.map((id) => {
+      const why = primaryReason(c.skillReasons?.[id] ?? []);
+      return why ? `${code(id)} (${mdLine(why)})` : code(id);
+    });
+    out.push(`- ${codeCell(c.id)}: ${picked.join(', ') || '—'}`);
+    if (c.skillsDropped?.length)
+      out.push(`  - over the skill budget: ${c.skillsDropped.map(code).join(', ')}`);
+  }
+  out.push('');
+}
+
 function renderChunks(run: RunRecord, out: string[]): void {
   out.push('## Chunks', '');
   out.push(
@@ -363,6 +381,7 @@ export function renderMarkdown(run: RunRecord): string {
   }
   renderCoverage(run, out);
   renderChunks(run, out);
+  renderChunkSkills(run, out);
   if (run.warnings.length) {
     out.push('## Warnings', '', ...run.warnings.map((w) => `- ${mdLine(w)}`), '');
   }
