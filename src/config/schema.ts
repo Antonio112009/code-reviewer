@@ -197,7 +197,8 @@ export const ReviewSettingsSchema = z.object({
   /**
    * A second verifier for findings the critic kept just around the bar of the main report (from 0.1 below
    * `advisoryConfidence` / `minConfidence` to 0.15 above it): asked to refute each one with code the first
-   * did not read; its verdict replaces the first.
+   * did not read; its verdict replaces the first. On at `full` depth (measured there: precision 40% → 46% on
+   * AACR-Bench ctx30 for 10% more cost), off at `essential`.
    */
   secondOpinion: z.boolean(),
   /**
@@ -547,6 +548,7 @@ export const DEPTH_PRESETS: Record<ReviewDepth, { review: Partial<ReviewSettings
       // What the critic did not reject is kept from 0.3; below advisoryConfidence it is only "worth a look".
       minConfidence: 0.3,
       advisoryConfidence: 0.6,
+      secondOpinion: true,
     },
   },
 };

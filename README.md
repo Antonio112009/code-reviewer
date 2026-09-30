@@ -206,6 +206,7 @@ code-reviewer providers test claude --model sonnet
 | Fix required | yes, for every finding | when possible |
 | Self-critique | also drops real but low-impact findings; keeps confidence ≥ 0.7 | drops only claims it can refute (low impact lowers the severity); keeps confidence ≥ 0.3 |
 | Corrected titles | an overstated headline over a real defect is kept with a corrected title (the report shows the original) | same |
+| Second opinion | off (`--second-opinion` turns it on) | findings the critic was not sure about are re-checked by a second verifier |
 | "Worth a look" | — | findings below confidence 0.6 and `info` findings: in the reports, not in PR comments, SARIF / Code Quality or `--fail-on` |
 
 ### A second look for important changes (`--deepen`, experimental)
@@ -297,9 +298,10 @@ Useful flags:
   of stopping at the first defect of a function;
 - `--deepen` (experimental): a second look at every chunk with findings, for other defects in the same
   functions ([when to use it](#a-second-look-for-important-changes---deepen-experimental));
-- `--second-opinion`: findings the critic was not sure about (confidence around the bar of the main report)
-  go to a second verifier that reads further — callers, implementations, what produces the value — and
-  decides; it moves real findings from "worth a look" into the main report and unverifiable ones out;
+- `--second-opinion` / `--no-second-opinion`: findings the critic was not sure about (confidence around the
+  bar of the main report) go to a second verifier that reads further — callers, implementations, what
+  produces the value — and decides. On by default at full depth (precision 40% → 46% on AACR-Bench for 10%
+  more cost), off at essential depth;
 - `--expand off|map|refs|deep`: related unchanged code per chunk — `map` (the default) lists where unchanged
   code uses the changed declarations and where the functions the new code calls are defined; `refs` adds
   excerpts of that code; `deep` also who calls those usages;
