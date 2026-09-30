@@ -2,11 +2,13 @@ import { SubmissionCollector } from '../tools/submission';
 import type { ReportedFinding, ReportedVerdict, Severity } from '../types';
 import type { AgentResult, AgentTask, Provider } from './types';
 
-const MARKER = /^\s*(\d+) [+ ] .*?(?:\/\/|#|--)\s*BUG(?:\((critical|major|minor|info)\))?:\s*(.+?)\s*$/;
+const MARKER =
+  /^\s*(\d+) [+ ] .*?(?:\/\/|#|--)\s*(BUG|NOTE)(?:\((critical|major|minor|info)\))?:\s*(.+?)\s*$/;
 
 /**
  * Deterministic offline provider for tests and demos.
- * Review: reports a finding for every rendered line carrying a `BUG:` / `BUG(major):` comment.
+ * Review: reports a finding for every rendered line carrying a `BUG:` / `BUG(major):` comment, and a
+ * maintainability note for every `NOTE:` comment.
  * Critique: confirms every finding, except ones whose title contains "false positive".
  */
 export class MockProvider implements Provider {
@@ -53,12 +55,25 @@ function scanFindings(prompt: string): ReportedFinding[] {
     if (seen.has(key)) continue;
     seen.add(key);
     // `BUG: title FIX: code` also proposes `code` as the replacement of the line.
-    const [title, fix] = m[3]!.split(/\s+FIX:\s*/, 2) as [string, string | undefined];
+    const [title, fix] = m[4]!.split(/\s+FIX:\s*/, 2) as [string, string | undefined];
+    if (m[2] === 'NOTE') {
+      findings.push({
+        file,
+        startLine: lineNo,
+        endLine: lineNo,
+        severity: 'info',
+        category: 'maintainability',
+        title,
+        description: `Mock note: ${title} (marker comment on line ${lineNo}).`,
+        confidence: 0.7,
+      });
+      continue;
+    }
     findings.push({
       file,
       startLine: lineNo,
       endLine: lineNo,
-      severity: (m[2] as Severity | undefined) ?? 'minor',
+      severity: (m[3] as Severity | undefined) ?? 'minor',
       category: 'bug',
       title,
       description: `Mock finding: ${title} (marker comment on line ${lineNo}).`,

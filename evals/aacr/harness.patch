@@ -1,5 +1,5 @@
 diff --git a/evaluation/evaluate.py b/evaluation/evaluate.py
-index 373fa1c..3326325 100644
+index 373fa1c..0c34046 100644
 --- a/evaluation/evaluate.py
 +++ b/evaluation/evaluate.py
 @@ -21,6 +21,7 @@ note（语义比对文本）映射：
@@ -21,7 +21,7 @@ index 373fa1c..3326325 100644
 +        return []
 +    comments = []
 +    # "Worth a look" findings are in the report the user reads, so they count as review comments too.
-+    for finding in [*(report.get("findings") or []), *(report.get("advisory") or [])]:
++    for finding in [*(report.get("findings") or []), *(report.get("advisory") or []), *(report.get("notes") or [])]:
 +        if not isinstance(finding, dict):
 +            continue
 +        parts = [

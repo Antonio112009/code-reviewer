@@ -52,6 +52,7 @@ const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
   'resource-leak': 'Memory, handles, connections or timers that are never released.',
   'api-misuse': 'An API used against its contract.',
   'data-loss': 'Data lost or corrupted: missing transactions, wrong writes, destructive migrations.',
+  maintainability: 'Maintainability note: true of the changed code, not a defect (never exported here).',
 };
 
 function severityOf(f: Finding): Severity {

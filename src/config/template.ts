@@ -145,7 +145,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
       doc: ['How the review runs. Only findings with confidence >= minConfidence are reported.'],
       keys: {
         depth: {
-          doc: 'full = every real defect (the default); essential = serious production issues only (security, data loss, crashes, leaks/OOM, overload, costly performance; about a third cheaper, a fifth of the findings). Also sets the defaults of minSeverity, minConfidence, advisoryConfidence, skillTokenBudget, maxSteps, contextShare and secondOpinion.',
+          doc: 'full = every real defect (the default); essential = serious production issues only (security, data loss, crashes, leaks/OOM, overload, costly performance; about a third cheaper, a fifth of the findings). Also sets the defaults of minSeverity, minConfidence, advisoryConfidence, skillTokenBudget, maxSteps, contextShare, secondOpinion and notes.',
           example: D.review.depth,
         },
         minSeverity: {
@@ -190,6 +190,13 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
         contextShare: { doc: 'Share of a chunk that may hold read-only excerpts of related files (0–0.5).' },
         advisoryConfidence: {
           doc: 'Findings kept below this confidence, and info findings, go to a separate "worth a look" list: in the reports, not in PR comments, SARIF/Code Quality or --fail-on (full depth: 0.6).',
+        },
+        notes: {
+          doc: 'Maintainability notes: misleading names, comments or messages, duplication, dead code, unexplained values; checked to be true and introduced by the change. Their own list in the reports and the PR summary comment, never inline, SARIF or --fail-on (full depth: on).',
+        },
+        maxNotes: {
+          doc: 'Most maintainability notes kept per run, the most confident first; 0 = no cap.',
+          example: D.review.maxNotes,
         },
         passes: {
           doc: 'Passes per chunk: [general] (one review), or [local, contracts]: the changed lines, then the changed declarations and their consumers (about twice the cost).',

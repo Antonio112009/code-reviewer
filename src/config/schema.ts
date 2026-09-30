@@ -203,6 +203,16 @@ export const ReviewSettingsSchema = z.object({
    */
   secondOpinion: z.boolean(),
   /**
+   * Maintainability notes: the reviewer also lists what the change makes harder to maintain (a misleading name,
+   * a comment or message that contradicts the code, duplication, dead code, an unexplained value, inconsistency
+   * with sibling code); the critic checks only that each note is true and introduced by the change. Their own
+   * list in the reports and the summary comment, never inline comments, SARIF or `--fail-on`. On at `full`
+   * depth, off at `essential`.
+   */
+  notes: z.boolean(),
+  /** Most maintainability notes kept per run (the most confident ones); 0 = no cap. */
+  maxNotes: z.number().int().nonnegative(),
+  /**
    * Where agents read code: `auto` = isolated snapshot for ACP agents, in place for API providers when the
    * checkout is clean and at head; `always` = always an isolated snapshot.
    */
@@ -477,6 +487,8 @@ export const DEFAULT_CONFIG: Config = {
     audit: false,
     deepen: false,
     secondOpinion: true,
+    notes: true,
+    maxNotes: 5,
     isolation: 'auto',
   },
   git: {
@@ -550,6 +562,7 @@ export const DEPTH_PRESETS: Record<ReviewDepth, { review: Partial<ReviewSettings
       minConfidence: 0.7,
       advisoryConfidence: 0,
       secondOpinion: false,
+      notes: false,
     },
   },
   full: {
@@ -562,6 +575,7 @@ export const DEPTH_PRESETS: Record<ReviewDepth, { review: Partial<ReviewSettings
       minConfidence: 0.3,
       advisoryConfidence: 0.6,
       secondOpinion: true,
+      notes: true,
     },
   },
 };

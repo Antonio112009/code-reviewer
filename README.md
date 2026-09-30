@@ -222,6 +222,20 @@ number of findings, so `essential` saves less than it leaves out.
 | Corrected titles | an overstated headline over a real defect is kept with a corrected title (the report shows the original) | same |
 | Second opinion | off (`--second-opinion` turns it on) | findings the critic was not sure about are re-checked by a second verifier |
 | "Worth a look" | — | findings below confidence 0.6 and `info` findings: in the reports, not in PR comments, SARIF / Code Quality or `--fail-on` |
+| Maintainability notes | — (`--notes` turns them on) | what the change makes harder to maintain, checked to be true: their own section in the report and a list in the PR summary comment; never inline, in SARIF / Code Quality or `--fail-on`; at most 5 (`review.maxNotes`); `--no-notes` turns them off |
+
+#### Maintainability notes
+
+At full depth the reviewer also lists what the change makes harder to maintain: a misleading or misspelt
+name, a comment, log or error message that contradicts the code, code the change duplicates, dead or
+commented-out code, a magic value left unexplained, handling inconsistent with the sibling code next to it.
+They are not defects and are never judged as such: the critic only checks that each note is true of the
+changed code and drops the ones that are not. They get their own section in the report and a short list in
+the pull request summary comment — no inline comments, nothing in SARIF / Code Quality, nothing for
+`--fail-on`. On 30 real pull requests (AACR-Bench ctx30) 60% of the notes were useful to a maintainer, 29%
+were nits and 9% wrong before the critic's check; with the notes the review matches 40% more of the human
+reviewers' comments (F1 12.9% → 16.6%) for the same price. `review.notes: false` or `--no-notes` turns them
+off; `review.maxNotes` (5) caps them.
 
 ### A second look for important changes (`--deepen`, experimental)
 

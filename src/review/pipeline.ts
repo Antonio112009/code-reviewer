@@ -81,7 +81,7 @@ import { packageVersion } from '../util/paths';
 import { deepenAdvice } from './advice';
 import { attributeFindings } from './attribution';
 import { coverageMap, type PartResult } from './coverage';
-import { type CritiqueCache, critiqueFindings } from './critique';
+import { type CritiqueCache, critiqueFindings, critiqueNotes } from './critique';
 import { dedupeFindings, titleSimilarity } from './dedupe';
 import type { InteractionHost, PhaseId, ReviewEvent, ReviewPlan } from './events';
 import {
@@ -116,6 +116,7 @@ import {
   critiqueFindingIdentity,
   critiqueInstructions,
   deepenSection,
+  notesInstructions,
   repairPrompt,
   reviewInstructions,
   reviewPrompt,
@@ -607,6 +608,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     rules: rules.text,
     skills: [],
     project: config.project,
+    notes: config.review.notes,
   });
   const overhead =
     estimateTokens(instructionsBase) +
@@ -1009,6 +1011,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           skills: chunkSkills.get(chunk.id) ?? [],
           project: config.project,
           readTools: config.review.tools,
+          notes: config.review.notes,
           ...(dependencies.length ? { dependencies } : {}),
           ...(config.review.audit ? { audit: true } : {}),
         });
@@ -1593,6 +1596,15 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       };
     };
 
+    // Maintainability notes are not defects: they have their own check and their own list (review.notes).
+    const isNote = (f: Finding): boolean => f.category === 'maintainability';
+    let notes = final.filter(isNote);
+    final = final.filter((f) => !isNote(f));
+    if (notes.length && !config.review.notes) {
+      rejected.push(...notes.map((f) => ({ ...f, droppedReason: 'notes-off' })));
+      notes = [];
+    }
+
     // 8. Self-critique ---------------------------------------------------------------------------------
     if (routes.critique && final.length > 0 && aborted()) {
       warn('Interrupted — self-critique skipped; findings are unverified.');
@@ -1643,6 +1655,41 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         for (const w of outcome.warnings) warn(w);
       });
     }
+    if (routes.critique && notes.length > 0 && !aborted()) {
+      const critique = routes.critique;
+      await phase('critique', `Checking ${notes.length} maintainability note(s)`, async () => {
+        const outcome = await critiqueNotes(notes, {
+          provider: new RoutedProvider('critique', router, registry),
+          model: critique.model,
+          reasoning: critique.reasoning,
+          mode,
+          depth,
+          root,
+          git,
+          readTools: config.review.tools,
+          ...(dependencies.length ? { dependencies } : {}),
+          maxSteps: config.review.maxSteps,
+          timeoutMs: taskTimeoutMs(config.review, Math.max(8_000, Math.floor(budget / 2))),
+          concurrency: config.review.concurrency,
+          batchTokenBudget: Math.max(8_000, Math.floor(budget / 2)),
+          signal: req.signal,
+          ...(mode === 'diff' ? { changedLines: changedLinesOf(units) } : {}),
+          ...(cache ? { cache: critiqueCache(cache, notesInstructions(mode, dependencies)) } : {}),
+        });
+        notes = outcome.kept;
+        rejected.push(...outcome.rejected);
+        meter.add(outcome.spend);
+        run.usage = sumUsage([run.usage, ...outcome.spend.map((s) => s.usage)]);
+        for (const w of outcome.warnings) warn(w);
+      });
+    }
+    if (config.review.maxNotes && notes.length > config.review.maxNotes) {
+      const sorted = sortFindings(notes);
+      notes = sorted.slice(0, config.review.maxNotes);
+      rejected.push(
+        ...sorted.slice(config.review.maxNotes).map((f) => ({ ...f, droppedReason: 'notes-cap' })),
+      );
+    }
 
     // 9. Confidence and severity thresholds (secrets / vulnerable deps are never dropped) ------------
     const min = config.review.minConfidence;
@@ -1678,6 +1725,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     }
 
     final = fingerprintFindings(final, reviewRootReader(root));
+    if (notes.length) run.notes = sortFindings(fingerprintFindings(notes, reviewRootReader(root)));
     const advisoryBelow = config.review.advisoryConfidence;
     const isAdvisory = (f: Finding) =>
       !f.nonRejectable && (f.confidence < advisoryBelow || f.severity === 'info');

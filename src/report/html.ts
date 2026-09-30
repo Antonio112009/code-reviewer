@@ -65,6 +65,7 @@ code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--code
 .card{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--sev);border-radius:8px;padding:12px 16px;margin:12px 0}
 .card.rejected{opacity:.6}
 .card.advisory{opacity:.8;border-style:dashed}
+.card.note{opacity:.85;border-style:dotted}
 .card h3{font-size:15px;margin:0 0 6px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .badge{font-size:11px;font-weight:700;text-transform:uppercase;padding:1px 6px;border-radius:4px;color:#fff;background:var(--sev)}
 .badge.static{background:var(--static)}
@@ -93,14 +94,15 @@ const SCRIPT = `
 const run = JSON.parse(document.getElementById('run-data').textContent);
 const SEV = ['critical','major','minor','info'];
 const sevOf = (s) => SEV.includes(s) ? s : 'info';
-const state = { sev: new Set(SEV), min: run.options.minConfidence, q: '', rejected: false, advisory: true, onlyStatic: false };
+const state = { sev: new Set(SEV), min: run.options.minConfidence, q: '', rejected: false, advisory: true, notes: true, onlyStatic: false };
 const advisory = run.advisory || [];
+const notes = run.notes || [];
 const el = (tag, attrs = {}, ...kids) => { const n = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) { if (k === 'class') n.className = v; else if (k === 'style') n.setAttribute('style', v); else n.setAttribute(k, v); }
   for (const k of kids.flat()) if (k != null && k !== false) n.append(k instanceof Node ? k : document.createTextNode(String(k)));
   return n; };
 const safeUrl = (u) => (typeof u === 'string' && /^https?:\\/\\//.test(u)) ? u : null;
-function card(f, rejected, worth) {
+function card(f, rejected, worth, note) {
   const loc = f.file + ':' + f.startLine + (f.endLine !== f.startLine ? '-' + f.endLine : '');
   const url = safeUrl(f.author && f.author.lineUrl);
   const isStatic = f.origin === 'static';
@@ -115,8 +117,9 @@ function card(f, rejected, worth) {
     f.checklist ? el('span', {}, 'from checklist: ' + f.checklist) : null,
     f.skills && f.skills.length ? el('span', {}, 'skills: ' + f.skills.join(', ')) : null,
     rejected ? el('span', {}, 'dropped: ' + (f.droppedReason || '')) : null,
-    worth ? el('span', {}, 'worth a look: not posted, not gated') : null);
-  return el('div', { class: 'card' + (rejected ? ' rejected' : worth ? ' advisory' : ''), style: '--sev: var(--' + sevOf(f.severity) + ')' },
+    worth ? el('span', {}, 'worth a look: not posted, not gated') : null,
+    note ? el('span', {}, 'maintainability note: in the summary comment, never inline') : null);
+  return el('div', { class: 'card' + (rejected ? ' rejected' : worth ? ' advisory' : note ? ' note' : ''), style: '--sev: var(--' + sevOf(f.severity) + ')' },
     el('h3', {}, el('span', { class: 'badge' }, sevOf(f.severity)), isStatic ? el('span', { class: 'badge static', title: 'reported by a static analyzer' }, 'static') : null, f.title),
     facts,
     el('div', { class: 'desc' }, f.description),
@@ -136,10 +139,12 @@ function render() {
   const shown = run.findings.filter((f) => match(f) && f.confidence >= state.min);
   const rej = state.rejected ? run.rejected.filter(match) : [];
   const worth = state.advisory ? advisory.filter((f) => match(f) && f.confidence >= state.min) : [];
-  for (const f of shown) list.append(card(f, false, false));
-  for (const f of worth) list.append(card(f, false, true));
-  for (const f of rej) list.append(card(f, true, false));
-  if (!shown.length && !rej.length && !worth.length) list.append(el('div', { class: 'empty' }, run.findings.length ? 'No findings match the filters.' : 'No defects found above the confidence threshold.'));
+  const shownNotes = state.notes ? notes.filter(match) : [];
+  for (const f of shown) list.append(card(f, false, false, false));
+  for (const f of worth) list.append(card(f, false, true, false));
+  for (const f of shownNotes) list.append(card(f, false, false, true));
+  for (const f of rej) list.append(card(f, true, false, false));
+  if (!shown.length && !rej.length && !worth.length && !shownNotes.length) list.append(el('div', { class: 'empty' }, run.findings.length ? 'No findings match the filters.' : 'No defects found above the confidence threshold.'));
   document.getElementById('count').textContent = shown.length + ' of ' + run.findings.length + ' shown';
 }
 const controls = document.getElementById('controls');
@@ -161,6 +166,11 @@ if (advisory.length) {
   const advCb = el('input', { type: 'checkbox' }); advCb.checked = true;
   advCb.onchange = () => { state.advisory = advCb.checked; render(); };
   controls.append(el('label', {}, advCb, 'show worth a look (' + advisory.length + ')'));
+}
+if (notes.length) {
+  const noteCb = el('input', { type: 'checkbox' }); noteCb.checked = true;
+  noteCb.onchange = () => { state.notes = noteCb.checked; render(); };
+  controls.append(el('label', {}, noteCb, 'show maintainability notes (' + notes.length + ')'));
 }
 const search = el('input', { type: 'search', placeholder: 'Filter by file, text or rule…' });
 search.oninput = () => { state.q = search.value; render(); };
@@ -287,6 +297,7 @@ export function renderHtml(run: RunRecord): string {
     ...run,
     findings: sortFindings(run.findings),
     ...(run.advisory ? { advisory: sortFindings(run.advisory) } : {}),
+    ...(run.notes ? { notes: sortFindings(run.notes) } : {}),
     rejected: sortFindings(run.rejected),
   };
   const failedChunks = run.chunks.filter((c) => c.status === 'failed');

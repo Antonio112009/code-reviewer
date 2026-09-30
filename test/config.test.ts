@@ -69,6 +69,15 @@ describe('loadConfig', () => {
     expect(await at({ review: { depth: 'essential', secondOpinion: true } })).toBe(true);
   });
 
+  it('turns maintainability notes on at full depth only, unless set explicitly', async () => {
+    const at = async (overrides: Record<string, unknown>) =>
+      (await loadConfig({ cwd: dir, stopDir: dir, ignoreGlobal: true, overrides })).config.review.notes;
+    expect(await at({})).toBe(true);
+    expect(await at({ review: { depth: 'essential' } })).toBe(false);
+    expect(await at({ review: { depth: 'full', notes: false } })).toBe(false);
+    expect(await at({ review: { depth: 'essential', notes: true } })).toBe(true);
+  });
+
   it('reports unknown keys, unknown profiles and unknown providers', async () => {
     writeFileSync(path.join(dir, '.code-reviewerrc.json'), JSON.stringify({ reveiw: {} }));
     await expect(loadConfig({ cwd: dir, stopDir: dir })).rejects.toThrow(ConfigError);

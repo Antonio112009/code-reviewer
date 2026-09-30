@@ -13,6 +13,7 @@ import { resolveVerdicts } from './findings';
 import {
   critiqueInstructions,
   critiquePrompt,
+  notesInstructions,
   secondOpinionInstructions,
   secondOpinionPrompt,
 } from './prompts';
@@ -154,6 +155,22 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
     cachedVerdicts: first.cachedVerdicts,
     secondOpinions: borderline.length,
   };
+}
+
+/**
+ * Checks maintainability notes (`review.notes`): the critic keeps a note when its statement holds for the
+ * changed code and drops it otherwise, without judging it as a defect. No second opinion; severity stays info.
+ */
+export async function critiqueNotes(notes: Finding[], opts: CritiqueOptions): Promise<CritiqueOutcome> {
+  const outcome = await runPass(notes, opts, {
+    label: 'notes',
+    instructions: notesInstructions(opts.mode, opts.dependencies),
+    prompt: critiquePrompt,
+    maxPerBatch: MAX_FINDINGS_PER_BATCH,
+    cache: opts.cache,
+    progress: false,
+  });
+  return { ...outcome, kept: outcome.kept.map((f) => ({ ...f, severity: 'info' as const })) };
 }
 
 async function runPass(findings: Finding[], opts: CritiqueOptions, pass: Pass): Promise<CritiqueOutcome> {
