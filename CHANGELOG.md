@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **`--deepen` (experimental).** A second look at each chunk with findings, asking for other defects in the
+  same functions. On AACR ctx30 it is the first change that raised recall (6.6% → 8.4%, code defects
+  9.6% → 13.7%, F1 11.4% → 13.5%), at lower precision and about 50% more cost; off by default.
+- **One defect per finding.** Reviews were told not to combine several defects in one finding and to point
+  at the offending lines; Sonnet 5.5 combined them in 13-14% of findings (e.g. three JNI defects in one,
+  matching none of the references). Dedupe no longer merges different findings that share a span.
+- **Eval case:** a workflow and its script disagree on an environment variable name.
+
 ## 0.5.2 — 2026-09-30
 
 Fixes the install size of 0.5.1 (635 MB → about 200 MB), makes skill attribution work on Claude and adds

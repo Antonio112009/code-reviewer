@@ -1,0 +1,98 @@
+title: Translation sync workflow sets SYNC_LANGUAGES but the script reads LANGUAGES
+tags: [javascript, github-actions, cross-file, hard]
+base:
+  package.json: |
+    {
+      "name": "dashboard",
+      "private": true,
+      "scripts": {
+        "build": "vite build"
+      },
+      "dependencies": {
+        "axios": "^1.7.9"
+      }
+    }
+  src/i18n/en.json: |
+    {
+      "greeting": "Hello"
+    }
+head:
+  .github/workflows/translations.yml: |
+    name: Sync translations
+
+    on:
+      schedule:
+        - cron: '0 3 * * 1'
+      workflow_dispatch:
+        inputs:
+          languages:
+            description: Comma-separated language codes to download
+            default: en,de,fr,es
+
+    jobs:
+      sync:
+        runs-on: ubuntu-latest
+        permissions:
+          contents: write
+          pull-requests: write
+        steps:
+          - uses: actions/checkout@v4
+          - uses: actions/setup-node@v4
+            with:
+              node-version: 22
+          - run: npm ci
+          - name: Download translations
+            run: node scripts/sync-translations.js
+            env:
+              POEDITOR_API_TOKEN: ${{ secrets.POEDITOR_API_TOKEN }}
+              POEDITOR_PROJECT_ID: ${{ vars.POEDITOR_PROJECT_ID }}
+              SYNC_LANGUAGES: ${{ inputs.languages || 'en,de,fr,es' }}
+          - uses: peter-evans/create-pull-request@v7
+            with:
+              branch: chore/translations
+              title: Update translations
+              commit-message: 'chore: update translations'
+  scripts/sync-translations.js: |
+    const fs = require('node:fs/promises');
+    const path = require('node:path');
+    const axios = require('axios');
+
+    const API = 'https://api.poeditor.com/v2';
+    const OUT_DIR = path.join(__dirname, '..', 'src', 'i18n');
+
+    const token = process.env.POEDITOR_API_TOKEN;
+    const projectId = process.env.POEDITOR_PROJECT_ID;
+    const languages = (process.env.LANGUAGES || 'en').split(',').map((l) => l.trim());
+
+    if (!token || !projectId) {
+      console.error('POEDITOR_API_TOKEN and POEDITOR_PROJECT_ID must be set');
+      process.exit(1);
+    }
+
+    async function exportLanguage(language) {
+      const form = new URLSearchParams({ api_token: token, id: projectId, language, type: 'key_value_json' });
+      const { data } = await axios.post(`${API}/projects/export`, form, { timeout: 30_000 });
+      if (data.response.status !== 'success') {
+        throw new Error(`export of ${language} failed: ${data.response.message}`);
+      }
+      const file = await axios.get(data.result.url, { timeout: 30_000 });
+      await fs.writeFile(path.join(OUT_DIR, `${language}.json`), `${JSON.stringify(file.data, null, 2)}\n`);
+      console.log(`updated ${language}`);
+    }
+
+    async function main() {
+      for (const language of languages) {
+        await exportLanguage(language);
+      }
+    }
+
+    main().catch((err) => {
+      console.error(err.message);
+      process.exit(1);
+    });
+expect:
+  - file: scripts/sync-translations.js
+    lines: 10
+    also: [{ file: .github/workflows/translations.yml, lines: 29 }]
+    severity: minor
+    note: the workflow passes the languages as SYNC_LANGUAGES, but the script reads LANGUAGES and falls back to 'en', so every scheduled or manual run downloads English only and the requested languages are silently ignored

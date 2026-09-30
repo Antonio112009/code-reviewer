@@ -223,6 +223,39 @@ to Sonnet 5.5; both cost $2 / $10 per MTok):
   near a labelled defect as a duplicate. The consistent clean false positive ("invalid order value silently
   treated as descending") is a robustness remark on a change labelled clean.
 
+#### Second look, one defect per finding, a Sonnet critic (2026-09-30)
+
+Pinned builds of main after 0.5.2 (4e302bf) and of the branch with `--deepen` and the one-defect rule; Sonnet
+5.5 reviews in every variant:
+
+| ctx30, two runs each | Findings | Precision | Recall | F1 | Code-defect recall | Cost / run |
+|---|---|---|---|---|---|---|
+| main (Opus 5.5 critique) | 48 | 39.7% | 6.6% (17, 21) | 11.4% (10.1, 12.6) | 9.6% | $9.6 |
+| `--critique-model sonnet` | 54.5 | 36.7% | 7.0% (20, 20) | 11.7% (11.7, 11.8) | 11.5% | $6.8 |
+| one defect per finding | 52.5 | 39.1% | 7.2% (20, 21) | 12.1% (11.8, 12.4) | 11.5% | $9.6 |
+| `--deepen` (+ one defect per finding) | 70.5 | 34.3% | 8.4% (23, 25) | 13.5% (13.2, 13.7) | 13.7% | $14.7 |
+
+| Eval corpus, one run each | Recall | Precision | Clean false positives | Cost |
+|---|---|---|---|---|
+| main (Opus critique) | 27/27 | 96% | 1 of 8 | $5.20 |
+| `--critique-model sonnet` | 27/27 | 100% | 0 of 8 | $3.77 |
+| `--deepen --critique-model sonnet` | 27/27 | 87% | 1 of 8 | $6.19 |
+
+- **Findings combined several defects.** Sonnet 5.5 joined defects in 13-14% of findings, on wide spans
+  (median 5-7 lines, 43% over 10): "Pending Java exception ignored; size truncated; buffer copied regardless
+  of result" (opencv, lines 16-34) covered two references and matched neither. Dedupe was not the cause (one
+  merge in four earlier runs). Asking for one defect per finding cut the share to 9% and moved F1 within noise.
+- **`--deepen` is the first change that raised recall:** both runs (23, 25 references) above both baseline
+  runs (17, 21), code defects 9.6% → 13.7%. It reviews every chunk with findings twice (24 second looks in a
+  run), so it costs about 50% more and adds findings the critic keeps at lower precision; on the eval corpus
+  the extras were a missing lockfile and `go.sum` entries (the synthetic cases have none) and one clean
+  change flagged. It stays experimental and off.
+- **A Sonnet critic cost 30% less at the same F1** on AACR, and on the eval corpus it kept every planted defect
+  and flagged no clean change (one run). The critic rejecting a real multi-defect JNI finding ("GetMethodID
+  cannot realistically fail") is the same strictness with either model.
+- **Skill attribution** (who led to a finding) is still sparse: 22% of kept findings name a checklist; the
+  JNI checklist led to 4 in opencv, the always-on general checklist was named by none.
+
 The eval corpus (`code-reviewer eval --full`, 33 cases: 16 hard, 2 from real repositories, 8 clean; one run per
 variant, main at 23c6948) is where skills are aimed:
 

@@ -189,6 +189,12 @@ export const ReviewSettingsSchema = z.object({
    */
   audit: z.boolean(),
   /**
+   * A second look at each chunk with findings: the same review task again, listing what was found and asking
+   * for other defects in the same functions (defects cluster; a reviewer tends to report one per spot).
+   * Experimental; off by default.
+   */
+  deepen: z.boolean(),
+  /**
    * Where agents read code: `auto` = isolated snapshot for ACP agents, in place for API providers when the
    * checkout is clean and at head; `always` = always an isolated snapshot.
    */
@@ -461,6 +467,7 @@ export const DEFAULT_CONFIG: Config = {
     expand: 'map',
     passes: ['general'],
     audit: false,
+    deepen: false,
     isolation: 'auto',
   },
   git: {
