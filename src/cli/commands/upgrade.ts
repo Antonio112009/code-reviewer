@@ -142,6 +142,11 @@ export async function runUpgrade(opts: UpgradeOptions, deps: UpgradeDeps): Promi
   const target = await resolveVersion(opts.to ?? 'latest', env);
   const available = opts.to ? target !== current : isNewer(target, current);
   const command = upgradeCommand(install.kind, target);
+  // An unreleased build (a source checkout, a local tarball) can be ahead of the registry.
+  const upToDate =
+    !opts.to && isNewer(current, target)
+      ? `${current} is newer than the latest release (${target}).`
+      : `Already on ${current}, the ${opts.to ? 'requested' : 'latest'} version.`;
 
   if (opts.check || opts.json) {
     if (opts.json) {
@@ -151,12 +156,12 @@ export async function runUpgrade(opts: UpgradeOptions, deps: UpgradeDeps): Promi
     } else if (available) {
       write(`${current} → ${target} available. Run: code-reviewer upgrade\n`);
     } else {
-      write(`${current} is the latest version.\n`);
+      write(`${upToDate}\n`);
     }
     return EXIT.ok;
   }
   if (!available) {
-    deps.logger.success(`Already on ${current}, the ${opts.to ? 'requested' : 'latest'} version.`);
+    deps.logger.success(upToDate);
     return EXIT.ok;
   }
   if (install.kind !== 'npm-global') {
