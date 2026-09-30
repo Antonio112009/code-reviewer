@@ -282,6 +282,17 @@ function isAbort(err: unknown, signal?: AbortSignal): boolean {
   return signal?.aborted === true || (err instanceof Error && err.name === 'AbortError');
 }
 
+/** The new-version lines each changed file added or modified: marked for the critic. */
+function changedLinesOf(units: readonly ReviewUnit[]): Map<string, Set<number>> {
+  const out = new Map<string, Set<number>>();
+  for (const u of units) {
+    const lines = new Set<number>();
+    for (const h of u.hunks) for (const l of h.lines) if (l.type === 'add' && l.newLine) lines.add(l.newLine);
+    if (lines.size) out.set(u.path, lines);
+  }
+  return out;
+}
+
 /** A static hit carried into the review as a candidate finding (verified by the critic). */
 function staticFinding(hit: StaticHit, chunkId: string): Finding {
   return {
@@ -1591,6 +1602,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           concurrency: config.review.concurrency,
           batchTokenBudget: Math.max(8_000, Math.floor(budget / 2)),
           signal: req.signal,
+          ...(mode === 'diff' ? { changedLines: changedLinesOf(units) } : {}),
           onBatchDone: ({ batch, total }) => emit({ type: 'critique-progress', batch, total }),
           ...(cache ? { cache: critiqueCache(cache, critiqueInstructions(mode, depth, dependencies)) } : {}),
         });

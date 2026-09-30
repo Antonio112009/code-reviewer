@@ -134,4 +134,17 @@ describe('depth prompts', () => {
     expect(critiqueInstructions('diff', 'essential')).toMatch(/ESSENTIAL-depth review: also reject/);
     expect(critiqueInstructions('diff', 'full')).not.toMatch(/ESSENTIAL/);
   });
+
+  it('tells the critic how findings that are only partly true or not reachable are judged', () => {
+    for (const depth of ['essential', 'full'] as const) {
+      const text = critiqueInstructions('diff', depth);
+      expect(text).toMatch(/by its headline claim/);
+      expect(text).toMatch(/probably false, the verdict is "rejected", not "uncertain"/);
+      expect(text).toMatch(/already handled by the function called/);
+      expect(text).toMatch(/only formally undefined/);
+      expect(text).toMatch(/reject it as pre-existing/);
+    }
+    // whole files: nothing is pre-existing
+    expect(critiqueInstructions('files', 'full')).not.toMatch(/reject it as pre-existing/);
+  });
 });
