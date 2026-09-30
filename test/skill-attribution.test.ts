@@ -37,12 +37,15 @@ describe('skill attribution', () => {
     const text = reviewInstructions({ mode: 'diff', skills: [{ skill, score: 1, reasons: [] }] });
     expect(text).toContain('### JSON [go/core/json]');
     expect(text).toContain('"checklist" field');
+    expect(text).toContain('without the brackets (e.g. `go/core/json`)');
   });
 
   it('keeps a checklist only when the chunk had it', () => {
     expect(toFinding(reported({ checklist: 'go/core/json' }), ctx).checklist).toBe('go/core/json');
     expect(toFinding(reported({ checklist: 'python/core/strings' }), ctx).checklist).toBeUndefined();
     expect('checklist' in toFinding(reported(), ctx)).toBe(false);
+    // the prompt shows ids in brackets; models copy them
+    expect(toFinding(reported({ checklist: ' [go/core/json] ' }), ctx).checklist).toBe('go/core/json');
   });
 
   it('counts the findings each skill led to, per run and across runs', () => {

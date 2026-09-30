@@ -7,6 +7,13 @@
   `--check` / `--json` only report, `--to <version>` installs an exact version. For pnpm, yarn, bun, npx, a
   project dependency or a source checkout it prints the command to run. Interactive reviews say once a day
   when a newer version exists (off in CI, with `--json`/`--quiet`, and with `CODE_REVIEWER_NO_UPDATE_CHECK=1`).
+- **Skill attribution works with Claude.** Reviews on Claude Sonnet never filled a finding's `checklist`, so
+  `skills usage` credited no findings to any skill. The prompt now asks for the id without its brackets (and
+  brackets are stripped when a model copies them), and a finding that confirms a skill's ast-grep check is
+  credited to that skill. A live review of a small change now attributes every finding.
+- **Eval fixes.** An `also` range in another file was checked against the wrong file, so the click case failed
+  with "does not exist in the head version"; a reported optional defect is now counted as found, and the
+  summary no longer lists optional defects under "Missed".
 - **Optional defects in eval cases.** `optional: true` marks a real but lesser defect: finding it counts as
   acceptable, missing it is not counted, and a case with only optional defects stays clean. The built-in
   corpus labels five such issues that reviews kept reporting (CSV formula injection and an in-memory export,

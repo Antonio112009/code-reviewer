@@ -8,6 +8,7 @@ import { shortHash } from '../util/ids';
 import { globalConfigDir, resolveInside } from '../util/paths';
 import { runManaged } from '../util/processes';
 import { expectationProblems } from './cases';
+import { defectRanges } from './metrics';
 import type { CaseSource, EvalCase } from './types';
 
 /** Branches of a materialised inline case (neutral names: they appear in the review prompt). */
@@ -246,8 +247,9 @@ export async function materializeCase(c: EvalCase, opts: MaterializeOptions = {}
   const repo = await materializeRepoCase(c.source, opts);
   const git = new GitRepo(repo.root);
   const contents = new Map<string, string | undefined>();
-  for (const d of c.expect) {
-    if (!contents.has(d.file)) contents.set(d.file, await git.show(c.source.headRef, d.file));
+  // Every file a defect names: its own and those of its `also` ranges.
+  for (const { file } of c.expect.flatMap(defectRanges)) {
+    if (!contents.has(file)) contents.set(file, await git.show(c.source.headRef, file));
   }
   const problems = expectationProblems(c.expect, (f) => contents.get(f));
   if (problems.length) throw new CaseRepoError(problems.join('; '));
