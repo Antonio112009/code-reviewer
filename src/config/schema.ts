@@ -97,7 +97,8 @@ export type MockProviderConfig = z.infer<typeof MockProviderSchema>;
  *   overload, costly performance); essential-tier skills, a smaller skill budget, fewer tool steps, less
  *   related context, critical/major findings only — fewer tokens;
  * - `full` — every real defect, including minor edge cases, accessibility and best practices with a
- *   concrete consequence; all skills.
+ *   concrete consequence; all skills. The default: on real pull requests it costs half as much again as
+ *   `essential` and finds almost four times as many of the defects human reviewers noted (AACR-Bench ctx30).
  */
 export const REVIEW_DEPTHS = ['essential', 'full'] as const;
 export type ReviewDepth = (typeof REVIEW_DEPTHS)[number];
@@ -443,13 +444,13 @@ export const DEFAULT_CONFIG: Config = {
     review: { provider: 'claude', reasoning: 'medium' },
   },
   review: {
-    // The depth-dependent values below are the `essential` preset (see DEPTH_PRESETS).
-    depth: 'essential',
+    // The depth-dependent values below are the `full` preset (see DEPTH_PRESETS).
+    depth: 'full',
     selfCritique: true,
-    minConfidence: 0.7,
+    minConfidence: 0.3,
     requireFailurePath: true,
-    advisoryConfidence: 0,
-    minSeverity: 'major',
+    advisoryConfidence: 0.6,
+    minSeverity: 'info',
     maxChunkTokens: 40_000,
     maxChunks: 60,
     concurrency: 3,
@@ -458,7 +459,7 @@ export const DEFAULT_CONFIG: Config = {
     authors: false,
     tools: true,
     skills: 'auto',
-    skillTokenBudget: 3_500,
+    skillTokenBudget: 6_000,
     fullFileTokens: 3_000,
     contextLines: 30,
     skillsExclude: [],
@@ -467,15 +468,15 @@ export const DEFAULT_CONFIG: Config = {
     maxTimeoutMs: 15 * 60_000,
     activeExtension: 0.5,
     stallTimeoutMs: 4 * 60_000,
-    maxSteps: 15,
+    maxSteps: 25,
     summary: false,
     chunking: 'smart',
-    contextShare: 0.1,
+    contextShare: 0.2,
     expand: 'map',
     passes: ['general'],
     audit: false,
     deepen: false,
-    secondOpinion: false,
+    secondOpinion: true,
     isolation: 'auto',
   },
   git: {
@@ -538,7 +539,19 @@ export const DEFAULT_CONFIG: Config = {
  * flag, so an explicit value (e.g. `review.skillTokenBudget: 8000`) always wins over the preset.
  */
 export const DEPTH_PRESETS: Record<ReviewDepth, { review: Partial<ReviewSettings> }> = {
-  essential: { review: { minSeverity: 'major', skillTokenBudget: 3_500, maxSteps: 15, contextShare: 0.1 } },
+  // Each preset names every depth-dependent setting, so switching depth never keeps the other's values.
+  essential: {
+    review: {
+      minSeverity: 'major',
+      skillTokenBudget: 3_500,
+      maxSteps: 15,
+      contextShare: 0.1,
+      // No "worth a look" tier: the critic also drops low-impact findings, the rest needs 0.7.
+      minConfidence: 0.7,
+      advisoryConfidence: 0,
+      secondOpinion: false,
+    },
+  },
   full: {
     review: {
       minSeverity: 'info',

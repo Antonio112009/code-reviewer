@@ -67,8 +67,8 @@ npm link           # puts `code-reviewer` on your PATH
 Everyday commands:
 
 ```bash
-code-reviewer review                          # your branch vs its base (auto-detected), essential depth
-code-reviewer review --full                   # every real defect, not only production-critical ones
+code-reviewer review                          # your branch vs its base (auto-detected), every real defect
+code-reviewer review --essential              # only what can seriously hurt production: cheaper, far fewer findings
 code-reviewer review --base main --fail-on major   # CI gate: exit code 1 on major or critical findings
 code-reviewer review --staged                 # what you are about to commit (--uncommitted: all local changes)
 code-reviewer hook install                    # review the staged changes before every commit
@@ -89,11 +89,11 @@ on `--base` in the meantime.
 # feature/login against main: the same changes a pull request would show
 code-reviewer review --base main --head feature/login
 
-# the settings we measure with: every real defect (--full); Sonnet reviews and double-checks each finding
-code-reviewer review --base main --head feature/login --full
+# only what can seriously hurt production (about a third cheaper, a fifth of the findings)
+code-reviewer review --base main --head feature/login --essential
 
 # a release branch against the previous one, reports (md + html) copied to ./reports
-code-reviewer review --base origin/release/2.3 --head origin/release/2.4 --full --format md,html --out reports
+code-reviewer review --base origin/release/2.3 --head origin/release/2.4 --format md,html --out reports
 
 # the plan first — files, chunks, skills, static hints — without calling a model
 code-reviewer review --base main --head feature/login --dry-run
@@ -102,8 +102,8 @@ code-reviewer review --base main --head feature/login --dry-run
 - A bare base name (`main`) means the freshly fetched remote branch; `origin/main` or a commit sha works too.
   `--offline` compares local refs without fetching.
 - `--head` defaults to `HEAD`, unpushed commits included. `--explain-refs` prints how both were resolved.
-- `--full` reports every real defect; the default `essential` depth keeps to what can seriously hurt
-  production (security, data loss, crashes, leaks, overload, costly performance) and costs less.
+- The default depth, `full`, reports every real defect. `--essential` keeps to what can seriously hurt
+  production (security, data loss, crashes, leaks, overload, costly performance) for about a third less.
 - With Claude Code, Sonnet reviews and Sonnet checks each finding (`--model` / `--critique-model` to change;
   an Opus critic measured the same quality for 40% more). `--max-cost 5` stops starting model calls once $5 is spent.
 
@@ -118,9 +118,9 @@ code-reviewer review --base main --head feature/login --dry-run
 - **Covers the whole change.** Related files (imports, tests, siblings) are reviewed together and shared
   files are added as read-only context, so nothing is silently dropped.
 - **Two depths.**
-  - `essential`, the default: only what can seriously hurt production — security, data loss, crashes,
-    memory leaks / OOM, overload, costly performance — using fewer tokens.
-  - `full`: every real defect, including edge cases and accessibility.
+  - `full`, the default: every real defect, including edge cases and accessibility.
+  - `essential`: only what can seriously hurt production — security, data loss, crashes, memory leaks / OOM,
+    overload, costly performance — using fewer tokens.
 - **Your models, per stage.** A fast model for the review and a stronger one for verification, each
   with its own reasoning effort. If a model becomes unavailable, it offers an alternative (Claude ↔
   Codex, …).
@@ -203,16 +203,16 @@ that match a comment human reviewers left, so real defects they did not write do
 
 | | Findings | Matching a human comment | Human comments found | Cost |
 |---|---|---|---|---|
-| `essential` (default) | 9.5, all major | 63% | 2.1% (code defects 4.4%) | $5.1 |
-| `--full` | 47.5 | 46% | 7.7% (code defects 12.2%) | $7.6 |
-| `--full --deepen` | 70.5 | 38% | 9.4% (code defects 13.7%) | $13.1 |
+| `--essential` | 9.5, all major | 63% | 2.1% (code defects 4.4%) | $5.1 |
+| `full` (default) | 47.5 | 46% | 7.7% (code defects 12.2%) | $7.6 |
+| `--deepen` | 70.5 | 38% | 9.4% (code defects 13.7%) | $13.1 |
 
 `essential` reports about one finding per three pull requests: the ones that can seriously hurt production,
-and every one of them is also in the `--full` review. `--full` costs half as much again and finds almost
-four times as many of the human comments. Reading the code is what costs, not the number of findings, so
-`essential` saves less than it leaves out.
+and every one of them is also in the `full` review. `full` costs half as much again and finds almost four
+times as many of the human comments, which is why it is the default. Reading the code is what costs, not the
+number of findings, so `essential` saves less than it leaves out.
 
-| | `essential` (default) | `full` (`--full`) |
+| | `essential` (`--essential`) | `full` (default) |
 |---|---|---|
 | Looks for | security, data loss, crashes/hangs, leaks & OOM, overload (unbounded concurrency, missing timeouts, retry storms, N+1), races, costly performance | every real defect, also edge cases, accessibility, best practices with a concrete consequence |
 | Severities | critical, major | all |
@@ -233,8 +233,8 @@ early return, code that must change together.
 
 | AACR-Bench ctx30 (30 real PRs, two runs each) | Recall | Code-defect recall | Precision | Cost per run |
 |---|---|---|---|---|
-| `--full` | 7.7% | 12.2% | 46.3% | $7.6 |
-| `--full --deepen` | 9.4% | 13.7% | 38.3% | $13.1 |
+| default | 7.7% | 12.2% | 46.3% | $7.6 |
+| `--deepen` | 9.4% | 13.7% | 38.3% | $13.1 |
 
 - **When:** changes where a missed defect is expensive: payments, authentication, migrations, a release
   branch. For everyday pull requests the default is the better trade.
@@ -294,8 +294,8 @@ roles:
   review:   { provider: claude, model: sonnet, reasoning: medium } # the defaults
   critique: { provider: claude, model: sonnet, reasoning: high }   # the defaults too
 review:
-  depth: essential          # or full
-  minConfidence: 0.7
+  depth: full               # the default; essential = only serious production issues
+  minConfidence: 0.3        # the default at full depth (0.7 at essential)
   exclude: ["**/*.generated.ts"]
 git:
   base: { rules: [{ match: "feature/**", base: [develop, main] }] }

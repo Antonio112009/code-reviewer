@@ -112,7 +112,7 @@
 
 ## Review depth
 
-`review.depth` is `essential` (the default) or `full`. It is resolved first, from the highest-priority
+`review.depth` is `full` (the default) or `essential`. It is resolved first, from the highest-priority
 layer that sets it. `config/load.ts` then puts `DEPTH_PRESETS[depth]` between the built-in defaults and
 the config files and flags, so explicit settings always win.
 
@@ -122,7 +122,9 @@ the config files and flags, so explicit settings always win.
 | `skillTokenBudget` | 3500 | 6000 |
 | `maxSteps` | 15 | 25 |
 | `contextShare` | 0.1 | 0.2 |
-| `minConfidence` | 0.7 (the default) | 0.3 |
+| `minConfidence` | 0.7 | 0.3 |
+| `advisoryConfidence` | 0 | 0.6 |
+| `secondOpinion` | off | on |
 
 The depth also affects:
 - **Prompts.** The review instructions (`prompts.ts#depthRules`) narrow the scope to serious production

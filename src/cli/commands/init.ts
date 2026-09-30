@@ -11,6 +11,7 @@ import { GLOBAL_CONFIG_FILES, loadConfig, PROJECT_CONFIG_FILES } from '../../con
 import {
   type Config,
   DEFAULT_CONFIG,
+  DEPTH_PRESETS,
   type PartialConfig,
   REPORT_FORMATS,
   type ReportFormat,
@@ -50,9 +51,10 @@ export const FOCUS_AREAS = [
 
 const DEFAULT_FOCUS = ['security', 'correctness'];
 const CONFIDENCE_CHOICES = [
+  { value: 0.3, hint: 'everything the critic did not reject; below 0.6 is listed as "worth a look"' },
   { value: 0.5, hint: 'more findings, more noise' },
   { value: 0.6, hint: '' },
-  { value: 0.7, hint: 'balanced, the default' },
+  { value: 0.7, hint: 'only confident findings' },
   { value: 0.8, hint: 'only findings the reviewer is sure about' },
 ];
 const PROVIDER_PREFERENCE = ['claude', 'codex', 'copilot', 'gemini', 'anthropic', 'bedrock'];
@@ -690,7 +692,19 @@ function resolveChoices(defaults: InitChoices, answers: InitAnswers): InitChoice
   for (const [key, value] of Object.entries(given)) {
     if (value !== undefined) (merged as unknown as Record<string, unknown>)[key] = value;
   }
+  if (answers.minConfidence === undefined) merged.minConfidence = confidenceFor(merged.depth, defaults);
   return merged;
+}
+
+/**
+ * The confidence threshold that goes with `depth`: that depth's own default (0.3 at full, where findings
+ * below 0.6 are "worth a look"; 0.7 at essential), unless the current config set another one on purpose.
+ */
+function confidenceFor(depth: ReviewDepth, current: Pick<InitChoices, 'depth' | 'minConfidence'>): number {
+  const custom = current.minConfidence !== DEPTH_PRESETS[current.depth].review.minConfidence;
+  return custom
+    ? current.minConfidence
+    : (DEPTH_PRESETS[depth].review.minConfidence ?? current.minConfidence);
 }
 
 function validateChoices(c: InitChoices, current: Config): void {
@@ -897,14 +911,14 @@ async function askChoices(
         message: 'Review depth',
         options: [
           {
-            value: 'essential' as const,
-            label: 'Essential',
-            hint: 'security, data loss, crashes, leaks/OOM, overload, costly performance — fewer tokens',
-          },
-          {
             value: 'full' as const,
             label: 'Full',
             hint: 'every real defect, incl. edge cases, accessibility, best practices',
+          },
+          {
+            value: 'essential' as const,
+            label: 'Essential',
+            hint: 'security, data loss, crashes, leaks/OOM, overload, costly performance — about a third cheaper, far fewer findings',
           },
         ],
         initialValue: d.depth,
@@ -912,16 +926,25 @@ async function askChoices(
     );
   }
   if (!has('minConfidence')) {
-    const options = CONFIDENCE_CHOICES.map((o) => ({ value: o.value, label: String(o.value), hint: o.hint }));
-    if (!options.some((o) => o.value === d.minConfidence)) {
-      options.unshift({ value: d.minConfidence, label: String(d.minConfidence), hint: 'current' });
+    // The threshold follows the depth just chosen, unless the config already had one of its own.
+    const suggested = confidenceFor(c.depth, d);
+    const options = CONFIDENCE_CHOICES.map((o) => ({
+      value: o.value,
+      label: String(o.value),
+      hint:
+        o.value === suggested
+          ? [o.hint, `the default at ${c.depth} depth`].filter(Boolean).join(' — ')
+          : o.hint,
+    }));
+    if (!options.some((o) => o.value === suggested)) {
+      options.unshift({ value: suggested, label: String(suggested), hint: 'current' });
     }
     c.minConfidence = unwrap(
       await p.select({
         ...io,
         message: 'Report findings with confidence of at least',
         options,
-        initialValue: d.minConfidence,
+        initialValue: suggested,
       }),
     );
   }

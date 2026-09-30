@@ -20,9 +20,9 @@ inputs:
     required: false
     default: ''
   depth:
-    description: essential (serious production issues only, fewer tokens) or full (every real defect).
+    description: full (every real defect) or essential (serious production issues only, fewer tokens). Empty = the configured depth (full unless the repository's config says otherwise).
     required: false
-    default: essential
+    default: ''
   fail-on:
     description: Fail the job when a finding of this severity or worse remains (critical, major, minor, info), or when part of the change was not reviewed. Empty = never fail on findings.
     required: false
@@ -116,7 +116,8 @@ runs:
         set -o pipefail
         formats="md,json"
         if [ "$CR_SARIF" = "true" ]; then formats="$formats,sarif"; fi
-        args=(review --plain --yes --format "$formats" --out "$CR_OUT" --depth "$CR_DEPTH")
+        args=(review --plain --yes --format "$formats" --out "$CR_OUT")
+        if [ -n "$CR_DEPTH" ]; then args+=(--depth "$CR_DEPTH"); fi
         if [ -n "$CR_PROVIDER" ]; then args+=(--provider "$CR_PROVIDER"); fi
         if [ -n "$CR_MODEL" ]; then args+=(--model "$CR_MODEL"); fi
         if [ -n "$CR_FAIL_ON" ]; then args+=(--fail-on "$CR_FAIL_ON"); fi
