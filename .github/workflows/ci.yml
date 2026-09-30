@@ -70,6 +70,42 @@ jobs:
       - run: node dist/cli.js skills list javascript/react
       - run: node dist/cli.js providers list
 
+  package:
+    name: Package install · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # The packed package installed globally must run its bundled ast-grep (none is on the runner's PATH).
+      - run: node scripts/ci/package-smoke.mjs --expect-ast-grep
+
+  package-musl:
+    name: Package install · Alpine (musl)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container: node:24-alpine
+    steps:
+      - run: apk add --no-cache git
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: npm ci
+      - run: npm run build
+      # No ast-grep build for musl: the install must still succeed and the review run without it.
+      - run: node scripts/ci/package-smoke.mjs
+
   dependency-review:
     name: Dependency review
     if: github.event_name == 'pull_request'
