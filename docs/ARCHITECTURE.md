@@ -215,6 +215,14 @@ with confidence at most 0.4 (below `advisoryConfidence`, so "worth a look" rathe
 "probably false" is `rejected`, not `uncertain`; formally undefined but working behaviour, hardening advice
 without a failure path, test-only hygiene and harmless leftover logging are not defects.
 
+Second opinion (`review.secondOpinion`, `--second-opinion`; off): findings the critic kept with a confidence
+from 0.1 below to 0.15 above the bar of the main report (`secondOpinionRange`: `advisoryConfidence`, else
+`minConfidence`) go to a second verifier, two per task with the full step budget. Its instructions are the
+critic's plus the task of refuting each finding with code the first did not read (implementations behind an
+interface, callers, what produces the value), and it sees the first verdict. Its verdict replaces the first;
+`critique.firstOpinion` keeps the first. Its verdicts are cached under their own instructions. A second
+opinion that does not arrive leaves the first verdict.
+
 ### Review passes (`review.passes`, `--passes`)
 
 `[general]` (the default) reviews each chunk once. A list of focused passes reviews every chunk once per

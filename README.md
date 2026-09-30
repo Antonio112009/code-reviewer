@@ -297,6 +297,9 @@ Useful flags:
   of stopping at the first defect of a function;
 - `--deepen` (experimental): a second look at every chunk with findings, for other defects in the same
   functions ([when to use it](#a-second-look-for-important-changes---deepen-experimental));
+- `--second-opinion`: findings the critic was not sure about (confidence around the bar of the main report)
+  go to a second verifier that reads further — callers, implementations, what produces the value — and
+  decides; it moves real findings from "worth a look" into the main report and unverifiable ones out;
 - `--expand off|map|refs|deep`: related unchanged code per chunk — `map` (the default) lists where unchanged
   code uses the changed declarations and where the functions the new code calls are defined; `refs` adds
   excerpts of that code; `deep` also who calls those usages;
