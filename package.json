@@ -1,6 +1,6 @@
 {
   "name": "@antonio112009/code-reviewer",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Next-level LLM code review: version-aware skills, static hints and self-critique for fewer false positives. Works with Claude Code, Codex, Copilot, Gemini, the Anthropic API, AWS Bedrock and OpenAI-compatible APIs (Ollama, OpenRouter, …).",
   "keywords": [
     "code-review",

@@ -1,19 +1,23 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 — 2026-09-30
+
+Sonnet now checks the findings too (30% cheaper per review at the same quality), and `--deepen` adds a second
+look for important changes: on AACR-Bench ctx30 it raised recall from 7.0% to 10.0% (F1 15.7%).
 
 - **Sonnet checks the findings by default.** With Sonnet 5.5 reviewing, an Opus critic measured the same
-  AACR-Bench F1 for 41% more cost; the eval corpus kept every planted defect at 100% precision with Sonnet.
-  `--critique-model opus` brings Opus back. Combined with `--deepen`, the Sonnet critic gave the best result
-  measured (F1 15.7%, recall 10.0%, $11.5 a run on ctx30).
-- **README:** when to use `--deepen`, and what it costs.
-- **`--deepen` (experimental).** A second look at each chunk with findings, asking for other defects in the
-  same functions. On AACR ctx30 it is the first change that raised recall (6.6% → 8.4%, code defects
-  9.6% → 13.7%, F1 11.4% → 13.5%), at lower precision and about 50% more cost; off by default.
+  AACR-Bench F1 for 41% more cost, and on the eval corpus the Sonnet critic kept every planted defect at 100%
+  precision. `--critique-model opus` brings Opus back.
+- **`--deepen` (experimental).** A second look at each chunk with findings, asking only for other defects in
+  the same functions (unhandled failures, resources on every path, state after an early return). On AACR-Bench
+  ctx30 with the Sonnet critic: recall 7.0% → 10.0%, code defects 11.5% → 14.1%, F1 11.7% → 15.7%, precision
+  unchanged, about 70% more cost. Off by default; the README says when it is worth it.
 - **One defect per finding.** Reviews were told not to combine several defects in one finding and to point
   at the offending lines; Sonnet 5.5 combined them in 13-14% of findings (e.g. three JNI defects in one,
   matching none of the references). Dedupe no longer merges different findings that share a span.
 - **Eval case:** a workflow and its script disagree on an environment variable name.
+- **`upgrade --check` on an unreleased build** says it is newer than the latest release instead of "the latest
+  version".
 
 ## 0.5.2 — 2026-09-30
 
