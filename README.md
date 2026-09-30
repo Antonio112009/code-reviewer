@@ -198,6 +198,20 @@ code-reviewer providers test claude --model sonnet
 
 ## Review depth
 
+Measured on 30 real pull requests (AACR-Bench ctx30, two runs each; "precision" is the share of findings
+that match a comment human reviewers left, so real defects they did not write down count against it):
+
+| | Findings | Matching a human comment | Human comments found | Cost |
+|---|---|---|---|---|
+| `essential` (default) | 9.5, all major | 63% | 2.1% (code defects 4.4%) | $5.1 |
+| `--full` | 47.5 | 46% | 7.7% (code defects 12.2%) | $7.6 |
+| `--full --deepen` | 70.5 | 38% | 9.4% (code defects 13.7%) | $13.1 |
+
+`essential` reports about one finding per three pull requests: the ones that can seriously hurt production,
+and every one of them is also in the `--full` review. `--full` costs half as much again and finds almost
+four times as many of the human comments. Reading the code is what costs, not the number of findings, so
+`essential` saves less than it leaves out.
+
 | | `essential` (default) | `full` (`--full`) |
 |---|---|---|
 | Looks for | security, data loss, crashes/hangs, leaks & OOM, overload (unbounded concurrency, missing timeouts, retry storms, N+1), races, costly performance | every real defect, also edge cases, accessibility, best practices with a concrete consequence |
@@ -219,16 +233,16 @@ early return, code that must change together.
 
 | AACR-Bench ctx30 (30 real PRs, two runs each) | Recall | Code-defect recall | Precision | Cost per run |
 |---|---|---|---|---|
-| `--full` | 7.0% | 11.5% | 36.7% | $6.8 |
-| `--full --deepen` | 10.0% | 14.1% | 37.2% | $11.5 |
+| `--full` | 7.7% | 12.2% | 46.3% | $7.6 |
+| `--full --deepen` | 9.4% | 13.7% | 38.3% | $13.1 |
 
 - **When:** changes where a missed defect is expensive: payments, authentication, migrations, a release
   branch. For everyday pull requests the default is the better trade.
 - **Cost:** chunks with findings are reviewed twice; the repeat reuses the cached prompt, so it adds about
   70% rather than doubling the price.
-- **Noise:** precision on real PRs held (37.2% vs 36.7%), but it reports more findings overall, minor ones and
-  remarks about what the diff does not show (a missing lockfile) among them; on the eval corpus of planted
-  defects precision fell from 100% to 87%.
+- **Noise:** it reports half as many findings again (70 against 47 on these PRs), most of them minor, and a
+  smaller share of them match what human reviewers wrote (38% against 46%). The references matched go from
+  22 to 27: a fifth more real defects for a lot more to read.
 - **Suggested, not automatic:** after a review with findings, the summary and the markdown report suggest
   `--deepen` with its estimated cost (also `advice.deepen` in the JSON). With the result cache on (the
   default), the re-run takes its first looks from the cache and pays only for the second looks.

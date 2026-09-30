@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **README: what each depth gives on real pull requests.** Measured on AACR-Bench ctx30: `essential` reports
+  about one finding per three pull requests (63% match a human comment), `--full` five times as many for half
+  as much again, `--full --deepen` the most.
 - **A second opinion on borderline findings.** Findings the critic kept without being sure (confidence around
   the bar of the main report) go to a second verifier, which reads further and decides. On AACR-Bench ctx30 it
   was better in both runs on every measure (precision 40.2% → 46.3%, F1 11.7% → 13.2%) for 10% more cost. On

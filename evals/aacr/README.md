@@ -311,6 +311,29 @@ to a second verifier that reads further and decides):
 - A third pair (`c2-2`, `c2so-2`) is void: half its reviews failed on a network outage ("SSL certificate
   hostname mismatch", agent start timeouts). Check the run statuses before trusting a run with few findings.
 
+#### The three modes (2026-09-30)
+
+Pinned build of main with the second opinion on by default at full depth (6bd6eca), two runs each:
+
+| ctx30 | Findings | Precision | Recall | F1 | Code-defect recall | Cost / run |
+|---|---|---|---|---|---|---|
+| `--essential` | 9.5 | 62.8% (55.6, 70.0) | 2.1% (5, 7) | 4.1% | 4.4% | $5.1 |
+| `--essential --second-opinion` | 9.5 | 63.3% (60.0, 66.7) | 2.1% (6, 6) | 4.1% | 4.4% | $5.9 |
+| `--full` (second opinion on) | 47.5 | 46.3% | 7.7% (21, 23) | 13.2% | 12.2% | $7.6 |
+| `--full --deepen` | 70.5 | 38.3% (38.0, 38.6) | 9.4% (27, 27) | 15.1% (15.1, 15.2) | 13.7% | $13.1 |
+
+- **Essential depth was never measured before.** It reports nine or ten findings on 30 PRs, all `major`; all
+  nine of one run are also in a full run of the same PRs. It costs a third less than `--full` and finds a
+  quarter of the references: the review's cost is reading the code, not reporting.
+- **A second opinion does nothing at essential depth** (two findings a run in its range, same numbers, 15%
+  more cost): it stays off there.
+- **`--full --deepen` is the most stable result measured** (F1 15.1% and 15.2%, 27 references both times) and
+  the highest recall, at 72% more cost than `--full` and eight points less precision. Against the same mode
+  before the critic rework (F1 15.7%, recall 10.0%, $11.5) it is unchanged within noise and 14% dearer: the
+  second opinion looks at 25-27 findings a run here. One review of 30 failed in each run (agent start
+  timeout; in the second the laptop had slept), so both are slightly low.
+- Cost per matched reference: `--essential` $0.85, `--full` $0.35, `--full --deepen` $0.49.
+
 The eval corpus (`code-reviewer eval --full`, 33 cases: 16 hard, 2 from real repositories, 8 clean; one run per
 variant, main at 23c6948) is where skills are aimed:
 
