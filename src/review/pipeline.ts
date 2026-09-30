@@ -210,7 +210,7 @@ export function resolveRouting(config: Config): { review: RoleRouting; critique?
   };
   if (!config.review.selfCritique) return { review: reviewRoute };
   // The critic runs on the review provider unless a critique role names another. Without a model of its
-  // own it takes the provider's `critiqueModel` (claude: opus), else the review's model (same provider) or
+  // own it takes the provider's `critiqueModel` (claude: sonnet), else the review's model (same provider) or
   // the provider's default.
   const r = config.roles.critique;
   const provider = r?.provider ?? review.provider;

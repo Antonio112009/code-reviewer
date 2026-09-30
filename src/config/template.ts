@@ -93,11 +93,11 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
         },
         claude: {
           doc: 'Claude Code over ACP. defaultModel / critiqueModel apply when a role sets no model.',
-          example: { type: 'acp', preset: 'claude', defaultModel: 'sonnet', critiqueModel: 'opus' },
+          example: { type: 'acp', preset: 'claude', defaultModel: 'sonnet', critiqueModel: 'sonnet' },
         },
         anthropic: {
           doc: 'The Anthropic API directly (ANTHROPIC_API_KEY): no agent overhead per task, cheaper in CI.',
-          example: { type: 'anthropic', defaultModel: 'claude-sonnet-5-5', critiqueModel: 'claude-opus-5-5' },
+          example: { type: 'anthropic', defaultModel: 'claude-sonnet-5-5', critiqueModel: 'claude-sonnet-5-5' },
         },
         'my-agent': {
           doc: 'Any other ACP agent, launched with your own command.',
@@ -125,7 +125,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           example: { provider: 'claude', model: 'opus', reasoning: 'high' },
         },
         critique: {
-          doc: "Self-critique pass that drops false positives. Unset: the review provider's critiqueModel (claude: opus), high reasoning.",
+          doc: "Self-critique pass that drops false positives. Unset: the review provider's critiqueModel (claude: sonnet), high reasoning.",
           example: { provider: 'codex', reasoning: 'high' },
         },
         summary: {

@@ -89,7 +89,7 @@ on `--base` in the meantime.
 # feature/login against main: the same changes a pull request would show
 code-reviewer review --base main --head feature/login
 
-# the settings we measure with: every real defect (--full); Sonnet reviews, Opus double-checks each finding
+# the settings we measure with: every real defect (--full); Sonnet reviews and double-checks each finding
 code-reviewer review --base main --head feature/login --full
 
 # a release branch against the previous one, reports (md + html) copied to ./reports
@@ -104,8 +104,8 @@ code-reviewer review --base main --head feature/login --dry-run
 - `--head` defaults to `HEAD`, unpushed commits included. `--explain-refs` prints how both were resolved.
 - `--full` reports every real defect; the default `essential` depth keeps to what can seriously hurt
   production (security, data loss, crashes, leaks, overload, costly performance) and costs less.
-- With Claude Code the defaults are Sonnet for the review and Opus for the critique (`--model` /
-  `--critique-model` to change). `--max-cost 5` stops starting model calls once $5 is spent.
+- With Claude Code, Sonnet reviews and Sonnet checks each finding (`--model` / `--critique-model` to change;
+  an Opus critic measured the same quality for 40% more). `--max-cost 5` stops starting model calls once $5 is spent.
 
 ## Why Code Reviewer
 
@@ -161,7 +161,7 @@ flowchart LR
 
 | Provider | Uses | Notes |
 |---|---|---|
-| `claude` | Claude Code over [ACP](https://agentclientprotocol.com) | your Claude Code login; reviews with Sonnet (1M context) and critiques with Opus by default; `--model opus` for a deeper review. Review sessions load none of your plugins, hooks or settings (only the `env` / `apiKeyHelper` sign-in); `providers.claude.userSettings: true` in the global config loads them |
+| `claude` | Claude Code over [ACP](https://agentclientprotocol.com) | your Claude Code login; reviews and critiques with Sonnet (1M context) by default; `--model opus` for a deeper review. Review sessions load none of your plugins, hooks or settings (only the `env` / `apiKeyHelper` sign-in); `providers.claude.userSettings: true` in the global config loads them |
 | `codex` | OpenAI Codex over ACP | experimental; can run commands, so it is never picked as an automatic fallback |
 | `copilot` | GitHub Copilot CLI over ACP | experimental |
 | `gemini` | Gemini CLI over ACP | experimental |
@@ -251,7 +251,7 @@ project:
   focus: [security, data-integrity, concurrency]
 roles:
   review:   { provider: claude, model: sonnet, reasoning: medium } # the defaults
-  critique: { provider: claude, model: opus, reasoning: high }     # the defaults too
+  critique: { provider: claude, model: sonnet, reasoning: high }   # the defaults too
 review:
   depth: essential          # or full
   minConfidence: 0.7

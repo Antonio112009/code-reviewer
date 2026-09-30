@@ -48,11 +48,11 @@ describe('loadConfig', () => {
     expect(loaded.config.providers.claude).toBeDefined(); // defaults kept
   });
 
-  it('reviews with Sonnet (medium reasoning) and critiques with Opus (high) by default', async () => {
+  it('reviews with Sonnet (medium reasoning) and critiques with Sonnet (high) by default', async () => {
     const { config } = await loadConfig({ cwd: dir, stopDir: dir, ignoreGlobal: true });
     expect(resolveRouting(config)).toEqual({
       review: { provider: 'claude', model: 'sonnet', reasoning: 'medium' },
-      critique: { provider: 'claude', model: 'opus', reasoning: 'high' },
+      critique: { provider: 'claude', model: 'sonnet', reasoning: 'high' },
     });
     config.roles.review!.model = 'opus';
     expect(resolveRouting(config).review.model).toBe('opus');
@@ -87,9 +87,9 @@ describe('applyRoleFlags', () => {
   it('--model is the review model: the critic keeps its own unless --critique-model', async () => {
     const { config } = await loadConfig({ cwd: dir, stopDir: dir, ignoreGlobal: true });
     applyRoleFlags(config, { provider: 'claude', model: 'haiku' });
-    expect(resolveRouting(config).critique).toMatchObject({ provider: 'claude', model: 'opus' });
-    applyRoleFlags(config, { critiqueModel: 'sonnet' });
     expect(resolveRouting(config).critique).toMatchObject({ provider: 'claude', model: 'sonnet' });
+    applyRoleFlags(config, { critiqueModel: 'opus' });
+    expect(resolveRouting(config).critique).toMatchObject({ provider: 'claude', model: 'opus' });
   });
 
   it('a provider without a critique model reviews and critiques with the same model', async () => {
@@ -104,7 +104,7 @@ describe('applyRoleFlags', () => {
     applyRoleFlags(config, { critiqueProvider: 'anthropic' });
     expect(resolveRouting(config).critique).toMatchObject({
       provider: 'anthropic',
-      model: 'claude-opus-5-5',
+      model: 'claude-sonnet-5-5',
     });
   });
 
