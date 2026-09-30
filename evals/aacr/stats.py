@@ -57,7 +57,12 @@ def load(dataset: str, run: str, src: dict) -> dict:
                 report = json.load(f).get("report") or {}
         except FileNotFoundError:
             continue
-        generated = [x for x in (report.get("findings") or []) + (report.get("advisory") or []) if x.get("title")]
+        # Everything the harness counts as a review comment: findings, "worth a look" and maintainability notes.
+        generated = [
+            x
+            for x in (report.get("findings") or []) + (report.get("advisory") or []) + (report.get("notes") or [])
+            if x.get("title")
+        ]
         refs = [
             (bool(c["semantic_match"]), src.get((c["path"], c["note"].strip()[:80]), "?"))
             for c in inst["comments"]

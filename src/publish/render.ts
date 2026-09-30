@@ -1,4 +1,4 @@
-import { clipText, severityCounts, summaryLine, TOOL_INFO_URI } from '../report/common';
+import { clipText, severityCounts, sortFindings, summaryLine, TOOL_INFO_URI } from '../report/common';
 import { code, mdLine, mdText } from '../report/markdown';
 import { FINGERPRINT_RE } from '../review/fingerprint';
 import { CATEGORIES, type Finding, type RunRecord, SEVERITIES, type Severity } from '../types';
@@ -231,6 +231,13 @@ export function renderSummary(input: SummaryInput): string {
       `${plural(advisory, 'more finding')} of lower confidence or \`info\` severity ${advisory === 1 ? 'is' : 'are'} listed as "worth a look" in the review report, not here.`,
       '',
     );
+  }
+  if (run.notes?.length) {
+    out.push(`**Maintainability notes** (not defects; nothing here blocks the ${request}):`, '');
+    for (const f of sortFindings(run.notes)) {
+      out.push(`- ${forgeCode(`${f.file}:${f.startLine}`, 200)} ${forgeLine(f.title, 200)}`);
+    }
+    out.push('');
   }
 
   const failed = run.chunks.filter((c) => c.status === 'failed');

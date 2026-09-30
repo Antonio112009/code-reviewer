@@ -356,6 +356,19 @@ export function renderMarkdown(run: RunRecord): string {
     out.push('');
   }
 
+  if (run.notes?.length) {
+    out.push(
+      `## Maintainability notes (${run.notes.length})`,
+      '',
+      '_True of the changed code, not defects: listed in the pull request summary comment, never as inline comments, in SARIF / Code Quality or `--fail-on`._',
+      '',
+    );
+    for (const f of sortFindings(run.notes)) {
+      out.push(`- ${codeCell(`${f.file}:${f.startLine}`)} **${mdLine(f.title)}** — ${mdLine(f.description)}`);
+    }
+    out.push('');
+  }
+
   if (run.rejected.length) {
     out.push(`## Rejected findings (${run.rejected.length})`, '');
     out.push(

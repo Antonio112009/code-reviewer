@@ -35,6 +35,9 @@
                                        critical/major without a failure path lowered a level (requireFailurePath)
       dedupe      review/dedupe.ts     same file + overlapping lines + similar title / same span
    9. critique    review/critique.ts   batches per file → submit_verdicts → confirmed/uncertain/rejected
+      notes       review/critique.ts   category `maintainability` (review.notes) skips the defect critic:
+                                       critiqueNotes keeps a note that is true of the changed code; capped by
+                                       review.maxNotes → run.notes (reports and the summary comment only)
   10. threshold   minConfidence (non-rejectable static findings bypass it); below advisoryConfidence or
                   info → run.advisory ("worth a look": reports only, not published, SARIF or --fail-on)
   11. authors     review/attribution   git blame → author, commit/line URLs (GitHub/GitLab)
@@ -125,6 +128,7 @@ the config files and flags, so explicit settings always win.
 | `minConfidence` | 0.7 | 0.3 |
 | `advisoryConfidence` | 0 | 0.6 |
 | `secondOpinion` | off | on |
+| `notes` | off | on |
 
 The depth also affects:
 - **Prompts.** The review instructions (`prompts.ts#depthRules`) narrow the scope to serious production

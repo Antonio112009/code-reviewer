@@ -374,6 +374,8 @@ const REASON_LABELS: Record<string, string> = {
   'line-out-of-range': 'line out of range',
   'outside-changed-lines': 'outside the changed lines',
   duplicate: 'duplicate',
+  'notes-off': 'maintainability note (notes are off)',
+  'notes-cap': 'maintainability note over review.maxNotes',
 };
 
 /** Human label for a `droppedReason`. */

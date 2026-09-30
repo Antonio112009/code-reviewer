@@ -18,6 +18,8 @@ export const CATEGORIES = [
   'resource-leak',
   'api-misuse',
   'data-loss',
+  /** A maintainability note (`review.notes`): true of the code, not a defect; its own list in the reports. */
+  'maintainability',
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
@@ -594,6 +596,12 @@ export interface RunRecord {
    * reports as "worth a look", left out of pull request comments, SARIF / Code Quality and `--fail-on`.
    */
   advisory?: Finding[];
+  /**
+   * Maintainability notes (`review.notes`): names, comments and messages that mislead, duplication, dead code,
+   * unexplained values — verified as true of the changed code, never as defects. Their own section in the
+   * reports and a list in the pull request summary comment; never inline, in SARIF / Code Quality or `--fail-on`.
+   */
+  notes?: Finding[];
   /** Findings removed by validation, critique or the confidence threshold — kept for auditing. */
   rejected: Finding[];
   usage: Usage;
