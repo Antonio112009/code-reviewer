@@ -114,7 +114,7 @@ for (const inst of readdirSync(runsDir)
   if (done.has(inst)) continue;
   try {
     const run = JSON.parse(readFileSync(path.join(runsDir, inst, 'run.json'), 'utf8')) as RunRecord;
-    const target = run.target as { base?: string; head?: string };
+    const target = run.target as { base?: string; head?: string; mergeBase?: string };
     const repo = path.join(repos, inst.split('@')[0]!);
     const seen = [
       ...run.findings,
@@ -148,7 +148,8 @@ for (const inst of readdirSync(runsDir)
       timeoutMs: 15 * 60_000,
       concurrency: 3,
       batchTokenBudget: 20_000,
-      ...(marks ? { changedLines: changedLines(repo, target.base, target.head) } : {}),
+      // The benchmark's base is the tip of the target branch; the PR's own changes start at the merge base.
+      ...(marks ? { changedLines: changedLines(repo, target.mergeBase ?? target.base, target.head) } : {}),
       ...(firstRows.length ? { cache: earlierVerdicts(inst) } : {}),
       ...(secondOpinion
         ? { secondOpinion: secondOpinionRange({ minConfidence: 0.3, advisoryConfidence: 0.6 }) }

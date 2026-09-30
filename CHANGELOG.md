@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Evaluation
+
+- `evals/aacr` gains what deciding on a benchmark needs: `stats.py` compares two variants with paired,
+  repository-clustered intervals; the `hold82` subset is a held-out half (82 PRs of the ctx30 repositories);
+  `audit.py` samples a run's findings for a blind audit and summarises the labels; `apply_verdicts.py` turns a
+  critic's offline verdicts into a run to judge; `report.py` splits recall by the reference's source (human /
+  LLM) and averages repeated judgings; `run.sh --eval-rounds N` works (the judge hung on the second round).
+  `recritique.mts` marks the pull request's own changes from the merge base. The README records what the
+  reporting scope, the held-out subset and the blind audits showed.
+
 ## 0.7.0 — 2026-09-30
 
 A review without flags now reports every real defect (`full` depth) and double-checks what it is not sure

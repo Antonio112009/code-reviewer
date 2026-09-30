@@ -52,6 +52,10 @@ evals/aacr/report.py ctx30 base-1 base-2             # recall by context level a
   at most two per repository) among the available PRs with ≤ 800 changed lines and at least three File- or
   Repo-level references. 286 references: 134 Diff, 107 File and 45 Repo level. Meant for changes to context
   and cross-file checking; run each variant at least twice.
+- `hold82` (`--subset hold82`): the 82 other PRs of ctx30's 22 repositories whose head commits still exist
+  (670 references, 44% maintainability, 74% written by the benchmark's LLM annotators). Nothing was tuned on
+  it: use it as the held-out half, ctx30 as the development half, and decide on both (see below). Needs no
+  new clones; the harness fetches the commits on first use.
 
 ## How it is scored
 
@@ -73,12 +77,51 @@ concern or suggestion". Our comment text is the finding's title, failure scenari
   prompts deliberately do not ask for. Precision counts real bugs that the annotators did not write down as
   noise.
 
+## Comparing variants
+
+```bash
+evals/aacr/stats.py ctx30 i7-1,i7-2 maint-1,maint-2 --by-source   # B against A, paired, with intervals
+evals/aacr/run.sh i7-1 --subset ctx30 --stage eval --eval-rounds 3   # judge the same findings three times
+evals/aacr/apply_verdicts.py ctx30 raw-1 verdicts.json raw-1c      # a critic's verdicts as a new run to judge
+```
+
+- **Noise.** The same configuration moves by about ±1.2 F1 points between runs on ctx30 (one matched
+  reference is 0.6 points); the judge adds only 0.3–0.5 points (five judgings of the same findings: 21, 21,
+  21, 21, 20 and 26, 25, 27, 25, 26 matches). Two runs per variant on 30 PRs resolve differences of 4–5 F1
+  points; all the critic changes of 0.7.0 together are +1.2 F1 with a 95% interval of −1.7..+4.1.
+- **Decide with `stats.py`:** it averages a variant's runs per PR, pairs the PRs, clusters on repositories
+  (Miller 2024) and reports the recall difference with a t interval and the F1 difference with a bootstrap
+  over repositories. Screen on ctx30 (two runs), confirm on `hold82` (one run each, ≈ $30), and treat a change
+  as real when both point the same way with P(B > A) ≥ 0.95.
+- **Critic-only experiments** cost a fifth of a run: `recritique.mts` re-verifies a finished run's findings
+  with the current critic, `apply_verdicts.py` turns its verdicts into a run that `--stage eval` judges.
+- `report.py` also splits recall by the reference's source (`source:human`, `source:AI`) and averages the
+  judgings when a run was judged with `--eval-rounds`.
+
+## Blind audit
+
+The references miss most real defects and contain remarks that are wrong about the code (see below), so the
+benchmark's precision says little about a report. A blind audit reads the code instead:
+
+```bash
+evals/aacr/audit.py sample ctx30 raw-1 audit/raw-1 --parts 3     # inputs without severity, confidence or tier
+evals/aacr/audit.py summarize audit/raw-1                         # after result<k>.json are written
+```
+
+Each part comes with `AUDIT_PROMPT<k>.md`: an auditor (an agent, or a person) labels every finding `real`,
+`real-minor`, `debatable`, `wrong` or `not-a-defect` by reading the clone with `git show` at the head sha,
+and gives the severity it would assign. `summarize` joins the labels with the hidden fields: real share by
+reviewer severity and confidence, by tier, by benchmark match, and the reviewer's severity against the
+auditor's. Audit about 100 findings per release; two agents given the same 66 items agreed on "the claim
+holds / does not hold" in 97% of cases (κ 0.94).
+
 ## What the patch changes
 
 - `reviewers/code_reviewer.py` is registered as `--reviewer code-reviewer`, and `evaluate.py` reads its
   findings and token usage.
 - `judge.py`: the `claude-cli` judge backend (concurrent `claude -p` calls, retries, cost and error counts in
-  the summary). `evaluate.py` scores PRs concurrently; matching inside one PR stays sequential, as upstream.
+  the summary; one semaphore per event loop, so `--eval-rounds` works). `evaluate.py` scores PRs
+  concurrently; matching inside one PR stays sequential, as upstream.
 - `repo_utils.py`: partial clones (`--filter=blob:none`). Several repositories are multi-GB.
 - `reviewers/claude.py`: `CLAUDE_USE_SUBSCRIPTION=true` runs the Claude Code baseline on the logged-in
   account instead of an API gateway token.
@@ -387,6 +430,74 @@ variant, main at 23c6948) is where skills are aimed:
 
 Skills stay on. The difference is one false positive and a few duplicates in one run each, so it is not a
 strong effect either way. They pay for themselves in precision and severity, not in recall.
+
+#### The reporting scope, the held-out subset and blind audits (2026-09-30 / 10-01)
+
+What limits the AACR number is what we choose to report, not how well we find defects. Pinned build of
+0.7.0 (eb5c564) unless noted; the audits are blind (six agents, no severity, confidence, tier or match shown).
+
+**The references.** Of ctx30's 286 references, 226 were written by the benchmark's six LLM annotators and 60
+by people (`is_ai_comment`); 111 are maintainability remarks. 53 references were matched at least once in 26
+full-depth runs. Two agents classified the other 233 (agreement on "the claim holds" 97%, κ 0.94):
+maintainability 93, unproven robustness remarks 54 (36 of them refuted by the code), wrong or about unchanged
+code 47, behaviour questions 14, performance 10, design 10, **concrete defects 5**. A defect-focused reviewer
+could report 5 of them, and 39 more only as low-confidence notes. Benchmark matches are a weak proxy for real
+defects: 69% of matched findings are real against 57% of unmatched ones.
+
+**The reviewer's own scores are well calibrated** (159 findings of two no-critic runs, 61% real overall):
+
+| Reviewer score | Findings | Real |
+|---|---|---|
+| `major` | 53 | 92% |
+| `minor` | 104 | 45% |
+| confidence ≥ 0.75 | 25 | 100% |
+| 0.60–0.75 | 34 | 85% |
+| 0.45–0.60 | 39 | 77% |
+| < 0.45 | 61 | 21% |
+
+Within one report a real finding ranks above a not-real one in 88–91% of pairs (severity, then confidence).
+
+**The critic on the same findings** (two critic runs each): main report 26 → 33 findings and 88% → 97% real
+(medium reasoning), 33 → 38–41 and 94% → 95–97% (high); 6–9 findings removed per run, at most one of them
+real. On the benchmark it is neutral (same findings: 26 → 24 matches; three of the removed had matched a
+reference, one of them wrong by the audit). In "worth a look", `minor` is real in 37–50% of cases and `info`
+in 15–25%: sort `minor` first. The critic lowers `major` to `minor` 8–12 times a run and is wrong in 2–5.
+
+**Variants without the critic** (single runs):
+
+| ctx30 | Findings | Precision | Recall | F1 | Cost |
+|---|---|---|---|---|---|
+| Sonnet, medium reasoning | 71 | 36.6% | 9.1% | 14.6% | $5.25 |
+| Sonnet, `--reasoning high` | 88 | 33.0% | 10.1% | 15.5% | $6.77 |
+| `--max-chunk-tokens 3000` (per-file chunks) | 104 | 28.8% | 10.5% | 15.4% | $11.71 |
+| `--model haiku` | 55 | 30.9% | 5.9% | 10.0% | $7.43 |
+| medium + high merged (production dedupe) | 117 | 31.6% | 12.9% | 18.4% | $12.0 |
+| wider scope (robustness remarks + maintainability notes), medium | 119 | 37.0% | 15.4% | 21.7% | $4.77 |
+| wider scope, high | 193 | 28.0% | 18.9% | 22.5% | $6.69 |
+
+- Haiku makes eleven tool calls and takes 164 s per PR: worse and dearer. Per-file chunks buy what high
+  reasoning buys at twice the price. The three variants together matched only four references no earlier run
+  had; the wider scope matched 21 new ones in two runs (ever matched: 53 → 83).
+- On the audit, high reasoning finds 52 real concerns against 43 (+21% for +29% reviewer cost); the union of
+  both runs 56. A concern found by both runs is real in 76% of cases, by one run in 31%.
+- Wider scope, audited (119 findings): confident defect findings 71% real; the low-confidence robustness net
+  20% real and 55% debatable (its matches are mostly debatable references); maintainability notes 60% useful,
+  29% nits, 9% wrong, and in half of the cases a maintainer would ask for the change (several were made
+  upstream). Through the critic, 17 of 35 notes remain, 15 of them useful.
+
+**Maintainability notes with the full pipeline** (notes bypass the critic, capped by nothing yet):
+
+| | PRs | Findings | Precision | Recall | F1 | Cost / run |
+|---|---|---|---|---|---|---|
+| 0.7.0, ctx30 (two runs) | 30 | 54.5 | 40.4% | 7.7% | 12.9% | $7.5 |
+| + notes, ctx30 (two runs) | 30 | 82.5 | 37.0% | 10.7% | 16.6% | $8.1 |
+| 0.7.0, hold82 | 82 | 145 | 29.7% | 6.4% | 10.6% | $30.75 |
+| + notes, hold82 | 82 | 205 | 27.3% | 8.4% | 12.8% | $31.27 |
+
+Paired: hold82 recall +1.9 points (95% CI +0.5..+3.4), F1 +2.2 (−0.1..+4.2), P(B > A) 0.97; ctx30 recall
++3.0 (−0.1..+6.0), F1 +3.6, P 0.97. Defect recall is unchanged (11.7% → 12.4% on hold82); maintainability
+recall 1.7% → 5.1%. ctx30 flatters every configuration: the same build scores 12.9 there and 10.6 held out.
+The human-vs-AI recall gap seen on ctx30 (1.7% vs 9.3%) does not hold on hold82 (7.8% vs 6.0%).
 
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,

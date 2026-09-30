@@ -2,7 +2,7 @@
 # Runs a reviewer on AACR-Bench and scores it. Run setup.sh first.
 #
 #   evals/aacr/run.sh <run-id> [--pilot | --subset <name>] [--stage all|review|eval] [--limit N] [--concurrency N]
-#                     [--reviewer code-reviewer|claude|codex|ocr] [-- <code-reviewer arguments>]
+#                     [--eval-rounds N] [--reviewer code-reviewer|claude|codex|ocr] [-- <code-reviewer arguments>]
 #
 # code-reviewer arguments default to "--full". Results: $AACR_DIR/aacr-bench/evaluation/results/<dataset>/
 # <reviewer>/<run-id>/, metrics next to them under metrics/. Cloned repositories are shared in $AACR_DIR/repos.
@@ -28,7 +28,7 @@ while [ $# -gt 0 ]; do
     --pilot) DATASET=data/aacr_pilot.jsonl ;;
     --subset) DATASET=data/aacr_$2.jsonl; shift ;;
     --stage) STAGE=$2; shift ;;
-    --limit | --concurrency) EXTRA+=("$1" "$2"); shift ;;
+    --limit | --concurrency | --eval-rounds) EXTRA+=("$1" "$2"); shift ;;
     --reviewer) REVIEWER=$2; shift ;;
     --) shift; CR_ARGS=("$@"); break ;;
     -h | --help) usage ;;
