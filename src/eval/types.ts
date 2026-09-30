@@ -18,6 +18,11 @@ export interface ExpectedDefect {
   /** Lowest severity a reviewer should give it; a match below it counts as `underrated`. */
   severity?: Severity;
   note?: string;
+  /**
+   * A real but lesser defect: reporting it is right (an `acceptable` finding, never unexpected or a false
+   * positive), missing it does not count against recall.
+   */
+  optional?: boolean;
 }
 
 export type CaseSource =
@@ -76,6 +81,8 @@ export interface Metrics {
   unexpected: number;
   duplicates: number;
   nearby: number;
+  /** Findings on an optional defect (right, but outside recall and precision). */
+  acceptable: number;
   falsePositives: number;
   /** Matched findings below the expected severity. */
   underrated: number;
@@ -120,6 +127,7 @@ export interface CaseRun {
   falsePositives: FindingRef[];
   duplicates: Array<{ defect: number; finding: FindingRef }>;
   nearby: Array<{ defect: number; finding: FindingRef }>;
+  acceptable: Array<{ defect: number; finding: FindingRef }>;
   /** Missed defects that a removed finding had matched. */
   lost: Array<{ defect: number; finding: FindingRef }>;
   /** Removed findings that matched no expected defect. */

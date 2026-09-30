@@ -137,4 +137,9 @@ head:
     	}
     	return fallback, nil
     }
-expect: []
+# Clean: the sort column goes through a whitelist. One real nit is acceptable.
+expect:
+  - file: internal/invoices/handler.go
+    lines: 37
+    optional: true
+    note: order values other than asc (ASC, typos) silently sort descending, while bad limit, offset and sort get a 400

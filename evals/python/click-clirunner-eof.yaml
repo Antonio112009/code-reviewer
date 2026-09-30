@@ -14,5 +14,5 @@ headRef: 262bdf02288daf9a37b9e815b44acafd62b5c6fe
 expect:
   - file: src/click/testing.py
     lines: [119, 124]
-    also: [351, 360]
+    also: [351, 360, { file: tests/test_chain.py, lines: [165, 167] }]
     note: _NamedTextIOWrapper.__next__ raises EOFError instead of StopIteration, which breaks the iterator protocol of the input stream; a command that reads stdin in a for loop (a File type set to "-") gets EOFError, turned into Abort, at the end of its input

@@ -143,3 +143,7 @@ expect:
     also: [20]
     severity: major
     note: part and PART_SIZE are ints, so part * PART_SIZE overflows before it is widened to long; from 2 GiB on the range start is negative (bytes=-2147483648-...) and every export larger than 2 GiB fails or is written at wrong offsets. Needs (long) part * PART_SIZE
+  - file: src/main/java/com/acme/exports/ExportDownloader.java
+    lines: [47, 53]
+    optional: true
+    note: an InterruptedException from f.get() is not handled, so the pending part downloads are never cancelled and keep writing to the closed channel, and the .part file stays on disk

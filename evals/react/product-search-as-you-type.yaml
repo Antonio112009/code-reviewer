@@ -144,3 +144,7 @@ expect:
     lines: [24, 35]
     severity: minor
     note: responses are applied without ignoring stale requests, so a slow earlier search can overwrite the results of the latest query
+  - file: src/components/ProductSearch.tsx
+    lines: [25, 28]
+    optional: true
+    note: clearing the query returns before setError(null), so an earlier error message stays on screen

@@ -37,6 +37,8 @@ const ExpectSchema = z.strictObject({
   also: z.array(AlsoSchema).optional(),
   severity: z.enum(SEVERITIES).optional(),
   note: z.string().optional(),
+  /** A real but lesser defect: finding it is right, missing it is not counted. */
+  optional: z.boolean().optional(),
 });
 
 const CaseSchema = z.strictObject({
@@ -149,6 +151,7 @@ export function parseCase(text: string, opts: { id: string; file: string }): Eva
       ...(also.length ? { also } : {}),
       ...(e.severity ? { severity: e.severity } : {}),
       ...(e.note ? { note: e.note } : {}),
+      ...(e.optional ? { optional: true } : {}),
     };
   });
 

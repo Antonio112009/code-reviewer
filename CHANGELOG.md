@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Optional defects in eval cases.** `optional: true` marks a real but lesser defect: finding it counts as
+  acceptable, missing it is not counted, and a case with only optional defects stays clean. The built-in
+  corpus labels five such issues that reviews kept reporting (CSV formula injection and an in-memory export,
+  unhandled interruption of part downloads, an error left on screen, an unvalidated `order` parameter that was
+  counted as a false positive on a clean case) and one more place for the click regression.
 - **Clearer help.** `code-reviewer --help` groups the commands (review, results, setup, measure quality) and
   shows examples; `review --help` groups its options (what to review, models, depth and filters, output and
   CI, cost and speed, advanced, pull request comments) and ends with examples, starting with comparing two

@@ -220,7 +220,7 @@ export async function runEval(opts: EvalOptions): Promise<EvalResult> {
       id: c.id,
       title: c.title,
       tags: c.tags,
-      clean: c.expect.length === 0,
+      clean: c.expect.every((d) => d.optional),
       source: c.source.kind === 'inline' ? 'inline' : c.source.repo,
       ...(opts.keep && repo?.tempDir ? { repoDir: repo.root } : {}),
       ...(setupError ? { error: setupError } : {}),
