@@ -9,7 +9,7 @@
 // it exists). The repository clones are checked out at each PR's head: do not run it next to a benchmark
 // run that uses the same clones (--repos points at another copy).
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import path from 'node:path';
 import { DEFAULT_CONFIG } from '../../src/config/schema';
@@ -64,7 +64,16 @@ function changedLines(repo: string, base: string, head: string): Map<string, Set
 }
 
 const registry = new ProviderRegistry(structuredClone(DEFAULT_CONFIG), silentLogger);
-const rows: VerdictRow[] = existsSync(outFile) ? JSON.parse(readFileSync(outFile, 'utf8')) : [];
+/** Verdicts of an interrupted run of this script, to continue from; none when the file is not there yet. */
+function earlierRows(file: string): VerdictRow[] {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw err;
+  }
+}
+const rows = earlierRows(outFile);
 const done = new Set(rows.map((r) => r.inst));
 
 for (const inst of readdirSync(runsDir)
