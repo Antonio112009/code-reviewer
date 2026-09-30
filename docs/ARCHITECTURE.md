@@ -202,7 +202,7 @@ A failed second look keeps the first review and its usage.
 Without `--deepen`, `review/advice.ts` suggests it after the run (`run.advice.deepen`: the chunks with
 findings and an estimate of 1.1 × their review cost, left out when a cost is unknown); the CLI summary and
 the markdown report print it as a tip. Aimed at the reviewer reporting one defect per spot;
-AACR ctx30 numbers are in `evals/aacr/README.md`.
+AACR ctx30 numbers are in `evals/aacr/README.md`; `evals/martian/README.md` scores real bugs (Martian's Code Review Bench).
 
 ### Self-critique (`review/critique.ts`)
 
