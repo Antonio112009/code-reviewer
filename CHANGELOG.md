@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **`--deepen` is suggested after a review.** When a review has findings and ran without `--deepen`, the summary
+  and the markdown report suggest a second look at the chunks with findings, with its estimated cost
+  (`advice.deepen` in the JSON). First and second looks are cached apart, so the re-run takes the first looks
+  from the cache and pays only for the second ones; the summary shows what each second look added.
+
 ## 0.6.0 — 2026-09-30
 
 Sonnet now checks the findings too (30% cheaper per review at the same quality), and `--deepen` adds a second

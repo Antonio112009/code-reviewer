@@ -192,8 +192,14 @@ same task again with `deepenSection` appended to its prompt: the findings so far
 and a checklist for the functions that hold them — calls that can fail, resources on every path, state on
 early returns, code that must change together. The prompt extends the first one, so its prefix comes from the
 prompt cache. New findings that repeat one (same file, overlapping lines, title similarity ≥ 0.5) are
-dropped; the rest join the part's findings and cached answer (`deepen` is part of the cache identity). A
-failed second look keeps the first review and its usage. Aimed at the reviewer reporting one defect per spot;
+dropped; the rest join the part's findings, and the chunk record keeps how many it added (`deepened`). The
+first look is cached under its usual key and the second look under its own (the first look's identity plus
+what it was told was found), so a run with `--deepen` after one without it pays only for the second looks.
+A failed second look keeps the first review and its usage.
+
+Without `--deepen`, `review/advice.ts` suggests it after the run (`run.advice.deepen`: the chunks with
+findings and an estimate of 1.1 × their review cost, left out when a cost is unknown); the CLI summary and
+the markdown report print it as a tip. Aimed at the reviewer reporting one defect per spot;
 AACR ctx30 numbers are in `evals/aacr/README.md`.
 
 ### Review passes (`review.passes`, `--passes`)

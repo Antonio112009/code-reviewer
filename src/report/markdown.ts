@@ -5,6 +5,7 @@ import {
   costLabel,
   coverageLabel,
   coverageRows,
+  deepenAdviceText,
   depthLabel,
   failureAdvice,
   fallbackLabel,
@@ -326,6 +327,8 @@ export function renderMarkdown(run: RunRecord): string {
     out.push('');
   }
   if (run.summary) out.push(mdText(run.summary), '');
+  const tip = deepenAdviceText(run);
+  if (tip) out.push(`> **Tip:** ${mdLine(tip)}`, '');
 
   out.push('## Findings', '');
   const findings = sortFindings(run.findings);

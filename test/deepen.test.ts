@@ -1,12 +1,17 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Config } from '../src/config/schema';
 import { MockProvider } from '../src/providers/mock';
 import { ProviderRegistry } from '../src/providers/registry';
 import type { AgentResult, AgentTask, Provider } from '../src/providers/types';
+import { deepenAdviceText } from '../src/report/common';
+import { DEEPEN_COST_FACTOR, deepenAdvice } from '../src/review/advice';
 import { dedupeFindings } from '../src/review/dedupe';
 import { runReview } from '../src/review/pipeline';
 import { deepenSection } from '../src/review/prompts';
-import type { Finding, ReportedFinding } from '../src/types';
+import type { ChunkRecord, Finding, ReportedFinding, RunRecord } from '../src/types';
 import { silentLogger } from '../src/util/logger';
 import { makeRepo, type TempRepo, testConfig } from './helpers';
 
@@ -104,6 +109,8 @@ describe('second look (review.deepen)', () => {
       'Result exported before validation',
       'division by zero',
     ]);
+    // recorded per chunk, only where a second look ran
+    expect(run.chunks.filter((c) => c.deepened !== undefined).map((c) => c.deepened)).toEqual([1]);
   });
 
   it('keeps the first review when the second look fails', async () => {
@@ -156,5 +163,88 @@ describe('dedupe on one span', () => {
       finding('average loop reads past the end of the array'),
     ]);
     expect(same.unique).toHaveLength(1);
+  });
+});
+
+describe('suggesting a second look', () => {
+  it('suggests --deepen after a run with findings, not after one that took it', async () => {
+    const plain = await review(new DeepenProvider([extra({})]));
+    expect(plain.advice?.deepen?.chunks.length).toBeGreaterThan(0);
+    const deepened = await review(new DeepenProvider([extra({})]), (c) => {
+      c.review.deepen = true;
+    });
+    expect(deepened.advice).toBeUndefined();
+  });
+
+  it('a re-run with --deepen pays only for the second looks', async () => {
+    const cacheDir = mkdtempSync(path.join(tmpdir(), 'cr-deepen-cache-'));
+    const saved = process.env.CODE_REVIEWER_CACHE_DIR;
+    process.env.CODE_REVIEWER_CACHE_DIR = cacheDir;
+    try {
+      const cached = (c: Config) => {
+        c.cache.enabled = true;
+      };
+      const first = new DeepenProvider([extra({})]);
+      await review(first, cached);
+      expect(first.tasks.some((t) => t.label.endsWith('-deepen'))).toBe(false);
+
+      const again = new DeepenProvider([extra({})]);
+      const run = await review(again, (c) => {
+        cached(c);
+        c.review.deepen = true;
+      });
+      // first looks from the cache: the model only takes the second looks
+      expect(again.tasks.length).toBeGreaterThan(0);
+      expect(again.tasks.every((t) => t.label.endsWith('-deepen'))).toBe(true);
+      expect(run.findings.map((f) => f.title)).toContain('Result exported before validation');
+      // second looks are not counted as cached chunks
+      expect(run.cache).toMatchObject({ hits: run.chunks.length, misses: 0 });
+
+      const third = new DeepenProvider([extra({})]);
+      const run3 = await review(third, (c) => {
+        cached(c);
+        c.review.deepen = true;
+      });
+      expect(third.tasks).toEqual([]);
+      expect(run3.findings.map((f) => f.title).sort()).toEqual(run.findings.map((f) => f.title).sort());
+    } finally {
+      process.env.CODE_REVIEWER_CACHE_DIR = saved;
+      rmSync(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  const chunk = (id: string, findings: number, amount?: number): ChunkRecord =>
+    ({
+      id,
+      files: [`${id}.ts`],
+      tokens: 10,
+      skills: [],
+      status: 'done',
+      findings,
+      ...(amount === undefined ? {} : { cost: { amount, currency: 'USD' } }),
+    }) as ChunkRecord;
+  const run = (chunks: ChunkRecord[]) => ({ status: 'completed', chunks }) as unknown as RunRecord;
+
+  it('estimates the second looks from the first looks at chunks with findings', () => {
+    const advice = deepenAdvice(run([chunk('c1', 2, 0.3), chunk('c2', 0, 0.5), chunk('c3', 1, 0.1)]), false);
+    expect(advice?.chunks).toEqual(['c1', 'c3']);
+    expect(advice?.estimatedCost?.amount).toBeCloseTo(0.4 * DEEPEN_COST_FACTOR);
+    // a chunk answered from the cache has no cost: no estimate rather than a wrong one
+    expect(deepenAdvice(run([chunk('c1', 1, 0.3), chunk('c2', 1)]), false)?.estimatedCost).toBeUndefined();
+    expect(deepenAdvice(run([chunk('c1', 0, 0.3)]), false)).toBeUndefined();
+    expect(deepenAdvice(run([chunk('c1', 1, 0.3)]), true)).toBeUndefined();
+  });
+
+  it('says what a second look covers, costs and reuses', () => {
+    const advice = { deepen: { chunks: ['c1', 'c3'], estimatedCost: { amount: 0.44, currency: 'USD' } } };
+    const text = deepenAdviceText({ advice })!;
+    expect(text).toMatch(
+      /^Code with one defect often has more: re-run with --deepen for a second look at the 2 chunks/,
+    );
+    expect(text).toMatch(/\(about \$0\.44\d* more\)\.$/);
+    expect(deepenAdviceText({ advice, cache: { hits: 0, misses: 2 } as never })).toContain(
+      'the first looks come from the cache',
+    );
+    expect(deepenAdviceText({})).toBeUndefined();
   });
 });
