@@ -81,7 +81,7 @@ import { packageVersion } from '../util/paths';
 import { attributeFindings } from './attribution';
 import { coverageMap, type PartResult } from './coverage';
 import { type CritiqueCache, critiqueFindings } from './critique';
-import { dedupeFindings } from './dedupe';
+import { dedupeFindings, titleSimilarity } from './dedupe';
 import type { InteractionHost, PhaseId, ReviewEvent, ReviewPlan } from './events';
 import {
   attachSpend,
@@ -114,6 +114,7 @@ import {
 import {
   critiqueFindingIdentity,
   critiqueInstructions,
+  deepenSection,
   repairPrompt,
   reviewInstructions,
   reviewPrompt,
@@ -992,6 +993,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         hints,
         stack: chunkStack.get(chunk.id),
         ...(config.review.audit ? { audit: true } : {}),
+        ...(config.review.deepen ? { deepen: true } : {}),
       });
       const buildTask = (
         chunk: Chunk,
@@ -1166,6 +1168,53 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         };
       };
 
+      /**
+       * `review.deepen`: a second look at a part that had findings — the same task, plus the findings so far
+       * and a request for other defects in the same functions. What it adds (minus repeats) joins `out`; a
+       * failed second look only costs its usage.
+       */
+      const deepen = async (
+        out: DoneOutcome,
+        chunk: Chunk,
+        part: Chunk,
+        hints: StaticHit[],
+        task: AgentTask,
+        notes: string[],
+      ): Promise<void> => {
+        const items = out.items ?? [];
+        emit({ type: 'chunk-activity', chunkId: chunk.id, note: 'second look' });
+        const id = `${part.id}-deepen`;
+        const second: AgentTask = { ...task, label: id, prompt: `${task.prompt}\n\n${deepenSection(items)}` };
+        let more: DoneOutcome;
+        try {
+          more = await reviewOnce(chunk, { ...part, id }, hints, second);
+        } catch (err) {
+          out.spend.push(...spendOf(err));
+          if (isAbort(err, req.signal)) throw err;
+          warn(`${id}: second look failed (${errorMessage(err)}); keeping the first review`);
+          return;
+        }
+        out.spend.push(...more.spend);
+        // A finding the second look repeats (same place, similar title) is dropped.
+        const repeats = (f: Finding) =>
+          out.findings.some(
+            (o) =>
+              o.file === f.file &&
+              o.startLine <= f.endLine &&
+              f.startLine <= o.endLine &&
+              titleSimilarity(o.title, f.title) >= 0.5,
+          );
+        const fresh = more.findings
+          .map((f, i) => ({ f, item: more.items?.[i] }))
+          .filter(({ f }) => !repeats(f));
+        out.findings.push(...fresh.map(({ f }) => f));
+        out.items = [...items, ...fresh.flatMap(({ item }) => (item ? [item] : []))];
+        for (const h of more.claimed) out.claimed.add(h);
+        out.reads = [...new Set([...(out.reads ?? []), ...(more.reads ?? [])])];
+        if (more.salvaged) out.salvaged = more.salvaged;
+        notes.push(`${part.id}: second look added ${fresh.length} finding(s)`);
+      };
+
       /** Remembers a complete answer (an early, salvaged one is partial: never cached). */
       const remember = async (out: DoneOutcome, task: AgentTask, chunk: Chunk, part: Chunk) => {
         if (!cache || out.salvaged || out.cached) return;
@@ -1274,6 +1323,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         }
         try {
           const out = await reviewOnce(chunk, part, hints, task);
+          if (config.review.deepen && out.findings.length > 0 && !out.salvaged) {
+            await deepen(out, chunk, part, hints, task, notes);
+          }
           await remember(out, task, chunk, part);
           return [out];
         } catch (err) {

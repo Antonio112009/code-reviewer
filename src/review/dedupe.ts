@@ -2,6 +2,8 @@ import type { Finding } from '../types';
 
 const LINE_SLACK = 2;
 const TITLE_SIMILARITY = 0.5;
+/** On the exact same span, a lower bar: the same defect reported by two overlapping chunks. */
+const SAME_SPAN_SIMILARITY = 0.15;
 
 function words(s: string): Set<string> {
   return new Set(
@@ -25,9 +27,11 @@ function isDuplicate(a: Finding, b: Finding): boolean {
   if (a.file !== b.file) return false;
   const overlap = a.startLine <= b.endLine + LINE_SLACK && b.startLine <= a.endLine + LINE_SLACK;
   if (!overlap) return false;
-  // Adjacent lines often hold different bugs: only merge on a similar title or the exact same span.
+  // Adjacent lines often hold different bugs, and so does one span (a function with several defects): merge
+  // on a similar title, or on the exact same span when the titles share something.
+  const similarity = titleSimilarity(a.title, b.title);
   const sameSpan = a.startLine === b.startLine && a.endLine === b.endLine && a.category === b.category;
-  return sameSpan || titleSimilarity(a.title, b.title) >= TITLE_SIMILARITY;
+  return similarity >= TITLE_SIMILARITY || (sameSpan && similarity >= SAME_SPAN_SIMILARITY);
 }
 
 /**

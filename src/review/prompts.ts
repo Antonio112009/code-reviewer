@@ -3,7 +3,15 @@ import { renderImpact } from '../chunking/expand';
 import type { ProjectSettings, ReviewDepth } from '../config/schema';
 import type { SkillMatch } from '../skills/detector';
 import type { DependencyRoot } from '../tools/dependencies';
-import { CATEGORIES, type Chunk, type Finding, type RunTarget, SEVERITIES, type StaticHit } from '../types';
+import {
+  CATEGORIES,
+  type Chunk,
+  type Finding,
+  type ReportedFinding,
+  type RunTarget,
+  SEVERITIES,
+  type StaticHit,
+} from '../types';
 
 const FINDING_FIELDS = `{"findings": [{"file": string, "startLine": int, "endLine": int, "severity": ${SEVERITIES.map((s) => `"${s}"`).join('|')}, "category": ${CATEGORIES.map((c) => `"${c}"`).join('|')}, "title": string, "description": string, "failurePath"?: string, "suggestion"?: string, "replacement"?: string, "checklist"?: string, "evidence"?: string, "confidence": number 0..1, "hint"?: string}]}`;
 
@@ -146,6 +154,8 @@ export function reviewPrompt(opts: {
   stack?: string;
   /** List the changed functions to audit (`review.audit`). */
   audit?: boolean;
+  /** A second look follows when the chunk has findings (`review.deepen`); only part of the cache identity. */
+  deepen?: boolean;
 }): string {
   const { target, chunk } = opts;
   const header =
@@ -238,6 +248,7 @@ export function reviewPromptIdentity(opts: Parameters<typeof reviewPrompt>[0]): 
     pass: chunk.pass ?? null,
     declarations: chunk.declarations ?? [],
     audit: opts.audit === true,
+    deepen: opts.deepen === true,
     impact: chunk.impact ?? [],
     hints: (opts.hints ?? []).map((h) => [
       h.analyzer,
@@ -250,6 +261,37 @@ export function reviewPromptIdentity(opts: Parameters<typeof reviewPrompt>[0]): 
       h.message,
     ]),
   };
+}
+
+/** Most findings listed in a second-look prompt (`review.deepen`); a chunk rarely has more. */
+const MAX_DEEPEN_FINDINGS = 30;
+
+/**
+ * The second look at a chunk that had findings (`review.deepen`): appended to the chunk's review prompt, so
+ * the shared prefix is served from the prompt cache. Defects cluster, and a reviewer tends to report one per
+ * spot; this asks for the others in the same functions, without repeating the ones already recorded.
+ */
+export function deepenSection(found: readonly ReportedFinding[]): string {
+  const listed = found
+    .slice(0, MAX_DEEPEN_FINDINGS)
+    .map((f) => `- ${f.file}:${f.startLine}-${f.endLine} — ${clipLine(f.title, 160)}`);
+  return `## Second look
+
+A first review of this code reported these defects. They are recorded: do NOT report them again.
+${listed.join('\n')}
+
+Code with one defect often has more. Re-examine each function or block that contains one of these findings, line by line, for OTHER defects:
+- every call that can fail, return null / None / nil / an error, or throw: is that outcome handled before the result is used?
+- every resource, handle, lock or reference acquired: is it released on every path, including errors and early returns?
+- every early return, break or error path: does it leave state consistent (flags, counters, caches, partially written data)?
+- code that must change together with this code (declaration and definition, both branches, sibling functions, the config or schema it reads): does it?
+
+The rules above still apply: report only concrete defects with a failure path, each distinct defect as its own finding (also on the same lines as a recorded one). If you find none, call submit_findings with an empty list.`;
+}
+
+function clipLine(text: string, max: number): string {
+  const one = text.replace(/\s+/g, ' ').trim();
+  return one.length > max ? `${one.slice(0, max - 1)}…` : one;
 }
 
 export function repairPrompt(previousReply: string, files: readonly string[] = []): string {
