@@ -186,6 +186,19 @@ export function changedSymbols(unit: ReviewUnit): ChangedSymbol[] {
 
 const CALL = /([A-Za-z_$][\w$]*)\s*\(/g;
 
+/** Names called on `lines` (functions and methods, in order of first appearance; keywords left out). */
+export function callsIn(lines: readonly string[]): string[] {
+  const out = new Set<string>();
+  for (const line of lines) {
+    if (line.length > MAX_LINE) continue;
+    for (const m of line.matchAll(CALL)) {
+      const n = m[1]!;
+      if (n.length >= MIN_NAME && !NOT_NAMES.has(n)) out.add(n);
+    }
+  }
+  return [...out];
+}
+
 /** Functions the added lines call (most called first), minus names the chunk's own files declare. */
 export function calledNames(units: readonly ReviewUnit[]): string[] {
   const own = new Set<string>();

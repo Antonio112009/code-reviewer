@@ -455,6 +455,15 @@ const NON_CODE_EXTENSIONS = ['md', 'markdown', 'rst', 'txt', 'adoc', 'json', 'lo
 const NON_CODE = NON_CODE_EXTENSIONS.map((ext) => `:(exclude,glob)**/*.${ext}`);
 const NON_CODE_FILE = new RegExp(`\\.(?:${NON_CODE_EXTENSIONS.join('|')}):\\d+:`, 'i');
 
+/**
+ * Definition lines of `name` in the reviewed revision (`path:line:code`, as `find_symbol` finds them). Empty
+ * outside a git work tree, where the search would walk the whole tree.
+ */
+export async function findDefinitions(name: string, ctx: ToolContext): Promise<string[]> {
+  if (!ctx.git || !/^[\w$]+$/.test(name)) return [];
+  return gitGrep(ctx, { pattern: definitionPattern(name), mode: 'regex', pathspecs: NON_CODE });
+}
+
 const findSymbolTool = defineTool({
   name: 'find_symbol',
   description:

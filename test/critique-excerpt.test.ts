@@ -270,3 +270,73 @@ describe('second opinion', () => {
     ]);
   });
 });
+
+describe('callee definitions in critic excerpts', () => {
+  let calls: TempRepo;
+  beforeAll(() => {
+    calls = makeRepo();
+    calls.write({
+      'src/handler.ts':
+        'export function handle(x: number) {\n  try {\n    return 1 / x;\n  } catch {\n    return 0;\n  }\n}\n',
+      'src/handler.test.ts': 'function handle() {\n  return 1;\n}\n',
+      'src/a.ts':
+        "import { handle } from './handler';\nexport const raw = JSON.parse('1');\nexport const x = handle(raw);\n",
+    });
+    calls.commit('initial');
+  });
+  afterAll(() => calls.cleanup());
+
+  const promptFor = async (git: boolean) => {
+    const { critiqueFindings } = await import('../src/review/critique');
+    let prompt = '';
+    const provider: Provider = {
+      id: 'mock',
+      kind: 'mock',
+      async run(task: AgentTask): Promise<AgentResult> {
+        prompt = task.prompt;
+        return { submission: { calls: 1, verdicts: [] }, text: '', toolCalls: 0, warnings: [] };
+      },
+      async dispose() {},
+    };
+    const finding = {
+      id: 'f1',
+      file: 'src/a.ts',
+      startLine: 2,
+      endLine: 3,
+      severity: 'major',
+      category: 'bug',
+      title: 'handle() failure is not handled',
+      description: 'A description long enough.',
+      confidence: 0.8,
+      skills: [],
+      source: { chunkIds: ['c1'], provider: 'mock' },
+    } as never;
+    await critiqueFindings([finding], {
+      provider,
+      reasoning: 'high',
+      mode: 'diff',
+      depth: 'full',
+      root: calls.root,
+      git,
+      readTools: false,
+      maxSteps: 5,
+      timeoutMs: 10_000,
+      concurrency: 1,
+      batchTokenBudget: 10_000,
+    });
+    return prompt;
+  };
+
+  it('list where the calls on the reported lines are implemented, product code before tests', async () => {
+    const prompt = await promptFor(true);
+    expect(prompt).toContain('Defined elsewhere, called on the reported lines of f1');
+    expect(prompt).toContain('- handle: src/handler.ts:1  export function handle(x: number) {');
+    // the test double is left out while product code defines the name; library calls have no definition
+    expect(prompt).not.toContain('handler.test.ts');
+    expect(prompt).not.toMatch(/^- parse:/m);
+  });
+
+  it('are left out outside a git work tree', async () => {
+    expect(await promptFor(false)).not.toContain('Defined elsewhere');
+  });
+});

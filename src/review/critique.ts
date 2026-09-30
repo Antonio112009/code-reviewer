@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs';
 import pLimit from 'p-limit';
+import { callsIn } from '../chunking/expand';
 import { estimateTokens } from '../chunking/tokens';
 import type { ReviewDepth } from '../config/schema';
 import type { AgentResult, AgentTask, Provider } from '../providers/types';
+import { findDefinitions } from '../tools/definitions';
 import type { DependencyRoot } from '../tools/dependencies';
 import type { FailureKind, Finding, ReasoningLevel, ReportedVerdict, RunTarget } from '../types';
 import { resolveInside } from '../util/paths';
@@ -19,6 +21,14 @@ const MAX_FINDINGS_PER_BATCH = 8;
 /** A second opinion digs deeper: few findings per task, each with the full step budget. */
 const MAX_FINDINGS_PER_SECOND_OPINION = 2;
 const NOT_VERIFIED = 'not verified (critic returned no verdict)';
+/** Callee definitions listed per finding: calls looked up, definitions shown per call, lines scanned. */
+const MAX_CALLS = 8;
+const MAX_DEFINITIONS = 3;
+const MAX_CALL_LINES = 40;
+/** A name defined in more places than this says nothing about which one the call reaches. */
+const TOO_MANY_DEFINITIONS = 6;
+const TEST_FILE =
+  /(?:^|\/)(?:tests?|__tests__|__mocks__|spec|mocks?|testdata|fixtures)\/|[._-](?:test|spec|mock)s?\.|_test\.|(?:Test|Tests|IT)\.(?:java|kt|cs)$/i;
 const EXCERPT_CONTEXT = 15;
 
 export interface CritiqueOptions {
@@ -137,8 +147,17 @@ export async function critiqueFindings(findings: Finding[], opts: CritiqueOption
 }
 
 async function runPass(findings: Finding[], opts: CritiqueOptions, pass: Pass): Promise<CritiqueOutcome> {
+  const lookups = pLimit(8);
   const excerpts = new Map(
-    findings.map((f) => [f.id, excerpt(opts.root, f, opts.changedLines?.get(f.file))]),
+    await Promise.all(
+      findings.map((f) =>
+        lookups(async (): Promise<[string, string]> => {
+          const code = excerpt(opts.root, f, opts.changedLines?.get(f.file));
+          const callees = opts.git ? await calleeNotes(opts.root, f).catch(() => '') : '';
+          return [f.id, callees ? `${code}\n${callees}` : code];
+        }),
+      ),
+    ),
   );
   const verdicts = new Map<
     string,
@@ -293,6 +312,40 @@ async function runPass(findings: Finding[], opts: CritiqueOptions, pass: Pass): 
     else kept.push(updated);
   }
   return { kept, rejected, spend, warnings, cachedVerdicts };
+}
+
+/**
+ * Where the functions called on a finding's lines are defined: the code a claim about what happens "in
+ * there" has to be checked against (the implementation behind an interface or handler call above all).
+ * Verifiers rarely look these up themselves. Names with no definition in the repository (library calls) or
+ * with too many are left out; test files only count when nothing else defines the name.
+ */
+async function calleeNotes(root: string, f: Finding): Promise<string> {
+  let lines: string[];
+  try {
+    lines = readFileSync(resolveInside(root, f.file), 'utf8').split('\n');
+  } catch {
+    return '';
+  }
+  const reported = lines.slice(f.startLine - 1, Math.min(f.endLine, f.startLine - 1 + MAX_CALL_LINES));
+  const notes: string[] = [];
+  for (const name of callsIn(reported).slice(0, MAX_CALLS)) {
+    const all = (await findDefinitions(name, { root, git: true }))
+      .map((line) => /^(.+?):(\d+):(.*)$/.exec(line))
+      .filter((m): m is RegExpExecArray => m !== null)
+      .map((m) => ({ file: m[1]!, line: Number(m[2]), code: m[3]!.trim() }))
+      // the definition inside the reported lines is already in the excerpt
+      .filter((d) => !(d.file === f.file && d.line >= f.startLine && d.line <= f.endLine));
+    const product = all.filter((d) => !TEST_FILE.test(d.file));
+    const defs = product.length ? product : all;
+    if (defs.length === 0 || defs.length > TOO_MANY_DEFINITIONS) continue;
+    for (const d of defs.slice(0, MAX_DEFINITIONS)) {
+      notes.push(`- ${name}: ${d.file}:${d.line}  ${d.code.slice(0, 140)}`);
+    }
+  }
+  return notes.length
+    ? `Defined elsewhere, called on the reported lines of ${f.id} (read the one the call reaches before judging what happens in it):\n${notes.join('\n')}`
+    : '';
 }
 
 function excerpt(root: string, f: Finding, changed?: ReadonlySet<number>): string {
