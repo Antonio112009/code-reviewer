@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/antonio112009/code-reviewer/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/antonio112009/code-reviewer/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://www.npmjs.com/package/@antonio112009/code-reviewer"><img alt="npm" src="https://img.shields.io/npm/v/@antonio112009/code-reviewer?color=7c3aed"></a>
-  <img alt="node >= 24" src="https://img.shields.io/badge/node-%E2%89%A5%2024-22d3ee">
+  <img alt="Node.js 24 or newer" src="https://img.shields.io/badge/node-%E2%89%A5%2024-22d3ee">
   <img alt="status: preview" src="https://img.shields.io/badge/status-preview-f472b6">
   <a href="LICENSE"><img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-22c55e"></a>
 </p>
@@ -75,6 +75,34 @@ code-reviewer files src/payments              # review whole files or folders
 code-reviewer runs open latest                # the HTML report of the last run
 code-reviewer eval --compare latest           # measure recall / precision on cases with known bugs
 ```
+
+### Compare two branches
+
+`--base` is the branch the work started from, `--head` the branch with the work. Like a pull request, the
+review covers what `--head` changed since it left `--base` (`merge-base(base, head)..head`), not what changed
+on `--base` in the meantime.
+
+```bash
+# feature/login against main: the same changes a pull request would show
+code-reviewer review --base main --head feature/login
+
+# the settings we measure with: every real defect (--full); Sonnet reviews, Opus double-checks each finding
+code-reviewer review --base main --head feature/login --full
+
+# a release branch against the previous one, reports (md + html) copied to ./reports
+code-reviewer review --base origin/release/2.3 --head origin/release/2.4 --full --format md,html --out reports
+
+# the plan first — files, chunks, skills, static hints — without calling a model
+code-reviewer review --base main --head feature/login --dry-run
+```
+
+- A bare base name (`main`) means the freshly fetched remote branch; `origin/main` or a commit sha works too.
+  `--offline` compares local refs without fetching.
+- `--head` defaults to `HEAD`, unpushed commits included. `--explain-refs` prints how both were resolved.
+- `--full` reports every real defect; the default `essential` depth keeps to what can seriously hurt
+  production (security, data loss, crashes, leaks, overload, costly performance) and costs less.
+- With Claude Code the defaults are Sonnet for the review and Opus for the critique (`--model` /
+  `--critique-model` to change). `--max-cost 5` stops starting model calls once $5 is spent.
 
 ## Why Code Reviewer
 

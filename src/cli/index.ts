@@ -28,15 +28,34 @@ export function buildProgram(): Command {
     .showHelpAfterError()
     .exitOverride();
 
-  registerInitCommand(program);
+  program.commandsGroup('Review:');
   registerReviewCommands(program);
   registerHookCommands(program);
+  program.commandsGroup('Results:');
   registerRunsCommands(program);
+  program.commandsGroup('Setup:');
+  registerInitCommand(program);
   registerProviderCommands(program);
   registerConfigCommands(program);
   registerSkillCommands(program);
-  registerEvalCommand(program);
   registerCacheCommands(program);
+  program.helpCommand(true); // listed with the setup commands
+  program.commandsGroup('Measure quality:');
+  registerEvalCommand(program);
+  program.addHelpText(
+    'after',
+    `
+Examples:
+  $ code-reviewer review                                          your branch against its base (auto-detected)
+  $ code-reviewer review --base main --head feature/login --full  two branches, every real defect
+  $ code-reviewer review --staged                                 what you are about to commit
+  $ code-reviewer runs open latest                                the HTML report of the last run
+  $ code-reviewer init                                            set up this repository
+
+"code-reviewer <command> --help" shows a command's options and examples.
+Docs: https://github.com/Antonio112009/code-reviewer#readme
+`,
+  );
 
   // Internal: MCP server spawned by ACP agents to expose our tools; not for direct use.
   program
