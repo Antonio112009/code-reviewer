@@ -1,18 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 — 2026-09-30
 
-- **The critic sees where the called functions are defined, and has a third outcome.** Under each finding's
-  code, the critic now gets the definitions of the functions its lines call; verifiers did not look them up
-  themselves, so "the panic is not recovered" was confirmed although the handler behind the call recovers it.
-  At full depth a finding that is true about the code but has no realistic way to fail (a redundant check,
-  hardening advice) is no longer rejected: it is listed as "worth a look". On the audited AACR findings the
-  three wrong findings that survived every earlier critic left the main report, no real finding was rejected,
-  and the main report is 90-93% real (82-84% before). The main report gets shorter and "worth a look" longer.
-- **Agent starts no longer wait for the npm registry.** The Claude and Codex adapters run through `npx`, which
-  asked the registry at every start; when it answered slowly, reviews failed with "ACP initialize timed out
-  after 60s" (one review in 30 in our benchmark runs). An adapter that is already installed now starts from
-  npm's cache, in 0.4 s instead of 2 s, and the registry is asked only the first time.
+A review without flags now reports every real defect (`full` depth) and double-checks what it is not sure
+about. On 30 real pull requests (AACR-Bench ctx30) it finds almost four times as many of the defects human
+reviewers noted as the 0.6.0 default, for half as much again. Against 0.6.0 `--full` it matches more of them
+(recall 7.0% → 7.7%, F1 11.7% → 12.9%) for 10% more, and on a hand-audited sample its main report is 90-93%
+real defects (84% before).
+
+### Behaviour changes
+
 - **`full` is the default depth.** On 30 real pull requests (AACR-Bench ctx30) `essential` reported about one
   finding per three pull requests and found 2% of what human reviewers noted; `full` found four times as much
   for half as much again ($0.25 against $0.17 a pull request). A review without flags now reports every real
@@ -20,17 +17,23 @@
   old behaviour back. The GitHub Action's `depth` input now defaults to the configured depth instead of
   forcing `essential`. `init` writes the confidence threshold of the chosen depth (0.3 at full, where
   findings below 0.6 are "worth a look"; 0.7 at essential).
-- **README: what each depth gives on real pull requests.** Measured on AACR-Bench ctx30: `essential` reports
-  about one finding per three pull requests (63% match a human comment), `--full` five times as many for half
-  as much again, `--full --deepen` the most.
+- **The main report gets shorter and "worth a look" longer.** At full depth the critic no longer rejects a
+  finding that is true about the code but has no realistic way to fail (a redundant check, hardening advice):
+  it is listed as "worth a look", which is not posted to pull requests. Only a claim that is wrong about the
+  code is rejected.
+
+### Review quality
+
+- **The critic sees where the called functions are defined.** Under each finding's code, the critic now gets
+  the definitions of the functions its lines call; verifiers did not look them up themselves, so "the panic is
+  not recovered" was confirmed although the handler behind the call recovers it. On the audited AACR findings
+  the three wrong findings that survived every earlier critic left the main report, and no real finding was
+  rejected.
 - **A second opinion on borderline findings.** Findings the critic kept without being sure (confidence around
-  the bar of the main report) go to a second verifier, which reads further and decides. On AACR-Bench ctx30 it
-  was better in both runs on every measure (precision 40.2% → 46.3%, F1 11.7% → 13.2%) for 10% more cost. On
-  by default at full depth (`--no-second-opinion` or `review.secondOpinion: false` turns it off), off at
-  essential depth (`--second-opinion` turns it on).
-- **Less test and logging noise.** The reviewer reports tests only when they cannot fail, never run, pass for
-  the wrong reason or break other tests, and leftover logging only when it exposes data or costs on a hot
-  path.
+  the bar of the main report) go to a second verifier, which reads further and decides. When it was added, it
+  was better in both AACR-Bench runs on every measure (precision 40.2% → 46.3%, F1 11.7% → 13.2%) for 10%
+  more cost. On by default at full depth (`--no-second-opinion` or `review.secondOpinion: false` turns it
+  off), off at essential depth (`--second-opinion` turns it on).
 - **A more careful critic.** A hand audit of the findings no AACR-Bench reference matched (a third of all
   findings; 20 of 35 were real defects the benchmark misses) showed where the critic went wrong: it kept
   findings whose headline it had refuted, took its own recollection of a database schema or a server's limits
@@ -38,12 +41,24 @@
   change did not touch. Now an overstated headline over a real defect gets a corrected title instead of a
   rejection (reports show the reviewer's original), "not handled" claims need the next layer read, claims
   about an external system the repository does not show stay "worth a look" at most, and diff critiques mark
-  the changed lines. On the audited set the kept findings went from 74% real to 78%, with 10-12 titles per run
-  corrected.
+  the changed lines.
+- **Less test and logging noise.** The reviewer reports tests only when they cannot fail, never run, pass for
+  the wrong reason or break other tests, and leftover logging only when it exposes data or costs on a hot
+  path.
+
+### Reliability and usability
+
+- **Agent starts no longer wait for the npm registry.** The Claude and Codex adapters run through `npx`, which
+  asked the registry at every start; when it answered slowly, reviews failed with "ACP initialize timed out
+  after 60s" (one review in 30 in our benchmark runs). An adapter that is already installed now starts from
+  npm's cache, in 0.4 s instead of 2 s, and the registry is asked only the first time.
 - **`--deepen` is suggested after a review.** When a review has findings and ran without `--deepen`, the summary
   and the markdown report suggest a second look at the chunks with findings, with its estimated cost
   (`advice.deepen` in the JSON). First and second looks are cached apart, so the re-run takes the first looks
   from the cache and pays only for the second ones; the summary shows what each second look added.
+- **README: what each depth gives on real pull requests.** Measured on AACR-Bench ctx30: `essential` reports
+  about one finding per three pull requests (63% match a human comment), the default `full` five times as
+  many for half as much again, `--deepen` the most (recall 9.4%, F1 15.1%).
 
 ## 0.6.0 — 2026-09-30
 
