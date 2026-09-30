@@ -340,3 +340,30 @@ describe('callee definitions in critic excerpts', () => {
     expect(await promptFor(false)).not.toContain('Defined elsewhere');
   });
 });
+
+describe('isTestFile', () => {
+  it('tells test code from product code by its path', async () => {
+    const { isTestFile } = await import('../src/review/critique');
+    for (const file of [
+      'src/handler.test.ts',
+      'pkg/http/router_test.go',
+      'app/src/test/java/com/acme/OrderService.java',
+      'core/OrderServiceTest.java',
+      'core/OrderServiceIT.java',
+      'pkg/test_utils.py',
+      'web/__mocks__/api.ts',
+      'spec/models/user_spec.rb',
+    ]) {
+      expect(isTestFile(file), file).toBe(true);
+    }
+    for (const file of [
+      'src/handler.ts',
+      'core/Latest.java',
+      'src/contest.ts',
+      'pkg/attestation.go',
+      'app/Unit.cs',
+    ]) {
+      expect(isTestFile(file), file).toBe(false);
+    }
+  });
+});
