@@ -23,12 +23,13 @@ def key(head: str, path: str, line, note: str) -> tuple:
 
 
 def labels() -> dict:
-    """(head, path, from_line, note prefix) → (context level, category) for every reference comment."""
+    """(head, path, from_line, note prefix) → (context level, category, source) for every reference comment."""
     out = {}
     with open(os.path.join(AACR_DIR, "aacr-bench", "dataset", "positive_samples.json"), encoding="utf-8") as f:
         for pr in json.load(f):
             for c in pr["comments"]:
-                out[key(pr["target_commit"], c["path"], c["from_line"], c["note"])] = (c["context"], c["category"])
+                source = "AI" if c["is_ai_comment"] else "human"
+                out[key(pr["target_commit"], c["path"], c["from_line"], c["note"])] = (c["context"], c["category"], source)
     return out
 
 
@@ -37,17 +38,22 @@ def score(dataset: str, run: str, refs: dict) -> dict:
     files = [f for f in files if not f.endswith("_average.json")]
     if not files:
         sys.exit(f"no metrics for run {run!r} of dataset {dataset!r} under {EVAL}/metrics")
-    with open(files[-1], encoding="utf-8") as f:
-        data = json.load(f)
-    by = defaultdict(lambda: [0, 0, 0])  # expected, semantic, line
-    for inst in data["eval_res"]:
-        head = inst["instance_id"].split("@")[1]
-        for c in inst["comments"]:
-            level, category = refs.get(key(head, c["path"], c["from_line"], c["note"]), ("?", "?"))
-            for k in ("all", f"level:{level}", f"category:{category}"):
-                by[k][0] += 1
-                by[k][1] += bool(c["semantic_match"])
-                by[k][2] += bool(c["line_match"])
+    # `--eval-rounds N` writes metrics_<reviewer>_<stamp>_round_<k>.json per judging: average the newest group.
+    newest = files[-1].split("_round_")[0]
+    rounds = [f for f in files if f.split("_round_")[0] == newest] if "_round_" in files[-1] else [files[-1]]
+    by = defaultdict(lambda: [0, 0.0, 0.0])  # expected, semantic, line (averaged over the judgings)
+    for path in rounds:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        for inst in data["eval_res"]:
+            head = inst["instance_id"].split("@")[1]
+            for c in inst["comments"]:
+                level, category, source = refs.get(key(head, c["path"], c["from_line"], c["note"]), ("?", "?", "?"))
+                for k in ("all", f"level:{level}", f"category:{category}", f"source:{source}"):
+                    if path == rounds[0]:
+                        by[k][0] += 1
+                    by[k][1] += bool(c["semantic_match"]) / len(rounds)
+                    by[k][2] += bool(c["line_match"]) / len(rounds)
     generated = data["summary"]["generated_notes"]
     out = {k: {"expected": e, "semantic": s, "line": l} for k, (e, s, l) in by.items()}
     out["generated"] = generated
@@ -84,7 +90,7 @@ def main() -> None:
             v = scores[r].get(k, {"expected": 0, "semantic": 0, "line": 0})
             rec = v["semantic"] / v["expected"] if v["expected"] else 0
             vals.append(rec)
-            cells += f"{v['semantic']:>5d}/{v['expected']:<4d}{pct(rec):>8s}"
+            cells += f"{v['semantic']:>5.0f}/{v['expected']:<4d}{pct(rec):>8s}"
         print(f"  {k:32s}" + cells + (f"  {pct(statistics.mean(vals))}" if len(runs) > 1 else ""))
     missing = {r: scores[r]["missing"] for r in runs if scores[r]["missing"]}
     if missing:

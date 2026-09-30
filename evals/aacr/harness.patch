@@ -113,17 +113,19 @@ index 373fa1c..3326325 100644
      return f"LLM（真实裁判模型）| 模型: {os.getenv(config.JUDGE_MODEL_VAR, '')}"
 \ No newline at end of file
 diff --git a/evaluation/judge.py b/evaluation/judge.py
-index ce519af..a0fe6c7 100644
+index ce519af..55a85a9 100644
 --- a/evaluation/judge.py
 +++ b/evaluation/judge.py
-@@ -46,6 +46,54 @@ def _get_llm_client():
+@@ -46,6 +46,57 @@ def _get_llm_client():
      return _llm_client
  
  
 +# JUDGE_BACKEND=claude-cli: the same judge prompt answered by `claude -p` (no API key needed).
 +USE_CLAUDE_CLI = os.getenv("JUDGE_BACKEND", "") == "claude-cli"
 +_CLAUDE_JUDGE_MODEL = os.getenv("JUDGE_CLAUDE_MODEL", "sonnet")
-+_claude_semaphore = None
++# One semaphore per event loop: `--eval-rounds` runs one asyncio.run() per round, and a semaphore created in
++# an earlier loop blocks forever in the next one.
++_claude_semaphores: Dict[Any, Any] = {}
 +judge_error_count = 0
 +judge_cost_usd = 0.0
 +
@@ -132,9 +134,10 @@ index ce519af..a0fe6c7 100644
 +    import asyncio
 +    import json as _json
 +
-+    global _claude_semaphore
-+    if _claude_semaphore is None:
-+        _claude_semaphore = asyncio.Semaphore(int(os.getenv("JUDGE_CONCURRENCY", "8")))
++    loop = asyncio.get_running_loop()
++    semaphore = _claude_semaphores.get(loop)
++    if semaphore is None:
++        semaphore = _claude_semaphores[loop] = asyncio.Semaphore(int(os.getenv("JUDGE_CONCURRENCY", "8")))
 +    command = [
 +        "claude", "-p", "--model", _CLAUDE_JUDGE_MODEL, "--output-format", "json",
 +        "--system-prompt", "You judge code review comments. Reply with exactly one word: yes or no.",
@@ -142,7 +145,7 @@ index ce519af..a0fe6c7 100644
 +    ]
 +    last_error = ""
 +    for attempt in range(3):
-+        async with _claude_semaphore:
++        async with semaphore:
 +            proc = await asyncio.create_subprocess_exec(
 +                *command,
 +                stdin=asyncio.subprocess.PIPE,
@@ -171,7 +174,7 @@ index ce519af..a0fe6c7 100644
  def _mock_semantic_match(reference_note: str, generated_note: str) -> bool:
      """本地近似语义匹配：综合序列相似度与词汇重叠度，不依赖外部 LLM。"""
      sequence_ratio = difflib.SequenceMatcher(
-@@ -67,7 +115,7 @@ async def match_semantic(reference_note: str, generated_note: str) -> Dict[str,
+@@ -67,7 +118,7 @@ async def match_semantic(reference_note: str, generated_note: str) -> Dict[str,
      global llm_request_count
      llm_request_count += 1
  
@@ -180,7 +183,7 @@ index ce519af..a0fe6c7 100644
          is_similar = _mock_semantic_match(reference_note, generated_note)
          return {"is_similar": is_similar, "reason": f"[mock] matched={is_similar}"}
  
-@@ -90,6 +138,9 @@ async def match_semantic(reference_note: str, generated_note: str) -> Dict[str,
+@@ -90,6 +141,9 @@ async def match_semantic(reference_note: str, generated_note: str) -> Dict[str,
          "Your answer:"
      )
  
@@ -190,7 +193,7 @@ index ce519af..a0fe6c7 100644
      try:
          response = await _get_llm_client().chat.completions.create(
              model=os.getenv(config.JUDGE_MODEL_VAR, "multiline_judge_model"),
-@@ -261,6 +312,11 @@ def print_llm_request_statistics() -> None:
+@@ -261,6 +315,11 @@ def print_llm_request_statistics() -> None:
      print("\n" + "=" * 50)
      print("语义匹配请求统计")
      print("=" * 50)
