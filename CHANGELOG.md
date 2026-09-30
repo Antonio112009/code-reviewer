@@ -2,7 +2,8 @@
 
 ## 0.5.2 — 2026-09-30
 
-Fixes the install size of 0.5.1 (635 MB → about 200 MB) and makes skill attribution work on Claude.
+Fixes the install size of 0.5.1 (635 MB → about 200 MB), makes skill attribution work on Claude and adds
+`code-reviewer upgrade`.
 
 - **`code-reviewer upgrade`.** Updates an npm global install in place (retrying while a just-published version
   is still reaching the registry) and prints the CHANGELOG sections between the old and the new version.
