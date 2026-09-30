@@ -27,8 +27,18 @@ const MAX_DEFINITIONS = 3;
 const MAX_CALL_LINES = 40;
 /** A name defined in more places than this says nothing about which one the call reaches. */
 const TOO_MANY_DEFINITIONS = 6;
-const TEST_FILE =
-  /(?:^|\/)(?:tests?|__tests__|__mocks__|spec|mocks?|testdata|fixtures)\/|[._-](?:test|spec|mock)s?\.|_test\.|(?:Test|Tests|IT)\.(?:java|kt|cs)$/i;
+/** Test code by path: a test directory, a `.test.` / `_test.` / `test_` file name, a `FooTest.java` class. */
+const TEST_PATHS = [
+  /(?:^|\/)(?:tests?|__tests__|__mocks__|spec|mocks?|testdata|fixtures)\//i,
+  /[._-](?:test|spec|mock)s?\.[^/]*$/i,
+  /(?:^|\/)test_[^/]*\.py$/i,
+  // case-sensitive: `OrderTest.java`, not `Latest.java`
+  /[a-z0-9](?:Tests?|IT)\.(?:java|kt|cs)$/,
+];
+
+export function isTestFile(file: string): boolean {
+  return TEST_PATHS.some((re) => re.test(file));
+}
 const EXCERPT_CONTEXT = 15;
 
 export interface CritiqueOptions {
@@ -336,7 +346,7 @@ async function calleeNotes(root: string, f: Finding): Promise<string> {
       .map((m) => ({ file: m[1]!, line: Number(m[2]), code: m[3]!.trim() }))
       // the definition inside the reported lines is already in the excerpt
       .filter((d) => !(d.file === f.file && d.line >= f.startLine && d.line <= f.endLine));
-    const product = all.filter((d) => !TEST_FILE.test(d.file));
+    const product = all.filter((d) => !isTestFile(d.file));
     const defs = product.length ? product : all;
     if (defs.length === 0 || defs.length > TOO_MANY_DEFINITIONS) continue;
     for (const d of defs.slice(0, MAX_DEFINITIONS)) {
