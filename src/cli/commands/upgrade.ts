@@ -9,11 +9,11 @@ import {
   detectInstall,
   type Install,
   isNewer,
+  isReleaseVersion,
   PACKAGE_NAME,
   RELEASES_URL,
   upgradeCommand,
 } from '../../util/upgrade';
-import { parseVersion } from '../../util/versions';
 import { EXIT, type GlobalOptions, makeLogger } from '../context';
 
 const NPM_QUERY_TIMEOUT_MS = 60_000;
@@ -73,7 +73,7 @@ async function resolveVersion(spec: string, env: NodeJS.ProcessEnv): Promise<str
   }
   // `npm view pkg@x version` prints nothing (exit 0) for a version that does not exist
   const version = r.stdout.trim().split(/\s+/).pop();
-  if (r.exitCode !== 0 || !version || !parseVersion(version)) {
+  if (r.exitCode !== 0 || !isReleaseVersion(version)) {
     const why = r.exitCode === 0 ? `no version ${spec} of ${PACKAGE_NAME}` : lastLines(r.stderr, 3);
     throw new Error(`Could not look up ${PACKAGE_NAME}@${spec}: ${why || 'npm failed'}`);
   }

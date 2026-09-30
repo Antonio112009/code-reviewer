@@ -90,6 +90,14 @@ export function upgradeCommand(kind: InstallKind, version: string): string[] | u
   }
 }
 
+/**
+ * A release version as the registry names them (`0.6.0`, `1.0.0-rc.1`), nothing else: registry answers are
+ * cached and printed, so anything longer or with other characters is refused.
+ */
+export function isReleaseVersion(v: unknown): v is string {
+  return typeof v === 'string' && /^\d{1,6}\.\d{1,6}\.\d{1,6}(?:-[0-9A-Za-z.-]{1,40})?$/.test(v);
+}
+
 /** Whether `candidate` is a newer version than `current`. */
 export function isNewer(candidate: string, current: string): boolean {
   const a = parseVersion(candidate);
@@ -128,7 +136,9 @@ export interface UpdateCheck {
 export async function readUpdateCheck(file: string): Promise<UpdateCheck | undefined> {
   try {
     const data = JSON.parse(await readFile(file, 'utf8'));
-    return typeof data?.checkedAt === 'number' && typeof data?.latest === 'string' ? data : undefined;
+    return typeof data?.checkedAt === 'number' && isReleaseVersion(data?.latest)
+      ? { checkedAt: data.checkedAt, latest: data.latest }
+      : undefined;
   } catch {
     return undefined;
   }
@@ -150,13 +160,13 @@ export async function refreshUpdateCheck(
 ): Promise<void> {
   try {
     const registry = (env.npm_config_registry || 'https://registry.npmjs.org/').replace(/\/?$/, '/');
-    const res = await fetchImpl(`${registry}${PACKAGE_NAME.replace('/', '%2F')}/latest`, {
+    const res = await fetchImpl(`${registry}${PACKAGE_NAME.replaceAll('/', '%2F')}/latest`, {
       headers: { accept: 'application/json' },
       signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
     });
     if (!res.ok) return;
     const latest = ((await res.json()) as { version?: unknown }).version;
-    if (typeof latest !== 'string' || !parseVersion(latest)) return;
+    if (!isReleaseVersion(latest)) return;
     await mkdir(path.dirname(file), { recursive: true });
     const tmp = `${file}.${process.pid}.tmp`;
     await writeFile(tmp, JSON.stringify({ checkedAt: Date.now(), latest } satisfies UpdateCheck));

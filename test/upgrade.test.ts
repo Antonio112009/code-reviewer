@@ -7,7 +7,9 @@ import { Logger } from '../src/util/logger';
 import {
   changelogBetween,
   detectInstall,
+  isReleaseVersion,
   PACKAGE_NAME,
+  readUpdateCheck,
   updateNotice,
   updateNoticeEnabled,
   upgradeCommand,
@@ -127,6 +129,21 @@ describe('update notice', () => {
     }) as unknown as typeof fetch;
     await updateNotice('0.5.0', file, { npm_config_registry: 'https://npm.example.com/r' }, recording);
     expect(urls).toEqual(['https://npm.example.com/r/@antonio112009%2Fcode-reviewer/latest']);
+  });
+
+  it('accepts only plain release versions from the registry and the cache', async () => {
+    expect(['0.6.0', '1.0.0-rc.1'].every(isReleaseVersion)).toBe(true);
+    expect(
+      ['0.6', 'v0.6.0', '0.6.0\u001b[31m', '0.6.0 ', `0.6.0-${'x'.repeat(50)}`, 6].some(isReleaseVersion),
+    ).toBe(false);
+    const file = path.join(scratch, `notice${n++}`, 'update-check.json');
+    expect(
+      await updateNotice('0.5.0', file, {}, answer('9.9.9\u001b]8;;https://evil.example\u0007')),
+    ).toBeUndefined();
+    expect(existsSync(file)).toBe(false);
+    mkdirSync(path.dirname(file), { recursive: true });
+    writeFileSync(file, JSON.stringify({ checkedAt: Date.now(), latest: '9.9.9\u001b[2J' }));
+    expect(await readUpdateCheck(file)).toBeUndefined();
   });
 
   it('runs only in an interactive terminal outside CI, unless turned off', () => {
