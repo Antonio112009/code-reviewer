@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **`code-reviewer upgrade`.** Updates an npm global install in place (retrying while a just-published version
+  is still reaching the registry) and prints the CHANGELOG sections between the old and the new version.
+  `--check` / `--json` only report, `--to <version>` installs an exact version. For pnpm, yarn, bun, npx, a
+  project dependency or a source checkout it prints the command to run. Interactive reviews say once a day
+  when a newer version exists (off in CI, with `--json`/`--quiet`, and with `CODE_REVIEWER_NO_UPDATE_CHECK=1`).
 - **Optional defects in eval cases.** `optional: true` marks a real but lesser defect: finding it counts as
   acceptable, missing it is not counted, and a case with only optional defects stays clean. The built-in
   corpus labels five such issues that reviews kept reporting (CSV formula injection and an in-memory export,

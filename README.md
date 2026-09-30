@@ -41,6 +41,9 @@ code-reviewer init        # detects your stack and providers, writes .code-revie
 code-reviewer review      # reviews your branch against its base branch
 ```
 
+`code-reviewer upgrade` updates it later and shows what changed (`--check` only looks). An interactive
+review says once a day when a new version is out; `CODE_REVIEWER_NO_UPDATE_CHECK=1` turns that off.
+
 <details>
 <summary>Other ways to install</summary>
 

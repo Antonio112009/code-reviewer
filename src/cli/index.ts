@@ -1,8 +1,11 @@
+import path from 'node:path';
 import { Command, CommanderError, Option } from 'commander';
+import { osCacheDir } from '../cache/location';
 import { runMcpServe } from '../tools/mcp-server';
 import { distrustDirectory } from '../util/executables';
 import { Logger } from '../util/logger';
-import { packageVersion } from '../util/paths';
+import { packageRoot, packageVersion } from '../util/paths';
+import { detectInstall, updateNotice, updateNoticeEnabled } from '../util/upgrade';
 import { registerCacheCommands } from './commands/cache';
 import { registerConfigCommands } from './commands/config';
 import { registerEvalCommand } from './commands/eval';
@@ -12,7 +15,9 @@ import { registerProviderCommands } from './commands/providers';
 import { registerReviewCommands } from './commands/review';
 import { registerRunsCommands } from './commands/runs';
 import { registerSkillCommands } from './commands/skills';
+import { registerUpgradeCommand } from './commands/upgrade';
 import { EXIT } from './context';
+import { isCI } from './ui/theme';
 
 export function buildProgram(): Command {
   const program = new Command()
@@ -39,6 +44,7 @@ export function buildProgram(): Command {
   registerConfigCommands(program);
   registerSkillCommands(program);
   registerCacheCommands(program);
+  registerUpgradeCommand(program);
   program.helpCommand(true); // listed with the setup commands
   program.commandsGroup('Measure quality:');
   registerEvalCommand(program);
@@ -99,8 +105,23 @@ export async function main(argv: string[]): Promise<void> {
   if (process.platform === 'win32') process.env.NoDefaultCurrentDirectoryInExePath = '1';
   distrustDirectory(process.cwd());
   const program = buildProgram();
+  // Once a day, an interactive review also asks the registry for the latest version (overlapping the
+  // review) and says when an upgrade is available.
+  let notice: Promise<string | undefined> | undefined;
+  program.hook('preAction', (_program, action) => {
+    if (action.name() !== 'review' && action.name() !== 'files') return;
+    const opts = action.optsWithGlobals<{ json?: boolean; quiet?: boolean }>();
+    if (opts.json || opts.quiet) return;
+    if (!updateNoticeEnabled(process.env, process.stderr.isTTY === true, isCI(process.env))) return;
+    if (detectInstall(packageRoot()).kind === 'source') return;
+    notice = updateNotice(packageVersion(), path.join(osCacheDir(), 'update-check.json')).catch(
+      () => undefined,
+    );
+  });
   try {
     await program.parseAsync(argv);
+    const text = await notice;
+    if (text) process.stderr.write(`\n${text}\n`);
   } catch (err) {
     if (err instanceof CommanderError) {
       // help/version are "errors" with exit code 0 under exitOverride
