@@ -415,14 +415,14 @@ export const DEFAULT_EXCLUDES = [
 export const DEFAULT_CONFIG: Config = {
   project: {},
   providers: {
-    // Sonnet is the everyday reviewer (cost/quality); pick Opus per run with `--model opus`.
-    // Opus checks the findings: it drops the weak ones Sonnet's critique lets through, for ~17% more.
-    claude: { type: 'acp', preset: 'claude', defaultModel: 'sonnet', critiqueModel: 'opus' },
+    // Sonnet reviews and checks the findings: with Sonnet 5.5 an Opus critic kept the same F1 on AACR ctx30
+    // for 40% more cost (evals/aacr/README.md). Pick Opus per run with `--model opus` / `--critique-model opus`.
+    claude: { type: 'acp', preset: 'claude', defaultModel: 'sonnet', critiqueModel: 'sonnet' },
     codex: { type: 'acp', preset: 'codex' },
     copilot: { type: 'acp', preset: 'copilot' },
     gemini: { type: 'acp', preset: 'gemini' },
     bedrock: { type: 'bedrock' },
-    anthropic: { type: 'anthropic', defaultModel: 'claude-sonnet-5-5', critiqueModel: 'claude-opus-5-5' },
+    anthropic: { type: 'anthropic', defaultModel: 'claude-sonnet-5-5', critiqueModel: 'claude-sonnet-5-5' },
     // OpenAI-compatible APIs: no default model (pass --model or set roles.review.model / defaultModel).
     openai: { type: 'openai' },
     openrouter: { type: 'openai', baseUrl: 'https://openrouter.ai/api/v1', apiKeyEnv: 'OPENROUTER_API_KEY' },

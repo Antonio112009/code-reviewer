@@ -234,6 +234,7 @@ Pinned builds of main after 0.5.2 (4e302bf) and of the branch with `--deepen` an
 | `--critique-model sonnet` | 54.5 | 36.7% | 7.0% (20, 20) | 11.7% (11.7, 11.8) | 11.5% | $6.8 |
 | one defect per finding | 52.5 | 39.1% | 7.2% (20, 21) | 12.1% (11.8, 12.4) | 11.5% | $9.6 |
 | `--deepen` (+ one defect per finding) | 70.5 | 34.3% | 8.4% (23, 25) | 13.5% (13.2, 13.7) | 13.7% | $14.7 |
+| `--deepen --critique-model sonnet` | 77 | 37.2% | 10.0% (29, 28) | 15.7% (15.7, 15.7) | 14.1% | $11.5 |
 
 | Eval corpus, one run each | Recall | Precision | Clean false positives | Cost |
 |---|---|---|---|---|
@@ -250,6 +251,9 @@ Pinned builds of main after 0.5.2 (4e302bf) and of the branch with `--deepen` an
   run), so it costs about 50% more and adds findings the critic keeps at lower precision; on the eval corpus
   the extras were a missing lockfile and `go.sum` entries (the synthetic cases have none) and one clean
   change flagged. It stays experimental and off.
+- **`--deepen` with a Sonnet critic is the best variant measured:** F1 15.7% in both runs, recall 10.0%, at
+  the precision of a single look (37.2%) and 70% above the Sonnet-critic default ($11.5). The Opus critic
+  dropped more of the second look's findings. The Sonnet critic became the default (below).
 - **A Sonnet critic cost 30% less at the same F1** on AACR, and on the eval corpus it kept every planted defect
   and flagged no clean change (one run). The critic rejecting a real multi-defect JNI finding ("GetMethodID
   cannot realistically fail") is the same strictness with either model.

@@ -312,7 +312,7 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
 ### Model routing (`review/execute.ts`, `models/*`)
 - **Routes** (`pipeline.ts#resolveRouting`): the review uses its role's model, else the provider's
   `defaultModel`. The critic runs on the review provider unless a critique role names another; without a
-  model of its own it takes the provider's `critiqueModel` (claude: `opus`), else the review's model on the
+  model of its own it takes the provider's `critiqueModel` (claude: `sonnet`), else the review's model on the
   same provider, else that provider's default. `--model` sets the review model only.
 - **Preflight.** It discovers the models of each provider and classifies them (tier, vendor). If a
   configured model is missing, it runs `resolveFallback` (`ask | fallback | fail`) before the run

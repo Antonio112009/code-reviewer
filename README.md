@@ -89,7 +89,7 @@ on `--base` in the meantime.
 # feature/login against main: the same changes a pull request would show
 code-reviewer review --base main --head feature/login
 
-# the settings we measure with: every real defect (--full); Sonnet reviews, Opus double-checks each finding
+# the settings we measure with: every real defect (--full); Sonnet reviews and double-checks each finding
 code-reviewer review --base main --head feature/login --full
 
 # a release branch against the previous one, reports (md + html) copied to ./reports
@@ -104,8 +104,8 @@ code-reviewer review --base main --head feature/login --dry-run
 - `--head` defaults to `HEAD`, unpushed commits included. `--explain-refs` prints how both were resolved.
 - `--full` reports every real defect; the default `essential` depth keeps to what can seriously hurt
   production (security, data loss, crashes, leaks, overload, costly performance) and costs less.
-- With Claude Code the defaults are Sonnet for the review and Opus for the critique (`--model` /
-  `--critique-model` to change). `--max-cost 5` stops starting model calls once $5 is spent.
+- With Claude Code, Sonnet reviews and Sonnet checks each finding (`--model` / `--critique-model` to change;
+  an Opus critic measured the same quality for 40% more). `--max-cost 5` stops starting model calls once $5 is spent.
 
 ## Why Code Reviewer
 
@@ -161,7 +161,7 @@ flowchart LR
 
 | Provider | Uses | Notes |
 |---|---|---|
-| `claude` | Claude Code over [ACP](https://agentclientprotocol.com) | your Claude Code login; reviews with Sonnet (1M context) and critiques with Opus by default; `--model opus` for a deeper review. Review sessions load none of your plugins, hooks or settings (only the `env` / `apiKeyHelper` sign-in); `providers.claude.userSettings: true` in the global config loads them |
+| `claude` | Claude Code over [ACP](https://agentclientprotocol.com) | your Claude Code login; reviews and critiques with Sonnet (1M context) by default; `--model opus` for a deeper review. Review sessions load none of your plugins, hooks or settings (only the `env` / `apiKeyHelper` sign-in); `providers.claude.userSettings: true` in the global config loads them |
 | `codex` | OpenAI Codex over ACP | experimental; can run commands, so it is never picked as an automatic fallback |
 | `copilot` | GitHub Copilot CLI over ACP | experimental |
 | `gemini` | Gemini CLI over ACP | experimental |
@@ -207,6 +207,28 @@ code-reviewer providers test claude --model sonnet
 | Self-critique | also drops real but low-impact findings; keeps confidence ≥ 0.7 | drops only claims it can refute (low impact lowers the severity); keeps confidence ≥ 0.3 |
 | "Worth a look" | — | findings below confidence 0.6 and `info` findings: in the reports, not in PR comments, SARIF / Code Quality or `--fail-on` |
 
+### A second look for important changes (`--deepen`, experimental)
+
+A reviewer tends to report one defect in a place and move on, while the same function often holds more: the
+cached handle is found, the unchecked call next to it is not. With `--deepen`, every chunk that had findings is
+reviewed once more. The model gets what was found so far and is asked only for *other* defects in the same
+functions: calls whose failure is not handled, resources not released on every path, state left behind by an
+early return, code that must change together.
+
+| AACR-Bench ctx30 (30 real PRs, two runs each) | Recall | Code-defect recall | Precision | Cost per run |
+|---|---|---|---|---|
+| `--full` | 7.0% | 11.5% | 36.7% | $6.8 |
+| `--full --deepen` | 10.0% | 14.1% | 37.2% | $11.5 |
+
+- **When:** changes where a missed defect is expensive: payments, authentication, migrations, a release
+  branch. For everyday pull requests the default is the better trade.
+- **Cost:** chunks with findings are reviewed twice; the repeat reuses the cached prompt, so it adds about
+  70% rather than doubling the price.
+- **Noise:** precision on real PRs held (37.2% vs 36.7%), but it reports more findings overall, minor ones and
+  remarks about what the diff does not show (a missing lockfile) among them; on the eval corpus of planted
+  defects precision fell from 100% to 87%.
+- Off by default. `review.deepen: true` in `.code-reviewer/config.yaml` turns it on for a repository.
+
 ## Before you commit
 
 `review` compares commits. To review changes that are not committed yet:
@@ -251,7 +273,7 @@ project:
   focus: [security, data-integrity, concurrency]
 roles:
   review:   { provider: claude, model: sonnet, reasoning: medium } # the defaults
-  critique: { provider: claude, model: opus, reasoning: high }     # the defaults too
+  critique: { provider: claude, model: sonnet, reasoning: high }   # the defaults too
 review:
   depth: essential          # or full
   minConfidence: 0.7
@@ -270,7 +292,7 @@ Useful flags:
 - `--audit` (experimental): the prompt lists every changed function and the model audits each one, instead
   of stopping at the first defect of a function;
 - `--deepen` (experimental): a second look at every chunk with findings, for other defects in the same
-  functions — more defects found (AACR recall 6.6% → 8.4%), lower precision, about 50% more cost;
+  functions ([when to use it](#a-second-look-for-important-changes---deepen-experimental));
 - `--expand off|map|refs|deep`: related unchanged code per chunk — `map` (the default) lists where unchanged
   code uses the changed declarations and where the functions the new code calls are defined; `refs` adds
   excerpts of that code; `deep` also who calls those usages;
