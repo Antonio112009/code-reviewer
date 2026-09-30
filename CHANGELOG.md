@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.5.2 — 2026-09-30
+
+Fixes the install size of 0.5.1 (635 MB → about 200 MB) and makes skill attribution work on Claude.
 
 - **Install size back to about 200 MB.** 0.5.1 installed 635 MB: npm installs every platform's optional
   package listed in a dependency's `npm-shrinkwrap.json`, so all eight ast-grep binaries were downloaded. The
