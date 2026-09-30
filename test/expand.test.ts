@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { clusterFiles } from '../src/chunking/cluster';
 import {
   calledNames,
+  callsIn,
   changedCalls,
   changedSymbols,
   declaredName,
@@ -490,5 +491,17 @@ describe('call edges between changed files', () => {
     );
     expect(callEdges([callee, ...callers])).toEqual([]);
     expect(callEdges([callee, ...callers.slice(0, 8)])).toHaveLength(8);
+  });
+});
+
+describe('callsIn', () => {
+  it('lists called names in order, without keywords and short names', () => {
+    expect(
+      callsIn([
+        'if (ok) { inner.ServeHTTP(w, r); return fn(a) }',
+        'for (const x of load(items)) go(x)',
+        'x'.repeat(500) + ' big(',
+      ]),
+    ).toEqual(['ServeHTTP', 'load']);
   });
 });
