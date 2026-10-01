@@ -233,9 +233,10 @@ They are not defects and are never judged as such: the critic only checks that e
 changed code and drops the ones that are not. They get their own section in the report and a short list in
 the pull request summary comment — no inline comments, nothing in SARIF / Code Quality, nothing for
 `--fail-on`. On 30 real pull requests (AACR-Bench ctx30) 60% of the notes were useful to a maintainer, 29%
-were nits and 9% wrong before the critic's check; with the notes the review matches 40% more of the human
-reviewers' comments (F1 12.9% → 16.6%) for the same price. `review.notes: false` or `--no-notes` turns them
-off; `review.maxNotes` (5) caps them.
+were nits and 9% wrong before the critic's check. With the notes the review matches more of what human
+reviewers wrote: F1 12.9% → 15.3% on those 30 pull requests and 10.6% → 13.9% on 82 held-out ones, at the
+same price and precision. `review.notes: false` or `--no-notes` turns them off; `review.maxNotes` (5) caps
+them.
 
 ### A second pass for important changes (`--deepen`)
 
