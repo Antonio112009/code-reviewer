@@ -55,6 +55,27 @@ Published rows for orientation (core profile, Opus 4.5 judge, P / R / F1): Qodo 
 Cubic 61.5 / 65.8 / 63.6, Augment 59.5 / 65.2 / 62.2, Bugbot 56.9 / 46.8 / 51.4, Greptile v4 50.9 / 51.3 /
 51.1, Copilot 38.5 / 66.5 / 48.7, Claude Code 46.3 / 48.1 / 47.2, CodeRabbit 32.6 / 59.5 / 42.2.
 
+## Results
+
+2026-10-01, judge `claude -p --model sonnet`, benchmark commit `e616e849`, 50 PRs. Baselines are the published
+candidates of the named tools judged under the same judge; one run of code-reviewer 0.7.0 so far (a second is
+running: one golden comment is 0.7 recall points, so read single-run differences of a few points as noise).
+
+| Core profile (158 golden comments) | Candidates / PR | Precision | Recall | F1 | Cost / PR |
+|---|---|---|---|---|---|
+| code-reviewer 0.7.0, main report only | 1.6 | 72.0% | 37.3% | 49.2% | $0.40 |
+| code-reviewer 0.7.0, main report + "worth a look" | 2.5 | 65.2% | 55.7% | 60.1% | $0.40 |
+| Augment (published candidates) | 3.4 | 54.7% | 59.5% | 57.0% | — |
+| Claude Code (published candidates) | 3.5 | 40.0% | 40.5% | 40.3% | — |
+
+- On the strict profile (139 real defects): main report 70.1% / 38.8% / 50.0%; with "worth a look"
+  63.3% / 58.3% / 60.7%. Recall by severity with "worth a look": Critical 8 of 12, High 37 of 54, Medium 35
+  of 61, Low 9 of 46.
+- Our judge is stricter than the leaderboard's: the same Claude Code candidates score 40.3 here against 47.2
+  published (Opus 4.5 judge), Augment 57.0 against 62.2.
+- "Worth a look" findings double the recall for a third less precision: on this benchmark half of them point
+  at a known bug.
+
 ## Caveats
 
 - The golden set is incomplete and unversioned (it grew from 137 to 173 comments in August 2026; every result
