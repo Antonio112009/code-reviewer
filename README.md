@@ -127,6 +127,23 @@ code-reviewer review --base main --head feature/login --dry-run
 - **Safe on untrusted code.** Agents read an isolated, read-only snapshot, and nothing from the reviewed
   repository is ever executed. Ctrl+C stops every process cleanly.
 
+## Measured on real bugs
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/martian-bench-dark.svg">
+  <img alt="Precision, recall and F1 on Martian's Code Review Bench, core profile: code-reviewer 0.7.0 main report 72.1 / 36.7 / 48.7, with worth-a-look findings 63.2 / 53.8 / 58.2; Augment 54.7 / 59.5 / 57.0; Claude Code 40.0 / 40.5 / 40.3, all under the same judge" src="docs/img/martian-bench-light.svg" width="820">
+</picture>
+
+[Martian's Code Review Bench](https://github.com/withmartian/code-review-benchmark) scores reviewers against
+173 verified bugs and remarks in 50 pull requests of Sentry, Grafana, Cal.com, Discourse and Keycloak. Run
+offline with `evals/martian/` (one judge for every row, so the rows are comparable with each other but not
+with the published leaderboard, whose judge is about 5–7 F1 points more lenient): code-reviewer 0.7.0 finds a
+third of the known defects with the highest precision in the table, and with its "worth a look" findings more
+than half of them for ten points of precision — at $0.40 a pull request. On AACR-Bench, where the references
+are mostly maintainability remarks by human and LLM reviewers, the numbers are lower and the differences
+between tools smaller; both are documented with their caveats in [evals/martian/README.md](evals/martian/README.md)
+and [evals/aacr/README.md](evals/aacr/README.md).
+
 ## How it works
 
 ```mermaid
