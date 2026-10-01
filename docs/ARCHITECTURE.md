@@ -205,7 +205,7 @@ second pass. A failed second pass keeps the first and its usage.
 Without `--deepen`, `review/advice.ts` suggests it after a run with findings (`run.advice.deepen`: every
 reviewed chunk and an estimate of `DEEPEN_COST_FACTOR` × the first pass's cost, left out when a chunk's cost is
 unknown); `deepenAdviceText` renders it in the summary and the markdown report.
-Every benchmark number, with history and caveats, is in `docs/benchmarks.md` (logs: `evals/aacr/README.md`,
+Every benchmark number, with history and caveats, is in `BENCHMARKS.md` (logs: `evals/aacr/README.md`,
 `evals/martian/README.md`).
 
 ### Self-critique (`review/critique.ts`)
@@ -642,6 +642,11 @@ The code under review, and therefore model output, is treated as untrusted.
   `result.json`, validated when loaded for `--compare`.
 - **`evals/`** — the built-in corpus; `test/evals-corpus.test.ts` checks every case (fields, lines in
   the head file and in the changed hunks, no hint markers, size).
+- **External benchmarks** (`evals/aacr/`, `evals/martian/`) — Python and shell harnesses around AACR-Bench and
+  Martian's Code Review Bench: they run a build (`evals/pin-build.sh` pins one to a commit) over the
+  benchmark's pull requests, judge the findings with `claude -p` and record each run's provenance
+  (`evals/provenance.py`). `evals/plain-llm.py` is the baseline without the pipeline: the same model given the
+  diff in one call. The numbers and how each was produced: `BENCHMARKS.md`.
 
 ## Extension points
 

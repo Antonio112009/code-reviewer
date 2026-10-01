@@ -24,7 +24,27 @@
   the critic): recall 9.6% → 15.0%, F1 15.3% → 19.7%, precision 37% → 29%, at $17.7 against $8.7 a run; the
   old second look scored 15.1% at $13.1. The suggestion after a run now covers every chunk.
 
+### Reports
+
+- Run records name the Code Reviewer version and every setting that shapes what a run reports (the "worth a
+  look" bar, second opinion, maintainability notes, `--deepen`, passes, audit); the markdown and HTML reports
+  show them as a "Stages" line (`critic · second opinion · maintainability notes (max 5)`) and the version.
+
 ### Evaluation
+
+- **BENCHMARKS.md**: every benchmark number in one page at the root — Code Reviewer against the published
+  review tools on real bugs (Martian's leaderboard, with three of its tools re-judged by the same judge as
+  Code Reviewer), against the same model asked directly, on AACR-Bench and in blind audits — and for each
+  number the build (commit), the exact command and the judge, with a measurement log of every configuration
+  measured.
+- `evals/plain-llm.py`: the plain baseline on both benchmarks — the reviewer's own model asked once for the
+  pull request's defects, without the pipeline.
+- `evals/provenance.py` records next to each benchmark run how it was made (build commit and version,
+  arguments, experiment switches, judges); `evals/pin-build.sh <commit>` builds a commit into its own directory
+  and records it.
+- The Martian judge asks with the benchmark's own system message, keeps one result file per judge and tier,
+  and takes `--judge-model claude-opus-4-5-20251101 --no-thinking` (also in `run.sh`) for the leaderboard's
+  judge model called the leaderboard's way; `--effort` sets the judge's reasoning effort.
 
 - `evals/aacr` gains what deciding on a benchmark needs: `stats.py` compares two variants with paired,
   repository-clustered intervals; the `hold82` subset is a held-out half (82 PRs of the ctx30 repositories);

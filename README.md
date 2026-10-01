@@ -127,22 +127,35 @@ code-reviewer review --base main --head feature/login --dry-run
 - **Safe on untrusted code.** Agents read an isolated, read-only snapshot, and nothing from the reviewed
   repository is ever executed. Ctrl+C stops every process cleanly.
 
-## Measured on real bugs
+## How it compares
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/img/martian-bench-dark.svg">
-  <img alt="Precision, recall and F1 on Martian's Code Review Bench, core profile: code-reviewer 0.7.0 main report 72.1 / 36.7 / 48.7, with worth-a-look findings 63.2 / 53.8 / 58.2; Augment 54.7 / 59.5 / 57.0; Claude Code 40.0 / 40.5 / 40.3, all under the same judge" src="docs/img/martian-bench-light.svg" width="820">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/martian-positioning-dark.svg">
+  <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: the leaderboard's first 61% and 60%, its third 58% and 63%, its twelfth 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
 </picture>
 
-[Martian's Code Review Bench](https://github.com/withmartian/code-review-benchmark) scores reviewers against
-173 verified bugs and remarks in 50 pull requests of Sentry, Grafana, Cal.com, Discourse and Keycloak. Run
-offline with `evals/martian/` (one judge for every row, so the rows are comparable with each other but not
-with the published leaderboard, whose judge is about 5–7 F1 points more lenient): code-reviewer 0.7.0 finds a
-third of the known defects with the highest precision in the table, and with its "worth a look" findings more
-than half of them for ten points of precision — at $0.40 a pull request. On AACR-Bench, where the references
-are mostly maintainability remarks by human and LLM reviewers, the numbers are lower and the differences
-between tools smaller. Every number, how it moved from release to release, the blind audits, the caveats and
-how to reproduce them: [docs/benchmarks.md](docs/benchmarks.md).
+[Martian's Code Review Bench](https://github.com/withmartian/code-review-benchmark) holds 50 pull requests of
+Sentry, Grafana, Cal.com, Discourse and Keycloak with 158 verified bugs and defects. Here every reviewer is
+scored by the same judge, Claude Opus 4.5, the leaderboard's judge model; the published tools are re-judged
+from the review comments they posted:
+
+| Reviewer | Precision | Recall | F1 | Cost / PR |
+|---|---|---|---|---|
+| The leaderboard's #3 tool, re-judged | 58.1% | 63.3% | **60.6%** | — |
+| The leaderboard's #1 tool, re-judged | 61.4% | 59.5% | 60.5% | — |
+| **code-reviewer 0.7.0**, main report + "worth a look" | 64.0% | 54.1% | 58.7% | $0.40 |
+| The same model given the diff in one call | 39.0% | **71.5%** | 50.5% | $0.08 |
+| **code-reviewer 0.7.0**, main report | **73.3%** | 37.3% | 49.5% | $0.40 |
+
+Code Reviewer's full report is within two F1 points of the leaderboard's two best tools, and more precise
+than both. Its main report, the part it posts on pull requests, is the most precise here: 73% of its
+findings are known bugs. The same model given the diff in one call finds more of the bugs, 72%, but only
+39% of its six findings per pull request match one: what the pipeline adds is precision, at five times the
+price of that call. On AACR-Bench, which scores agreement with reviewers' comments rather than bugs, the
+single call matches as many of them as the `main` branch and more than 0.7.0.
+
+Every number with its build, command and judge, the AACR-Bench results, the blind audits and the caveats:
+[BENCHMARKS.md](BENCHMARKS.md).
 
 ## How it works
 
