@@ -125,7 +125,7 @@ import {
   sweepInstructions,
   sweepPrompt,
 } from './prompts';
-import { reportedLines, SWEEP_SOURCE, sweepParts } from './sweep';
+import { atReportedSpot, SWEEP_SOURCE, sweepParts } from './sweep';
 import { taskTimeoutMs } from './timeouts';
 import { requireFailurePath, validateFindings } from './validate';
 
@@ -1571,7 +1571,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         const allFiles = units.filter((u) => u.status !== 'deleted').map((u) => u.path);
         const reportedSoFar = collected.filter((f) => f.origin === 'llm');
         const parts = sweepParts(chunks, Math.max(budget, promptRoom));
-        const record = { parts: parts.length, failed: 0, findings: 0 };
+        const record = { parts: parts.length, failed: 0, findings: 0, duplicates: 0 };
         const instructions = sweepInstructions(mode, depth);
         for (const [index, part] of parts.entries()) {
           if (req.signal?.aborted || router.fatal) break;
@@ -1585,12 +1585,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             kind: 'findings',
             label,
             instructions,
-            prompt: sweepPrompt({
-              target,
-              chunks: part,
-              reported: reportedLines(reportedSoFar, files),
-              part: { index, total: parts.length },
-            }),
+            prompt: sweepPrompt({ target, chunks: part, part: { index, total: parts.length } }),
             reasoning: 'medium',
             readTools: false,
             root,
@@ -1640,8 +1635,11 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
               f.origin = 'llm';
               return f;
             });
-            collected.push(...found);
+            // What a chunk review already reported at the same spot is the same defect, as a rule: not again.
+            const fresh = found.filter((f) => !atReportedSpot(f, reportedSoFar));
+            collected.push(...fresh);
             record.findings += found.length;
+            record.duplicates += found.length - fresh.length;
             await store.saveArtifact(run.id, label, {
               chunk: { id: label, files: [...files], tokens: part.reduce((n, c) => n + c.tokens, 0) },
               provider: result.provider,

@@ -196,9 +196,10 @@ export const ReviewSettingsSchema = z.object({
    */
   deepen: z.boolean(),
   /**
-   * One more review call over the whole change at once, without tools, told what the chunk reviews reported and
-   * asked broadly for the rest; what it finds goes to the critic with everything else. Experimental, off by
-   * default: the model given the whole diff in one call finds known bugs the per-chunk review never reports.
+   * One more review call over the whole change at once, without tools and independent of the chunk reviews, asked
+   * broadly for its defects; what it finds at a spot no chunk review reported goes to the critic with everything
+   * else. Experimental, off by default: the model given the whole diff in one call finds known bugs the per-chunk
+   * review never reports.
    */
   sweep: z.boolean(),
   /**

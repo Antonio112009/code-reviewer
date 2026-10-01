@@ -5,7 +5,7 @@ import { ProviderRegistry } from '../src/providers/registry';
 import type { AgentResult, AgentTask, Provider } from '../src/providers/types';
 import { stagesLabel } from '../src/report/common';
 import { runReview } from '../src/review/pipeline';
-import { reportedLines, SWEEP_SOURCE, sweepParts } from '../src/review/sweep';
+import { atReportedSpot, SWEEP_SOURCE, sweepParts } from '../src/review/sweep';
 import type { Chunk, Finding, ReportedFinding } from '../src/types';
 import { silentLogger } from '../src/util/logger';
 import { makeRepo, type TempRepo, testConfig } from './helpers';
@@ -91,7 +91,7 @@ const sweepOn = (c: Config) => {
 };
 
 describe('sweep over the whole change (review.sweep)', () => {
-  it('reads every chunk in one call without tools, told what the chunks reported', async () => {
+  it('reads every chunk in one call without tools, independently of the chunk reviews', async () => {
     const provider = new SweepProvider([extra({})]);
     const run = await review(provider, sweepOn);
     const sweeps = provider.tasks.filter((t) => t.label.startsWith('sweep-'));
@@ -99,18 +99,19 @@ describe('sweep over the whole change (review.sweep)', () => {
     const sweep = sweeps[0]!;
     expect(sweep.readTools).toBe(false);
     expect(sweep.maxSteps).toBe(3);
-    // the code of every changed file, and the chunk reviews' finding as already reported
+    // the code of every changed file, and nothing of what the chunk reviews found
     expect(sweep.prompt).toContain('## File: src/a.ts');
     expect(sweep.prompt).toContain('## File: src/b.ts');
-    expect(sweep.prompt).toMatch(/## Already reported \(do not repeat\)\n- src\/a\.ts:2 — division by zero/);
-    expect(sweep.instructions).toContain('Already reported');
+    expect(sweep.prompt).not.toContain('Already reported');
+    expect(sweep.instructions).toContain('An independent verifier checks every finding');
 
-    // the mock repeats "division by zero": merged with the chunk's; the new defect comes from the sweep alone
+    // the mock repeats "division by zero" at the chunk finding's spot: dropped as a duplicate; the new defect
+    // comes from the sweep alone
     const byTitle = new Map(run.findings.map((f) => [f.title, f]));
     expect([...byTitle.keys()].sort()).toEqual(['division by zero', 'y is computed from the old b']);
     expect(byTitle.get('y is computed from the old b')!.source.chunkIds).toEqual([SWEEP_SOURCE]);
-    expect(byTitle.get('division by zero')!.source.chunkIds).toContain(SWEEP_SOURCE);
-    expect(run.sweep).toEqual({ parts: 1, failed: 0, findings: 2 });
+    expect(byTitle.get('division by zero')!.source.chunkIds).not.toContain(SWEEP_SOURCE);
+    expect(run.sweep).toEqual({ parts: 1, failed: 0, findings: 2, duplicates: 1 });
     expect(run.options.sweep).toBe(true);
     expect(stagesLabel(run)).toContain('whole-change sweep (--sweep)');
   });
@@ -138,7 +139,7 @@ describe('sweep over the whole change (review.sweep)', () => {
     const run = await review(new SweepProvider(new Error('agent crashed')), sweepOn);
     expect(run.status).toBe('completed');
     expect(run.findings.map((f) => f.title)).toEqual(['division by zero']);
-    expect(run.sweep).toEqual({ parts: 1, failed: 1, findings: 0 });
+    expect(run.sweep).toEqual({ parts: 1, failed: 1, findings: 0, duplicates: 0 });
     expect(run.warnings.some((w) => w.startsWith('sweep-1 failed (agent crashed)'))).toBe(true);
   });
 
@@ -170,14 +171,12 @@ describe('sweep parts', () => {
     expect(sweepParts(chunks, 500).map((p) => p.map((c) => c.id))).toEqual([['c1'], ['c2'], ['c3']]);
   });
 
-  it('lists the reported findings of the part, one line each', () => {
-    const f = (file: string, startLine: number, endLine: number, title: string) =>
-      ({ file, startLine, endLine, title }) as Finding;
-    expect(
-      reportedLines(
-        [f('a.ts', 3, 3, 'Off  by\none'), f('b.ts', 4, 9, 'Leak'), f('c.ts', 1, 1, 'Other')],
-        new Set(['a.ts', 'b.ts']),
-      ),
-    ).toEqual(['- a.ts:3 — Off by one', '- b.ts:4-9 — Leak']);
+  it('takes a finding at the spot of a reported one, give or take two lines, for the same defect', () => {
+    const f = (file: string, startLine: number, endLine: number) => ({ file, startLine, endLine }) as Finding;
+    const reported = [f('a.ts', 10, 12)];
+    expect(atReportedSpot(f('a.ts', 14, 14), reported)).toBe(true);
+    expect(atReportedSpot(f('a.ts', 5, 8), reported)).toBe(true);
+    expect(atReportedSpot(f('a.ts', 15, 20), reported)).toBe(false);
+    expect(atReportedSpot(f('b.ts', 10, 12), reported)).toBe(false);
   });
 });

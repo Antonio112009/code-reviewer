@@ -5,9 +5,8 @@ import type { Chunk, Finding } from '../types';
 /** `source.chunkIds` of a finding the sweep reported (`review.sweep`): it comes from no chunk. */
 export const SWEEP_SOURCE = 'sweep';
 
-/** Most findings listed to the sweep as already reported, and the longest title shown. */
-const MAX_REPORTED = 200;
-const MAX_TITLE = 160;
+/** Lines a sweep finding may be off from a chunk finding and still be at the same spot. */
+const LINE_SLACK = 2;
 
 /**
  * The chunks each sweep call reads together: every chunk once (a focused pass's copy of a chunk shows the same
@@ -35,14 +34,14 @@ export function sweepParts(chunks: readonly Chunk[], maxTokens: number): Chunk[]
   return parts;
 }
 
-/** What the chunk reviews reported in `files`, one `file:lines — title` line each, for the sweep to skip. */
-export function reportedLines(findings: readonly Finding[], files: ReadonlySet<string>): string[] {
-  return findings
-    .filter((f) => files.has(f.file))
-    .slice(0, MAX_REPORTED)
-    .map((f) => {
-      const lines = f.endLine > f.startLine ? `${f.startLine}-${f.endLine}` : `${f.startLine}`;
-      const title = f.title.replace(/\s+/g, ' ').slice(0, MAX_TITLE);
-      return `- ${f.file}:${lines} — ${title}`;
-    });
+/**
+ * A sweep finding at the spot of a finding the chunk reviews reported (same file, overlapping lines give or take
+ * two): the same defect in other words, as a rule. Dropped before the critic, so it is neither checked nor
+ * reported twice; a second defect on the very same lines is lost with it.
+ */
+export function atReportedSpot(f: Finding, reported: readonly Finding[]): boolean {
+  return reported.some(
+    (o) =>
+      o.file === f.file && f.startLine <= o.endLine + LINE_SLACK && o.startLine <= f.endLine + LINE_SLACK,
+  );
 }

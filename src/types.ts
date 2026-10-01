@@ -603,10 +603,11 @@ export interface RunRecord {
   /** Which changed files the review covered, problem files first. */
   coverage?: FileCoverage[];
   /**
-   * `review.sweep`: the calls over the whole change (`parts`, one for most changes), how many failed, and how
-   * many findings they handed to validation and the critic (`source.chunkIds` = ["sweep"]).
+   * `review.sweep`: the calls over the whole change (`parts`, one for most changes), how many failed, how many
+   * findings they reported, and how many of those were at the spot of a chunk review's finding (`duplicates`,
+   * dropped); the rest went to validation and the critic (`source.chunkIds` = ["sweep"]).
    */
-  sweep?: { parts: number; failed: number; findings: number };
+  sweep?: { parts: number; failed: number; findings: number; duplicates: number };
   /** Suggested follow-ups (`--deepen`); advice only. */
   advice?: { deepen?: DeepenAdvice };
   findings: Finding[];
