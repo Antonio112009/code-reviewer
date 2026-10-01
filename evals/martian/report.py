@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Scores judged runs of the Martian benchmark: precision, recall and F1 per profile, recall by severity and
 repository, candidates and cost per pull request.
 

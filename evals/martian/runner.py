@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Reviews the benchmark's pull requests with code-reviewer, one detached worktree at the head commit each.
 
     runner.py <run-id> [--limit N] [--concurrency N] [--timeout-minutes M] [--only <id,id,...>]

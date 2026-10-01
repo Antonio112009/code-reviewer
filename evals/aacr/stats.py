@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Paired comparison of two AACR-Bench variants, with the uncertainty that repeated runs on a few dozen PRs carry.
 
     evals/aacr/stats.py <dataset> <runs A> <runs B> [--by-source] [--draws N]

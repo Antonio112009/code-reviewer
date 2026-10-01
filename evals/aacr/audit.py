@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Blind audit of a run's findings: what share is real, by the scores the reviewer and the critic gave them.
 
 The benchmark's references miss most real defects and include remarks that are wrong about the code, so its

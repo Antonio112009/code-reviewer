@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Records how a benchmark run was made, next to its results: which Code Reviewer build (version and commit),
 the exact arguments and experiment switches, the judge, the benchmark checkout. BENCHMARKS.md cites these files.
 

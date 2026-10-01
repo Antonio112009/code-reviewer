@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Judges a run (or a published tool's candidates) against the golden comments with the benchmark's own prompt.
 
     judge.py <run-id> [--tier main|all] [--judge-model sonnet] [--effort low|medium|high] [--no-thinking]

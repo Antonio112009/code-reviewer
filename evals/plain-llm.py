@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """The plain-LLM baseline: the reviewer's own model asked once to review the pull request's diff. No skills, no
 chunking, no repository tools, no critic, no thresholds. It answers one question: what does Code Reviewer's
 pipeline add over just asking the same model?
