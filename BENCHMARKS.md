@@ -9,7 +9,7 @@ produced it (a commit of this repository), the exact command and the judge that 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/martian-positioning-dark.svg">
-  <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. code-reviewer main with the opt-in --sweep: main report 71% and 44%, with worth-a-look findings 57% and 64%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: Qodo Extended (#1 on the leaderboard) 61% and 60%, Augment (#3) 58% and 63%, Claude Code CLI (#12) 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
+  <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. code-reviewer 0.8.0 with the opt-in --sweep: main report 71% and 44%, with worth-a-look findings 57% and 64%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: Qodo Extended (#1 on the leaderboard) 61% and 60%, Augment (#3) 58% and 63%, Claude Code CLI (#12) 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
 </picture>
 
 [Martian's Code Review Bench](https://github.com/withmartian/code-review-benchmark): 50 pull requests of
@@ -23,7 +23,7 @@ verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/marti
 |---|---|---|---|---|---|---|
 | Augment (#3 on the leaderboard), re-judged | 3.6 | 58.1% | 63.3% | **60.6%** | — | [json](evals/martian/judgings/2026-10-01/augment.json) |
 | Qodo Extended (#1), re-judged | 3.0 | 61.4% | 59.5% | 60.5% | — | [json](evals/martian/judgings/2026-10-01/qodo-extended.json) |
-| **code-reviewer `main` + `--sweep`** (opt-in, unreleased), main report + "worth a look" | 3.4 | 57.4% | 63.9% | 60.5% | $0.61 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-sweep-run1-all.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-sweep-run2-all.json) |
+| **code-reviewer 0.8.0 + `--sweep`** (opt-in), main report + "worth a look" | 3.4 | 57.4% | 63.9% | 60.5% | $0.61 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-sweep-run1-all.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-sweep-run2-all.json) |
 | **code-reviewer 0.7.0**, main report + "worth a look" | 2.6 | 64.0% | 54.1% | 58.7% | $0.40 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run1-all.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run2-all.json) |
 | The same model given the diff in one call | 5.9 | 39.0% | **71.5%** | 50.5% | $0.08 | [run 1](evals/martian/judgings/2026-10-01/plain-model-run1.json), [run 2](evals/martian/judgings/2026-10-01/plain-model-run2.json) |
 | **code-reviewer 0.7.0**, main report | 1.6 | **73.3%** | 37.3% | 49.5% | $0.40 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run1-main.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run2-main.json) |
@@ -33,7 +33,7 @@ verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/marti
   "worth a look", scores 58.7 against 60.5 for Qodo Extended and 60.6 for Augment, the leaderboard's first
   and third tools. The paired difference to Qodo Extended, −1.8 points, is within the noise (95% interval
   −10.0..+5.9). Code Reviewer is the more precise of the three and finds fewer of the bugs.
-- **Level with them with `--sweep`.** The opt-in sweep on `main`, one more call over the whole diff whose
+- **Level with them with `--sweep`.** The opt-in sweep of 0.8.0, one more call over the whole diff whose
   findings go to the same critic, raises the full report to 60.5 (recall 63.9%) for about half again the price.
 - **The most precise main report.** 73% of the findings in the main report, the part Code Reviewer posts
   on a pull request, match a known bug. Even under the leaderboard's more lenient scoring, only Graphite is
@@ -74,17 +74,17 @@ It gets no chunking, related files, repository tools, skills, critic or threshol
 | | code-reviewer 0.7.0, main report | 1.6 | **73.3%** | 37.3% | 49.5% | $0.40 |
 | AACR-Bench, 82 held-out PRs | the plain model, one call | 3.7 | 23.5% | **10.6%** | **14.6%** | $0.09 |
 | | code-reviewer 0.7.0 | 1.8 | 29.7% | 6.4% | 10.6% | $0.38 |
-| | code-reviewer `main` (0.7.0 + maintainability notes) | 2.3 | **31.4%** | 9.0% | 13.9% | $0.40 |
+| | code-reviewer 0.8.0 (maintainability notes on) | 2.3 | **31.4%** | 9.0% | 13.9% | $0.40 |
 | AACR-Bench ctx30, 30 PRs | the plain model, one call | 4.1 | 29.4% | 12.6% | 17.6% | $0.04 |
 | | code-reviewer 0.7.0 | 1.8 | **40.4%** | 7.7% | 12.9% | $0.25 |
-| | code-reviewer `main` | 2.5 | 37.4% | 9.6% | 15.3% | $0.29 |
-| | code-reviewer `main --deepen` | 5.0 | 28.6% | **15.0%** | **19.7%** | $0.59 |
+| | code-reviewer 0.8.0 | 2.5 | 37.4% | 9.6% | 15.3% | $0.29 |
+| | code-reviewer 0.8.0 `--deepen` | 5.0 | 28.6% | **15.0%** | **19.7%** | $0.59 |
 
 **What the pipeline buys is precision.** On real bugs the full report is 25 points more precise than the
 single call (64% against 39%) and finds 17 points fewer of the bugs (54% against 72%); F1 is 8.2 points
 higher (paired bootstrap over pull requests, 95% interval +0.7..+15.4). On AACR-Bench, where volume pays,
 the single call matches as many reviewers' comments: on the held-out pull requests its F1 is level with
-`main` (14.6 against 13.9; paired difference −0.7, 95% interval −3.0..+1.5) and 4.1 points above 0.7.0,
+0.8.0 (14.6 against 13.9; paired difference −0.7, 95% interval −3.0..+1.5) and 4.1 points above 0.7.0,
 while Code Reviewer without `--deepen` is 6 to 11 points more precise. Only `--deepen` passes it, on ctx30,
 by 2.1 points (−1.0..+5.1), at 14 times the cost. On both benchmarks the single call costs a fifth as much
 or less.
@@ -103,11 +103,11 @@ data or API defects.
 |---|---|---|---|---|---|---|---|
 | **code-reviewer 0.7.0**, main report + "worth a look" | `eb5c564` | 2.6 | 64.0% | 54.1% | 58.7% (60.0, 57.3) | 59.4% | $0.40 |
 | **code-reviewer 0.7.0**, main report | `eb5c564` | 1.6 | 73.3% | 37.3% | 49.5% (49.6, 49.4) | 50.0% | $0.40 |
-| **code-reviewer `main` + `--sweep`**, main report + "worth a look" | `d330ae1` | 3.4 | 57.4% | 63.9% | 60.5% (58.3, 62.7) | 60.6% | $0.61 |
-| **code-reviewer `main` + `--sweep`**, main report | `d330ae1` | 1.8 | 70.8% | 43.7% | 54.0% (50.4, 57.7) | 54.0% | $0.61 |
-| **code-reviewer `main`, defaults** (what the next release ships), everything listed | `84d96f3` | 3.1 | 56.0% | 56.3% | 56.2% (56.7, 55.6) | 56.1% | $0.42 |
-| **code-reviewer `main`, defaults**, main report + "worth a look", without the notes | `84d96f3` | 2.8 | 57.9% | 53.5% | 55.6% | — | $0.42 |
-| **code-reviewer `main`, defaults**, main report | `84d96f3` | 1.7 | 71.2% | 39.9% | 51.1% (53.8, 48.4) | 52.1% | $0.42 |
+| **code-reviewer 0.8.0 + `--sweep`**, main report + "worth a look" | `d330ae1` | 3.4 | 57.4% | 63.9% | 60.5% (58.3, 62.7) | 60.6% | $0.61 |
+| **code-reviewer 0.8.0 + `--sweep`**, main report | `d330ae1` | 1.8 | 70.8% | 43.7% | 54.0% (50.4, 57.7) | 54.0% | $0.61 |
+| **code-reviewer 0.8.0**, everything listed | `84d96f3` | 3.1 | 56.0% | 56.3% | 56.2% (56.7, 55.6) | 56.1% | $0.42 |
+| **code-reviewer 0.8.0**, main report + "worth a look", without the notes | `84d96f3` | 2.8 | 57.9% | 53.5% | 55.6% | — | $0.42 |
+| **code-reviewer 0.8.0**, main report | `84d96f3` | 1.7 | 71.2% | 39.9% | 51.1% (53.8, 48.4) | 52.1% | $0.42 |
 | The same model, one call | plain | 5.9 | 39.0% | 71.5% | 50.5% (48.7, 52.4) | 50.5% | $0.08 |
 | Qodo Extended (#1 on the leaderboard), re-judged | published comments | 3.0 | 61.4% | 59.5% | 60.5% | 60.6% | — |
 | Augment (#3), re-judged | published comments | 3.6 | 58.1% | 63.3% | 60.6% | 58.9% | — |
@@ -126,8 +126,8 @@ data or API defects.
   was replaced. Reasoning harder in the sweep (build `84d96f3` + [`evals/experiments/sweep-high.patch`](evals/experiments/sweep-high.patch),
   two runs) found as many more bugs (recall +9.5) for more precision (−7.1; F1 +1.3): the sweep stays at
   medium reasoning.
-- `main` with its defaults (build `84d96f3`, `--full`: maintainability notes on, no sweep) is what the next
-  release ships. Its main report scores F1 51.1 (0.7.0: 49.5). Without the notes, the main report and "worth a
+- 0.8.0 with its defaults (build `84d96f3`, its code before an unrelated snapshot fix; `--full`: maintainability
+  notes on, no sweep). Its main report scores F1 51.1 (0.7.0: 49.5). Without the notes, the main report and "worth a
   look" score 55.6, inside the range of the pipeline without the notes rule (55.9 to 58.7 over four pairs of
   runs): no measurable effect of the notes on finding bugs. With the notes, 56.2: some notes match known
   documentation defects.
@@ -160,11 +160,11 @@ than 1.3 points and the order holds (verdicts: [opus-5-5](evals/martian/judgings
 |---|---|---|
 | Qodo Extended (#1), re-judged | 61.4 / 59.5 / 60.5 | 62.3 / 60.8 / 61.5 |
 | Augment (#3), re-judged | 58.1 / 63.3 / 60.6 | 57.0 / 62.0 / 59.4 |
-| **code-reviewer `main` + `--sweep`**, main report + "worth a look" | 57.4 / 63.9 / 60.5 | 56.4 / 62.7 / 59.4 |
+| **code-reviewer 0.8.0 + `--sweep`**, main report + "worth a look" | 57.4 / 63.9 / 60.5 | 56.4 / 62.7 / 59.4 |
 | **code-reviewer 0.7.0**, main report + "worth a look" | 64.0 / 54.1 / 58.7 | 64.2 / 54.4 / 58.9 |
-| **code-reviewer `main`, defaults**, everything listed | 56.0 / 56.3 / 56.2 | 56.2 / 56.3 / 56.2 |
-| **code-reviewer `main` + `--sweep`**, main report | 70.8 / 43.7 / 54.0 | 70.3 / 43.4 / 53.6 |
-| **code-reviewer `main`, defaults**, main report | 71.2 / 39.9 / 51.1 | 70.6 / 39.6 / 50.7 |
+| **code-reviewer 0.8.0**, everything listed | 56.0 / 56.3 / 56.2 | 56.2 / 56.3 / 56.2 |
+| **code-reviewer 0.8.0 + `--sweep`**, main report | 70.8 / 43.7 / 54.0 | 70.3 / 43.4 / 53.6 |
+| **code-reviewer 0.8.0**, main report | 71.2 / 39.9 / 51.1 | 70.6 / 39.6 / 50.7 |
 | **code-reviewer 0.7.0**, main report | 73.3 / 37.3 / 49.5 | 71.4 / 36.4 / 48.2 |
 | The same model, one call | 39.0 / 71.5 / 50.5 | 39.6 / 72.8 / 51.3 |
 | Claude Code CLI (#12), re-judged | 41.8 / 41.8 / 41.8 | 42.6 / 43.7 / 43.1 |
@@ -187,9 +187,9 @@ held-out half that nothing was tuned on (run once).
 |---|---|---|---|---|---|
 | 0.5.2 with a Sonnet critic (what 0.6.0 made the default) | `4e302bf` | `--full --critique-model sonnet` | 54.5 / 36.7% / 7.0% / 11.7% | — | $6.76 |
 | **0.7.0** | `42747d9` (code of `v0.7.0`) | `--full` | 54.5 / 40.4% / 7.7% / 12.9% | 145 / 29.7% / 6.4% / 10.6% | $7.47 |
-| + maintainability notes (on `main`, unreleased) | `4fb887c` | `--full` | 73.5 / 37.4% / 9.6% / 15.3% | 191 / 31.4% / 9.0% / 13.9% | $8.66 |
-| + `--deepen`, an independent second pass (on `main`) | `0d73c06` | `--full --deepen` | 150.5 / 28.6% / 15.0% / 19.7% | — | $17.67 |
-| + `--sweep`, a call over the whole diff (on `main`, opt-in) | `d330ae1` | `--full --sweep` | 88.5 / 41.8% / 12.9% / 19.8% | 209 / 29.7% / 9.3% / 14.1% | $11.85 |
+| + maintainability notes (0.8.0) | `4fb887c` | `--full` | 73.5 / 37.4% / 9.6% / 15.3% | 191 / 31.4% / 9.0% / 13.9% | $8.66 |
+| + `--deepen`, an independent second pass (0.8.0) | `0d73c06` | `--full --deepen` | 150.5 / 28.6% / 15.0% / 19.7% | — | $17.67 |
+| + `--sweep`, a call over the whole diff (0.8.0, opt-in) | `d330ae1` | `--full --sweep` | 88.5 / 41.8% / 12.9% / 19.8% | 209 / 29.7% / 9.3% / 14.1% | $11.85 |
 | The plain model, one call | — | `evals/plain-llm.py aacr` | 122.5 / 29.4% / 12.6% / 17.6% | 302 / 23.5% / 10.6% / 14.6% | $1.28 |
 
 Paired differences, clustered on repositories ([evals/aacr/stats.py](evals/aacr/stats.py)): the notes add 3.4
@@ -254,7 +254,7 @@ identical).
 | `deepen-wip` | [`0d73c06`](https://github.com/Antonio112009/code-reviewer/commit/0d73c06) | 0.7.0 | + `--deepen` as an independent second pass, as merged in #60 |
 | `sweep-c2bad4a` | [`c2bad4a`](https://github.com/Antonio112009/code-reviewer/commit/c2bad4a) | 0.7.0 | experiment: the first `--sweep`, told what the chunk reviews had reported (replaced) |
 | `sweep2-d330ae1` | [`d330ae1`](https://github.com/Antonio112009/code-reviewer/commit/d330ae1) | 0.7.0 | + `--sweep` as merged: independent of the chunk reviews, same-spot duplicates dropped |
-| `main-84d96f3` | [`84d96f3`](https://github.com/Antonio112009/code-reviewer/commit/84d96f3) | 0.7.0 | `main` after `--sweep` was merged: the next release's defaults |
+| `main-84d96f3` | [`84d96f3`](https://github.com/Antonio112009/code-reviewer/commit/84d96f3) | 0.7.0 | the code of **0.8.0** except the snapshot fix (#67), which changes no review output |
 | `sweephigh-84d96f3` | `84d96f3` + [`evals/experiments/sweep-high.patch`](evals/experiments/sweep-high.patch) | 0.7.0 | experiment, never merged: the sweep at high reasoning |
 
 The version string lags behind: a commit between releases prints the previous release's version. Name builds
@@ -267,7 +267,7 @@ run record shows): the reviewer is Claude Code over ACP (`@agentclientprotocol/c
 model `sonnet` (`claude-sonnet-5-5`) at medium reasoning; the critic is the same model at high reasoning (Opus
 in builds before 0.6.0, unless `--critique-model sonnet`). In 0.7.0, full depth means: keep findings from
 confidence 0.3, list those below 0.6 and `info` findings as "worth a look", every severity, 6,000 tokens of
-skills per chunk, 25 tool steps, a second opinion on borderline findings. On `main` since #59: maintainability
+skills per chunk, 25 tool steps, a second opinion on borderline findings. Since 0.8.0: maintainability
 notes on (at most 5); `--deepen` off.
 
 ### Commands
@@ -443,7 +443,7 @@ and resolves differences of about 3 F1 points on AACR-Bench and 5 on Martian; si
 
 ## History
 
-- **2026-10-02** — every Martian row judged again by Claude Opus 5.5 (the same order); `main` with its defaults
+- **2026-10-02** — every Martian row judged again by Claude Opus 5.5 (the same order); 0.8.0 with its defaults
   measured on Martian; the sweep at high reasoning tried and dropped.
 - **2026-10-01** — `--sweep`, one more call over the whole diff, measured on both benchmarks and the held-out
   half (opt-in); Martian adapter; 0.7.0 run twice and judged by the leaderboard's judge model, with three

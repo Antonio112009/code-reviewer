@@ -42,7 +42,7 @@ REJUDGED_NAMES = "Qodo Extended #1, Augment #3, Claude Code CLI #12"
 OURS_MAIN = (73.3, 37.3)  # main report
 OURS_ALL = (64.0, 54.1)  # main report + "worth a look"
 PLAIN = (39.0, 71.5)
-# code-reviewer main (d330ae1) with the opt-in --sweep, runs ws2-1 and ws2-2 averaged, same judge.
+# code-reviewer 0.8.0 (measured on d330ae1) with the opt-in --sweep, runs ws2-1 and ws2-2 averaged, same judge.
 SWEEP_MAIN = (70.8, 43.7)
 SWEEP_ALL = (57.4, 63.9)
 
@@ -53,7 +53,7 @@ DUMBBELL = [  # (title, details, cost, [(metric, plain value, code-reviewer valu
      "per pull request: $0.08 plain, $0.40 code-reviewer",
      [("Precision", 39.0, 64.0), ("Recall", 71.5, 54.1), ("F1", 50.5, 58.7)]),
     ("Reviewers' comments: AACR-Bench, 82 held-out pull requests",
-     "code-reviewer main (0.7.0 + maintainability notes); one run each; matched by Claude Sonnet",
+     "code-reviewer 0.8.0 (maintainability notes on); one run each; matched by Claude Sonnet",
      "per pull request: $0.09 plain, $0.40 code-reviewer",
      [("Precision", 23.5, 31.4), ("Recall", 10.6, 9.0), ("F1", 14.6, 13.9)]),
 ]
@@ -119,7 +119,7 @@ def positioning(out_dir: str) -> None:
         ]
         legend = (
             (dot, t["ours"], "code-reviewer 0.7.0, released (two runs)"),
-            (square, t["ours"], "code-reviewer main + --sweep, opt-in (two runs)"),
+            (square, t["ours"], "code-reviewer 0.8.0 + --sweep, opt-in (two runs)"),
             (dot, t["plain"], "same model, one call (two runs)"),
             (dot, t["other"], "20 published review tools, as published"),
             (ring, t["other"], f"re-judged our way: {REJUDGED_NAMES}"),
@@ -176,7 +176,7 @@ def positioning(out_dir: str) -> None:
         parts.append(text(16, H - 30, "Method, judge calibration, builds and commands: BENCHMARKS.md. Published points: Martian's leaderboard", t["muted"], 11))
         parts.append(text(16, H - 14, "(github.com/withmartian/code-review-benchmark, offline/analysis), Opus 4.5 judge, at commit e616e849.", t["muted"], 11))
         label = (f"Precision against recall on real bugs, Martian Code Review Bench, Opus 4.5 judge: code-reviewer 0.7.0 main report "
-                 f"{pm} precision {rm} recall, with worth-a-look findings {pa} and {ra}; code-reviewer main with --sweep "
+                 f"{pm} precision {rm} recall, with worth-a-look findings {pa} and {ra}; code-reviewer 0.8.0 with --sweep "
                  f"{qm} and {wm}, with worth-a-look findings {qa} and {wa}; the same model asked once {pp} and {rp}; "
                  f"20 published tools between {min(p for p, _ in PUBLISHED)} and {max(p for p, _ in PUBLISHED)} precision as published; "
                  f"re-judged our way ({REJUDGED_NAMES}): " + "; ".join(f"{rank} {p0}/{r0} published, {p1}/{r1} re-judged" for rank, (p0, r0), (p1, r1), _ in REJUDGED))

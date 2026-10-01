@@ -131,7 +131,7 @@ code-reviewer review --base main --head feature/login --dry-run
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/martian-positioning-dark.svg">
-  <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. code-reviewer main with the opt-in --sweep: main report 71% and 44%, with worth-a-look findings 57% and 64%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: Qodo Extended (#1 on the leaderboard) 61% and 60%, Augment (#3) 58% and 63%, Claude Code CLI (#12) 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
+  <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. code-reviewer 0.8.0 with the opt-in --sweep: main report 71% and 44%, with worth-a-look findings 57% and 64%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: Qodo Extended (#1 on the leaderboard) 61% and 60%, Augment (#3) 58% and 63%, Claude Code CLI (#12) 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
 </picture>
 
 [Martian's Code Review Bench](https://github.com/withmartian/code-review-benchmark) holds 50 pull requests of
@@ -144,7 +144,7 @@ the judge's verdicts for every row: [evals/martian/judgings](evals/martian/judgi
 |---|---|---|---|---|
 | Augment (#3 on the leaderboard), re-judged | 58.1% | 63.3% | **60.6%** | — |
 | Qodo Extended (#1), re-judged | 61.4% | 59.5% | 60.5% | — |
-| **code-reviewer** `main` + [`--sweep`](#more-of-the-real-bugs---sweep) (opt-in), main report + "worth a look" | 57.4% | 63.9% | 60.5% | $0.61 |
+| **code-reviewer 0.8.0** + [`--sweep`](#more-of-the-real-bugs---sweep) (opt-in), main report + "worth a look" | 57.4% | 63.9% | 60.5% | $0.61 |
 | **code-reviewer 0.7.0**, main report + "worth a look" | 64.0% | 54.1% | 58.7% | $0.40 |
 | The same model given the diff in one call | 39.0% | **71.5%** | 50.5% | $0.08 |
 | **code-reviewer 0.7.0**, main report | **73.3%** | 37.3% | 49.5% | $0.40 |
@@ -154,7 +154,7 @@ third tools, and more precise than both. Its main report, the part it posts on p
 precise here: 73% of its findings are known bugs. The same model given the diff in one call finds more of the
 bugs, 72%, but only 39% of its six findings per pull request match one: what the pipeline adds is precision,
 at five times the price of that call. On AACR-Bench, which scores agreement with reviewers' comments rather than bugs, the
-single call matches as many of them as the `main` branch and more than 0.7.0.
+single call matches as many of them as 0.8.0 and more than 0.7.0.
 
 Judged again by Claude Opus 5.5, the newest Opus, every row moves by at most 1.3 points and the order holds.
 Every number with its build, command and judge, the AACR-Bench results, the blind audits and the caveats:
