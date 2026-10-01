@@ -205,7 +205,7 @@ that match a comment human reviewers left, so real defects they did not write do
 |---|---|---|---|---|
 | `--essential` | 9.5, all major | 63% | 2.1% (code defects 4.4%) | $5.1 |
 | `full` (default) | 47.5 | 46% | 7.7% (code defects 12.2%) | $7.6 |
-| `--deepen` | 70.5 | 38% | 9.4% (code defects 13.7%) | $13.1 |
+| `--deepen` | 150.5 | 29% | 15.0% (code defects 17.4%) | $17.7 |
 
 `essential` reports about one finding per three pull requests: the ones that can seriously hurt production,
 and every one of them is also in the `full` review. `full` costs half as much again and finds almost four
@@ -247,14 +247,15 @@ told nothing about the first pass, reasoning harder. What either pass found goes
 reported is marked so (`passes` in the JSON), and the critic is told, since agreement is evidence: such
 findings were real three times in four, findings of one pass one time in three.
 
-| AACR-Bench ctx30 (30 real PRs) | Recall | Precision | F1 | Cost per run |
-|---|---|---|---|---|
-| one pass, medium reasoning, no critic | 9.1% | 36.6% | 14.6% | $5.25 |
-| one pass, high reasoning, no critic | 10.1% | 33.0% | 15.5% | $6.77 |
-| both passes merged, no critic | 12.9% | 31.6% | 18.4% | $12.0 |
+| AACR-Bench ctx30 (30 real PRs, two runs each) | Findings | Recall | Code-defect recall | Precision | F1 | Cost per run |
+|---|---|---|---|---|---|---|
+| default | 73.5 | 9.6% | 13.7% | 37.4% | 15.3% | $8.7 |
+| `--deepen` | 150.5 | 15.0% | 17.4% | 28.6% | 19.7% | $17.7 |
+| the old second look (0.7.0) | 70.5 | 9.4% | 13.7% | 38.3% | 15.1% | $13.1 |
 
 - **When:** changes where a missed defect is expensive: payments, authentication, migrations, a release
-  branch. For everyday pull requests the default is the better trade.
+  branch. For everyday pull requests the default is the better trade: twice the findings to read, a third of
+  them matching what human reviewers wrote instead of two fifths.
 - **Cost:** about twice the price (the second pass reasons harder), plus the critic's look at what it adds.
 - **Suggested, not automatic:** after a review with findings, the summary and the markdown report suggest
   `--deepen` with its estimated cost (also `advice.deepen` in the JSON). With the result cache on (the

@@ -20,8 +20,9 @@
   result; what either pass found goes to the critic, and a finding both passes reported is marked so
   (`passes` in the JSON) and shown to the critic as evidence. In a blind audit on 30 real pull requests one
   pass held 43 real findings, the union of two 56, and a finding both passes reported was real three times in
-  four against one time in three for a finding of one pass. About twice the price; the suggestion after a run
-  now covers every chunk.
+  four against one time in three for a finding of one pass. Measured on AACR-Bench ctx30 (two runs each, with
+  the critic): recall 9.6% → 15.0%, F1 15.3% → 19.7%, precision 37% → 29%, at $17.7 against $8.7 a run; the
+  old second look scored 15.1% at $13.1. The suggestion after a run now covers every chunk.
 
 ### Evaluation
 
