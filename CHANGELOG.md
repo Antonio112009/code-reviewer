@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Review quality
+
+- **Maintainability notes.** At full depth the review also lists what the change makes harder to maintain —
+  a misleading name, a comment or message that contradicts the code, duplicated or dead code, an unexplained
+  value, handling inconsistent with sibling code — as `review.notes`, checked by the critic to be true of the
+  changed code but never judged as defects. They have their own section in the reports and a short list in
+  the pull request summary comment; they are never posted inline, exported to SARIF / Code Quality or
+  counted by `--fail-on`, and `review.maxNotes` (5) caps them. `--no-notes` / `review.notes: false` turns
+  them off; at `essential` depth they are off. Measured with the critic's check in place: on AACR-Bench ctx30
+  F1 12.9% → 15.3% (two runs each) and on 82 held-out pull requests 10.6% → 13.9% (paired: +3.4 points, 95%
+  interval +1.2..+5.6), at the same cost and precision; in a blind audit 60% of the notes were useful to a
+  maintainer and 9% wrong before the critic's check.
+
+- **`--deepen` is an independent second pass.** Instead of a second look at the chunks with findings, told
+  what was found, every chunk is reviewed a second time at high reasoning without knowing the first pass's
+  result; what either pass found goes to the critic, and a finding both passes reported is marked so
+  (`passes` in the JSON) and shown to the critic as evidence. In a blind audit on 30 real pull requests one
+  pass held 43 real findings, the union of two 56, and a finding both passes reported was real three times in
+  four against one time in three for a finding of one pass. Measured on AACR-Bench ctx30 (two runs each, with
+  the critic): recall 9.6% → 15.0%, F1 15.3% → 19.7%, precision 37% → 29%, at $17.7 against $8.7 a run; the
+  old second look scored 15.1% at $13.1. The suggestion after a run now covers every chunk.
+
 ### Evaluation
 
 - `evals/aacr` gains what deciding on a benchmark needs: `stats.py` compares two variants with paired,

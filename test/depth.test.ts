@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { flagsToOverrides } from '../src/cli/commands/review';
 import { loadConfig } from '../src/config/load';
 import { DEFAULT_CONFIG, DEPTH_PRESETS } from '../src/config/schema';
-import { critiqueInstructions, reviewInstructions } from '../src/review/prompts';
+import { critiqueInstructions, notesInstructions, reviewInstructions } from '../src/review/prompts';
 import { matchSkill, selectSkills, skillsForDepth } from '../src/skills/detector';
 import { parseGroup, parseSkill, splitTiers } from '../src/skills/loader';
 
@@ -140,6 +140,14 @@ describe('depth prompts', () => {
     const full = reviewInstructions({ mode: 'diff', depth: 'full', skills: [] });
     expect(full).toContain('Depth: FULL');
     expect(full).toMatch(/accessibility failures/);
+    // maintainability notes are asked for only when review.notes is on (the full-depth default)
+    expect(full).not.toMatch(/Maintainability notes\./);
+    const withNotes = reviewInstructions({ mode: 'diff', depth: 'full', skills: [], notes: true });
+    expect(withNotes).toMatch(/Maintainability notes\. Besides defects/);
+    expect(withNotes).toMatch(/category "maintainability", severity "info"/);
+    expect(notesInstructions('diff')).toMatch(/you do not judge them as defects/);
+    expect(notesInstructions('diff')).toMatch(/"\+" in the excerpts marks the changed lines/);
+    expect(notesInstructions('files')).not.toMatch(/did not touch/);
     expect(critiqueInstructions('diff', 'essential')).toMatch(/ESSENTIAL-depth review: also reject/);
     expect(critiqueInstructions('diff', 'full')).not.toMatch(/ESSENTIAL/);
   });

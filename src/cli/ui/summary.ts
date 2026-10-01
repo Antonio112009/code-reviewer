@@ -211,6 +211,15 @@ export function renderSummary(run: RunRecord, ctx: SummaryContext): string {
       ...findingLines(run.advisory, ctx),
     );
   }
+  if (run.notes?.length) {
+    out.push(
+      '',
+      c.dim(
+        `Maintainability notes (${run.notes.length}): true of the changed code, not defects — in the reports and the summary comment, never inline`,
+      ),
+      ...findingLines(run.notes, ctx),
+    );
+  }
   const tip = deepenAdviceText(run);
   if (tip) out.push('', c.cyan(`${sym.arrow} ${clean(tip)}`));
   out.push('');
@@ -250,7 +259,7 @@ export function renderSummary(run: RunRecord, ctx: SummaryContext): string {
     );
   }
   items(
-    'Second look',
+    'Second pass',
     run.chunks
       .filter((ch) => ch.deepened !== undefined)
       .map((ch) => `${clean(ch.id)} ${c.dim(`+${ch.deepened}`)}`),

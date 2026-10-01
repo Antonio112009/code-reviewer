@@ -35,6 +35,9 @@
                                        critical/major without a failure path lowered a level (requireFailurePath)
       dedupe      review/dedupe.ts     same file + overlapping lines + similar title / same span
    9. critique    review/critique.ts   batches per file → submit_verdicts → confirmed/uncertain/rejected
+      notes       review/critique.ts   category `maintainability` (review.notes) skips the defect critic:
+                                       critiqueNotes keeps a note that is true of the changed code; capped by
+                                       review.maxNotes → run.notes (reports and the summary comment only)
   10. threshold   minConfidence (non-rejectable static findings bypass it); below advisoryConfidence or
                   info → run.advisory ("worth a look": reports only, not published, SARIF or --fail-on)
   11. authors     review/attribution   git blame → author, commit/line URLs (GitHub/GitLab)
@@ -125,6 +128,7 @@ the config files and flags, so explicit settings always win.
 | `minConfidence` | 0.7 | 0.3 |
 | `advisoryConfidence` | 0 | 0.6 |
 | `secondOpinion` | off | on |
+| `notes` | off | on |
 
 The depth also affects:
 - **Prompts.** The review instructions (`prompts.ts#depthRules`) narrow the scope to serious production
@@ -187,22 +191,22 @@ restoring state, edge-case inputs, parsed values, calls, callers — and to keep
 first defect. The model records each function in `submit_findings.audit`; the chunk record keeps
 `audit: { listed, audited }`. Aimed at the reviewer reporting one defect per place where several exist.
 
-### Second look (`review.deepen`, `--deepen`; experimental, off)
+### Second pass (`review.deepen`, `--deepen`; off)
 
-After a chunk (or split part) is reviewed with at least one finding, `deepen` in `review/pipeline.ts` runs the
-same task again with `deepenSection` appended to its prompt: the findings so far ("do NOT report them again")
-and a checklist for the functions that hold them — calls that can fail, resources on every path, state on
-early returns, code that must change together. The prompt extends the first one, so its prefix comes from the
-prompt cache. New findings that repeat one (same file, overlapping lines, title similarity ≥ 0.5) are
-dropped; the rest join the part's findings, and the chunk record keeps how many it added (`deepened`). The
-first look is cached under its usual key and the second look under its own (the first look's identity plus
-what it was told was found), so a run with `--deepen` after one without it pays only for the second looks.
-A failed second look keeps the first review and its usage.
+With `review.deepen`, `deepen` in `review/pipeline.ts` runs every reviewed part a second time as an independent
+task: the same prompt and instructions, `reasoning: high` (`SECOND_PASS_REASONING`), told nothing about the
+first pass. Its findings join the part's: a finding the first pass already reported (same file, overlapping
+lines, similar title) is kept once with `passes: 2`, the others get `passes: 1`, and the chunk record keeps how
+many the second pass added (`deepened`). `critiqueFindingIdentity` shows the critic which findings both passes
+reported ("reportedBy"), as evidence to check, not a verdict. The first pass is cached under its usual key and
+the second under its own (`SECOND_PASS`), so a run with `--deepen` after one without it pays only for the
+second pass. A failed second pass keeps the first and its usage.
 
-Without `--deepen`, `review/advice.ts` suggests it after the run (`run.advice.deepen`: the chunks with
-findings and an estimate of 1.1 × their review cost, left out when a cost is unknown); the CLI summary and
-the markdown report print it as a tip. Aimed at the reviewer reporting one defect per spot;
-AACR ctx30 numbers are in `evals/aacr/README.md`; `evals/martian/README.md` scores real bugs (Martian's Code Review Bench).
+Without `--deepen`, `review/advice.ts` suggests it after a run with findings (`run.advice.deepen`: every
+reviewed chunk and an estimate of `DEEPEN_COST_FACTOR` × the first pass's cost, left out when a chunk's cost is
+unknown); `deepenAdviceText` renders it in the summary and the markdown report.
+AACR ctx30 numbers are in `evals/aacr/README.md`; `evals/martian/README.md` scores real bugs (Martian's Code
+Review Bench).
 
 ### Self-critique (`review/critique.ts`)
 

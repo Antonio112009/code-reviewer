@@ -69,6 +69,8 @@ export interface ReviewFlags {
   audit?: boolean;
   deepen?: boolean;
   secondOpinion?: boolean;
+  /** `--notes` / `--no-notes`: maintainability notes (`review.notes`). */
+  notes?: boolean;
   /** Post the finished review to its pull / merge request (`--post`, with the publish target flags). */
   post?: boolean;
 }
@@ -246,6 +248,7 @@ export function applyRunFlags(config: Config, f: ReviewFlags): void {
   if (f.audit) config.review.audit = true;
   if (f.deepen) config.review.deepen = true;
   if (f.secondOpinion !== undefined) config.review.secondOpinion = f.secondOpinion;
+  if (f.notes !== undefined) config.review.notes = f.notes;
   if (f.analyzers === false) {
     config.analyzers.builtin = false;
     config.analyzers.external = 'off';
@@ -439,12 +442,20 @@ export function addRunLimitOptions(cmd: Command): Command {
       'review passes per chunk: general | local,contracts (changed lines, then consumers)',
     )
     .option('--audit', 'experimental: audit every changed function one by one')
-    .option('--deepen', 'experimental: a second look at chunks with findings, for other defects nearby')
+    .option(
+      '--deepen',
+      'an independent second review pass over every chunk at high reasoning (about twice the price, a third more real defects)',
+    )
     .option(
       '--second-opinion',
       'a second verifier re-checks findings the critic was not sure about (default at full depth)',
     )
     .option('--no-second-opinion', 'one verifier only')
+    .option(
+      '--notes',
+      'also list maintainability notes (misleading names, comments or messages, duplication, dead code) in the report and the summary comment (the full-depth default)',
+    )
+    .option('--no-notes', 'defects only')
     .option(
       '--expand <level>',
       'related unchanged code per chunk: off | map (file:line of usages and called definitions, default) | refs (plus excerpts) | deep',

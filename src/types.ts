@@ -18,6 +18,8 @@ export const CATEGORIES = [
   'resource-leak',
   'api-misuse',
   'data-loss',
+  /** A maintainability note (`review.notes`): true of the code, not a defect; its own list in the reports. */
+  'maintainability',
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
@@ -240,6 +242,8 @@ export interface Finding extends ReportedFinding {
   replacementOk?: boolean;
   /** Severity lowered before critique because the finding gave no failure path (`review.requireFailurePath`). */
   lowered?: { from: Severity; reason: 'no-failure-path' };
+  /** Independent review passes that reported it, when `review.deepen` ran: 2 = both, 1 = one of them. */
+  passes?: number;
   /** Set when a validation step rejected the finding (hallucinated path, lines out of range, ...). */
   droppedReason?: string;
   /**
@@ -508,7 +512,7 @@ export interface ChunkRecord {
   skillsDropped?: string[];
   /** `review.audit`: changed functions listed in the prompt and how many the model recorded as audited. */
   audit?: { listed: number; audited: number };
-  /** `review.deepen`: findings the second look added (set when one ran). */
+  /** `review.deepen`: findings the second pass added (set when one ran). */
   deepened?: number;
   /** Provider/model that actually reviewed the chunk (after any fallback). */
   provider?: string;
@@ -544,11 +548,11 @@ export interface FileCoverage {
   opened?: boolean;
 }
 
-/** `advice.deepen`: a second look (`--deepen`) at the chunks that had findings, suggested after a run. */
+/** `advice.deepen`: a second pass (`--deepen`) over the reviewed chunks, suggested after a run with findings. */
 export interface DeepenAdvice {
-  /** Chunks a second look would review again. */
+  /** Chunks a second pass would review again. */
   chunks: string[];
-  /** What it would add, estimated from the first looks' cost; absent when unknown. */
+  /** What it would add, estimated from the first pass's cost; absent when unknown. */
   estimatedCost?: Money;
 }
 
@@ -594,6 +598,12 @@ export interface RunRecord {
    * reports as "worth a look", left out of pull request comments, SARIF / Code Quality and `--fail-on`.
    */
   advisory?: Finding[];
+  /**
+   * Maintainability notes (`review.notes`): names, comments and messages that mislead, duplication, dead code,
+   * unexplained values — verified as true of the changed code, never as defects. Their own section in the
+   * reports and a list in the pull request summary comment; never inline, in SARIF / Code Quality or `--fail-on`.
+   */
+  notes?: Finding[];
   /** Findings removed by validation, critique or the confidence threshold — kept for auditing. */
   rejected: Finding[];
   usage: Usage;

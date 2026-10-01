@@ -499,6 +499,32 @@ Paired: hold82 recall +1.9 points (95% CI +0.5..+3.4), F1 +2.2 (−0.1..+4.2), P
 recall 1.7% → 5.1%. ctx30 flatters every configuration: the same build scores 12.9 there and 10.6 held out.
 The human-vs-AI recall gap seen on ctx30 (1.7% vs 9.3%) does not hold on hold82 (7.8% vs 6.0%).
 
+**As implemented** (`review.notes`: the notes go through their own critic check, at most 5 per run):
+
+| | PRs | Findings | Precision | Recall | F1 | Cost / run |
+|---|---|---|---|---|---|---|
+| 0.7.0, ctx30 (two runs) | 30 | 54.5 | 40.4% | 7.7% | 12.9% | $7.5 |
+| + notes, ctx30 (two runs) | 30 | 73.5 | 37.4% | 9.6% | 15.3% | $8.7 |
+| 0.7.0, hold82 | 82 | 145 | 29.7% | 6.4% | 10.6% | $30.75 |
+| + notes, hold82 | 82 | 191 | 31.4% | 9.0% | 13.9% | $32.72 |
+
+Paired: hold82 recall +2.5 (95% CI +1.0..+4.1), F1 +3.4 (+1.2..+5.6), P(B > A) 0.999; ctx30 recall +1.9
+(−0.2..+4.1), F1 +2.4 (−0.4..+5.6), P 0.95.
+
+**`--deepen` as an independent second pass** (high reasoning, the union to the critic; notes on; two runs):
+
+| ctx30 | Findings | Precision | Recall | Code-defect recall | F1 | Cost / run |
+|---|---|---|---|---|---|---|
+| default (notes on) | 73.5 | 37.4% | 9.6% | 13.7% | 15.3% | $8.7 |
+| `--deepen`, second pass | 150.5 | 28.6% | 15.0% | 17.4% | 19.7% | $17.7 |
+| `--deepen`, old second look (0.7.0) | 70.5 | 38.3% | 9.4% | 13.7% | 15.1% | $13.1 |
+
+Paired against the default: recall +5.4 (95% CI +3.2..+7.6), F1 +4.4 (+1.9..+7.2), P(B > A) 1.00; against
+the old second look F1 +4.6 (+0.9..+8.7), P 0.99. The second pass adds 107–115 raw findings a run, of which
+the critic rejects 17–26; only 10–22 of the kept findings were reported by both passes. The reviewer writes fewer notes than in the probe (0.4–0.6 per PR
+against 0.8) and the check drops few of them (1 of 37 on ctx30, 23 of 56 findings and notes on hold82 are
+critic rejections in total); defect recall 11.7% → 14.0% on hold82.
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).
