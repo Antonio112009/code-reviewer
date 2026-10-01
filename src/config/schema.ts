@@ -196,6 +196,12 @@ export const ReviewSettingsSchema = z.object({
    */
   deepen: z.boolean(),
   /**
+   * One more review call over the whole change at once, without tools, told what the chunk reviews reported and
+   * asked broadly for the rest; what it finds goes to the critic with everything else. Experimental, off by
+   * default: the model given the whole diff in one call finds known bugs the per-chunk review never reports.
+   */
+  sweep: z.boolean(),
+  /**
    * A second verifier for findings the critic kept just around the bar of the main report (from 0.1 below
    * `advisoryConfidence` / `minConfidence` to 0.15 above it): asked to refute each one with code the first
    * did not read; its verdict replaces the first. On at `full` depth (measured there: precision 40% → 46% on
@@ -486,6 +492,7 @@ export const DEFAULT_CONFIG: Config = {
     passes: ['general'],
     audit: false,
     deepen: false,
+    sweep: false,
     secondOpinion: true,
     notes: true,
     maxNotes: 5,
