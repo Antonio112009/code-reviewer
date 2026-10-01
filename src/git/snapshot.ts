@@ -49,9 +49,19 @@ export interface SnapshotOptions {
   onForcedExit?: (cleanup: () => void) => () => void;
 }
 
-/** Temp dir layout: `<tmpdir>/code-reviewer-XXXXXX/{tree,no-hooks,owner.json}`. */
+/**
+ * Temp dir layout: `<tmpdir>/code-reviewer-XXXXXX/{tree-XXXXXX,no-hooks,owner.json}`. The worktree's name
+ * repeats the temp dir's unique part: git names a worktree's administrative directory after it
+ * (`.git/worktrees/<name>`), and snapshots of one repository created at the same time must not race for one
+ * name (they did with a fixed `tree`: one read the other's index). Files snapshots, without git, use `tree`.
+ */
 const TEMP_PREFIX = 'code-reviewer-';
 const TREE_DIR = 'tree';
+
+/** The worktree directory of the snapshot in `parent`. */
+function treeDirOf(parent: string): string {
+  return `${TREE_DIR}-${path.basename(parent).slice(TEMP_PREFIX.length)}`;
+}
 const NO_HOOKS_DIR = 'no-hooks';
 const OWNER_FILE = 'owner.json';
 /** A snapshot older than this is stale even if its recorded pid is alive again (pid reuse). */
@@ -101,7 +111,7 @@ export async function createSnapshot(
   }
 
   const parent = await mkdtemp(path.join(tmpdir(), TEMP_PREFIX));
-  const root = path.join(parent, TREE_DIR);
+  const root = path.join(parent, treeDirOf(parent));
   distrustDirectory(root); // reviewed code: never resolve programs from it
   // Registered before the worktree exists: a forced exit mid-creation must not leave it behind.
   const unregister = opts.onForcedExit?.(() => removeSnapshotSync(repo.root, root, parent)) ?? (() => {});
@@ -357,7 +367,8 @@ async function lstatOrUndefined(p: string) {
 
 /**
  * Removes snapshot worktrees of `repo` left behind by crashed or killed runs: linked worktrees at
- * `<tmpdir>/code-reviewer-XXXXXX/tree` whose owning process is gone (or that are older than a day), then
+ * `<tmpdir>/code-reviewer-XXXXXX/tree-XXXXXX` (or `tree`, as older versions named it) whose owning process is
+ * gone (or that are older than a day), then
  * runs `git worktree prune`. Snapshots of live runs — including concurrent ones — are kept. Returns the
  * removed worktree paths (sorted). Never throws for git failures.
  */
@@ -371,7 +382,9 @@ export async function pruneStaleSnapshots(repo: GitRepo): Promise<string[]> {
     if (entry.locked || canonical(entry.path) === own) continue;
     const worktree = path.resolve(entry.path);
     const parent = path.dirname(worktree);
-    if (path.basename(worktree) !== TREE_DIR || !path.basename(parent).startsWith(TEMP_PREFIX)) continue;
+    const name = path.basename(worktree);
+    if (!path.basename(parent).startsWith(TEMP_PREFIX) || (name !== treeDirOf(parent) && name !== TREE_DIR))
+      continue;
     if (!tempRoots.has(canonical(path.dirname(parent)))) continue;
     if (!(await isStale(parent))) continue;
     await repo.tryRun(['worktree', 'remove', '--force', worktree]);

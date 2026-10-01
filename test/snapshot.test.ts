@@ -4,11 +4,13 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
+  mkdtempSync,
   readFileSync,
   rmSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { GitRepo } from '../src/git/repo';
@@ -273,6 +275,31 @@ describe('createSnapshot', () => {
   });
 });
 
+describe('concurrent snapshots', () => {
+  it('of one repository each get their own worktree, and all are removed', async () => {
+    const { temp, repo } = setup();
+    temp.write({ 'a.ts': '1\n' });
+    const sha = temp.commit('c');
+    // git names a worktree's administrative directory after its folder: a shared name made these race
+    const snapshots = await Promise.all(
+      Array.from({ length: 6 }, () => createSnapshot(repo, sha, { forceIsolated: true })),
+    );
+    try {
+      expect(new Set(snapshots.map((s) => path.basename(s.root))).size).toBe(6);
+      for (const s of snapshots) {
+        expect(path.basename(s.root)).toBe(
+          `tree-${path.basename(path.dirname(s.root)).slice('code-reviewer-'.length)}`,
+        );
+        expect(readFileSync(path.join(s.root, 'a.ts'), 'utf8')).toBe('1\n');
+      }
+      expect(worktreePaths(temp)).toHaveLength(7);
+    } finally {
+      await Promise.all(snapshots.map((s) => s.dispose()));
+    }
+    expect(worktreePaths(temp)).toHaveLength(1);
+  });
+});
+
 describe('pruneStaleSnapshots', () => {
   it('removes worktrees of dead runs and keeps live ones', async () => {
     const { temp, repo } = setup();
@@ -301,7 +328,9 @@ describe('pruneStaleSnapshots', () => {
       const remaining = worktreePaths(temp);
       expect(remaining).toHaveLength(2);
       expect(
-        remaining.some((p) => p.endsWith(path.join(path.basename(path.dirname(live.root)), 'tree'))),
+        remaining.some((p) =>
+          p.endsWith(path.join(path.basename(path.dirname(live.root)), path.basename(live.root))),
+        ),
       ).toBe(true);
       expect(await pruneStaleSnapshots(repo)).toEqual([]);
     } finally {
@@ -310,6 +339,22 @@ describe('pruneStaleSnapshots', () => {
       await legacy.dispose();
     }
     expect(worktreePaths(temp)).toHaveLength(1);
+  });
+
+  it('removes a dead snapshot named the way older versions named it', async () => {
+    const { temp, repo } = setup();
+    temp.write({ 'a.ts': '1\n' });
+    temp.commit('c');
+    const parent = mkdtempSync(path.join(tmpdir(), 'code-reviewer-'));
+    const legacy = path.join(parent, 'tree');
+    temp.git('worktree', 'add', '--detach', '--quiet', legacy, 'HEAD');
+    try {
+      // no owner.json: an older run that is gone
+      expect((await pruneStaleSnapshots(repo)).map((p) => path.basename(p))).toEqual(['tree']);
+      expect(existsSync(parent)).toBe(false);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
   });
 
   it('ignores worktrees that are not code-reviewer snapshots', async () => {

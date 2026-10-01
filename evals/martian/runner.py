@@ -40,7 +40,9 @@ def git(repo: Path, *args: str) -> str:
 
 def review(pr: dict, run_dir: Path, cli: str, args: list[str], timeout_s: int) -> dict:
     repo = MARTIAN_DIR / "repos" / pr["repo"]
-    work = MARTIAN_DIR / "work" / run_dir.name / pr["id"]
+    # Named after run and PR: git names a worktree's admin directory after its folder, and two runs of the same
+    # PR at once must not race for one name.
+    work = MARTIAN_DIR / "work" / run_dir.name / f"{run_dir.name}-{pr['id']}"
     if work.exists():
         subprocess.run(["git", "-C", str(repo), "worktree", "remove", "--force", str(work)], capture_output=True)
         shutil.rmtree(work, ignore_errors=True)

@@ -71,6 +71,14 @@
   prompt answered by `claude -p`, a baseline mode that judges a published tool's candidates under the same
   judge, and a report by profile, severity and repository.
 
+### Fixes
+
+- Two reviews of one repository at the same time no longer break each other's snapshot. Every snapshot
+  worktree was named `tree`, git names a worktree's administrative directory after it, and two snapshots
+  created at once raced for that name: one failed with "index file smaller than expected" or "Could not write
+  new index file". Each snapshot now has a unique name; stale snapshots of older versions are still cleaned
+  up.
+
 ### Packaging
 
 - The npm package ships only the built-in eval corpus from `evals/`, no longer the benchmark harnesses
