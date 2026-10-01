@@ -141,8 +141,8 @@ with the published leaderboard, whose judge is about 5–7 F1 points more lenien
 third of the known defects with the highest precision in the table, and with its "worth a look" findings more
 than half of them for ten points of precision — at $0.40 a pull request. On AACR-Bench, where the references
 are mostly maintainability remarks by human and LLM reviewers, the numbers are lower and the differences
-between tools smaller; both are documented with their caveats in [evals/martian/README.md](evals/martian/README.md)
-and [evals/aacr/README.md](evals/aacr/README.md).
+between tools smaller. Every number, how it moved from release to release, the blind audits, the caveats and
+how to reproduce them: [docs/benchmarks.md](docs/benchmarks.md).
 
 ## How it works
 

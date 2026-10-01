@@ -1,5 +1,7 @@
 # AACR-Bench
 
+The summary of every benchmark, with charts and the release-to-release history, is [docs/benchmarks.md](../../docs/benchmarks.md); this file is the measurement log.
+
 [AACR-Bench](https://github.com/alibaba/aacr-bench) is Alibaba's public code review benchmark: 196 real pull
 requests (the paper counts 200) from 50 open-source repositories in 10 languages, with 1,505 expert-verified
 review comments. It is

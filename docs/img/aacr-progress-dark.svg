@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="356" viewBox="0 0 640 356" role="img" aria-label="F1 on AACR-Bench by configuration: 0.6.0 full 11.7; 0.7.0 12.9 on ctx30 and 10.6 held out; with maintainability notes 15.3 and 13.9; with the deepen second pass 19.7 on ctx30" font-family="system-ui, -apple-system, &quot;Segoe UI&quot;, sans-serif">
+<text x="16" y="26" font-size="15" font-weight="600" fill="#f0f6fc">AACR-Bench: F1 against human and LLM reviewers' comments, by configuration</text>
+<text x="16" y="46" font-size="12" fill="#c3c2b7">Semantic match by a Sonnet judge; every configuration runs with its critic.</text>
+<text x="16" y="62" font-size="12" fill="#c3c2b7">Two runs per value on ctx30, one on the held-out pull requests.</text>
+<rect x="16" y="82" width="12" height="12" rx="2" fill="#3987e5"/>
+<text x="34" y="92" font-size="12" fill="#c3c2b7">ctx30, 30 PRs, two runs</text>
+<rect x="219" y="82" width="12" height="12" rx="2" fill="#d95926"/>
+<text x="237" y="92" font-size="12" fill="#c3c2b7">held-out, 82 PRs, one run</text>
+<line x1="230.0" y1="110" x2="230.0" y2="290" stroke="#383835" stroke-width="1"/>
+<text x="230.0" y="306" font-size="11" fill="#898781" text-anchor="middle">0</text>
+<line x1="350.0" y1="110" x2="350.0" y2="290" stroke="#2c2c2a" stroke-width="1"/>
+<text x="350.0" y="306" font-size="11" fill="#898781" text-anchor="middle">10</text>
+<line x1="470.0" y1="110" x2="470.0" y2="290" stroke="#2c2c2a" stroke-width="1"/>
+<text x="470.0" y="306" font-size="11" fill="#898781" text-anchor="middle">20</text>
+<line x1="590.0" y1="110" x2="590.0" y2="290" stroke="#2c2c2a" stroke-width="1"/>
+<text x="590.0" y="306" font-size="11" fill="#898781" text-anchor="middle">30% F1</text>
+<text x="16" y="134" font-size="12.5" fill="#f0f6fc">0.6.0, --full</text>
+<path d="M230 116 H366.4 a4 4 0 0 1 4 4 V126 a4 4 0 0 1 -4 4 H230 Z" fill="#3987e5"/>
+<text x="376.4" y="127.0" font-size="12" fill="#c3c2b7" font-variant-numeric="tabular-nums">11.7</text>
+<text x="236" y="143.0" font-size="11" fill="#898781">not measured</text>
+<text x="16" y="180" font-size="12.5" fill="#f0f6fc">0.7.0 (full is the default)</text>
+<path d="M230 162 H380.8 a4 4 0 0 1 4 4 V172 a4 4 0 0 1 -4 4 H230 Z" fill="#3987e5"/>
+<text x="390.8" y="173.0" font-size="12" fill="#c3c2b7" font-variant-numeric="tabular-nums">12.9</text>
+<path d="M230 178 H353.2 a4 4 0 0 1 4 4 V188 a4 4 0 0 1 -4 4 H230 Z" fill="#d95926"/>
+<text x="363.2" y="189.0" font-size="12" fill="#c3c2b7" font-variant-numeric="tabular-nums">10.6</text>
+<text x="16" y="226" font-size="12.5" fill="#f0f6fc">+ maintainability notes</text>
+<path d="M230 208 H409.6 a4 4 0 0 1 4 4 V218 a4 4 0 0 1 -4 4 H230 Z" fill="#3987e5"/>
+<text x="419.6" y="219.0" font-size="12" fill="#c3c2b7" font-variant-numeric="tabular-nums">15.3</text>
+<path d="M230 224 H392.8 a4 4 0 0 1 4 4 V234 a4 4 0 0 1 -4 4 H230 Z" fill="#d95926"/>
+<text x="402.8" y="235.0" font-size="12" fill="#c3c2b7" font-variant-numeric="tabular-nums">13.9</text>
+<text x="16" y="272" font-size="12.5" fill="#f0f6fc">+ --deepen, second pass</text>
+<path d="M230 254 H462.4 a4 4 0 0 1 4 4 V264 a4 4 0 0 1 -4 4 H230 Z" fill="#3987e5"/>
+<text x="472.4" y="265.0" font-size="12" fill="#c3c2b7" font-variant-numeric="tabular-nums">19.7</text>
+<text x="236" y="281.0" font-size="11" fill="#898781">not measured</text>
+<text x="16" y="332" font-size="11" fill="#898781">The benchmark rewards agreement with reviewers' comments, 40% of them about maintainability; see evals/aacr/README.md.</text>
+</svg>
