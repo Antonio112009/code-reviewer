@@ -1,5 +1,7 @@
 # Martian Code Review Bench, offline
 
+The summary of every benchmark, with charts and history, is [docs/benchmarks.md](../../docs/benchmarks.md); this file is the method and the per-run numbers.
+
 [Martian's code-review benchmark](https://github.com/withmartian/code-review-benchmark) (MIT) scores review
 tools against **real bugs**: 50 pull requests from Sentry, Grafana, Cal.com, Discourse and Keycloak with 173
 hand-verified "golden comments" — 139 of them in the defect categories (bug, security, concurrency, data,
