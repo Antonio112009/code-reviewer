@@ -1,11 +1,54 @@
 # Benchmarks
 
 What Code Reviewer finds, measured against real bugs, against what human and LLM reviewers wrote on the same
-pull requests, and by blind audits of its own findings. Every number on this page names the build that
+pull requests, and by blind audits of its own findings. It starts with the leaderboard of review tools on real
+bugs and where Code Reviewer stands on it. Every number on this page names the build that
 produced it (a commit of this repository), the exact command and the judge that scored it: see
 [How each number was produced](#how-each-number-was-produced).
 
-## At a glance
+## Leaderboard: real bugs
+
+[Martian's Code Review Bench](https://codereview.withmartian.com) scores code review tools on 50 pull requests of Sentry, Grafana, Cal.com,
+Discourse and Keycloak with 158 verified bugs and defects (core profile). Its published leaderboard, with
+Code Reviewer's measurements placed by F1:
+
+| # | Reviewer | Precision | Recall | F1 |
+|---|---|---|---|---|
+| 1 | Qodo Extended | 67.1% | 64.6% | 65.8% |
+| 2 | Cubic v2 | 61.5% | 65.8% | 63.6% |
+| 3 | Augment | 59.5% | 65.2% | 62.2% |
+|  | **code-reviewer 0.8.0 + `--sweep`** †, main report + "worth a look" | 57.4% | 63.9% | **60.5%** |
+|  | **code-reviewer 0.7.0** †, main report + "worth a look" | 64.0% | 54.1% | **58.7%** |
+| 4 | Qodo v2 | 55.4% | 62.0% | 58.5% |
+|  | **code-reviewer 0.8.0** †, everything listed (defaults) | 56.0% | 56.3% | **56.2%** |
+| 5 | Macroscope | 61.1% | 48.7% | 54.2% |
+| 6 | GitLab Duo Code Review | 53.5% | 52.5% | 53.0% |
+| 7 | Devin | 69.1% | 41.1% | 51.6% |
+| 8 | Cursor Bugbot | 56.9% | 46.8% | 51.4% |
+| 9 | Greptile v4 | 50.9% | 51.3% | 51.1% |
+|  | **code-reviewer 0.8.0** †, main report (what it posts on a PR) | 71.2% | 39.9% | **51.1%** |
+|  | the same model, Claude Sonnet, given the diff in one call † | 39.0% | 71.5% | 50.5% |
+| 10 | Gemini | 45.3% | 55.1% | 49.7% |
+| 11 | GitHub Copilot | 38.5% | 66.5% | 48.7% |
+| 12 | Claude Code (CLI) | 46.3% | 48.1% | 47.2% |
+| 13 | Sourcery | 41.0% | 55.1% | 47.0% |
+| 14 | Kodus | 59.2% | 38.6% | 46.7% |
+| 15 | Baz | 61.5% | 37.3% | 46.5% |
+| 16 | CodeRabbit | 32.6% | 59.5% | 42.2% |
+| 17 | gitar ‡ | 38.3% | 44.9% | 41.3% |
+| 18 | CodeAnt | 40.1% | 41.1% | 40.6% |
+| 19 | Claude Code | 43.2% | 38.0% | 40.4% |
+| 20 | KG | 54.3% | 15.8% | 24.5% |
+| 21 | Graphite | 100.0% | 7.6% | 14.1% |
+
+† Measured by us and scored by the same judge model, Claude Opus 4.5, through `claude -p`. That judging is
+stricter than the leaderboard's own: the three tools scored both ways lost 1.6 to 5.4 F1 points (Qodo Extended
+65.8 → 60.5, Augment 62.2 → 60.6, Claude Code CLI 47.2 → 41.8). These rows are not adjusted, so their real
+place is, if anything, higher. Under one judge for every row, code-reviewer 0.8.0 with `--sweep` scores 60.5,
+level with Qodo Extended (60.5) and Augment (60.6). Published rows: [Martian's leaderboard](https://codereview.withmartian.com), [data at the measured commit](https://github.com/withmartian/code-review-benchmark/blob/e616e849755441da38f18bf3adba2c9583b03803/offline/analysis/benchmark_dashboard.json). ‡ Judged against
+an older set of golden comments.
+
+## Like for like: one judge for every row
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/martian-positioning-dark.svg">
