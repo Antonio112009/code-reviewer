@@ -259,7 +259,7 @@ export function renderSummary(run: RunRecord, ctx: SummaryContext): string {
     );
   }
   items(
-    'Second look',
+    'Second pass',
     run.chunks
       .filter((ch) => ch.deepened !== undefined)
       .map((ch) => `${clean(ch.id)} ${c.dim(`+${ch.deepened}`)}`),

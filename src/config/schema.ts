@@ -190,9 +190,9 @@ export const ReviewSettingsSchema = z.object({
    */
   audit: z.boolean(),
   /**
-   * A second look at each chunk with findings: the same review task again, listing what was found and asking
-   * for other defects in the same functions (defects cluster; a reviewer tends to report one per spot).
-   * Experimental; off by default.
+   * An independent second review pass over every chunk at high reasoning, told nothing about the first; the
+   * union goes to the critic, and a finding both passes reported is marked so (`passes`). About twice the
+   * price; on 30 real pull requests the union held a third more real defects than one pass. Off by default.
    */
   deepen: z.boolean(),
   /**

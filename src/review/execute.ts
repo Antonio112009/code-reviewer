@@ -11,7 +11,7 @@ import {
 import { type CostBudget, formatMoney } from '../models/pricing';
 import type { ProviderRegistry } from '../providers/registry';
 import { type AgentResult, type AgentTask, type Provider, ProviderError } from '../providers/types';
-import type { FailureKind, Money, Role, RoleRouting, RunRecord, Usage } from '../types';
+import type { FailureKind, Money, ReasoningLevel, Role, RoleRouting, RunRecord, Usage } from '../types';
 import type { Logger } from '../util/logger';
 import type { InteractionHost, ReviewEvent } from './events';
 
@@ -279,6 +279,8 @@ export async function runRouted(
   task: AgentTask,
   router: ModelRouter,
   registry: ProviderRegistry,
+  /** `reasoning` takes precedence over the route's (a pass that must reason harder than the role's default). */
+  opts: { reasoning?: ReasoningLevel } = {},
 ): Promise<RoutedResult> {
   if (router.fatal) throw router.fatal;
   let route = router.route(role);
@@ -295,7 +297,11 @@ export async function runRouted(
     }
     try {
       const provider = registry.get(route.provider);
-      const result = await provider.run({ ...task, model: route.model, reasoning: route.reasoning });
+      const result = await provider.run({
+        ...task,
+        model: route.model,
+        reasoning: opts.reasoning ?? route.reasoning,
+      });
       const model = result.model ?? route.model;
       const usage = usageOrEstimate(result.usage, task, result.text);
       for (const call of result.submission.toolLog ?? []) {

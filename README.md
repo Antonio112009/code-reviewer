@@ -205,7 +205,7 @@ that match a comment human reviewers left, so real defects they did not write do
 |---|---|---|---|---|
 | `--essential` | 9.5, all major | 63% | 2.1% (code defects 4.4%) | $5.1 |
 | `full` (default) | 47.5 | 46% | 7.7% (code defects 12.2%) | $7.6 |
-| `--deepen` | 70.5 | 38% | 9.4% (code defects 13.7%) | $13.1 |
+| `--deepen` | 150.5 | 29% | 15.0% (code defects 17.4%) | $17.7 |
 
 `essential` reports about one finding per three pull requests: the ones that can seriously hurt production,
 and every one of them is also in the `full` review. `full` costs half as much again and finds almost four
@@ -238,29 +238,28 @@ reviewers wrote: F1 12.9% → 15.3% on those 30 pull requests and 10.6% → 13.9
 same price and precision. `review.notes: false` or `--no-notes` turns them off; `review.maxNotes` (5) caps
 them.
 
-### A second look for important changes (`--deepen`, experimental)
+### A second pass for important changes (`--deepen`)
 
-A reviewer tends to report one defect in a place and move on, while the same function often holds more: the
-cached handle is found, the unchecked call next to it is not. With `--deepen`, every chunk that had findings is
-reviewed once more. The model gets what was found so far and is asked only for *other* defects in the same
-functions: calls whose failure is not handled, resources not released on every path, state left behind by an
-early return, code that must change together.
+One review pass misses about a quarter of the real defects a second one finds: on 30 real pull requests a
+blind audit counted 43 real findings in one pass, 52 in a pass at high reasoning, and 56 in the two together,
+mostly different ones. With `--deepen`, every chunk is reviewed a second time, independently — the same task,
+told nothing about the first pass, reasoning harder. What either pass found goes to the critic; a finding both
+reported is marked so (`passes` in the JSON), and the critic is told, since agreement is evidence: such
+findings were real three times in four, findings of one pass one time in three.
 
-| AACR-Bench ctx30 (30 real PRs, two runs each) | Recall | Code-defect recall | Precision | Cost per run |
-|---|---|---|---|---|
-| default | 7.7% | 12.2% | 46.3% | $7.6 |
-| `--deepen` | 9.4% | 13.7% | 38.3% | $13.1 |
+| AACR-Bench ctx30 (30 real PRs, two runs each) | Findings | Recall | Code-defect recall | Precision | F1 | Cost per run |
+|---|---|---|---|---|---|---|
+| default | 73.5 | 9.6% | 13.7% | 37.4% | 15.3% | $8.7 |
+| `--deepen` | 150.5 | 15.0% | 17.4% | 28.6% | 19.7% | $17.7 |
+| the old second look (0.7.0) | 70.5 | 9.4% | 13.7% | 38.3% | 15.1% | $13.1 |
 
 - **When:** changes where a missed defect is expensive: payments, authentication, migrations, a release
-  branch. For everyday pull requests the default is the better trade.
-- **Cost:** chunks with findings are reviewed twice; the repeat reuses the cached prompt, so it adds about
-  70% rather than doubling the price.
-- **Noise:** it reports half as many findings again (70 against 47 on these PRs), most of them minor, and a
-  smaller share of them match what human reviewers wrote (38% against 46%). The references matched go from
-  22 to 27: a fifth more real defects for a lot more to read.
+  branch. For everyday pull requests the default is the better trade: twice the findings to read, a third of
+  them matching what human reviewers wrote instead of two fifths.
+- **Cost:** about twice the price (the second pass reasons harder), plus the critic's look at what it adds.
 - **Suggested, not automatic:** after a review with findings, the summary and the markdown report suggest
   `--deepen` with its estimated cost (also `advice.deepen` in the JSON). With the result cache on (the
-  default), the re-run takes its first looks from the cache and pays only for the second looks.
+  default), the re-run takes its first pass from the cache and pays only for the second.
 - Off by default. `review.deepen: true` in `.code-reviewer/config.yaml` turns it on for a repository.
 
 ## Before you commit
@@ -325,8 +324,8 @@ Useful flags:
   changed declarations and their consumers (about twice the cost);
 - `--audit` (experimental): the prompt lists every changed function and the model audits each one, instead
   of stopping at the first defect of a function;
-- `--deepen` (experimental): a second look at every chunk with findings, for other defects in the same
-  functions ([when to use it](#a-second-look-for-important-changes---deepen-experimental));
+- `--deepen`: an independent second review pass over every chunk at high reasoning, about twice the
+  price ([when to use it](#a-second-pass-for-important-changes---deepen));
 - `--second-opinion` / `--no-second-opinion`: findings the critic was not sure about (confidence around the
   bar of the main report) go to a second verifier that reads further — callers, implementations, what
   produces the value — and decides. On by default at full depth (precision 40% → 46% on AACR-Bench for 10%
