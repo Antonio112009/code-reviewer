@@ -1,0 +1,13 @@
+diff --git a/src/review/pipeline.ts b/src/review/pipeline.ts
+index e94e317..94b9bdf 100644
+--- a/src/review/pipeline.ts
++++ b/src/review/pipeline.ts
+@@ -1599,7 +1599,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
+           };
+           const spend: Spend[] = [];
+           try {
+-            const result = await runRouted('review', task, router, registry);
++            const result = await runRouted('review', task, router, registry, { reasoning: 'high' });
+             spend.push(...result.spend);
+             let resolved = resolveFindings(result);
+             let reply = result.text;

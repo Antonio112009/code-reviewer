@@ -131,7 +131,7 @@ code-reviewer review --base main --head feature/login --dry-run
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/martian-positioning-dark.svg">
-  <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: Qodo Extended (#1 on the leaderboard) 61% and 60%, Augment (#3) 58% and 63%, Claude Code CLI (#12) 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
+  <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. code-reviewer main with the opt-in --sweep: main report 71% and 44%, with worth-a-look findings 57% and 64%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: Qodo Extended (#1 on the leaderboard) 61% and 60%, Augment (#3) 58% and 63%, Claude Code CLI (#12) 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
 </picture>
 
 [Martian's Code Review Bench](https://github.com/withmartian/code-review-benchmark) holds 50 pull requests of
@@ -156,6 +156,7 @@ bugs, 72%, but only 39% of its six findings per pull request match one: what the
 at five times the price of that call. On AACR-Bench, which scores agreement with reviewers' comments rather than bugs, the
 single call matches as many of them as the `main` branch and more than 0.7.0.
 
+Judged again by Claude Opus 5.5, the newest Opus, every row moves by at most 1.3 points and the order holds.
 Every number with its build, command and judge, the AACR-Bench results, the blind audits and the caveats:
 [BENCHMARKS.md](BENCHMARKS.md).
 
