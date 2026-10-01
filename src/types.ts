@@ -559,6 +559,8 @@ export interface DeepenAdvice {
 export interface RunRecord {
   schemaVersion: 1;
   id: string;
+  /** Code Reviewer version that made the run (older runs: absent). */
+  version?: string;
   command: 'review' | 'files';
   status: 'running' | 'completed' | 'partial' | 'failed';
   createdAt: string;
@@ -576,6 +578,14 @@ export interface RunRecord {
     authors: boolean;
     maxChunkTokens: number;
     concurrency: number;
+    /** The settings below decide what a run reports as well (older runs: absent). */
+    advisoryConfidence?: number;
+    secondOpinion?: boolean;
+    deepen?: boolean;
+    notes?: boolean;
+    maxNotes?: number;
+    passes?: string[];
+    audit?: boolean;
   };
   routing: Partial<Record<Role, RoleRouting>>;
   /** Model fallbacks applied during the run. */
