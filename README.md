@@ -129,34 +129,45 @@ code-reviewer review --base main --head feature/login --dry-run
 
 ## How it compares
 
+[Martian's Code Review Bench](https://codereview.withmartian.com) scores code review tools on 50 real pull
+requests of Sentry, Grafana, Cal.com, Discourse and Keycloak with 158 verified bugs. The top of its published
+leaderboard, with Code Reviewer placed by F1:
+
+| # | Reviewer | Precision | Recall | F1 |
+|---|---|---|---|---|
+| 1 | Qodo Extended | 67.1% | 64.6% | 65.8% |
+| 2 | Cubic v2 | 61.5% | 65.8% | 63.6% |
+| 3 | Augment | 59.5% | 65.2% | 62.2% |
+|  | **code-reviewer 0.8.0 + `--sweep`** †, main report + "worth a look" | 57.4% | 63.9% | **60.5%** |
+|  | **code-reviewer 0.7.0** †, main report + "worth a look" | 64.0% | 54.1% | **58.7%** |
+| 4 | Qodo v2 | 55.4% | 62.0% | 58.5% |
+|  | **code-reviewer 0.8.0** †, everything listed (defaults) | 56.0% | 56.3% | **56.2%** |
+| 5 | Macroscope | 61.1% | 48.7% | 54.2% |
+| 6 | GitLab Duo Code Review | 53.5% | 52.5% | 53.0% |
+| 7 | Devin | 69.1% | 41.1% | 51.6% |
+| 8 | Cursor Bugbot | 56.9% | 46.8% | 51.4% |
+| 9 | Greptile v4 | 50.9% | 51.3% | 51.1% |
+|  | **code-reviewer 0.8.0** †, main report (what it posts on a PR) | 71.2% | 39.9% | **51.1%** |
+|  | the same model, Claude Sonnet, given the diff in one call † | 39.0% | 71.5% | 50.5% |
+
+† Measured by us and scored by the same judge model, Claude Opus 4.5, through `claude -p`. That judging is
+stricter than the leaderboard's own: the three tools scored both ways lost 1.6 to 5.4 F1 points (Qodo Extended
+65.8 → 60.5, Augment 62.2 → 60.6, Claude Code CLI 47.2 → 41.8). These rows are not adjusted, so their real
+place is, if anything, higher. Under one judge for every row, code-reviewer 0.8.0 with `--sweep` scores 60.5,
+level with Qodo Extended (60.5) and Augment (60.6). The full table, 21 tools:
+[BENCHMARKS.md](BENCHMARKS.md#leaderboard-real-bugs).
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/martian-positioning-dark.svg">
   <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. code-reviewer 0.8.0 with the opt-in --sweep: main report 71% and 44%, with worth-a-look findings 57% and 64%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: Qodo Extended (#1 on the leaderboard) 61% and 60%, Augment (#3) 58% and 63%, Claude Code CLI (#12) 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
 </picture>
 
-[Martian's Code Review Bench](https://github.com/withmartian/code-review-benchmark) holds 50 pull requests of
-Sentry, Grafana, Cal.com, Discourse and Keycloak with 158 verified bugs and defects. Here every reviewer is
-scored by the same judge, Claude Opus 4.5, the leaderboard's judge model; the published tools are re-judged
-from the review comments they posted (their own scores: [Martian's leaderboard](https://codereview.withmartian.com);
-the judge's verdicts for every row: [evals/martian/judgings](evals/martian/judgings/2026-10-01/README.md)):
+Code Reviewer's main report, the part it posts on pull requests, is the most precise here: 71–73% of its
+findings are known bugs. The same model given the diff in one call finds more of the bugs, 72%, but only 39% of
+its six findings per pull request match one: what the pipeline adds is precision. A second judge, Claude Opus
+5.5, moves every row by at most 1.3 points and keeps the order. On AACR-Bench, which scores agreement with
+reviewers' comments rather than bugs, the single call matches as many of them as 0.8.0 and more than 0.7.0.
 
-| Reviewer | Precision | Recall | F1 | Cost / PR |
-|---|---|---|---|---|
-| Augment (#3 on the leaderboard), re-judged | 58.1% | 63.3% | **60.6%** | — |
-| Qodo Extended (#1), re-judged | 61.4% | 59.5% | 60.5% | — |
-| **code-reviewer 0.8.0** + [`--sweep`](#more-of-the-real-bugs---sweep) (opt-in), main report + "worth a look" | 57.4% | 63.9% | 60.5% | $0.61 |
-| **code-reviewer 0.7.0**, main report + "worth a look" | 64.0% | 54.1% | 58.7% | $0.40 |
-| The same model given the diff in one call | 39.0% | **71.5%** | 50.5% | $0.08 |
-| **code-reviewer 0.7.0**, main report | **73.3%** | 37.3% | 49.5% | $0.40 |
-
-Code Reviewer's full report is within two F1 points of Qodo Extended and Augment, the leaderboard's first and
-third tools, and more precise than both. Its main report, the part it posts on pull requests, is the most
-precise here: 73% of its findings are known bugs. The same model given the diff in one call finds more of the
-bugs, 72%, but only 39% of its six findings per pull request match one: what the pipeline adds is precision,
-at five times the price of that call. On AACR-Bench, which scores agreement with reviewers' comments rather than bugs, the
-single call matches as many of them as 0.8.0 and more than 0.7.0.
-
-Judged again by Claude Opus 5.5, the newest Opus, every row moves by at most 1.3 points and the order holds.
 Every number with its build, command and judge, the AACR-Bench results, the blind audits and the caveats:
 [BENCHMARKS.md](BENCHMARKS.md).
 
