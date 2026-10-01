@@ -9,37 +9,39 @@ produced it (a commit of this repository), the exact command and the judge that 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/martian-positioning-dark.svg">
-  <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: the leaderboard's first 61% and 60%, its third 58% and 63%, its twelfth 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
+  <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: Qodo Extended (#1 on the leaderboard) 61% and 60%, Augment (#3) 58% and 63%, Claude Code CLI (#12) 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
 </picture>
 
 [Martian's Code Review Bench](https://github.com/withmartian/code-review-benchmark): 50 pull requests of
 Sentry, Grafana, Cal.com, Discourse and Keycloak with 158 verified bugs and defects. Every row below was
 scored by the same judge, Claude Opus 4.5 (the leaderboard's judge model); the published tools were re-judged
-from the review comments they posted.
+from the review comments they posted. Their own published scores are on
+[Martian's leaderboard](https://codereview.withmartian.com) ([data at the measured commit](https://github.com/withmartian/code-review-benchmark/blob/e616e849755441da38f18bf3adba2c9583b03803/offline/analysis/benchmark_dashboard.json)), and the judge's
+verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/martian/judgings/2026-10-01/README.md).
 
-| Reviewer | Findings / PR | Precision | Recall | F1 | Cost / PR |
-|---|---|---|---|---|---|
-| The leaderboard's #3 tool, re-judged | 3.6 | 58.1% | 63.3% | **60.6%** | — |
-| The leaderboard's #1 tool, re-judged | 3.0 | 61.4% | 59.5% | 60.5% | — |
-| **code-reviewer 0.7.0**, main report + "worth a look" | 2.6 | 64.0% | 54.1% | 58.7% | $0.40 |
-| The same model given the diff in one call | 5.9 | 39.0% | **71.5%** | 50.5% | $0.08 |
-| **code-reviewer 0.7.0**, main report | 1.6 | **73.3%** | 37.3% | 49.5% | $0.40 |
-| The leaderboard's #12 tool, re-judged | 3.5 | 41.8% | 41.8% | 41.8% | — |
+| Reviewer | Findings / PR | Precision | Recall | F1 | Cost / PR | Verdicts |
+|---|---|---|---|---|---|---|
+| Augment (#3 on the leaderboard), re-judged | 3.6 | 58.1% | 63.3% | **60.6%** | — | [json](evals/martian/judgings/2026-10-01/augment.json) |
+| Qodo Extended (#1), re-judged | 3.0 | 61.4% | 59.5% | 60.5% | — | [json](evals/martian/judgings/2026-10-01/qodo-extended.json) |
+| **code-reviewer 0.7.0**, main report + "worth a look" | 2.6 | 64.0% | 54.1% | 58.7% | $0.40 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run1-all.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run2-all.json) |
+| The same model given the diff in one call | 5.9 | 39.0% | **71.5%** | 50.5% | $0.08 | [run 1](evals/martian/judgings/2026-10-01/plain-model-run1.json), [run 2](evals/martian/judgings/2026-10-01/plain-model-run2.json) |
+| **code-reviewer 0.7.0**, main report | 1.6 | **73.3%** | 37.3% | 49.5% | $0.40 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run1-main.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run2-main.json) |
+| Claude Code CLI (#12), re-judged | 3.5 | 41.8% | 41.8% | 41.8% | — | [json](evals/martian/judgings/2026-10-01/claude-code-cli.json) |
 
 - **Within two F1 points of the leaderboard's best.** Code Reviewer's full report, main findings and
-  "worth a look", scores 58.7 against 60.5 and 60.6 for the leaderboard's first and third tools. The
-  paired difference to the first, −1.8 points, is within the noise (95% interval −10.0..+5.9). Code
-  Reviewer is the more precise of the three and finds fewer of the bugs.
+  "worth a look", scores 58.7 against 60.5 for Qodo Extended and 60.6 for Augment, the leaderboard's first
+  and third tools. The paired difference to Qodo Extended, −1.8 points, is within the noise (95% interval
+  −10.0..+5.9). Code Reviewer is the more precise of the three and finds fewer of the bugs.
 - **The most precise main report.** 73% of the findings in the main report, the part Code Reviewer posts
-  on a pull request, match a known bug. Even under the leaderboard's more lenient scoring, only one
-  published tool is more precise, and it finds 8% of the bugs.
+  on a pull request, match a known bug. Even under the leaderboard's more lenient scoring, only Graphite is
+  more precise (100%), and it finds 8% of the bugs ([published data](https://github.com/withmartian/code-review-benchmark/blob/e616e849755441da38f18bf3adba2c9583b03803/offline/analysis/benchmark_dashboard.json)).
 - **More than the model alone, though not more bugs.** The same model given the diff in one call finds
   the most known bugs on this page, 72%, but only 39% of its six findings per pull request match one. The
   pipeline's full report scores 8 F1 points higher (95% interval +0.7..+15.4), at five times the price.
 
-Rows are averages of two runs for Code Reviewer and the plain model. The published tools were re-judged
-from the review comments they posted, as the benchmark checked them in; their names, published scores
-and the commands are under [Judge calibration](#judge-calibration).
+Rows for Code Reviewer and the plain model are averages of two runs. The published tools were re-judged from
+the review comments they posted, as the benchmark checked them in; why, and their published scores, are
+under [Judge calibration](#judge-calibration).
 
 ## Three kinds of ground truth
 
@@ -99,9 +101,9 @@ data or API defects.
 | **code-reviewer 0.7.0**, main report + "worth a look" | `eb5c564` | 2.6 | 64.0% | 54.1% | 58.7% (60.0, 57.3) | 59.4% | $0.40 |
 | **code-reviewer 0.7.0**, main report | `eb5c564` | 1.6 | 73.3% | 37.3% | 49.5% (49.6, 49.4) | 50.0% | $0.40 |
 | The same model, one call | plain | 5.9 | 39.0% | 71.5% | 50.5% (48.7, 52.4) | 50.5% | $0.08 |
-| The leaderboard's #1 tool, re-judged | published comments | 3.0 | 61.4% | 59.5% | 60.5% | 60.6% | — |
-| The leaderboard's #3 tool, re-judged | published comments | 3.6 | 58.1% | 63.3% | 60.6% | 58.9% | — |
-| The leaderboard's #12 tool, re-judged | published comments | 3.5 | 41.8% | 41.8% | 41.8% | 41.8% | — |
+| Qodo Extended (#1 on the leaderboard), re-judged | published comments | 3.0 | 61.4% | 59.5% | 60.5% | 60.6% | — |
+| Augment (#3), re-judged | published comments | 3.6 | 58.1% | 63.3% | 60.6% | 58.9% | — |
+| Claude Code CLI (#12), re-judged | published comments | 3.5 | 41.8% | 41.8% | 41.8% | 41.8% | — |
 
 - The two runs of a configuration differ by up to 3.7 F1 points; one golden comment is 0.6 recall points.
 - By severity, the full report finds 7 of the 12 critical bugs, 36.5 of 54 high, 34.5 of 59 medium and
@@ -116,11 +118,11 @@ The judge asks Claude Opus 4.5 the benchmark's own question, with its system mes
 thinking, as the leaderboard does, but through `claude -p` instead of Martian's gateway. Re-judging published
 tools' comments shows that it is stricter than the published scoring:
 
-| Published tool (rank by F1) | Published P / R / F1 | Re-judged here P / R / F1 | F1 difference |
+| Published tool (rank by F1) | [Published](https://github.com/withmartian/code-review-benchmark/blob/e616e849755441da38f18bf3adba2c9583b03803/offline/analysis/benchmark_dashboard.json) P / R / F1 | Re-judged here P / R / F1 | F1 difference |
 |---|---|---|---|
-| Qodo Extended (#1) | 67.1 / 64.6 / 65.8 | 61.4 / 59.5 / 60.5 | −5.3 |
-| Augment (#3) | 59.5 / 65.2 / 62.2 | 58.1 / 63.3 / 60.6 | −1.6 |
-| Claude Code (CLI) (#12) | 46.3 / 48.1 / 47.2 | 41.8 / 41.8 / 41.8 | −5.4 |
+| Qodo Extended (#1) | 67.1 / 64.6 / 65.8 | [61.4 / 59.5 / 60.5](evals/martian/judgings/2026-10-01/qodo-extended.json) | −5.3 |
+| Augment (#3) | 59.5 / 65.2 / 62.2 | [58.1 / 63.3 / 60.6](evals/martian/judgings/2026-10-01/augment.json) | −1.6 |
+| Claude Code CLI (#12) | 46.3 / 48.1 / 47.2 | [41.8 / 41.8 / 41.8](evals/martian/judgings/2026-10-01/claude-code-cli.json) | −5.4 |
 
 The difference is 1.6 to 5.4 F1 points and not the same for every tool, so the two scales cannot be mixed:
 Code Reviewer is compared with the re-judged rows, never with the published table, and its numbers are
@@ -136,9 +138,10 @@ at temperature 0.
   <img alt="F1 on AACR-Bench by configuration: 0.5.2 with a Sonnet critic 11.7 on ctx30; 0.7.0 12.9 on ctx30 and 10.6 held out; with maintainability notes 15.3 and 13.9; with the deepen second pass 19.7 on ctx30; the same model given the diff in one call 17.6 and 14.6" src="docs/img/aacr-progress-light.svg" width="640">
 </picture>
 
-[AACR-Bench](https://github.com/alibaba/aacr-bench) holds the comments human reviewers and six LLM reviewers
-left on real pull requests, accepted by annotators: 79% of them LLM-written, 40% about maintainability. A
-finding counts when the judge says it expresses the same concern on the same lines. We use 30 pull requests of
+[AACR-Bench](https://github.com/alibaba/aacr-bench) ([paper](https://arxiv.org/abs/2601.19494)) holds the
+comments human reviewers and six LLM reviewers left on real pull requests, accepted by annotators: 79% of them
+LLM-written, 40% about maintainability. A finding counts when the judge says it expresses the same concern on
+the same lines. We use 30 pull requests of
 22 repositories (ctx30, run twice per configuration) and the 82 other pull requests of those repositories as a
 held-out half that nothing was tuned on (run once).
 
@@ -158,8 +161,9 @@ with an interval of −1.7..+4.1: this benchmark cannot resolve them; the blind 
 What bounds these numbers is the benchmark, not the search: of the 233 ctx30 references no run had matched in
 26 runs, 5 are concrete defects; the rest are maintainability remarks (93), unproven robustness concerns (54,
 two thirds of them refuted by the code), comments that are wrong or about unchanged code (47), and questions,
-design and micro-performance remarks (34). For scale, one result published for the full benchmark is 25.1% F1,
-with Claude Opus 4.6, about 4.5 comments per pull request and a different judge.
+design and micro-performance remarks (34). For scale, [OpenCodeReview](https://arxiv.org/abs/2608.09290)
+reports 25.1% F1 on the full benchmark with Claude Opus 4.6, about 4.5 comments per pull request and a different
+judge.
 
 ## Blind audits
 
@@ -329,7 +333,8 @@ Martian, 50 pull requests, all judged by `claude-opus-4-5-20251101` without exte
 | 10-01 | baseline-augment | published comments | `evals/martian/judge.py --baseline augment` | 3.6 | 58.1% | 63.3% | 60.6% | — |
 | 10-01 | baseline-claude-code | published comments | `evals/martian/judge.py --baseline claude-code` | 3.5 | 41.8% | 41.8% | 41.8% | — |
 
-Earlier judgings of the same runs, kept for the record: with Sonnet and an earlier system message, the main
+The judge's verdicts for every row above: [evals/martian/judgings/2026-10-01](evals/martian/judgings/2026-10-01/README.md). Earlier judgings of the same runs, kept for
+the record: with Sonnet and an earlier system message, the main
 report scored 48.7% and with "worth a look" 58.2%; with Opus 4.5, extended thinking and the earlier system
 message, run m-1 scored 49.2% and 61.0% (49.6% and 60.0% in the table's judging).
 

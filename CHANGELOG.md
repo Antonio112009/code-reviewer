@@ -46,6 +46,9 @@
   and takes `--judge-model claude-opus-4-5-20251101 --no-thinking` (also in `run.sh`) for the leaderboard's
   judge model called the leaderboard's way; `--effort` sets the judge's reasoning effort.
 
+- The judge's verdicts behind every Martian number of BENCHMARKS.md are in `evals/martian/judgings/2026-10-01`
+  (`report.py` scores a judging file directly), and BENCHMARKS.md and the README name the published tools
+  they compare with and link the published scores.
 - `evals/aacr` gains what deciding on a benchmark needs: `stats.py` compares two variants with paired,
   repository-clustered intervals; the `hold82` subset is a held-out half (82 PRs of the ctx30 repositories);
   `audit.py` samples a run's findings for a blind audit and summarises the labels; `apply_verdicts.py` turns a
@@ -58,6 +61,11 @@
   manifest of the pull requests, a review loop in detached worktrees at each head, the benchmark's own judge
   prompt answered by `claude -p`, a baseline mode that judges a published tool's candidates under the same
   judge, and a report by profile, severity and repository.
+
+### Packaging
+
+- The npm package ships only the built-in eval corpus from `evals/`, no longer the benchmark harnesses
+  (`evals/martian`, the evaluation scripts and experiment patches).
 
 ## 0.7.0 — 2026-09-30
 

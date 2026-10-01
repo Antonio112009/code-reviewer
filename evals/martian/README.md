@@ -62,7 +62,8 @@ Two deliberate differences from the published pipeline:
   re-judged by `--baseline <tool>` (their checked-in candidates and de-duplication groups under the same
   judge), not with the published table; the same holds for Sonnet, which is stricter still.
 
-Published rows for orientation (core profile, Opus 4.5 judge, P / R / F1): Qodo Extended 67.1 / 64.6 / 65.8,
+Published rows for orientation ([codereview.withmartian.com](https://codereview.withmartian.com); core profile,
+Opus 4.5 judge, P / R / F1): Qodo Extended 67.1 / 64.6 / 65.8,
 Cubic 61.5 / 65.8 / 63.6, Augment 59.5 / 65.2 / 62.2, Bugbot 56.9 / 46.8 / 51.4, Greptile v4 50.9 / 51.3 /
 51.1, Copilot 38.5 / 66.5 / 48.7, Claude Code 46.3 / 48.1 / 47.2, CodeRabbit 32.6 / 59.5 / 42.2.
 
@@ -71,7 +72,8 @@ Cubic 61.5 / 65.8 / 63.6, Augment 59.5 / 65.2 / 62.2, Bugbot 56.9 / 46.8 / 51.4,
 2026-10-01, benchmark commit `e616e849`, 50 PRs, judge `claude-opus-4-5-20251101` through `claude -p` without
 extended thinking. code-reviewer 0.7.0 (`eb5c564`, `--full`) and the plain model (`evals/plain-llm.py`) ran
 twice each (per-run F1 in brackets); the published tools are their checked-in candidates under the same judge.
-One golden comment is 0.6 recall points.
+One golden comment is 0.6 recall points. The judge's verdicts for every row are in
+[judgings/2026-10-01](judgings/2026-10-01/README.md) (`report.py judgings/2026-10-01/*.json` scores them).
 
 | Core profile (158 golden comments) | Candidates / PR | Precision | Recall | F1 | Cost / PR |
 |---|---|---|---|---|---|

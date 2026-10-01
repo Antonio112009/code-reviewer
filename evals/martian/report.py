@@ -3,6 +3,7 @@
 repository, candidates and cost per pull request.
 
     report.py <run-id>[:<judge>[:<tier>]] ...   e.g. report.py m-1 m-1:claude-opus-4-5-20251101-nothink:all
+    report.py <judging.json> ...                e.g. report.py evals/martian/judgings/2026-10-01/*.json
 
 <judge> names a judging as judge.py saved it (default sonnet; claude-opus-4-5-20251101-nothink for the
 leaderboard's judge model without extended thinking), <tier> is main (default) or all.
@@ -29,7 +30,12 @@ SEVERITIES = ["Critical", "High", "Medium", "Low"]
 
 
 def load(spec: str) -> tuple[dict, dict, dict]:
-    """`<run-id>[:<judge>[:<tier>]]`: the run's results and one of its judgings (default sonnet, main)."""
+    """`<run-id>[:<judge>[:<tier>]]`: the run's results and one of its judgings (default sonnet, main); or the path
+    of a judging file on its own (no costs: those are in the run's results)."""
+    if spec.endswith(".json") and Path(spec).is_file():
+        with open(spec, encoding="utf-8") as f:
+            data = json.load(f)
+        return data["meta"], data["evaluations"], {}
     parts = spec.split(":")
     run_id = parts[0]
     judge = parts[1] if len(parts) > 1 and parts[1] else "sonnet"
