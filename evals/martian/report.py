@@ -1,7 +1,11 @@
+#!/usr/bin/env python3
 """Scores judged runs of the Martian benchmark: precision, recall and F1 per profile, recall by severity and
 repository, candidates and cost per pull request.
 
-    report.py <run-id> [<run-id> ...]        e.g. report.py m-1 m-2 baseline-claude-code
+    report.py <run-id>[:<judge>[:<tier>]] ...   e.g. report.py m-1 m-1:claude-opus-4-5-20251101-nothink:all
+
+<judge> names a judging as judge.py saved it (default sonnet; claude-opus-4-5-20251101-nothink for the
+leaderboard's judge model without extended thinking), <tier> is main (default) or all.
 
 Profiles (the benchmark's `score_profiles.py`): strict = bug, security, concurrency, data, api; core adds
 perf, test_gap, doc_defect; all adds style, speculative. A true positive or false negative counts in a
@@ -24,13 +28,18 @@ PROFILES = {
 SEVERITIES = ["Critical", "High", "Medium", "Low"]
 
 
-def load(run_id: str) -> tuple[dict, dict, dict]:
+def load(spec: str) -> tuple[dict, dict, dict]:
+    """`<run-id>[:<judge>[:<tier>]]`: the run's results and one of its judgings (default sonnet, main)."""
+    parts = spec.split(":")
+    run_id = parts[0]
+    judge = parts[1] if len(parts) > 1 and parts[1] else "sonnet"
+    tier = parts[2] if len(parts) > 2 and parts[2] else "main"
     run_dir = MARTIAN_DIR / "results" / run_id
-    with open(run_dir / "evaluations.json", encoding="utf-8") as f:
+    with open(run_dir / f"eval-{judge}-{tier}.json", encoding="utf-8") as f:
         data = json.load(f)
     costs = {}
     for path in run_dir.glob("*.json"):
-        if path.name == "evaluations.json":
+        if path.name.startswith("eval") or path.name == "provenance.json":
             continue
         with open(path, encoding="utf-8") as f:
             r = json.load(f)
@@ -59,7 +68,7 @@ def score(evaluations: dict, cats: set) -> dict:
 
 def main() -> None:
     runs = sys.argv[1:]
-    if not runs:
+    if not runs or runs[0] in ("-h", "--help"):
         sys.exit(__doc__)
     sets = {}
     for path in (MARTIAN_DIR / "bench" / "offline" / "golden_comments").glob("*.json"):

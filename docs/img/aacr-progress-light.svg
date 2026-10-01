@@ -1,36 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="356" viewBox="0 0 640 356" role="img" aria-label="F1 on AACR-Bench by configuration: 0.6.0, --full 11.7; 0.7.0 (full is the default) 12.9 on ctx30 and 10.6 held out; + maintainability notes 15.3 on ctx30 and 13.9 held out; + --deepen, second pass 19.7" font-family="system-ui, -apple-system, &quot;Segoe UI&quot;, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="402" viewBox="0 0 640 402" role="img" aria-label="F1 on AACR-Bench by configuration: 0.5.2 + Sonnet critic 11.7; 0.7.0 12.9 on ctx30 and 10.6 held out; + maintainability notes 15.3 on ctx30 and 13.9 held out; + --deepen, second pass 19.7; same model, one call 17.6 on ctx30 and 14.6 held out" font-family="system-ui, -apple-system, &quot;Segoe UI&quot;, sans-serif">
 <text x="16.0" y="26.0" font-size="15" fill="#1f2328" font-weight="600">AACR-Bench: F1 against human and LLM reviewers' comments, by configuration</text>
-<text x="16.0" y="46.0" font-size="12" fill="#52514e">Semantic match by a Sonnet judge; every configuration runs with its critic.</text>
-<text x="16.0" y="62.0" font-size="12" fill="#52514e">Two runs per value on ctx30, one on the held-out pull requests.</text>
-<rect x="16" y="82" width="12" height="12" rx="2" fill="#2a78d6"/>
+<text x="16.0" y="46.0" font-size="12" fill="#52514e">Semantic match by a Sonnet judge; every code-reviewer configuration runs with its critic. Two runs per</text>
+<text x="16.0" y="62.0" font-size="12" fill="#52514e">value on ctx30, one on the held-out pull requests. Last row: the same model given the diff in one call.</text>
+<rect x="16" y="82" width="12" height="12" rx="2" fill="#1baf7a"/>
 <text x="34.0" y="92.0" font-size="12" fill="#52514e">ctx30, 30 PRs, two runs</text>
-<rect x="219" y="82" width="12" height="12" rx="2" fill="#eb6834"/>
+<rect x="219" y="82" width="12" height="12" rx="2" fill="#4a3aa7"/>
 <text x="237.0" y="92.0" font-size="12" fill="#52514e">held-out, 82 PRs, one run</text>
-<line x1="230.0" y1="110" x2="230.0" y2="290" stroke="#c3c2b7" stroke-width="1"/>
-<text x="230.0" y="306.0" font-size="11" fill="#898781" text-anchor="middle">0</text>
-<line x1="350.0" y1="110" x2="350.0" y2="290" stroke="#e1e0d9" stroke-width="1"/>
-<text x="350.0" y="306.0" font-size="11" fill="#898781" text-anchor="middle">10</text>
-<line x1="470.0" y1="110" x2="470.0" y2="290" stroke="#e1e0d9" stroke-width="1"/>
-<text x="470.0" y="306.0" font-size="11" fill="#898781" text-anchor="middle">20</text>
-<line x1="590.0" y1="110" x2="590.0" y2="290" stroke="#e1e0d9" stroke-width="1"/>
-<text x="590.0" y="306.0" font-size="11" fill="#898781" text-anchor="middle">30% F1</text>
-<text x="16.0" y="134.0" font-size="12.5" fill="#1f2328">0.6.0, --full</text>
-<path d="M230 116 H366.4 a4 4 0 0 1 4 4 V126 a4 4 0 0 1 -4 4 H230 Z" fill="#2a78d6"/>
+<line x1="230.0" y1="110" x2="230.0" y2="336" stroke="#c3c2b7" stroke-width="1"/>
+<text x="230.0" y="352.0" font-size="11" fill="#898781" text-anchor="middle">0</text>
+<line x1="350.0" y1="110" x2="350.0" y2="336" stroke="#e1e0d9" stroke-width="1"/>
+<text x="350.0" y="352.0" font-size="11" fill="#898781" text-anchor="middle">10</text>
+<line x1="470.0" y1="110" x2="470.0" y2="336" stroke="#e1e0d9" stroke-width="1"/>
+<text x="470.0" y="352.0" font-size="11" fill="#898781" text-anchor="middle">20</text>
+<line x1="590.0" y1="110" x2="590.0" y2="336" stroke="#e1e0d9" stroke-width="1"/>
+<text x="590.0" y="352.0" font-size="11" fill="#898781" text-anchor="middle">30% F1</text>
+<text x="16.0" y="134.0" font-size="12.5" fill="#1f2328">0.5.2 + Sonnet critic</text>
+<path d="M230 116 H366.4 a4 4 0 0 1 4 4 V126 a4 4 0 0 1 -4 4 H230 Z" fill="#1baf7a"/>
 <text x="376.4" y="127.0" font-size="12" fill="#52514e" font-variant-numeric="tabular-nums">11.7</text>
 <text x="236.0" y="143.0" font-size="11" fill="#898781">not measured</text>
-<text x="16.0" y="180.0" font-size="12.5" fill="#1f2328">0.7.0 (full is the default)</text>
-<path d="M230 162 H380.8 a4 4 0 0 1 4 4 V172 a4 4 0 0 1 -4 4 H230 Z" fill="#2a78d6"/>
+<text x="16.0" y="180.0" font-size="12.5" fill="#1f2328">0.7.0</text>
+<path d="M230 162 H380.8 a4 4 0 0 1 4 4 V172 a4 4 0 0 1 -4 4 H230 Z" fill="#1baf7a"/>
 <text x="390.8" y="173.0" font-size="12" fill="#52514e" font-variant-numeric="tabular-nums">12.9</text>
-<path d="M230 178 H353.2 a4 4 0 0 1 4 4 V188 a4 4 0 0 1 -4 4 H230 Z" fill="#eb6834"/>
+<path d="M230 178 H353.2 a4 4 0 0 1 4 4 V188 a4 4 0 0 1 -4 4 H230 Z" fill="#4a3aa7"/>
 <text x="363.2" y="189.0" font-size="12" fill="#52514e" font-variant-numeric="tabular-nums">10.6</text>
 <text x="16.0" y="226.0" font-size="12.5" fill="#1f2328">+ maintainability notes</text>
-<path d="M230 208 H409.6 a4 4 0 0 1 4 4 V218 a4 4 0 0 1 -4 4 H230 Z" fill="#2a78d6"/>
+<path d="M230 208 H409.6 a4 4 0 0 1 4 4 V218 a4 4 0 0 1 -4 4 H230 Z" fill="#1baf7a"/>
 <text x="419.6" y="219.0" font-size="12" fill="#52514e" font-variant-numeric="tabular-nums">15.3</text>
-<path d="M230 224 H392.8 a4 4 0 0 1 4 4 V234 a4 4 0 0 1 -4 4 H230 Z" fill="#eb6834"/>
+<path d="M230 224 H392.8 a4 4 0 0 1 4 4 V234 a4 4 0 0 1 -4 4 H230 Z" fill="#4a3aa7"/>
 <text x="402.8" y="235.0" font-size="12" fill="#52514e" font-variant-numeric="tabular-nums">13.9</text>
 <text x="16.0" y="272.0" font-size="12.5" fill="#1f2328">+ --deepen, second pass</text>
-<path d="M230 254 H462.4 a4 4 0 0 1 4 4 V264 a4 4 0 0 1 -4 4 H230 Z" fill="#2a78d6"/>
+<path d="M230 254 H462.4 a4 4 0 0 1 4 4 V264 a4 4 0 0 1 -4 4 H230 Z" fill="#1baf7a"/>
 <text x="472.4" y="265.0" font-size="12" fill="#52514e" font-variant-numeric="tabular-nums">19.7</text>
 <text x="236.0" y="281.0" font-size="11" fill="#898781">not measured</text>
-<text x="16.0" y="332.0" font-size="11" fill="#898781">The benchmark rewards agreement with reviewers' comments, 40% of them about maintainability; see evals/aacr/README.md.</text>
+<line x1="16" y1="292" x2="624" y2="292" stroke="#e1e0d9" stroke-width="1"/>
+<text x="16.0" y="318.0" font-size="12.5" fill="#52514e">same model, one call</text>
+<path d="M230 300 H437.2 a4 4 0 0 1 4 4 V310 a4 4 0 0 1 -4 4 H230 Z" fill="#1baf7a"/>
+<text x="447.2" y="311.0" font-size="12" fill="#52514e" font-variant-numeric="tabular-nums">17.6</text>
+<path d="M230 316 H401.2 a4 4 0 0 1 4 4 V326 a4 4 0 0 1 -4 4 H230 Z" fill="#4a3aa7"/>
+<text x="411.2" y="327.0" font-size="12" fill="#52514e" font-variant-numeric="tabular-nums">14.6</text>
+<text x="16.0" y="378.0" font-size="11" fill="#898781">The references are reviewers' comments: 79% written by LLM reviewers, 40% about maintainability.</text>
 </svg>

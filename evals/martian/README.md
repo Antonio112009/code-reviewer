@@ -1,6 +1,6 @@
 # Martian Code Review Bench, offline
 
-The summary of every benchmark, with charts and history, is [docs/benchmarks.md](../../docs/benchmarks.md); this file is the method and the per-run numbers.
+The summary of every benchmark, with charts and history, is [BENCHMARKS.md](../../BENCHMARKS.md); this file is the method and the per-run numbers.
 
 [Martian's code-review benchmark](https://github.com/withmartian/code-review-benchmark) (MIT) scores review
 tools against **real bugs**: 50 pull requests from Sentry, Grafana, Cal.com, Discourse and Keycloak with 173
@@ -18,11 +18,15 @@ Requires a built `dist/`, `git`, `python3` and a logged-in Claude Code (`claude 
 ```bash
 npm run build
 evals/martian/setup.sh                         # once: benchmark checkout, five clones, every PR's commits
-evals/martian/run.sh m-1 --concurrency 3       # review the 50 PRs, judge, score
+evals/martian/run.sh m-1 --concurrency 3       # review the 50 PRs, judge with Sonnet, score
 evals/martian/run.sh m-2 --concurrency 3 -- --full --deepen
 evals/martian/run.sh m-1 --stage judge --tier all   # re-judge with "worth a look" and notes as candidates
 evals/martian/judge.py --baseline claude-code  # a published tool's candidates under the same judge
 evals/martian/report.py m-1 m-2 baseline-claude-code
+
+# the leaderboard's judge model, for numbers to publish (about $0.012 a judge call)
+evals/martian/judge.py m-1 --tier all --judge-model claude-opus-4-5-20251101 --no-thinking
+evals/martian/report.py m-1:claude-opus-4-5-20251101-nothink:all
 ```
 
 - `$MARTIAN_DIR` (default `~/.cache/code-reviewer-martian`) holds the benchmark's `offline/` directory at a
@@ -36,9 +40,12 @@ evals/martian/report.py m-1 m-2 baseline-claude-code
 
 ## How it is scored
 
-The judge prompt is the benchmark's own, read from the pinned checkout and answered by `claude -p` (Sonnet by
-default; `--judge-model`). Every golden comment is compared with every candidate of the PR, text against
-text — no file, line or diff. A golden comment is matched by the candidate the judge is most confident about;
+The judge prompt and its system message are the benchmark's own, read from the pinned checkout and answered
+by `claude -p`: Sonnet by default (cheap, for iteration), or `--judge-model claude-opus-4-5-20251101
+--no-thinking`, the leaderboard's judge model called as the leaderboard calls it, for the numbers we publish.
+Each judging is kept as `results/<run>/eval-<judge>-<tier>.json` (`<judge>` is the model, with `-nothink`
+without extended thinking); `report.py <run>:<judge>:<tier>` scores one. Every golden comment is compared
+with every candidate of the PR, text against text — no file, line or diff. A golden comment is matched by the candidate the judge is most confident about;
 a candidate counts as matched when it is that best match for some golden comment; the rest are false
 positives. Precision = TP / (TP + FP), recall = TP / (TP + FN), micro-averaged over the PRs. Profiles restrict
 TP and FN to categories (strict, core, all); false positives always count.
@@ -48,10 +55,12 @@ Two deliberate differences from the published pipeline:
 - **Candidates are our findings** — title and description, one per finding (`--tier main`: the main list;
   `--tier all`: also "worth a look" and maintainability notes). The published pipeline sends every comment
   body through an LLM that extracts and de-duplicates issues; our findings are already one defect each.
-- **The judge is `claude -p`**, not the Opus 4.5 / Sonnet 4.5 / GPT-5.2 snapshots of the leaderboard, and the
-  same tool output moves by up to 9.5 F1 points between those judges. Numbers here are therefore not
-  comparable with the published table directly: compare with `--baseline <tool>`, which judges a published
-  tool's checked-in candidates (with their de-duplication groups) under our judge.
+- **The judge runs through `claude -p`**, not Martian's gateway (which calls the model at temperature 0;
+  `claude -p` cannot), and it is stricter than the published scores: re-judged with Opus 4.5, published
+  tools' candidates lose 1.6 to 5.4 F1 points (the calibration in [BENCHMARKS.md](../../BENCHMARKS.md)).
+  Extended thinking and the system message do not change that. So compare a run with published tools
+  re-judged by `--baseline <tool>` (their checked-in candidates and de-duplication groups under the same
+  judge), not with the published table; the same holds for Sonnet, which is stricter still.
 
 Published rows for orientation (core profile, Opus 4.5 judge, P / R / F1): Qodo Extended 67.1 / 64.6 / 65.8,
 Cubic 61.5 / 65.8 / 63.6, Augment 59.5 / 65.2 / 62.2, Bugbot 56.9 / 46.8 / 51.4, Greptile v4 50.9 / 51.3 /
@@ -59,24 +68,29 @@ Cubic 61.5 / 65.8 / 63.6, Augment 59.5 / 65.2 / 62.2, Bugbot 56.9 / 46.8 / 51.4,
 
 ## Results
 
-2026-10-01, judge `claude -p --model sonnet`, benchmark commit `e616e849`, 50 PRs, code-reviewer 0.7.0 run
-twice (per-run values in brackets). Baselines are the published candidates of the named tools judged under
-the same judge. One golden comment is 0.7 recall points; the two runs differ by up to 4 F1 points.
+2026-10-01, benchmark commit `e616e849`, 50 PRs, judge `claude-opus-4-5-20251101` through `claude -p` without
+extended thinking. code-reviewer 0.7.0 (`eb5c564`, `--full`) and the plain model (`evals/plain-llm.py`) ran
+twice each (per-run F1 in brackets); the published tools are their checked-in candidates under the same judge.
+One golden comment is 0.6 recall points.
 
 | Core profile (158 golden comments) | Candidates / PR | Precision | Recall | F1 | Cost / PR |
 |---|---|---|---|---|---|
-| code-reviewer 0.7.0, main report only | 1.6 | 72.1% (72.0, 72.2) | 36.7% (37.3, 36.1) | 48.7% (49.2, 48.1) | $0.40 |
-| code-reviewer 0.7.0, main report + "worth a look" | 2.6 | 63.2% (65.2, 61.2) | 53.8% (55.7, 51.9) | 58.2% (60.1, 56.2) | $0.40 |
-| Augment (published candidates) | 3.4 | 54.7% | 59.5% | 57.0% | — |
-| Claude Code (published candidates) | 3.5 | 40.0% | 40.5% | 40.3% | — |
+| code-reviewer 0.7.0, main report | 1.6 | 73.3% | 37.3% | 49.5% (49.6, 49.4) | $0.40 |
+| code-reviewer 0.7.0, main report + "worth a look" | 2.6 | 64.0% | 54.1% | 58.7% (60.0, 57.3) | $0.40 |
+| plain model, one call per PR | 5.9 | 39.0% | 71.5% | 50.5% (48.7, 52.4) | $0.08 |
+| Qodo Extended (published candidates; 65.8% as published) | 3.0 | 61.4% | 59.5% | 60.5% | — |
+| Augment (published candidates; 62.2% as published) | 3.6 | 58.1% | 63.3% | 60.6% | — |
+| Claude Code CLI (published candidates; 47.2% as published) | 3.5 | 41.8% | 41.8% | 41.8% | — |
 
-- Strict profile (139 real defects), main report + "worth a look": 61.4% / 56.5% / 58.8% (runs: 63.3 / 58.3 /
-  60.7 and 59.4 / 54.7 / 56.9). Recall by severity, both runs: Critical 8 of 12 each, High 37 and 33 of 54,
-  Medium 35 and 36 of 61, Low 9 and 6 of 46.
-- Our judge is stricter than the leaderboard's: the same Claude Code candidates score 40.3 here against 47.2
-  published (Opus 4.5 judge), Augment 57.0 against 62.2.
-- "Worth a look" findings raise recall by half for ten points of precision: on this benchmark half of them
-  point at a known bug.
+- Strict profile (139 defects): code-reviewer's full report 62.2% / 56.8% / 59.4%, the plain model 37.6% /
+  76.6% / 50.5%, Qodo Extended 59.3% / 61.9% / 60.6%, Augment 55.0% / 63.3% / 58.9%.
+- Paired bootstrap over PRs, core F1: code-reviewer's full report − the plain model +8.2 (95% interval
+  +0.7..+15.4); − Qodo Extended −1.8 (−10.0..+5.9).
+- Of the 36 golden comments a plain run matched and neither code-reviewer run did, the reviewer had found 4
+  (the critic rejected them) and never reported 32 (judged against the runs' rejected findings with the same
+  judge).
+- Earlier judgings: Sonnet with an earlier system message, main report 48.7% and with "worth a look" 58.2%;
+  Opus 4.5 with extended thinking, Claude Code CLI 42.1% and run m-1 49.2% / 61.0%.
 
 ## Caveats
 

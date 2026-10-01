@@ -18,6 +18,7 @@ import {
   skillUsage,
   sortFindings,
   stackEntries,
+  stagesLabel,
   stripUnsafeChars,
   summaryLine,
   targetLabel,
@@ -318,7 +319,11 @@ export function renderMarkdown(run: RunRecord): string {
   const coverage = coverageLabel(run);
   if (coverage) out.push(`| Coverage | ${cell(coverage)} |`);
   out.push(`| Depth | ${cell(depthLabel(run))} |`);
-  out.push(`| Min confidence | ${run.options.minConfidence} |`, '');
+  const stages = stagesLabel(run);
+  if (stages) out.push(`| Stages | ${cell(stages)} |`);
+  out.push(`| Min confidence | ${run.options.minConfidence} |`);
+  if (run.version) out.push(`| Code Reviewer | ${cell(run.version)} |`);
+  out.push('');
   out.push(`**${mdLine(summaryLine(run))}**`, '');
   if (run.error) out.push(`> **Error:** ${mdLine(run.error)}`, '');
   if (failed.length) {

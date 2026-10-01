@@ -389,6 +389,25 @@ export function rejectionLabel(
   return REASON_LABELS[reason] ?? reason.replace(/-/g, ' ');
 }
 
+/**
+ * The review stages a run had on, as one line — `critic · second opinion · notes (max 5) · second pass
+ * (--deepen)` — so a report says how it was made; undefined for runs older than these settings.
+ */
+export function stagesLabel(run: Pick<RunRecord, 'options'>): string | undefined {
+  const o = run.options;
+  if (o.secondOpinion === undefined && o.deepen === undefined && o.notes === undefined) return undefined;
+  const passes =
+    o.passes && (o.passes.length > 1 || o.passes[0] !== 'general') ? o.passes.join(' + ') : undefined;
+  return [
+    o.selfCritique ? 'critic' : 'no critic',
+    ...(o.selfCritique && o.secondOpinion ? ['second opinion'] : []),
+    ...(o.notes ? [`maintainability notes${o.maxNotes ? ` (max ${o.maxNotes})` : ''}`] : []),
+    ...(o.deepen ? ['second pass (--deepen)'] : []),
+    ...(o.audit ? ['function audit'] : []),
+    ...(passes ? [`passes: ${passes}`] : []),
+  ].join(' · ');
+}
+
 /** `essential (critical/major only)` / `full` — how deep the run went (older runs: full). */
 export function depthLabel(run: Pick<RunRecord, 'options'>): string {
   const depth = run.options.depth ?? 'full';

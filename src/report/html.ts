@@ -17,6 +17,7 @@ import {
   skillUsage,
   sortFindings,
   stackEntries,
+  stagesLabel,
   stripUnsafeChars,
   summaryLine,
   targetLabel,
@@ -316,7 +317,9 @@ export function renderHtml(run: RunRecord): string {
     ...(cacheLabel(run) ? ([['Cache', cacheLabel(run)!]] as Array<[string, string]>) : []),
     ['Chunks', `${run.chunks.length}${failed ? ` (${failed} failed)` : ''}`],
     ['Depth', depthLabel(run)],
+    ...(stagesLabel(run) ? ([['Stages', stagesLabel(run)!]] as Array<[string, string]>) : []),
     ['Min confidence', String(run.options.minConfidence)],
+    ...(run.version ? ([['Code Reviewer', run.version]] as Array<[string, string]>) : []),
   ];
   const counts = severityCounts(run.findings);
   const countChips = (Object.keys(counts) as Array<keyof typeof counts>)

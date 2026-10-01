@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Scores AACR-Bench runs by context level (Diff / File / Repo) and category, averaged over repeated runs.
 
     evals/aacr/report.py <dataset> <run-id> [<run-id> ...]      e.g.  report.py ctx30 base-1 base-2

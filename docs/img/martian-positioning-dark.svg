@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="676" viewBox="0 0 760 676" role="img" aria-label="Precision against recall on real bugs, Martian Code Review Bench, Opus 4.5 judge: code-reviewer 0.7.0 main report 73.3 precision 37.3 recall, with worth-a-look findings 64.0 and 54.1; the same model asked once 39.0 and 71.5; 20 published tools between 32.6 and 100.0 precision as published; three of them re-judged our way: 67.1/64.6 published, 61.4/59.5 re-judged; 59.5/65.2 published, 58.1/63.3 re-judged; 46.3/48.1 published, 41.8/41.8 re-judged" font-family="system-ui, -apple-system, &quot;Segoe UI&quot;, sans-serif">
+<text x="16.0" y="28.0" font-size="16" fill="#f0f6fc" font-weight="600">Real bugs: precision and recall on Martian's Code Review Bench</text>
+<text x="16.0" y="50.0" font-size="12" fill="#c3c2b7">50 pull requests, 158 golden comments (core profile), judged by Claude Opus 4.5, the leaderboard's judge model.</text>
+<text x="16.0" y="67.0" font-size="12" fill="#c3c2b7">Our judging is stricter than the published one: compare code-reviewer with the rings, the same tools re-judged our way.</text>
+<circle cx="22.0" cy="96.0" r="5.5" fill="#3987e5" stroke="#0d1117" stroke-width="2"/>
+<text x="34.0" y="100.0" font-size="12" fill="#c3c2b7">code-reviewer 0.7.0 (two runs)</text>
+<circle cx="322.0" cy="96.0" r="5.5" fill="#d95926" stroke="#0d1117" stroke-width="2"/>
+<text x="334.0" y="100.0" font-size="12" fill="#c3c2b7">same model, one call (two runs)</text>
+<circle cx="22.0" cy="118.0" r="5.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<text x="34.0" y="122.0" font-size="12" fill="#c3c2b7">20 published review tools, as published</text>
+<circle cx="322.0" cy="118.0" r="4.5" fill="#0d1117" stroke="#6b6a64" stroke-width="2"/>
+<text x="334.0" y="122.0" font-size="12" fill="#c3c2b7">three of them, re-judged our way</text>
+<line x1="216.5" y1="580" x2="216.5" y2="152" stroke="#2c2c2a" stroke-width="1"/>
+<line x1="72" y1="473.0" x2="650" y2="473.0" stroke="#2c2c2a" stroke-width="1"/>
+<line x1="361.0" y1="580" x2="361.0" y2="152" stroke="#2c2c2a" stroke-width="1"/>
+<line x1="72" y1="366.0" x2="650" y2="366.0" stroke="#2c2c2a" stroke-width="1"/>
+<line x1="505.5" y1="580" x2="505.5" y2="152" stroke="#2c2c2a" stroke-width="1"/>
+<line x1="72" y1="259.0" x2="650" y2="259.0" stroke="#2c2c2a" stroke-width="1"/>
+<line x1="650.0" y1="580" x2="650.0" y2="152" stroke="#2c2c2a" stroke-width="1"/>
+<line x1="72" y1="152.0" x2="650" y2="152.0" stroke="#2c2c2a" stroke-width="1"/>
+<line x1="72" y1="580" x2="650" y2="580" stroke="#383835" stroke-width="1"/>
+<line x1="72" y1="580" x2="72" y2="152" stroke="#383835" stroke-width="1"/>
+<text x="72.0" y="598.0" font-size="11" fill="#898781" text-anchor="middle">0%</text>
+<text x="64.0" y="584.0" font-size="11" fill="#898781" text-anchor="end">0%</text>
+<text x="216.5" y="598.0" font-size="11" fill="#898781" text-anchor="middle">25%</text>
+<text x="64.0" y="477.0" font-size="11" fill="#898781" text-anchor="end">25%</text>
+<text x="361.0" y="598.0" font-size="11" fill="#898781" text-anchor="middle">50%</text>
+<text x="64.0" y="370.0" font-size="11" fill="#898781" text-anchor="end">50%</text>
+<text x="505.5" y="598.0" font-size="11" fill="#898781" text-anchor="middle">75%</text>
+<text x="64.0" y="263.0" font-size="11" fill="#898781" text-anchor="end">75%</text>
+<text x="650.0" y="598.0" font-size="11" fill="#898781" text-anchor="middle">100%</text>
+<text x="64.0" y="156.0" font-size="11" fill="#898781" text-anchor="end">100%</text>
+<text x="361.0" y="620.0" font-size="12" fill="#c3c2b7" text-anchor="middle">Recall: share of the known bugs found</text>
+<text x="24" y="366.0" font-size="12" fill="#c3c2b7" text-anchor="middle" transform="rotate(-90 24 366.0)">Precision: share of findings that match a known bug</text>
+<polyline points="174.0,152.0 181.9,276.2 189.9,337.2 197.8,373.4 205.7,397.5 213.7,414.5 221.6,427.3 229.5,437.2 237.5,445.1 245.4,451.6 253.3,457.0 261.3,461.5 269.2,465.4 277.1,468.8 285.1,471.8 293.0,474.4 300.9,476.7 308.9,478.7 316.8,480.6 324.7,482.3 332.7,483.8 340.6,485.2 348.5,486.5 356.5,487.7 364.4,488.7 372.3,489.7 380.3,490.7 388.2,491.5 396.1,492.4 404.1,493.1 412.0,493.8 419.9,494.5 427.9,495.1 435.8,495.7 443.7,496.3 451.7,496.8 459.6,497.3 467.5,497.8 475.5,498.2 483.4,498.7 491.3,499.1 499.3,499.5 507.2,499.8 515.1,500.2 523.1,500.5 531.0,500.8 538.9,501.2 546.9,501.5 554.8,501.7 562.7,502.0 570.7,502.3 578.6,502.5 586.5,502.8 594.5,503.0 602.4,503.3 610.3,503.5 618.3,503.7 626.2,503.9 634.1,504.1 642.1,504.3 650.0,504.5" fill="none" stroke="#3a3a37" stroke-width="1"/>
+<text x="656.0" y="508.5" font-size="11" fill="#898781">F1 30</text>
+<polyline points="216.5,152.0 223.7,220.5 230.9,266.1 238.2,298.7 245.4,323.2 252.6,342.2 259.9,357.4 267.1,369.9 274.3,380.3 281.5,389.0 288.8,396.6 296.0,403.1 303.2,408.8 310.4,413.8 317.6,418.3 324.9,422.3 332.1,425.9 339.3,429.2 346.6,432.1 353.8,434.9 361.0,437.3 368.2,439.6 375.4,441.7 382.7,443.7 389.9,445.5 397.1,447.2 404.4,448.7 411.6,450.2 418.8,451.6 426.0,452.9 433.2,454.1 440.5,455.3 447.7,456.4 454.9,457.4 462.1,458.4 469.4,459.3 476.6,460.2 483.8,461.0 491.1,461.8 498.3,462.5 505.5,463.3 512.7,464.0 520.0,464.6 527.2,465.3 534.4,465.9 541.6,466.4 548.9,467.0 556.1,467.5 563.3,468.1 570.5,468.6 577.8,469.0 585.0,469.5 592.2,469.9 599.4,470.4 606.6,470.8 613.9,471.2 621.1,471.6 628.3,471.9 635.5,472.3 642.8,472.7 650.0,473.0" fill="none" stroke="#3a3a37" stroke-width="1"/>
+<text x="656.0" y="477.0" font-size="11" fill="#898781">F1 40</text>
+<polyline points="264.7,152.0 271.1,189.8 277.5,219.6 283.9,243.7 290.4,263.7 296.8,280.4 303.2,294.7 309.6,307.0 316.0,317.7 322.5,327.1 328.9,335.4 335.3,342.9 341.7,349.5 348.2,355.6 354.6,361.0 361.0,366.0 367.4,370.6 373.8,374.7 380.3,378.6 386.7,382.2 393.1,385.5 399.5,388.5 406.0,391.4 412.4,394.1 418.8,396.6 425.2,398.9 431.6,401.1 438.1,403.2 444.5,405.2 450.9,407.0 457.3,408.8 463.8,410.5 470.2,412.1 476.6,413.6 483.0,415.0 489.4,416.4 495.9,417.7 502.3,418.9 508.7,420.1 515.1,421.2 521.6,422.3 528.0,423.4 534.4,424.4 540.8,425.3 547.2,426.3 553.7,427.1 560.1,428.0 566.5,428.8 572.9,429.6 579.4,430.4 585.8,431.1 592.2,431.8 598.6,432.5 605.0,433.2 611.5,433.9 617.9,434.5 624.3,435.1 630.7,435.7 637.2,436.2 643.6,436.8 650.0,437.3" fill="none" stroke="#3a3a37" stroke-width="1"/>
+<text x="656.0" y="441.3" font-size="11" fill="#898781">F1 50</text>
+<polyline points="319.7,152.0 325.2,172.7 330.7,190.7 336.2,206.5 341.7,220.5 347.2,233.0 352.7,244.2 358.2,254.3 363.8,263.5 369.3,271.8 374.8,279.5 380.3,286.5 385.8,293.0 391.3,299.0 396.8,304.5 402.3,309.7 407.8,314.5 413.3,319.0 418.8,323.2 424.3,327.2 429.8,330.9 435.3,334.4 440.8,337.7 446.3,340.8 451.8,343.7 457.3,346.5 462.8,349.2 468.3,351.7 473.8,354.1 479.4,356.4 484.9,358.6 490.4,360.7 495.9,362.7 501.4,364.6 506.9,366.5 512.4,368.2 517.9,369.9 523.4,371.5 528.9,373.1 534.4,374.6 539.9,376.0 545.4,377.4 550.9,378.7 556.4,380.0 561.9,381.3 567.4,382.5 572.9,383.6 578.4,384.7 583.9,385.8 589.4,386.9 595.0,387.9 600.5,388.9 606.0,389.9 611.5,390.8 617.0,391.7 622.5,392.6 628.0,393.4 633.5,394.2 639.0,395.0 644.5,395.8 650.0,396.6" fill="none" stroke="#3a3a37" stroke-width="1"/>
+<text x="656.0" y="400.6" font-size="11" fill="#898781">F1 60</text>
+<polyline points="383.2,152.0 387.7,162.9 392.1,173.0 396.6,182.3 401.0,191.0 405.5,199.2 409.9,206.7 414.4,213.8 418.8,220.5 423.2,226.7 427.7,232.6 432.1,238.2 436.6,243.5 441.0,248.4 445.5,253.2 449.9,257.6 454.4,261.9 458.8,266.0 463.3,269.8 467.7,273.5 472.2,277.0 476.6,280.4 481.0,283.6 485.5,286.7 489.9,289.7 494.4,292.5 498.8,295.2 503.3,297.9 507.7,300.4 512.2,302.8 516.6,305.1 521.1,307.4 525.5,309.6 530.0,311.7 534.4,313.7 538.8,315.6 543.3,317.5 547.7,319.4 552.2,321.1 556.6,322.9 561.1,324.5 565.5,326.1 570.0,327.7 574.4,329.2 578.9,330.7 583.3,332.1 587.8,333.5 592.2,334.9 596.6,336.2 601.1,337.5 605.5,338.7 610.0,339.9 614.4,341.1 618.9,342.3 623.3,343.4 627.8,344.5 632.2,345.5 636.7,346.6 641.1,347.6 645.6,348.6 650.0,349.5" fill="none" stroke="#3a3a37" stroke-width="1"/>
+<text x="656.0" y="353.5" font-size="11" fill="#898781">F1 70</text>
+<line x1="445.4" y1="292.8" x2="415.9" y2="317.2" stroke="#6b6a64" stroke-width="1.5" stroke-dasharray="3 3"/>
+<line x1="448.9" y1="325.3" x2="437.9" y2="331.3" stroke="#6b6a64" stroke-width="1.5" stroke-dasharray="3 3"/>
+<line x1="350.0" y1="381.8" x2="313.6" y2="401.1" stroke="#6b6a64" stroke-width="1.5" stroke-dasharray="3 3"/>
+<circle cx="445.4" cy="292.8" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="452.3" cy="316.8" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="448.9" cy="325.3" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="430.4" cy="342.9" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="353.5" cy="318.5" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="375.4" cy="351.0" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="309.6" cy="284.3" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="342.5" cy="336.5" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="368.5" cy="362.1" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="390.5" cy="386.1" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="456.4" cy="415.2" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="350.0" cy="381.8" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="390.5" cy="404.5" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="295.1" cy="326.6" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="287.6" cy="316.8" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="415.9" cy="440.5" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="309.6" cy="408.4" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="291.6" cy="395.1" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="163.3" cy="347.6" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="115.9" cy="152.0" r="4.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<circle cx="415.9" cy="317.2" r="4.5" fill="#0d1117" stroke="#6b6a64" stroke-width="2"/>
+<circle cx="437.9" cy="331.3" r="4.5" fill="#0d1117" stroke="#6b6a64" stroke-width="2"/>
+<circle cx="313.6" cy="401.1" r="4.5" fill="#0d1117" stroke="#6b6a64" stroke-width="2"/>
+<line x1="287.6" y1="266.3" x2="384.7" y2="306.1" stroke="#3987e5" stroke-width="2"/>
+<circle cx="287.6" cy="266.3" r="6.5" fill="#3987e5" stroke="#0d1117" stroke-width="2"/>
+<circle cx="384.7" cy="306.1" r="6.5" fill="#3987e5" stroke="#0d1117" stroke-width="2"/>
+<circle cx="485.3" cy="413.1" r="6.5" fill="#d95926" stroke="#0d1117" stroke-width="2"/>
+<text x="277.6" y="256.3" font-size="12" fill="#f0f6fc" text-anchor="end" font-weight="600">main report</text>
+<line x1="389.7" y1="300.1" x2="400.7" y2="276.1" stroke="#3987e5" stroke-width="1"/>
+<text x="404.7" y="272.1" font-size="12" fill="#f0f6fc" font-weight="600">+ “worth a look”</text>
+<text x="495.3" y="431.1" font-size="12" fill="#f0f6fc">same model, one call</text>
+<text x="16.0" y="646.0" font-size="11" fill="#898781">Method, judge calibration, builds and commands: BENCHMARKS.md. Published points: Martian's leaderboard</text>
+<text x="16.0" y="662.0" font-size="11" fill="#898781">(github.com/withmartian/code-review-benchmark, offline/analysis), Opus 4.5 judge, at commit e616e849.</text>
+</svg>

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Scores a critic without re-running the reviews: applies the verdicts of `recritique.mts` to a finished run's
 findings and writes them as a new run, which `run.sh <new-run-id> --subset <dataset> --stage eval` then judges.
 
