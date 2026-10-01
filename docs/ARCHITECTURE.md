@@ -205,6 +205,8 @@ second pass. A failed second pass keeps the first and its usage.
 Without `--deepen`, `review/advice.ts` suggests it after a run with findings (`run.advice.deepen`: every
 reviewed chunk and an estimate of `DEEPEN_COST_FACTOR` × the first pass's cost, left out when a chunk's cost is
 unknown); `deepenAdviceText` renders it in the summary and the markdown report.
+AACR ctx30 numbers are in `evals/aacr/README.md`; `evals/martian/README.md` scores real bugs (Martian's Code
+Review Bench).
 
 ### Self-critique (`review/critique.ts`)
 

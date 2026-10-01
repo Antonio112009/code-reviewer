@@ -33,6 +33,11 @@
   LLM) and averages repeated judgings; `run.sh --eval-rounds N` works (the judge hung on the second round).
   `recritique.mts` marks the pull request's own changes from the merge base. The README records what the
   reporting scope, the held-out subset and the blind audits showed.
+- `evals/martian`: an offline adapter for Martian's Code Review Bench (50 pull requests from Sentry, Grafana,
+  Cal.com, Discourse and Keycloak with 173 verified golden comments, 139 of them real defects): a frozen
+  manifest of the pull requests, a review loop in detached worktrees at each head, the benchmark's own judge
+  prompt answered by `claude -p`, a baseline mode that judges a published tool's candidates under the same
+  judge, and a report by profile, severity and repository.
 
 ## 0.7.0 — 2026-09-30
 
