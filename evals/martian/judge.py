@@ -1,21 +1,30 @@
 """Judges a run (or a published tool's candidates) against the golden comments with the benchmark's own prompt.
 
-    judge.py <run-id> [--tier main|all] [--judge-model sonnet] [--concurrency 8]
-    judge.py --baseline <tool> [--judge-model sonnet]        e.g. --baseline claude-code
+    judge.py <run-id> [--tier main|all] [--judge-model sonnet] [--effort low|medium|high] [--no-thinking]
+             [--concurrency 8]
+    judge.py --baseline <tool> [--judge-model sonnet] [--no-thinking]    e.g. --baseline claude-code
 
-The judge prompt is read verbatim from the pinned benchmark checkout (offline/code_review_benchmark/
-step3_judge_comments.py, MIT) and answered by `claude -p`; every (golden, candidate) pair of a pull request is
-judged, and the matching rule is the benchmark's: a golden comment is matched by the candidate the judge is
-most confident about, a candidate counts as matched when it is that best match for some golden comment, the
-rest are false positives. Verdicts are cached under $MARTIAN_DIR/judge-cache by judge model and texts.
+`--judge-model claude-opus-4-5-20251101 --no-thinking` asks the leaderboard's judge model the way the
+leaderboard does (its prompt and system message, no extended thinking). Through `claude -p`, which cannot set
+the leaderboard's temperature of 0, it is still stricter than the published scores: published tools'
+candidates re-judged with `--baseline` lose 1.6 to 5.4 F1 points (BENCHMARKS.md, "Judge calibration"). Compare
+runs with re-judged baselines, not with the published table. Sonnet (the default) is cheaper and stricter.
+
+The judge prompt and its system message are read verbatim from the pinned benchmark checkout
+(offline/code_review_benchmark/step3_judge_comments.py, MIT) and answered by `claude -p`; every (golden,
+candidate) pair of a pull request is judged, and the matching rule is the benchmark's: a golden comment is
+matched by the candidate the judge is most confident about, a candidate counts as matched when it is that best
+match for some golden comment, the rest are false positives. Verdicts are cached under
+$MARTIAN_DIR/judge-cache by judge model, judge settings and texts.
 
 What differs from the published pipeline: our candidates are the findings themselves (title and description,
 one per finding; `--tier all` adds "worth a look" and maintainability notes), not issues an LLM extracted from
 comment bodies, and there is no LLM de-duplication step. A published tool's candidates (`--baseline`) are
 taken as checked in, with their de-duplication groups, so the two are comparable under this judge.
 
-Output: $MARTIAN_DIR/results/<run-id>/evaluations.json in the benchmark's shape ({url: {tool: {tp, fp, fn,
-true_positives, false_negatives, false_positives, ...}}}) plus judge metadata; report.py scores it.
+Output: $MARTIAN_DIR/results/<run-id>/eval-<judge>-<tier>.json (<judge>: the model, then -<effort> and
+-nothink when set) in the benchmark's shape ({url: {tool: {tp, fp, fn, true_positives, false_negatives,
+false_positives, ...}}}) plus judge metadata; report.py scores it.
 """
 from __future__ import annotations
 
@@ -50,30 +59,38 @@ def golden_by_url() -> dict:
     return out
 
 
-def judge_prompt() -> str:
+def judge_prompts() -> tuple[str, str]:
+    """The benchmark's judge prompt and system message, verbatim from its step3 script."""
     src = (BENCH / "code_review_benchmark" / "step3_judge_comments.py").read_text(encoding="utf-8")
     m = re.search(r'JUDGE_PROMPT = """(.*?)"""', src, re.S)
-    if not m:
-        sys.exit("JUDGE_PROMPT not found in the benchmark checkout: run evals/martian/setup.sh")
-    return m.group(1)
+    s = re.search(r'"role": "system",\s*"content": "([^"]+)"', src)
+    if not m or not s:
+        sys.exit("the judge prompt was not found in the benchmark checkout: run evals/martian/setup.sh")
+    return m.group(1), s.group(1)
 
 
-def ask(prompt: str, model: str) -> dict:
+SYSTEM = ""  # set from the benchmark checkout in main()
+
+
+def ask(prompt: str, model: str, effort: str = "", thinking: bool = True) -> dict:
     """One judge call through `claude -p`; the answer is the JSON object the prompt asks for."""
-    key = hashlib.sha256(f"{model}\n{prompt}".encode()).hexdigest()
+    variant = f"{'@' + effort if effort else ''}{'' if thinking else '@nothink'}@{SYSTEM}"
+    key = hashlib.sha256(f"{model}{variant}\n{prompt}".encode()).hexdigest()
     cached = MARTIAN_DIR / "judge-cache" / f"{key}.json"
     if cached.exists():
         with open(cached, encoding="utf-8") as f:
             return json.load(f)
     command = [
         "claude", "-p", "--model", model, "--output-format", "json",
-        "--system-prompt", "You are a precise evaluator. Respond with valid JSON only.",
+        "--system-prompt", SYSTEM,
         "--tools", "", "--strict-mcp-config", "--setting-sources", "", "--no-session-persistence",
+        *(["--effort", effort] if effort else []),
     ]
     last = ""
     for attempt in range(3):
         try:
-            proc = subprocess.run(command, input=prompt, capture_output=True, text=True, timeout=120)
+            env = os.environ if thinking else {**os.environ, "MAX_THINKING_TOKENS": "0"}
+            proc = subprocess.run(command, input=prompt, capture_output=True, text=True, timeout=120, env=env)
             data = json.loads(proc.stdout)
             if data.get("is_error"):
                 raise ValueError(str(data.get("result"))[:200])
@@ -96,7 +113,7 @@ def ask(prompt: str, model: str) -> dict:
 
 
 def evaluate(golden: list[dict], candidates: list[str], groups: list[list[int]] | None, model: str, template: str,
-             pool: ThreadPoolExecutor) -> dict:
+             pool: ThreadPoolExecutor, effort: str = "", thinking: bool = True) -> dict:
     """The benchmark's evaluate_review: best match per golden comment, the rest of the candidates are FPs."""
     if not candidates:
         return {"skipped": False, "true_positives": [], "false_positives": [],
@@ -104,7 +121,7 @@ def evaluate(golden: list[dict], candidates: list[str], groups: list[list[int]] 
                 "errors": [], "total_candidates": 0, "total_golden": len(golden), "tp": 0, "fp": 0, "fn": len(golden), "errors_count": 0,
                 "precision": 0.0, "recall": 0.0}
     pairs = [(g, c) for g in golden for c in candidates]
-    verdicts = list(pool.map(lambda gc: ask(template.format(golden_comment=gc[0]["comment"], candidate=gc[1]), model), pairs))
+    verdicts = list(pool.map(lambda gc: ask(template.format(golden_comment=gc[0]["comment"], candidate=gc[1]), model, effort, thinking), pairs))
     best: dict = {g["comment"]: {"matched": False, "confidence": 0.0, "candidate": None, "reasoning": None} for g in golden}
     matched = dict.fromkeys(range(len(candidates)), False)
     siblings: dict = {}
@@ -138,7 +155,7 @@ def candidates_of_run(run_dir: Path, tier: str) -> dict:
     """url → candidate texts of our findings: the title and the description, one per finding."""
     out = {}
     for path in sorted(run_dir.glob("*.json")):
-        if path.name == "evaluations.json":
+        if path.name.startswith("eval") or path.name == "provenance.json":
             continue
         with open(path, encoding="utf-8") as f:
             result = json.load(f)
@@ -158,12 +175,15 @@ def candidates_of_run(run_dir: Path, tier: str) -> dict:
 
 def main() -> None:
     model = opt("--judge-model", "sonnet")
+    effort = opt("--effort", "")
+    thinking = "--no-thinking" not in sys.argv
     tier = opt("--tier", "main")
     concurrency = opt("--concurrency", 8)
     baseline = opt("--baseline", "")
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    global SYSTEM
     golden = golden_by_url()
-    template = judge_prompt()
+    template, SYSTEM = judge_prompts()
     if baseline:
         tool, run_id = baseline, f"baseline-{baseline}"
         with open(BENCH / "results" / PUBLISHED_JUDGE_DIR / "candidates.json", encoding="utf-8") as f:
@@ -196,15 +216,17 @@ def main() -> None:
                 print(f"[{n}/{len(golden)}] {url.split('github.com/')[1]}: no result")
                 continue
             calls += len(g["comments"]) * len(c)
-            ev = evaluate(g["comments"], c, groups.get(url), model, template, pool)
+            ev = evaluate(g["comments"], c, groups.get(url), model, template, pool, effort, thinking)
             evaluations[url] = {tool: ev}
             print(f"[{n}/{len(golden)}] {url.split('github.com/')[1]}: {len(c)} candidate(s), TP {ev['tp']} FP {ev['fp']} FN {ev['fn']}" + (f", {ev['errors_count']} judge error(s)" if ev.get("errors_count") else ""))
-    meta = {"judge_model": model, "tier": tier, "tool": tool, "judge_calls": calls,
+    meta = {"judge_model": model, "judge_effort": effort or "default", "judge_thinking": thinking, "tier": tier,
+            "tool": tool, "judge_calls": calls,
             "golden_sha256": (MARTIAN_DIR / "golden.sha256").read_text(encoding="utf-8") if (MARTIAN_DIR / "golden.sha256").exists() else None,
             "benchmark_commit": subprocess.run(["git", "-C", str(MARTIAN_DIR / "bench"), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()}
-    with open(out_dir / "evaluations.json", "w", encoding="utf-8") as f:
+    out = out_dir / f"eval-{model}{'-' + effort if effort else ''}{'' if thinking else '-nothink'}-{tier}.json"
+    with open(out, "w", encoding="utf-8") as f:
         json.dump({"meta": meta, "evaluations": evaluations}, f, indent=1)
-    print(f"judged {calls} pair(s) with {model}; evaluations in {out_dir / 'evaluations.json'}")
+    print(f"judged {calls} pair(s) with {model}; evaluations in {out}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,69 @@
+diff --git a/src/review/pipeline.ts b/src/review/pipeline.ts
+index 309507d..7bce423 100644
+--- a/src/review/pipeline.ts
++++ b/src/review/pipeline.ts
+@@ -1593,6 +1593,16 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
+       };
+     };
+ 
++    // EXPERIMENT ONLY (never merged): maintainability notes are not defects, so the critic, which rejects
++    // style remarks, does not see them; they rejoin the report after the critique, capped per run.
++    const isNote = (f: Finding): boolean => /^maintainability\b/i.test(f.title);
++    const noteCap = Number(process.env.CR_EXP_NOTE_CAP ?? '0');
++    let notes = (process.env.CR_EXP ?? '').includes('maint') ? final.filter(isNote) : [];
++    if (notes.length) {
++      final = final.filter((f) => !isNote(f));
++      if (noteCap > 0) notes = notes.slice(0, noteCap);
++    }
++
+     // 8. Self-critique ---------------------------------------------------------------------------------
+     if (routes.critique && final.length > 0 && aborted()) {
+       warn('Interrupted — self-critique skipped; findings are unverified.');
+@@ -1643,6 +1653,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
+         for (const w of outcome.warnings) warn(w);
+       });
+     }
++    if (notes.length) final = [...final, ...notes];
+ 
+     // 9. Confidence and severity thresholds (secrets / vulnerable deps are never dropped) ------------
+     const min = config.review.minConfidence;
+diff --git a/src/review/prompts.ts b/src/review/prompts.ts
+index c15164a..8406867 100644
+--- a/src/review/prompts.ts
++++ b/src/review/prompts.ts
+@@ -49,6 +49,26 @@ export function dependencyLine(deps: readonly DependencyRoot[] | undefined): str
+ /** `review.audit`: one function at a time, and not only its first defect. */
+ const AUDIT_RULE = `- Audit every function listed under "Changed functions to audit", one at a time, and any other changed function you notice. For each, check: every early return and error path restores what the function set before it (flags, counters, locks, open handles, half-built state); empty, null, zero, negative, duplicate and oversized inputs; each value it parses or receives (strings like "false" or "0", null JSON fields, missing keys); each call it makes (return values and errors checked, resources released); and its contract with its callers. A function often has more than one defect: after you find one, keep checking the same function. Record every audited function in the "audit" field of submit_findings with its result (defects, clean or unsure).`;
+ 
++/**
++ * EXPERIMENT ONLY (never merged): extra reviewer rules switched on with CR_EXP=wide,maint to measure what a
++ * wider reporting scope does to recall on a benchmark.
++ */
++function experimentRules(): string {
++  const on = new Set((process.env.CR_EXP ?? '').split(',').map((s) => s.trim()));
++  const rules: string[] = [];
++  if (on.has('wide')) {
++    rules.push(
++      `- After the defects, also report the robustness gaps this change opens that you could not prove harmless. Go through every changed hunk for them: a value used without a check that its producer does not guarantee (null, empty, zero, negative, a missing key or field); an error or return value of a call the change adds that is ignored; an input nobody validates; a resource not released on an error path; a behaviour change that existing callers or users may not expect. Report each as its own finding with severity "minor" or "info" and a confidence of 0.3–0.45, and say in the description what would have to be true for it to fail. There is no limit on their number; an independent verifier sorts them afterwards.`,
++    );
++  }
++  if (on.has('maint')) {
++    rules.push(
++      `- This review also has a maintainability section, which overrides the rule against reporting style, naming and documentation for these findings only. For each changed hunk, report the maintainability problems the change introduces on its changed lines: a misleading or misspelt name; a comment, log or error message that contradicts the code; code the change duplicates; dead, unreachable or commented-out code; a magic value repeated or left unexplained; a missing note on a non-obvious unit, contract or side effect; handling that is inconsistent with identical sibling code next to it; code with a clearly simpler equivalent. Report each as its own finding with severity "info", category "bug", confidence 0.4 and a title that starts with "Maintainability: ". Leave out formatting and whatever a formatter or linter fixes.`,
++    );
++  }
++  return rules.length ? `\n${rules.join('\n')}` : '';
++}
++
+ /** What a focused pass looks for; the other pass covers the rest. */
+ function passRules(pass: ReviewInstructionOptions['pass']): string {
+   if (pass === 'local') {
+@@ -101,7 +121,7 @@ export function reviewInstructions(opts: ReviewInstructionOptions): string {
+ 
+ Rules:
+ ${scope}
+-${depthRules(opts.depth ?? 'full')}${opts.pass ? `\n${passRules(opts.pass)}` : ''}${opts.audit ? `\n${AUDIT_RULE}` : ''}
++${depthRules(opts.depth ?? 'full')}${opts.pass ? `\n${passRules(opts.pass)}` : ''}${opts.audit ? `\n${AUDIT_RULE}` : ''}${experimentRules()}
+ - Review the files under "Files to review". "Related files" are read-only context owned by another reviewer: use them to understand the code, but report defects only in the files you review.
+ - Do NOT report style, naming, formatting, missing comments/tests/docs, refactoring ideas, or anything a compiler, type checker or linter would catch.
+ - In test code, report only a test that cannot fail, never runs, passes for the wrong reason or breaks other tests — not teardown order, a missing try/finally around cleanup, or leftover output. Leftover debug logging anywhere is a defect only when it exposes secrets or personal data or does real work on a hot path.

@@ -54,6 +54,18 @@ if [ "$REVIEWER" = claude ] && [ -z "${ANTHROPIC_AUTH_TOKEN:-}" ]; then
   export CLAUDE_USE_SUBSCRIPTION=true ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-sonnet}
 fi
 
+# How this run was made (build commit, arguments, experiment switches, judge), next to its results.
+BENCH=$(basename "$DATASET" .jsonl)
+RUN_DIR=$EVAL/results/$BENCH/$REVIEWER/$RUN_ID
+if [ "$STAGE" != eval ]; then
+  python3 "$ROOT/evals/provenance.py" review "$RUN_DIR" --benchmark "$BENCH" --run-id "$RUN_ID" --reviewer "$REVIEWER"
+fi
+if [ "$STAGE" != review ]; then
+  ROUNDS=1
+  for ((i = 0; i < ${#EXTRA[@]}; i++)); do [ "${EXTRA[$i]}" = --eval-rounds ] && ROUNDS=${EXTRA[$((i + 1))]}; done
+  EVAL_ROUNDS=$ROUNDS python3 "$ROOT/evals/provenance.py" judge "$RUN_DIR" --benchmark "$BENCH"
+fi
+
 cd "$EVAL"
 exec .venv/bin/python -m pipeline run --stage "$STAGE" --reviewer "$REVIEWER" --dataset "$DATASET" \
   --run-id "$RUN_ID" --repo-dir "$AACR_DIR/repos" --timeout-minutes 60 ${EXTRA[@]+"${EXTRA[@]}"}

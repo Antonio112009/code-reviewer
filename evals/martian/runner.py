@@ -93,6 +93,10 @@ def main() -> None:
         manifest = manifest[:limit]
     run_dir = MARTIAN_DIR / "results" / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
+    if not (run_dir / "provenance.json").exists():
+        # How this run was made (build commit, arguments, experiment switches), next to its results.
+        subprocess.run([sys.executable, str(HERE.parent / "provenance.py"), "review", str(run_dir),
+                        "--benchmark", "martian", "--run-id", run_id], check=False)
     todo = [p for p in manifest if not (run_dir / f"{p['id']}.json").exists()]
     print(f"{run_id}: {len(todo)} of {len(manifest)} pull request(s) to review, concurrency {concurrency}, args: {' '.join(extra)}")
     done = 0

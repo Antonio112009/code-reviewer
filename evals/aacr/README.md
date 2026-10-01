@@ -1,6 +1,6 @@
 # AACR-Bench
 
-The summary of every benchmark, with charts and the release-to-release history, is [docs/benchmarks.md](../../docs/benchmarks.md); this file is the measurement log.
+The summary of every benchmark, with charts and the release-to-release history, is [BENCHMARKS.md](../../BENCHMARKS.md); this file is the measurement log.
 
 [AACR-Bench](https://github.com/alibaba/aacr-bench) is Alibaba's public code review benchmark: 196 real pull
 requests (the paper counts 200) from 50 open-source repositories in 10 languages, with 1,505 expert-verified
@@ -39,10 +39,11 @@ evals/aacr/report.py ctx30 base-1 base-2             # recall by context level a
 
 - `$AACR_DIR` (default `~/.cache/code-reviewer-aacr`) holds the harness, its results and the cloned
   repositories (partial clones, fetched once and shared by all runs).
-- The benchmark measures whatever `dist/cli.js` contains. To pin a version while you keep editing, build a
-  copy (`git archive <sha> | tar -x -C /tmp/cr && cd /tmp/cr && npm ci && npm run build`) and set
-  `CODE_REVIEWER_CLI=/tmp/cr/dist/cli.js`.
-- Results: `$AACR_DIR/aacr-bench/evaluation/results/<dataset>/<reviewer>/<run-id>/`. Each PR has a result
+- The benchmark measures whatever `dist/cli.js` contains. To pin a commit while you keep editing,
+  `evals/pin-build.sh <commit>` builds it into `~/.cache/code-reviewer-builds/<commit>/` with a `BUILD.json`;
+  set `CODE_REVIEWER_CLI` to its `dist/cli.js`, and every run records which commit it measured.
+- Results: `$AACR_DIR/aacr-bench/evaluation/results/<dataset>/<reviewer>/<run-id>/`, with a `provenance.json`
+  recording the build (commit and version), the arguments, experiment switches (`CR_EXP`) and the judges. Each PR has a result
   file with the full `report.json`, and `runs/<instance>/` keeps the run directory (prompts, replies,
   `run.log`). Metrics are in the mirrored `metrics/` directory, and the console prints a summary.
 
