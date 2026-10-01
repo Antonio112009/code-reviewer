@@ -23,6 +23,7 @@ export const PHASES = [
   'chunking',
   'snapshot',
   'review',
+  'sweep',
   'validate',
   'critique',
   'authors',

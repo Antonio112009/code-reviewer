@@ -14,6 +14,8 @@ benchmark's own prompt and system message, against the golden comments of
 | `qodo-extended.json` | Qodo Extended, #1 on the leaderboard | `judge.py --baseline qodo-extended-v2` |
 | `augment.json` | Augment, #3 | `judge.py --baseline augment` |
 | `claude-code-cli.json` | Claude Code CLI, #12 | `judge.py --baseline claude-code` |
+| `code-reviewer-sweep-run1-main.json`, `-run2-main.json`, `-run1-all.json`, `-run2-all.json` | `main` with `--sweep`, main report / + "worth a look" | build `d330ae1`, `run.sh ws2-1` / `ws2-2` (`--full --no-notes --sweep`) |
+| `code-reviewer-sweep-v1-*.json` | the first version of the sweep (replaced) | build `c2bad4a`, `run.sh ws-1` / `ws-2` |
 
 The published tools' candidates are the review comments each tool posted, as Martian extracted and checked
 them in (`offline/results/anthropic_claude-opus-4-5-20251101/candidates.json`); their published scores are in

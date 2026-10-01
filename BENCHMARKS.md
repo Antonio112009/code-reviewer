@@ -23,6 +23,7 @@ verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/marti
 |---|---|---|---|---|---|---|
 | Augment (#3 on the leaderboard), re-judged | 3.6 | 58.1% | 63.3% | **60.6%** | — | [json](evals/martian/judgings/2026-10-01/augment.json) |
 | Qodo Extended (#1), re-judged | 3.0 | 61.4% | 59.5% | 60.5% | — | [json](evals/martian/judgings/2026-10-01/qodo-extended.json) |
+| **code-reviewer `main` + `--sweep`** (opt-in, unreleased), main report + "worth a look" | 3.4 | 57.4% | 63.9% | 60.5% | $0.61 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-sweep-run1-all.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-sweep-run2-all.json) |
 | **code-reviewer 0.7.0**, main report + "worth a look" | 2.6 | 64.0% | 54.1% | 58.7% | $0.40 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run1-all.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run2-all.json) |
 | The same model given the diff in one call | 5.9 | 39.0% | **71.5%** | 50.5% | $0.08 | [run 1](evals/martian/judgings/2026-10-01/plain-model-run1.json), [run 2](evals/martian/judgings/2026-10-01/plain-model-run2.json) |
 | **code-reviewer 0.7.0**, main report | 1.6 | **73.3%** | 37.3% | 49.5% | $0.40 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run1-main.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run2-main.json) |
@@ -32,6 +33,8 @@ verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/marti
   "worth a look", scores 58.7 against 60.5 for Qodo Extended and 60.6 for Augment, the leaderboard's first
   and third tools. The paired difference to Qodo Extended, −1.8 points, is within the noise (95% interval
   −10.0..+5.9). Code Reviewer is the more precise of the three and finds fewer of the bugs.
+- **Level with them with `--sweep`.** The opt-in sweep on `main`, one more call over the whole diff whose
+  findings go to the same critic, raises the full report to 60.5 (recall 63.9%) for about half again the price.
 - **The most precise main report.** 73% of the findings in the main report, the part Code Reviewer posts
   on a pull request, match a known bug. Even under the leaderboard's more lenient scoring, only Graphite is
   more precise (100%), and it finds 8% of the bugs ([published data](https://github.com/withmartian/code-review-benchmark/blob/e616e849755441da38f18bf3adba2c9583b03803/offline/analysis/benchmark_dashboard.json)).
@@ -100,6 +103,8 @@ data or API defects.
 |---|---|---|---|---|---|---|---|
 | **code-reviewer 0.7.0**, main report + "worth a look" | `eb5c564` | 2.6 | 64.0% | 54.1% | 58.7% (60.0, 57.3) | 59.4% | $0.40 |
 | **code-reviewer 0.7.0**, main report | `eb5c564` | 1.6 | 73.3% | 37.3% | 49.5% (49.6, 49.4) | 50.0% | $0.40 |
+| **code-reviewer `main` + `--sweep`**, main report + "worth a look" | `d330ae1` | 3.4 | 57.4% | 63.9% | 60.5% (58.3, 62.7) | 60.6% | $0.61 |
+| **code-reviewer `main` + `--sweep`**, main report | `d330ae1` | 1.8 | 70.8% | 43.7% | 54.0% (50.4, 57.7) | 54.0% | $0.61 |
 | The same model, one call | plain | 5.9 | 39.0% | 71.5% | 50.5% (48.7, 52.4) | 50.5% | $0.08 |
 | Qodo Extended (#1 on the leaderboard), re-judged | published comments | 3.0 | 61.4% | 59.5% | 60.5% | 60.6% | — |
 | Augment (#3), re-judged | published comments | 3.6 | 58.1% | 63.3% | 60.6% | 58.9% | — |
@@ -111,6 +116,11 @@ data or API defects.
 - "Worth a look" holds findings below confidence 0.6 and `info` findings: Code Reviewer lists them in its
   report but does not post them on pull requests. They add 17 points of recall for 9 points of precision;
   on this benchmark half of them point at a known bug.
+- `--sweep` (build `d330ae1`, `--full --no-notes --sweep`, notes off as in 0.7.0): within the same runs, the
+  sweep's own findings raise the full report's recall from 55.1% to 63.9% and its F1 from 57.7% to 60.5% (+2.8,
+  95% interval −0.4..+6.4) for 3 points of precision, and the main report's F1 from 51.2% to 54.0%. A first
+  version, told what the chunk reviews had found, added 7 points of recall for 9.5 of precision (F1 −1.3) and
+  was replaced.
 
 ### Judge calibration
 
@@ -151,12 +161,16 @@ held-out half that nothing was tuned on (run once).
 | **0.7.0** | `42747d9` (code of `v0.7.0`) | `--full` | 54.5 / 40.4% / 7.7% / 12.9% | 145 / 29.7% / 6.4% / 10.6% | $7.47 |
 | + maintainability notes (on `main`, unreleased) | `4fb887c` | `--full` | 73.5 / 37.4% / 9.6% / 15.3% | 191 / 31.4% / 9.0% / 13.9% | $8.66 |
 | + `--deepen`, an independent second pass (on `main`) | `0d73c06` | `--full --deepen` | 150.5 / 28.6% / 15.0% / 19.7% | — | $17.67 |
+| + `--sweep`, a call over the whole diff (on `main`, opt-in) | `d330ae1` | `--full --sweep` | 88.5 / 41.8% / 12.9% / 19.8% | 209 / 29.7% / 9.3% / 14.1% | $11.85 |
 | The plain model, one call | — | `evals/plain-llm.py aacr` | 122.5 / 29.4% / 12.6% / 17.6% | 302 / 23.5% / 10.6% / 14.6% | $1.28 |
 
 Paired differences, clustered on repositories ([evals/aacr/stats.py](evals/aacr/stats.py)): the notes add 3.4
 F1 points on the held-out pull requests (95% interval +1.2..+5.6) and 2.4 on ctx30; the second pass adds 4.4
 more on ctx30 (+1.9..+7.2) at twice the price. All the critic changes of 0.7.0 together are +1.2 F1 on ctx30
-with an interval of −1.7..+4.1: this benchmark cannot resolve them; the blind audit below can.
+with an interval of −1.7..+4.1: this benchmark cannot resolve them; the blind audit below can. Within the same
+runs, the sweep's own findings add 1.0 F1 on ctx30 (−0.2..+2.6) and 0.6 on the held-out pull requests
+(−0.2..+1.7); the rest of the gap between its row and the notes row on ctx30 is run-to-run variation (the same
+pipeline without the sweep's findings scored 18.8 in those runs, 16.5 in the runs of its first version).
 
 What bounds these numbers is the benchmark, not the search: of the 233 ctx30 references no run had matched in
 26 runs, 5 are concrete defects; the rest are maintainability remarks (93), unproven robustness concerns (54,
@@ -210,6 +224,8 @@ identical).
 | `exp-scope`, `exp-scope2` | `eb5c564` + [`evals/experiments/scope-probe-prompts.patch`](evals/experiments/scope-probe-prompts.patch), [`scope-probe.patch`](evals/experiments/scope-probe.patch) | 0.7.0 | experiment, never merged: extra reviewer rules switched on with `CR_EXP` (`wide`: unproven robustness remarks; `maint`: maintainability notes); `exp-scope2` also lets notes bypass the critic |
 | `notes-wip` | [`4fb887c`](https://github.com/Antonio112009/code-reviewer/commit/4fb887c) | 0.7.0 | 0.7.0 + maintainability notes (`review.notes`), as merged in #59 |
 | `deepen-wip` | [`0d73c06`](https://github.com/Antonio112009/code-reviewer/commit/0d73c06) | 0.7.0 | + `--deepen` as an independent second pass, as merged in #60 |
+| `sweep-c2bad4a` | [`c2bad4a`](https://github.com/Antonio112009/code-reviewer/commit/c2bad4a) | 0.7.0 | experiment: the first `--sweep`, told what the chunk reviews had reported (replaced) |
+| `sweep2-d330ae1` | [`d330ae1`](https://github.com/Antonio112009/code-reviewer/commit/d330ae1) | 0.7.0 | + `--sweep` as merged: independent of the chunk reviews, same-spot duplicates dropped |
 
 The version string lags behind: a commit between releases prints the previous release's version. Name builds
 by commit; [`evals/pin-build.sh <commit>`](evals/pin-build.sh) builds one into its own directory and records it.
@@ -290,6 +306,9 @@ AACR-Bench, newest first. Values are averages over the listed runs; findings cou
 
 | Date | Runs | Build | Arguments (and experiment switches) | Dataset | Findings / run | P | R | F1 | Cost / run | What it measured |
 |---|---|---|---|---|---|---|---|---|---|---|
+| 10-01 | hs-a1, hs-b1 | `d330ae1` | `--full --sweep` | held-out 82 | 209 | 29.7% | 9.3% | 14.1% | $47.60 | `--sweep`; its own findings +0.6 F1 |
+| 10-01 | sv2-1, sv2-2 | `d330ae1` | `--full --sweep` | ctx30 | 88.5 | 41.8% | 12.9% | 19.8% | $11.85 | `--sweep`; its own findings +1.0 F1 |
+| 10-01 | sw-1, sw-2 | `c2bad4a` | `--full --sweep` | ctx30 | 93 | 35.5% | 11.5% | 17.4% | $12.47 | the first sweep; its own findings +1.0 F1 |
 | 10-01 | plain-ha1, plain-hb1 | plain model | `evals/plain-llm.py aacr` | held-out 82 | 302 | 23.5% | 10.6% | 14.6% | $7.40 | the same model asked once |
 | 10-01 | plain-1, plain-2 | plain model | `evals/plain-llm.py aacr` | ctx30 | 122.5 | 29.4% | 12.6% | 17.6% | $1.28 | the same model asked once |
 | 10-01 | deep2-1, deep2-2 | `0d73c06` | `--full --deepen` | ctx30 | 150.5 | 28.6% | 15.0% | 19.7% | $17.67 | `--deepen` as an independent second pass |
@@ -318,7 +337,10 @@ AACR-Bench, newest first. Values are averages over the listed runs; findings cou
 | 09-30 | b052-1, b052-2 | `4e302bf` | `--full` | ctx30 | 48 | 39.6% | 6.6% | 11.4% | $9.62 | 0.5.2 with its Opus critic |
 
 Void runs, left out: `c2-2`, `c2so-2` (network failures in half of the reviews), `hold-a2`, `hold-b2` (the
-account's usage limit cut 67 of 82 reviews). Re-judgings of finished runs (`i7-1j*`, `raw-1j*`) and critic-only
+account's usage limit cut 67 of 82 reviews). Re-run in place: the reviews of `sw-1` (2), `sv2-1` (12) and `sv2-2`
+(10) that two runs sharing one clone or the account's usage limit had failed, and on Martian those of `ws-1`
+(1), `ws2-1` (7) and `ws2-2` (9); every run above has all its reviews. Held-out runs miss the 4 pull requests
+whose commits GitHub no longer serves. Re-judgings of finished runs (`i7-1j*`, `raw-1j*`) and critic-only
 experiments (`raw-1c`, `wmc-1`, `wmcc-1`, verdicts from `recritique.mts` applied with `apply_verdicts.py`) are
 in [evals/aacr/README.md](evals/aacr/README.md).
 
@@ -326,6 +348,10 @@ Martian, 50 pull requests, all judged by `claude-opus-4-5-20251101` without exte
 
 | Date | Runs | Build | Command | Findings / PR | P | R | F1 (core) | Cost / PR |
 |---|---|---|---|---|---|---|---|---|
+| 10-01 | ws2-1, ws2-2 | `d330ae1` | `evals/martian/run.sh` (`--full --no-notes --sweep`), judged `--tier all` | 3.4 | 57.4% | 63.9% | 60.5% (58.3, 62.7) | $0.61 |
+| 10-01 | ws2-1, ws2-2 | `d330ae1` | same runs, judged `--tier main` | 1.8 | 70.8% | 43.7% | 54.0% (50.4, 57.7) | $0.61 |
+| 10-01 | ws-1, ws-2 | `c2bad4a` | the first sweep, judged `--tier all` | 3.6 | 53.0% | 61.7% | 57.0% (57.1, 57.0) | $0.63 |
+| 10-01 | ws-1, ws-2 | `c2bad4a` | same runs, judged `--tier main` | 1.8 | 68.1% | 40.5% | 50.8% (48.0, 53.6) | $0.63 |
 | 10-01 | p-1, p-2 | plain model | `evals/plain-llm.py martian` | 5.9 | 39.0% | 71.5% | 50.5% (48.7, 52.4) | $0.08 |
 | 10-01 | m-1, m-2 | `eb5c564` | `evals/martian/run.sh` (`--full`), judged `--tier all` | 2.6 | 64.0% | 54.1% | 58.7% (60.0, 57.3) | $0.40 |
 | 10-01 | m-1, m-2 | `eb5c564` | same runs, judged `--tier main` | 1.6 | 73.3% | 37.3% | 49.5% (49.6, 49.4) | $0.40 |
@@ -383,7 +409,8 @@ and resolves differences of about 3 F1 points on AACR-Bench and 5 on Martian; si
 
 ## History
 
-- **2026-10-01** — Martian adapter; 0.7.0 run twice and judged by the leaderboard's judge model, with three
+- **2026-10-01** — `--sweep`, one more call over the whole diff, measured on both benchmarks and the held-out
+  half (opt-in); Martian adapter; 0.7.0 run twice and judged by the leaderboard's judge model, with three
   published tools re-judged the same way; the plain baseline on both benchmarks; maintainability notes and
   `--deepen` as a second pass measured; every earlier build verified against its commit; runs record their
   provenance.

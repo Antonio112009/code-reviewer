@@ -582,6 +582,8 @@ export interface RunRecord {
     advisoryConfidence?: number;
     secondOpinion?: boolean;
     deepen?: boolean;
+    /** `review.sweep`: a call over the whole change for what the chunks missed. */
+    sweep?: boolean;
     notes?: boolean;
     maxNotes?: number;
     passes?: string[];
@@ -600,6 +602,12 @@ export interface RunRecord {
   chunks: ChunkRecord[];
   /** Which changed files the review covered, problem files first. */
   coverage?: FileCoverage[];
+  /**
+   * `review.sweep`: the calls over the whole change (`parts`, one for most changes), how many failed, how many
+   * findings they reported, and how many of those were at the spot of a chunk review's finding (`duplicates`,
+   * dropped); the rest went to validation and the critic (`source.chunkIds` = ["sweep"]).
+   */
+  sweep?: { parts: number; failed: number; findings: number; duplicates: number };
   /** Suggested follow-ups (`--deepen`); advice only. */
   advice?: { deepen?: DeepenAdvice };
   findings: Finding[];

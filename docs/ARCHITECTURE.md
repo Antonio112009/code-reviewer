@@ -205,6 +205,17 @@ second pass. A failed second pass keeps the first and its usage.
 Without `--deepen`, `review/advice.ts` suggests it after a run with findings (`run.advice.deepen`: every
 reviewed chunk and an estimate of `DEEPEN_COST_FACTOR` × the first pass's cost, left out when a chunk's cost is
 unknown); `deepenAdviceText` renders it in the summary and the markdown report.
+### Sweep (`review.sweep`, `--sweep`; off)
+
+With `review.sweep`, after the chunk reviews `runReview` makes one more review call per part of the change:
+`sweepParts` (`review/sweep.ts`) groups the code of every chunk, each once, up to the prompt room, so most
+changes take one call. `sweepInstructions` / `sweepPrompt` show the whole change without read tools and ask
+broadly for its defects, telling nothing about the chunk reviews. A finding at the spot of one a chunk review
+reported (`atReportedSpot`: same file, lines overlapping give or take two) is dropped as the same defect; the
+rest join the collected findings with `source.chunkIds = ["sweep"]` and go through validation, dedupe and the
+critic. A failed sweep leaves the chunk reviews standing. `run.sweep` records the calls, failures, findings and
+duplicates. Sweep answers are not cached.
+
 Every benchmark number, with history and caveats, is in `BENCHMARKS.md` (logs: `evals/aacr/README.md`,
 `evals/martian/README.md`).
 

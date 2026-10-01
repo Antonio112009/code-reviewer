@@ -122,7 +122,10 @@ import {
   reviewPrompt,
   reviewPromptIdentity,
   secondOpinionInstructions,
+  sweepInstructions,
+  sweepPrompt,
 } from './prompts';
+import { atReportedSpot, SWEEP_SOURCE, sweepParts } from './sweep';
 import { taskTimeoutMs } from './timeouts';
 import { requireFailurePath, validateFindings } from './validate';
 
@@ -859,6 +862,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       advisoryConfidence: config.review.advisoryConfidence,
       secondOpinion: config.review.secondOpinion,
       deepen: config.review.deepen,
+      sweep: config.review.sweep,
       notes: config.review.notes,
       maxNotes: config.review.maxNotes,
       passes: [...config.review.passes],
@@ -1560,6 +1564,108 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     });
 
     run.coverage = coverageMap(units, skipped, chunks, partResults);
+
+    // 6b. Sweep (`review.sweep`): the whole change in one call, for the defects the chunk reviews missed --
+    if (config.review.sweep && chunks.length > 0 && !req.signal?.aborted && !router.fatal) {
+      await phase('sweep', 'Reading the whole change at once', async () => {
+        const allFiles = units.filter((u) => u.status !== 'deleted').map((u) => u.path);
+        const reportedSoFar = collected.filter((f) => f.origin === 'llm');
+        const parts = sweepParts(chunks, Math.max(budget, promptRoom));
+        const record = { parts: parts.length, failed: 0, findings: 0, duplicates: 0 };
+        const instructions = sweepInstructions(mode, depth);
+        for (const [index, part] of parts.entries()) {
+          if (req.signal?.aborted || router.fatal) break;
+          const label = `sweep-${index + 1}`;
+          const files = new Set(part.flatMap((c) => c.files));
+          const timeoutMs = taskTimeoutMs(
+            config.review,
+            part.reduce((n, c) => n + c.tokens, 0),
+          );
+          const task: AgentTask = {
+            kind: 'findings',
+            label,
+            instructions,
+            prompt: sweepPrompt({ target, chunks: part, part: { index, total: parts.length } }),
+            reasoning: 'medium',
+            readTools: false,
+            root,
+            git,
+            maxSteps: 3,
+            timeoutMs,
+            extendMs: Math.round(timeoutMs * config.review.activeExtension),
+            stallTimeoutMs: config.review.stallTimeoutMs,
+            maxOutputTokens: reviewRole?.maxOutputTokens,
+            signal: req.signal,
+          };
+          const spend: Spend[] = [];
+          try {
+            const result = await runRouted('review', task, router, registry);
+            spend.push(...result.spend);
+            let resolved = resolveFindings(result);
+            let reply = result.text;
+            if (resolved.via === 'none' && result.text.trim()) {
+              const repaired = await runRouted(
+                'review',
+                {
+                  ...task,
+                  label: `${label}-repair`,
+                  prompt: repairPrompt(result.text, [...files]),
+                  maxSteps: 3,
+                  salvage: false,
+                },
+                router,
+                registry,
+              );
+              spend.push(...repaired.spend);
+              resolved = resolveFindings(repaired);
+              reply = `${result.text}\n\n--- repair ---\n${repaired.text}`;
+            }
+            if (resolved.via === 'none')
+              throw new NoPayloadError('the model returned no findings payload', reply);
+            if (resolved.invalid) warn(`${label}: ${resolved.invalid} malformed finding(s) ignored`);
+            const found = resolved.items.map((r) => {
+              const f = toFinding(r, {
+                root,
+                chunkId: SWEEP_SOURCE,
+                provider: result.provider,
+                model: result.model,
+                skills: [],
+                files: allFiles,
+              });
+              f.origin = 'llm';
+              return f;
+            });
+            // What a chunk review already reported at the same spot is the same defect, as a rule: not again.
+            const fresh = found.filter((f) => !atReportedSpot(f, reportedSoFar));
+            collected.push(...fresh);
+            record.findings += found.length;
+            record.duplicates += found.length - fresh.length;
+            await store.saveArtifact(run.id, label, {
+              chunk: { id: label, files: [...files], tokens: part.reduce((n, c) => n + c.tokens, 0) },
+              provider: result.provider,
+              model: result.model,
+              stopReason: result.stopReason,
+              via: resolved.via,
+              instructions: task.instructions,
+              prompt: task.prompt,
+              reply,
+              submission: result.submission,
+              warnings: result.warnings,
+            });
+          } catch (err) {
+            spend.push(...spendOf(err));
+            if (isAbort(err, req.signal)) throw err;
+            record.failed++;
+            warn(`${label} failed (${errorMessage(err).split('\n')[0]}); the chunk reviews stand`);
+          } finally {
+            meter.add(spend);
+            run.usage = sumUsage([run.usage, ...spend.map((x) => x.usage)]);
+          }
+        }
+        run.sweep = record;
+        await persist();
+      });
+    }
 
     // 7. Validate + dedupe -------------------------------------------------------------------------
     const validated = await phase('validate', `Validating ${collected.length} raw finding(s)`, async () => {

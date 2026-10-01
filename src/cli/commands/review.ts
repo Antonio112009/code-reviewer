@@ -68,6 +68,7 @@ export interface ReviewFlags {
   passes?: string;
   audit?: boolean;
   deepen?: boolean;
+  sweep?: boolean;
   secondOpinion?: boolean;
   /** `--notes` / `--no-notes`: maintainability notes (`review.notes`). */
   notes?: boolean;
@@ -247,6 +248,7 @@ export function applyRunFlags(config: Config, f: ReviewFlags): void {
   }
   if (f.audit) config.review.audit = true;
   if (f.deepen) config.review.deepen = true;
+  if (f.sweep) config.review.sweep = true;
   if (f.secondOpinion !== undefined) config.review.secondOpinion = f.secondOpinion;
   if (f.notes !== undefined) config.review.notes = f.notes;
   if (f.analyzers === false) {
@@ -445,6 +447,10 @@ export function addRunLimitOptions(cmd: Command): Command {
     .option(
       '--deepen',
       'an independent second review pass over every chunk at high reasoning (about twice the price, a third more real defects)',
+    )
+    .option(
+      '--sweep',
+      'experimental: one more call reads the whole change at once for defects the chunk reviews missed; its findings also go to the critic',
     )
     .option(
       '--second-opinion',

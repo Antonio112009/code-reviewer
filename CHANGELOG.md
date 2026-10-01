@@ -24,6 +24,15 @@
   the critic): recall 9.6% → 15.0%, F1 15.3% → 19.7%, precision 37% → 29%, at $17.7 against $8.7 a run; the
   old second look scored 15.1% at $13.1. The suggestion after a run now covers every chunk.
 
+- **`--sweep`: more of the real bugs (experimental, off by default).** After the chunk reviews, one more call
+  reads the whole change at once, without tools, and lists its defects; what it finds where no chunk review
+  reported anything goes to the critic, what it finds at the same spot is dropped as a duplicate. On Martian's
+  benchmark (50 real pull requests, two runs, the same runs with and without the sweep's findings) the full
+  report found 63.9% of the known bugs instead of 55.1% at 57.4% precision instead of 60.6% (F1 57.7% →
+  60.5%), the main report 43.7% instead of 39.9% at 70.8% precision. On AACR-Bench F1 +1.0 on ctx30 and +0.6
+  on the held-out pull requests. 40–50% more per review. `review.sweep: true` or `--sweep`; `run.sweep` in the
+  JSON.
+
 ### Reports
 
 - Run records name the Code Reviewer version and every setting that shapes what a run reports (the "worth a

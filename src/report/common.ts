@@ -403,6 +403,7 @@ export function stagesLabel(run: Pick<RunRecord, 'options'>): string | undefined
     ...(o.selfCritique && o.secondOpinion ? ['second opinion'] : []),
     ...(o.notes ? [`maintainability notes${o.maxNotes ? ` (max ${o.maxNotes})` : ''}`] : []),
     ...(o.deepen ? ['second pass (--deepen)'] : []),
+    ...(o.sweep ? ['whole-change sweep (--sweep)'] : []),
     ...(o.audit ? ['function audit'] : []),
     ...(passes ? [`passes: ${passes}`] : []),
   ].join(' · ');
