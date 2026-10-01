@@ -144,6 +144,7 @@ the judge's verdicts for every row: [evals/martian/judgings](evals/martian/judgi
 |---|---|---|---|---|
 | Augment (#3 on the leaderboard), re-judged | 58.1% | 63.3% | **60.6%** | — |
 | Qodo Extended (#1), re-judged | 61.4% | 59.5% | 60.5% | — |
+| **code-reviewer** `main` + [`--sweep`](#more-of-the-real-bugs---sweep) (opt-in), main report + "worth a look" | 57.4% | 63.9% | 60.5% | $0.61 |
 | **code-reviewer 0.7.0**, main report + "worth a look" | 64.0% | 54.1% | 58.7% | $0.40 |
 | The same model given the diff in one call | 39.0% | **71.5%** | 50.5% | $0.08 |
 | **code-reviewer 0.7.0**, main report | **73.3%** | 37.3% | 49.5% | $0.40 |
@@ -293,6 +294,27 @@ findings were real three times in four, findings of one pass one time in three.
   default), the re-run takes its first pass from the cache and pays only for the second.
 - Off by default. `review.deepen: true` in `.code-reviewer/config.yaml` turns it on for a repository.
 
+### More of the real bugs (`--sweep`)
+
+The review goes through a change chunk by chunk, with tools. Given the whole diff in one call, the same model
+finds known bugs that the chunk reviews never report: on Martian's benchmark, of the 36 known bugs only the
+model found, the reviewer had never reported 32. With `--sweep`, after the chunk reviews one more call reads the
+whole change at once, without tools, and lists its defects. What it finds where no chunk review reported
+anything goes to the critic like every other finding; what it finds at the same spot is dropped as a duplicate.
+
+| [Martian's Code Review Bench](BENCHMARKS.md#real-bugs-martian-code-review-bench), 50 real PRs, two runs | Precision | Recall | F1 |
+|---|---|---|---|
+| full report, the same runs without the sweep's findings | 60.6% | 55.1% | 57.7% |
+| full report with `--sweep` | 57.4% | 63.9% | 60.5% |
+| main report without | 71.6% | 39.9% | 51.2% |
+| main report with `--sweep` | 70.8% | 43.7% | 54.0% |
+
+- **Where it helps:** real bugs. On AACR-Bench, whose references are mostly reviewers' remarks rather than bugs,
+  it adds little: F1 +1.0 on 30 pull requests and +0.6 on 82 held-out ones.
+- **Cost:** 40–50% more per review: one more call over the whole diff, and the critic's look at what it adds.
+- Off by default (experimental). `review.sweep: true` turns it on for a repository; `run.sweep` in the JSON
+  counts what it reported and what was dropped as a duplicate.
+
 ## Before you commit
 
 `review` compares commits. To review changes that are not committed yet:
@@ -357,6 +379,8 @@ Useful flags:
   of stopping at the first defect of a function;
 - `--deepen`: an independent second review pass over every chunk at high reasoning, about twice the
   price ([when to use it](#a-second-pass-for-important-changes---deepen));
+- `--sweep` (experimental): one more call reads the whole change at once for the defects the chunk reviews
+  missed, 40–50% more per review ([what it finds](#more-of-the-real-bugs---sweep));
 - `--second-opinion` / `--no-second-opinion`: findings the critic was not sure about (confidence around the
   bar of the main report) go to a second verifier that reads further — callers, implementations, what
   produces the value — and decides. On by default at full depth (precision 40% → 46% on AACR-Bench for 10%

@@ -206,6 +206,14 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           doc: 'Experimental: audit every changed function one by one (listed in the prompt) instead of stopping at the first defect of a function.',
           example: D.review.audit,
         },
+        deepen: {
+          doc: 'An independent second review pass over every chunk at high reasoning; what either pass found goes to the critic (about twice the price).',
+          example: D.review.deepen,
+        },
+        sweep: {
+          doc: 'Experimental: one more call reads the whole change at once, without tools, for the defects the chunk reviews missed; what it finds goes to the critic (40–50% more per review).',
+          example: D.review.sweep,
+        },
         expand: {
           doc: 'Related unchanged code per chunk: off; map = impact map (file:line of the usages of the changed declarations and of the definitions the new code calls); refs = the map plus excerpts of that code; deep = also the callers of those usages.',
           example: D.review.expand,
