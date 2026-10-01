@@ -1,13 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="698" viewBox="0 0 760 698" role="img" aria-label="Precision against recall on real bugs, Martian Code Review Bench, Opus 4.5 judge: code-reviewer 0.7.0 main report 73.3 precision 37.3 recall, with worth-a-look findings 64.0 and 54.1; the same model asked once 39.0 and 71.5; 20 published tools between 32.6 and 100.0 precision as published; re-judged our way (Qodo Extended #1, Augment #3, Claude Code CLI #12): #1 67.1/64.6 published, 61.4/59.5 re-judged; #3 59.5/65.2 published, 58.1/63.3 re-judged; #12 46.3/48.1 published, 41.8/41.8 re-judged" font-family="system-ui, -apple-system, &quot;Segoe UI&quot;, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="698" viewBox="0 0 760 698" role="img" aria-label="Precision against recall on real bugs, Martian Code Review Bench, Opus 4.5 judge: code-reviewer 0.7.0 main report 73.3 precision 37.3 recall, with worth-a-look findings 64.0 and 54.1; code-reviewer main with --sweep 70.8 and 43.7, with worth-a-look findings 57.4 and 63.9; the same model asked once 39.0 and 71.5; 20 published tools between 32.6 and 100.0 precision as published; re-judged our way (Qodo Extended #1, Augment #3, Claude Code CLI #12): #1 67.1/64.6 published, 61.4/59.5 re-judged; #3 59.5/65.2 published, 58.1/63.3 re-judged; #12 46.3/48.1 published, 41.8/41.8 re-judged" font-family="system-ui, -apple-system, &quot;Segoe UI&quot;, sans-serif">
 <text x="16.0" y="28.0" font-size="16" fill="#f0f6fc" font-weight="600">Real bugs: precision and recall on Martian's Code Review Bench</text>
 <text x="16.0" y="50.0" font-size="12" fill="#c3c2b7">50 pull requests, 158 golden comments (core profile), judged by Claude Opus 4.5, the leaderboard's judge model.</text>
 <text x="16.0" y="67.0" font-size="12" fill="#c3c2b7">Our judging is stricter than the published one: compare code-reviewer with the rings, the same tools re-judged our way.</text>
 <circle cx="22.0" cy="96.0" r="5.5" fill="#3987e5" stroke="#0d1117" stroke-width="2"/>
-<text x="34.0" y="100.0" font-size="12" fill="#c3c2b7">code-reviewer 0.7.0 (two runs)</text>
-<circle cx="322.0" cy="96.0" r="5.5" fill="#d95926" stroke="#0d1117" stroke-width="2"/>
-<text x="334.0" y="100.0" font-size="12" fill="#c3c2b7">same model, one call (two runs)</text>
-<circle cx="22.0" cy="118.0" r="5.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
-<text x="34.0" y="122.0" font-size="12" fill="#c3c2b7">20 published review tools, as published</text>
+<text x="34.0" y="100.0" font-size="12" fill="#c3c2b7">code-reviewer 0.7.0, released (two runs)</text>
+<rect x="347.5" y="91.5" width="9.0" height="9.0" rx="1.5" fill="#3987e5" stroke="#0d1117" stroke-width="2"/>
+<text x="364.0" y="100.0" font-size="12" fill="#c3c2b7">code-reviewer main + --sweep, opt-in (two runs)</text>
+<circle cx="22.0" cy="118.0" r="5.5" fill="#d95926" stroke="#0d1117" stroke-width="2"/>
+<text x="34.0" y="122.0" font-size="12" fill="#c3c2b7">same model, one call (two runs)</text>
+<circle cx="352.0" cy="118.0" r="5.5" fill="#6b6a64" stroke="#0d1117" stroke-width="2"/>
+<text x="364.0" y="122.0" font-size="12" fill="#c3c2b7">20 published review tools, as published</text>
 <circle cx="22.0" cy="140.0" r="4.5" fill="#0d1117" stroke="#6b6a64" stroke-width="2"/>
 <text x="34.0" y="144.0" font-size="12" fill="#c3c2b7">re-judged our way: Qodo Extended #1, Augment #3, Claude Code CLI #12</text>
 <line x1="216.5" y1="602" x2="216.5" y2="174" stroke="#2c2c2a" stroke-width="1"/>
@@ -72,12 +74,19 @@
 <circle cx="313.6" cy="423.1" r="4.5" fill="#0d1117" stroke="#6b6a64" stroke-width="2"/>
 <text x="322.6" y="427.1" font-size="10.5" fill="#c3c2b7" text-anchor="start">#12</text>
 <line x1="287.6" y1="288.3" x2="384.7" y2="328.1" stroke="#3987e5" stroke-width="2"/>
+<line x1="324.6" y1="299.0" x2="441.3" y2="356.3" stroke="#3987e5" stroke-width="2" stroke-dasharray="5 3"/>
 <circle cx="287.6" cy="288.3" r="6.5" fill="#3987e5" stroke="#0d1117" stroke-width="2"/>
 <circle cx="384.7" cy="328.1" r="6.5" fill="#3987e5" stroke="#0d1117" stroke-width="2"/>
+<rect x="318.6" y="293.0" width="12" height="12" rx="1.5" fill="#3987e5" stroke="#0d1117" stroke-width="2"/>
+<rect x="435.3" y="350.3" width="12" height="12" rx="1.5" fill="#3987e5" stroke="#0d1117" stroke-width="2"/>
 <circle cx="485.3" cy="435.1" r="6.5" fill="#d95926" stroke="#0d1117" stroke-width="2"/>
-<text x="277.6" y="278.3" font-size="12" fill="#f0f6fc" text-anchor="end" font-weight="600">main report</text>
-<line x1="389.7" y1="322.1" x2="400.7" y2="298.1" stroke="#3987e5" stroke-width="1"/>
-<text x="404.7" y="294.1" font-size="12" fill="#f0f6fc" font-weight="600">+ “worth a look”</text>
+<text x="275.6" y="292.3" font-size="12" fill="#f0f6fc" text-anchor="end" font-weight="600">code-reviewer 0.7.0: main report</text>
+<line x1="324.6" y1="299.0" x2="324.6" y2="268.0" stroke="#3987e5" stroke-width="1"/>
+<text x="324.6" y="263.0" font-size="12" fill="#f0f6fc" text-anchor="middle" font-weight="600">code-reviewer + --sweep: main report</text>
+<line x1="384.7" y1="328.1" x2="395.7" y2="296.1" stroke="#3987e5" stroke-width="1"/>
+<text x="398.7" y="300.1" font-size="12" fill="#f0f6fc" text-anchor="start" font-weight="600">0.7.0: + “worth a look”</text>
+<line x1="441.3" y1="356.3" x2="528.3" y2="332.3" stroke="#3987e5" stroke-width="1"/>
+<text x="531.3" y="336.3" font-size="12" fill="#f0f6fc" text-anchor="start" font-weight="600">--sweep: + “worth a look”</text>
 <text x="495.3" y="453.1" font-size="12" fill="#f0f6fc">same model, one call</text>
 <text x="16.0" y="668.0" font-size="11" fill="#898781">Method, judge calibration, builds and commands: BENCHMARKS.md. Published points: Martian's leaderboard</text>
 <text x="16.0" y="684.0" font-size="11" fill="#898781">(github.com/withmartian/code-review-benchmark, offline/analysis), Opus 4.5 judge, at commit e616e849.</text>

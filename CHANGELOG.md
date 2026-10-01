@@ -55,6 +55,9 @@
   and takes `--judge-model claude-opus-4-5-20251101 --no-thinking` (also in `run.sh`) for the leaderboard's
   judge model called the leaderboard's way; `--effort` sets the judge's reasoning effort.
 
+- BENCHMARKS.md adds a second judge, Claude Opus 5.5, for every Martian row (the order of the tools holds), and
+  measures `main` with its defaults on Martian. The chart names code-reviewer's points and shows `--sweep`.
+  `evals/experiments/sweep-high.patch` keeps the sweep at high reasoning, tried and dropped.
 - The judge's verdicts behind every Martian number of BENCHMARKS.md are in `evals/martian/judgings/2026-10-01`
   (`report.py` scores a judging file directly), and BENCHMARKS.md and the README name the published tools
   they compare with and link the published scores.

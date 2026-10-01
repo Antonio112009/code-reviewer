@@ -9,7 +9,7 @@ produced it (a commit of this repository), the exact command and the judge that 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/martian-positioning-dark.svg">
-  <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: Qodo Extended (#1 on the leaderboard) 61% and 60%, Augment (#3) 58% and 63%, Claude Code CLI (#12) 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
+  <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.7.0: main report 73% precision and 37% recall, with worth-a-look findings 64% and 54%. code-reviewer main with the opt-in --sweep: main report 71% and 44%, with worth-a-look findings 57% and 64%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, three of them re-judged the same way: Qodo Extended (#1 on the leaderboard) 61% and 60%, Augment (#3) 58% and 63%, Claude Code CLI (#12) 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
 </picture>
 
 [Martian's Code Review Bench](https://github.com/withmartian/code-review-benchmark): 50 pull requests of
@@ -105,6 +105,9 @@ data or API defects.
 | **code-reviewer 0.7.0**, main report | `eb5c564` | 1.6 | 73.3% | 37.3% | 49.5% (49.6, 49.4) | 50.0% | $0.40 |
 | **code-reviewer `main` + `--sweep`**, main report + "worth a look" | `d330ae1` | 3.4 | 57.4% | 63.9% | 60.5% (58.3, 62.7) | 60.6% | $0.61 |
 | **code-reviewer `main` + `--sweep`**, main report | `d330ae1` | 1.8 | 70.8% | 43.7% | 54.0% (50.4, 57.7) | 54.0% | $0.61 |
+| **code-reviewer `main`, defaults** (what the next release ships), everything listed | `84d96f3` | 3.1 | 56.0% | 56.3% | 56.2% (56.7, 55.6) | 56.1% | $0.42 |
+| **code-reviewer `main`, defaults**, main report + "worth a look", without the notes | `84d96f3` | 2.8 | 57.9% | 53.5% | 55.6% | — | $0.42 |
+| **code-reviewer `main`, defaults**, main report | `84d96f3` | 1.7 | 71.2% | 39.9% | 51.1% (53.8, 48.4) | 52.1% | $0.42 |
 | The same model, one call | plain | 5.9 | 39.0% | 71.5% | 50.5% (48.7, 52.4) | 50.5% | $0.08 |
 | Qodo Extended (#1 on the leaderboard), re-judged | published comments | 3.0 | 61.4% | 59.5% | 60.5% | 60.6% | — |
 | Augment (#3), re-judged | published comments | 3.6 | 58.1% | 63.3% | 60.6% | 58.9% | — |
@@ -120,7 +123,14 @@ data or API defects.
   sweep's own findings raise the full report's recall from 55.1% to 63.9% and its F1 from 57.7% to 60.5% (+2.8,
   95% interval −0.4..+6.4) for 3 points of precision, and the main report's F1 from 51.2% to 54.0%. A first
   version, told what the chunk reviews had found, added 7 points of recall for 9.5 of precision (F1 −1.3) and
-  was replaced.
+  was replaced. Reasoning harder in the sweep (build `84d96f3` + [`evals/experiments/sweep-high.patch`](evals/experiments/sweep-high.patch),
+  two runs) found as many more bugs (recall +9.5) for more precision (−7.1; F1 +1.3): the sweep stays at
+  medium reasoning.
+- `main` with its defaults (build `84d96f3`, `--full`: maintainability notes on, no sweep) is what the next
+  release ships. Its main report scores F1 51.1 (0.7.0: 49.5). Without the notes, the main report and "worth a
+  look" score 55.6, inside the range of the pipeline without the notes rule (55.9 to 58.7 over four pairs of
+  runs): no measurable effect of the notes on finding bugs. With the notes, 56.2: some notes match known
+  documentation defects.
 
 ### Judge calibration
 
@@ -140,6 +150,24 @@ not adjusted. Neither extended thinking nor the system message explains the diff
 candidates scored 42.1 with extended thinking and an earlier system message, and 41.8 without. What
 `claude -p` cannot reproduce is the call itself: the leaderboard asks the model through Martian's gateway,
 at temperature 0.
+
+### A second judge: Claude Opus 5.5
+
+Every Martian row was judged again, the same way, by Claude Opus 5.5, the newest Opus. No F1 moves by more
+than 1.3 points and the order holds (verdicts: [opus-5-5](evals/martian/judgings/2026-10-01/opus-5-5/)):
+
+| Reviewer | Opus 4.5: P / R / F1 | Opus 5.5: P / R / F1 |
+|---|---|---|
+| Qodo Extended (#1), re-judged | 61.4 / 59.5 / 60.5 | 62.3 / 60.8 / 61.5 |
+| Augment (#3), re-judged | 58.1 / 63.3 / 60.6 | 57.0 / 62.0 / 59.4 |
+| **code-reviewer `main` + `--sweep`**, main report + "worth a look" | 57.4 / 63.9 / 60.5 | 56.4 / 62.7 / 59.4 |
+| **code-reviewer 0.7.0**, main report + "worth a look" | 64.0 / 54.1 / 58.7 | 64.2 / 54.4 / 58.9 |
+| **code-reviewer `main`, defaults**, everything listed | 56.0 / 56.3 / 56.2 | 56.2 / 56.3 / 56.2 |
+| **code-reviewer `main` + `--sweep`**, main report | 70.8 / 43.7 / 54.0 | 70.3 / 43.4 / 53.6 |
+| **code-reviewer `main`, defaults**, main report | 71.2 / 39.9 / 51.1 | 70.6 / 39.6 / 50.7 |
+| **code-reviewer 0.7.0**, main report | 73.3 / 37.3 / 49.5 | 71.4 / 36.4 / 48.2 |
+| The same model, one call | 39.0 / 71.5 / 50.5 | 39.6 / 72.8 / 51.3 |
+| Claude Code CLI (#12), re-judged | 41.8 / 41.8 / 41.8 | 42.6 / 43.7 / 43.1 |
 
 ## Reviewers' comments: AACR-Bench
 
@@ -226,6 +254,8 @@ identical).
 | `deepen-wip` | [`0d73c06`](https://github.com/Antonio112009/code-reviewer/commit/0d73c06) | 0.7.0 | + `--deepen` as an independent second pass, as merged in #60 |
 | `sweep-c2bad4a` | [`c2bad4a`](https://github.com/Antonio112009/code-reviewer/commit/c2bad4a) | 0.7.0 | experiment: the first `--sweep`, told what the chunk reviews had reported (replaced) |
 | `sweep2-d330ae1` | [`d330ae1`](https://github.com/Antonio112009/code-reviewer/commit/d330ae1) | 0.7.0 | + `--sweep` as merged: independent of the chunk reviews, same-spot duplicates dropped |
+| `main-84d96f3` | [`84d96f3`](https://github.com/Antonio112009/code-reviewer/commit/84d96f3) | 0.7.0 | `main` after `--sweep` was merged: the next release's defaults |
+| `sweephigh-84d96f3` | `84d96f3` + [`evals/experiments/sweep-high.patch`](evals/experiments/sweep-high.patch) | 0.7.0 | experiment, never merged: the sweep at high reasoning |
 
 The version string lags behind: a commit between releases prints the previous release's version. Name builds
 by commit; [`evals/pin-build.sh <commit>`](evals/pin-build.sh) builds one into its own directory and records it.
@@ -348,6 +378,10 @@ Martian, 50 pull requests, all judged by `claude-opus-4-5-20251101` without exte
 
 | Date | Runs | Build | Command | Findings / PR | P | R | F1 (core) | Cost / PR |
 |---|---|---|---|---|---|---|---|---|
+| 10-02 | mn-1, mn-2 | `84d96f3` | `evals/martian/run.sh` (`--full`, the defaults: notes on), judged `--tier all` | 3.1 | 56.0% | 56.3% | 56.2% (56.7, 55.6) | $0.42 |
+| 10-02 | mn-1, mn-2 | `84d96f3` | same runs, judged `--tier main` | 1.7 | 71.2% | 39.9% | 51.1% (53.8, 48.4) | $0.42 |
+| 10-02 | wh-1, wh-2 | `84d96f3` + `sweep-high.patch` | `--full --no-notes --sweep`, judged `--tier all` | 3.6 | 53.4% | 61.4% | 57.1% (56.7, 57.6) | $0.65 |
+| 10-02 | wh-1, wh-2 | same | same runs, judged `--tier main` | 1.9 | 63.9% | 39.2% | 48.6% (49.0, 48.2) | $0.65 |
 | 10-01 | ws2-1, ws2-2 | `d330ae1` | `evals/martian/run.sh` (`--full --no-notes --sweep`), judged `--tier all` | 3.4 | 57.4% | 63.9% | 60.5% (58.3, 62.7) | $0.61 |
 | 10-01 | ws2-1, ws2-2 | `d330ae1` | same runs, judged `--tier main` | 1.8 | 70.8% | 43.7% | 54.0% (50.4, 57.7) | $0.61 |
 | 10-01 | ws-1, ws-2 | `c2bad4a` | the first sweep, judged `--tier all` | 3.6 | 53.0% | 61.7% | 57.0% (57.1, 57.0) | $0.63 |
@@ -409,6 +443,8 @@ and resolves differences of about 3 F1 points on AACR-Bench and 5 on Martian; si
 
 ## History
 
+- **2026-10-02** — every Martian row judged again by Claude Opus 5.5 (the same order); `main` with its defaults
+  measured on Martian; the sweep at high reasoning tried and dropped.
 - **2026-10-01** — `--sweep`, one more call over the whole diff, measured on both benchmarks and the held-out
   half (opt-in); Martian adapter; 0.7.0 run twice and judged by the leaderboard's judge model, with three
   published tools re-judged the same way; the plain baseline on both benchmarks; maintainability notes and

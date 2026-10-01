@@ -42,6 +42,9 @@ REJUDGED_NAMES = "Qodo Extended #1, Augment #3, Claude Code CLI #12"
 OURS_MAIN = (73.3, 37.3)  # main report
 OURS_ALL = (64.0, 54.1)  # main report + "worth a look"
 PLAIN = (39.0, 71.5)
+# code-reviewer main (d330ae1) with the opt-in --sweep, runs ws2-1 and ws2-2 averaged, same judge.
+SWEEP_MAIN = (70.8, 43.7)
+SWEEP_ALL = (57.4, 63.9)
 
 # --- The same model with and without the pipeline: per benchmark, its headline, details, cost and metric rows ----
 DUMBBELL = [  # (title, details, cost, [(metric, plain value, code-reviewer value)])
@@ -91,6 +94,11 @@ def write(out_dir: str, name: str, theme: str, width: int, height: int, label: s
         f.write("\n".join([head, *body, "</svg>"]) + "\n")
 
 
+def square(x: float, y: float, r: float, fill: str, ring: str) -> str:
+    return (f'<rect x="{x - r:.1f}" y="{y - r:.1f}" width="{2 * r}" height="{2 * r}" rx="1.5" fill="{fill}" '
+            f'stroke="{ring}" stroke-width="2"/>')
+
+
 def ring(x: float, y: float, r: float, color: str, surface: str) -> str:
     return f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r}" fill="{surface}" stroke="{color}" stroke-width="2"/>'
 
@@ -102,6 +110,7 @@ def positioning(out_dir: str) -> None:
     sx = lambda r: X0 + (X1 - X0) * r / 100  # noqa: E731
     sy = lambda p: Y0 - (Y0 - Y1) * p / 100  # noqa: E731
     (pm, rm), (pa, ra), (pp, rp) = OURS_MAIN, OURS_ALL, PLAIN
+    (qm, wm), (qa, wa) = SWEEP_MAIN, SWEEP_ALL
     for theme, t in THEMES.items():
         parts = [
             text(16, 28, "Real bugs: precision and recall on Martian's Code Review Bench", t["primary"], 16, font_weight="600"),
@@ -109,13 +118,15 @@ def positioning(out_dir: str) -> None:
             text(16, 67, "Our judging is stricter than the published one: compare code-reviewer with the rings, the same tools re-judged our way.", t["secondary"]),
         ]
         legend = (
-            (dot, t["ours"], "code-reviewer 0.7.0 (two runs)"), (dot, t["plain"], "same model, one call (two runs)"),
+            (dot, t["ours"], "code-reviewer 0.7.0, released (two runs)"),
+            (square, t["ours"], "code-reviewer main + --sweep, opt-in (two runs)"),
+            (dot, t["plain"], "same model, one call (two runs)"),
             (dot, t["other"], "20 published review tools, as published"),
             (ring, t["other"], f"re-judged our way: {REJUDGED_NAMES}"),
         )
         for i, (mark, color, name) in enumerate(legend):
-            row = 0 if i < 2 else i - 1  # the first two side by side, then one per row
-            lx, ly = 16 + (300 if i == 1 else 0), 96 + row * 22
+            row, col = (i // 2, i % 2) if i < 4 else (2, 0)  # two per row, the long last entry alone
+            lx, ly = 16 + col * 330, 96 + row * 22
             parts.append(mark(lx + 6, ly, 5.5 if mark is dot else 4.5, color, t["surface"]))
             parts.append(text(lx + 18, ly + 4, name, t["secondary"]))
         for v in (25, 50, 75, 100):
@@ -144,18 +155,29 @@ def positioning(out_dir: str) -> None:
             parts.append(ring(sx(r1), sy(p1), 4.5, t["other"], t["surface"]))
             parts.append(text(sx(r1) + dx, sy(p1) + dy, rank, t["secondary"], 10.5, text_anchor=anchor))
         parts.append(f'<line x1="{sx(rm):.1f}" y1="{sy(pm):.1f}" x2="{sx(ra):.1f}" y2="{sy(pa):.1f}" stroke="{t["ours"]}" stroke-width="2"/>')
+        parts.append(f'<line x1="{sx(wm):.1f}" y1="{sy(qm):.1f}" x2="{sx(wa):.1f}" y2="{sy(qa):.1f}" stroke="{t["ours"]}" stroke-width="2" stroke-dasharray="5 3"/>')
         parts.append(dot(sx(rm), sy(pm), 6.5, t["ours"], t["surface"]))
         parts.append(dot(sx(ra), sy(pa), 6.5, t["ours"], t["surface"]))
+        parts.append(square(sx(wm), sy(qm), 6, t["ours"], t["surface"]))
+        parts.append(square(sx(wa), sy(qa), 6, t["ours"], t["surface"]))
         parts.append(dot(sx(rp), sy(pp), 6.5, t["plain"], t["surface"]))
-        parts.append(text(sx(rm) - 10, sy(pm) - 10, "main report", t["primary"], 12, text_anchor="end", font_weight="600"))
-        # the published dots and rings crowd the space next to this point: label it above, with a leader line
-        parts.append(f'<line x1="{sx(ra) + 5:.1f}" y1="{sy(pa) - 6:.1f}" x2="{sx(ra) + 16:.1f}" y2="{sy(pa) - 30:.1f}" stroke="{t["ours"]}" stroke-width="1"/>')
-        parts.append(text(sx(ra) + 20, sy(pa) - 34, "+ “worth a look”", t["primary"], 12, font_weight="600"))
+        # labels in the empty space around the points, each with its own leader line: dots and rings crowd the rest
+        for x, y, lx, ly, anchor, label in (
+            (sx(rm), sy(pm), sx(rm) - 12, sy(pm) + 4, "end", "code-reviewer 0.7.0: main report"),
+            (sx(wm), sy(qm), sx(wm), sy(qm) - 36, "middle", "code-reviewer + --sweep: main report"),
+            (sx(ra), sy(pa), sx(ra) + 14, sy(pa) - 28, "start", "0.7.0: + “worth a look”"),
+            (sx(wa), sy(qa), sx(wa) + 90, sy(qa) - 20, "start", "--sweep: + “worth a look”"),
+        ):
+            if anchor != "end":
+                end_x = lx if anchor == "middle" else lx - 3
+                parts.append(f'<line x1="{x:.1f}" y1="{y:.1f}" x2="{end_x:.1f}" y2="{ly + (5 if anchor == "middle" else -4):.1f}" stroke="{t["ours"]}" stroke-width="1"/>')
+            parts.append(text(lx, ly, label, t["primary"], 12, text_anchor=anchor, font_weight="600"))
         parts.append(text(sx(rp) + 10, sy(pp) + 18, "same model, one call", t["primary"], 12))
         parts.append(text(16, H - 30, "Method, judge calibration, builds and commands: BENCHMARKS.md. Published points: Martian's leaderboard", t["muted"], 11))
         parts.append(text(16, H - 14, "(github.com/withmartian/code-review-benchmark, offline/analysis), Opus 4.5 judge, at commit e616e849.", t["muted"], 11))
         label = (f"Precision against recall on real bugs, Martian Code Review Bench, Opus 4.5 judge: code-reviewer 0.7.0 main report "
-                 f"{pm} precision {rm} recall, with worth-a-look findings {pa} and {ra}; the same model asked once {pp} and {rp}; "
+                 f"{pm} precision {rm} recall, with worth-a-look findings {pa} and {ra}; code-reviewer main with --sweep "
+                 f"{qm} and {wm}, with worth-a-look findings {qa} and {wa}; the same model asked once {pp} and {rp}; "
                  f"20 published tools between {min(p for p, _ in PUBLISHED)} and {max(p for p, _ in PUBLISHED)} precision as published; "
                  f"re-judged our way ({REJUDGED_NAMES}): " + "; ".join(f"{rank} {p0}/{r0} published, {p1}/{r1} re-judged" for rank, (p0, r0), (p1, r1), _ in REJUDGED))
         write(out_dir, "martian-positioning", theme, W, H, label, parts)
