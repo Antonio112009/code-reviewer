@@ -31,11 +31,12 @@ PUBLISHED = [  # precision, recall
 ]
 # Three of them re-judged from their published candidates by the judge that scored code-reviewer and the plain model
 # (`evals/martian/judge.py --baseline <tool>`): (published point, re-judged point), precision and recall.
-REJUDGED = [
-    ((67.1, 64.6), (61.4, 59.5)),  # #1 of the leaderboard
-    ((59.5, 65.2), (58.1, 63.3)),  # #3
-    ((46.3, 48.1), (41.8, 41.8)),  # #12
+REJUDGED = [  # label next to the ring: (dx, dy, text-anchor)
+    ("#1", (67.1, 64.6), (61.4, 59.5), (0, -11, "middle")),  # Qodo Extended
+    ("#3", (59.5, 65.2), (58.1, 63.3), (7, 17, "start")),  # Augment
+    ("#12", (46.3, 48.1), (41.8, 41.8), (9, 4, "start")),  # Claude Code CLI
 ]
+REJUDGED_NAMES = "Qodo Extended #1, Augment #3, Claude Code CLI #12"
 # code-reviewer 0.7.0 (eb5c564), runs m-1 and m-2 averaged, and the same model asked once (plain LLM), p-1 and
 # p-2 averaged; judged by claude-opus-4-5-20251101 through `claude -p` (BENCHMARKS.md, "Judges").
 OURS_MAIN = (73.3, 37.3)  # main report
@@ -96,8 +97,8 @@ def ring(x: float, y: float, r: float, color: str, surface: str) -> str:
 
 def positioning(out_dir: str) -> None:
     """Precision against recall on real bugs, with lines of equal F1: where code-reviewer sits."""
-    W, H = 760, 676
-    X0, X1, Y0, Y1 = 72, 650, 580, 152  # plot area: recall on x, precision on y, both 0–100%
+    W, H = 760, 698
+    X0, X1, Y0, Y1 = 72, 650, 602, 174  # plot area: recall on x, precision on y, both 0–100%
     sx = lambda r: X0 + (X1 - X0) * r / 100  # noqa: E731
     sy = lambda p: Y0 - (Y0 - Y1) * p / 100  # noqa: E731
     (pm, rm), (pa, ra), (pp, rp) = OURS_MAIN, OURS_ALL, PLAIN
@@ -109,10 +110,12 @@ def positioning(out_dir: str) -> None:
         ]
         legend = (
             (dot, t["ours"], "code-reviewer 0.7.0 (two runs)"), (dot, t["plain"], "same model, one call (two runs)"),
-            (dot, t["other"], "20 published review tools, as published"), (ring, t["other"], "three of them, re-judged our way"),
+            (dot, t["other"], "20 published review tools, as published"),
+            (ring, t["other"], f"re-judged our way: {REJUDGED_NAMES}"),
         )
         for i, (mark, color, name) in enumerate(legend):
-            lx, ly = 16 + (i % 2) * 300, 96 + (i // 2) * 22
+            row = 0 if i < 2 else i - 1  # the first two side by side, then one per row
+            lx, ly = 16 + (300 if i == 1 else 0), 96 + row * 22
             parts.append(mark(lx + 6, ly, 5.5 if mark is dot else 4.5, color, t["surface"]))
             parts.append(text(lx + 18, ly + 4, name, t["secondary"]))
         for v in (25, 50, 75, 100):
@@ -133,12 +136,13 @@ def positioning(out_dir: str) -> None:
                 pts.append(f"{sx(r):.1f},{sy(f1 * r / (2 * r - f1)):.1f}")
             parts.append(f'<polyline points="{" ".join(pts)}" fill="none" stroke="{t["iso"]}" stroke-width="1"/>')
             parts.append(text(sx(100) + 6, sy(f1 * 100 / (200 - f1)) + 4, f"F1 {f1}", t["muted"], 11))
-        for (p0, r0), (p1, r1) in REJUDGED:
+        for _, (p0, r0), (p1, r1), _ in REJUDGED:
             parts.append(f'<line x1="{sx(r0):.1f}" y1="{sy(p0):.1f}" x2="{sx(r1):.1f}" y2="{sy(p1):.1f}" stroke="{t["other"]}" stroke-width="1.5" stroke-dasharray="3 3"/>')
         for p, r in PUBLISHED:
             parts.append(dot(sx(r), sy(p), 4.5, t["other"], t["surface"]))
-        for _, (p1, r1) in REJUDGED:
+        for rank, _, (p1, r1), (dx, dy, anchor) in REJUDGED:
             parts.append(ring(sx(r1), sy(p1), 4.5, t["other"], t["surface"]))
+            parts.append(text(sx(r1) + dx, sy(p1) + dy, rank, t["secondary"], 10.5, text_anchor=anchor))
         parts.append(f'<line x1="{sx(rm):.1f}" y1="{sy(pm):.1f}" x2="{sx(ra):.1f}" y2="{sy(pa):.1f}" stroke="{t["ours"]}" stroke-width="2"/>')
         parts.append(dot(sx(rm), sy(pm), 6.5, t["ours"], t["surface"]))
         parts.append(dot(sx(ra), sy(pa), 6.5, t["ours"], t["surface"]))
@@ -153,7 +157,7 @@ def positioning(out_dir: str) -> None:
         label = (f"Precision against recall on real bugs, Martian Code Review Bench, Opus 4.5 judge: code-reviewer 0.7.0 main report "
                  f"{pm} precision {rm} recall, with worth-a-look findings {pa} and {ra}; the same model asked once {pp} and {rp}; "
                  f"20 published tools between {min(p for p, _ in PUBLISHED)} and {max(p for p, _ in PUBLISHED)} precision as published; "
-                 "three of them re-judged our way: " + "; ".join(f"{p0}/{r0} published, {p1}/{r1} re-judged" for (p0, r0), (p1, r1) in REJUDGED))
+                 f"re-judged our way ({REJUDGED_NAMES}): " + "; ".join(f"{rank} {p0}/{r0} published, {p1}/{r1} re-judged" for rank, (p0, r0), (p1, r1), _ in REJUDGED))
         write(out_dir, "martian-positioning", theme, W, H, label, parts)
 
 
