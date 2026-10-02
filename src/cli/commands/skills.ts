@@ -55,7 +55,7 @@ export function registerSkillCommands(program: Command): void {
       process.stdout.write(renderSkillList(list, new Set(config.review.skillsExclude), terminalWidth()));
       process.stdout.write(
         pc.dim(
-          `\nPer chunk, skills are picked by score within review.skillTokenBudget = ${config.review.skillTokenBudget} tokens. ` +
+          `\nPer chunk, skills are picked by score within review.skillTokenBudget = ${config.review.skillTokenBudget} tokens; the other matching ones are named by their topics. ` +
             'Run "code-reviewer skills detect" to see which apply to this repository.\n',
         ),
       );

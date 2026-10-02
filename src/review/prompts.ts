@@ -1,7 +1,9 @@
 import { chunkTextFor } from '../chunking/chunker';
 import { renderImpact } from '../chunking/expand';
+import { estimateTokens } from '../chunking/tokens';
 import type { ProjectSettings, ReviewDepth } from '../config/schema';
 import type { SkillMatch } from '../skills/detector';
+import type { Skill } from '../skills/loader';
 import type { DependencyRoot } from '../tools/dependencies';
 import { CATEGORIES, type Chunk, type Finding, type RunTarget, SEVERITIES, type StaticHit } from '../types';
 
@@ -20,6 +22,8 @@ export interface ReviewInstructionOptions {
   /** Where the rules were read from (e.g. "origin/main"), shown to the model. */
   rulesOrigin?: string;
   skills: SkillMatch[];
+  /** Skills that matched the chunk but did not fit the skill budget (best first): listed by their topics. */
+  skillsOverBudget?: readonly Skill[];
   project?: ProjectSettings;
   /** Read-only exploration tools are available. */
   readTools?: boolean;
@@ -123,14 +127,40 @@ Output: call the \`submit_findings\` tool as soon as you have verified a finding
       `## Project guidelines${opts.rulesOrigin ? ` (as of ${opts.rulesOrigin})` : ''}\nThe repository documents these conventions. Treat violations as defects only when they cause real bugs or the guideline explicitly marks them as must-follow.\n\n${opts.rules}`,
     );
   }
-  if (opts.skills.length) {
-    sections.push(
-      `## Technology checklists\nChecklists selected for the technologies in this chunk. Use them as hints about where bugs hide — every finding still needs evidence in the code. Whenever a checklist item covers a defect you report — even one you would have spotted anyway — set the finding's "checklist" field to that checklist's id: the text in brackets after its title, without the brackets (e.g. \`${opts.skills[0]!.skill.id}\`).\n\n${opts.skills
-        .map((s) => `### ${s.skill.name} [${s.skill.id}]\n${s.skill.body}`)
-        .join('\n\n')}`,
-    );
+  const summaries = skillSummaries(opts.skillsOverBudget ?? []);
+  if (opts.skills.length || summaries.length) {
+    const parts = [
+      `## Technology checklists\nChecklists selected for the technologies in this chunk. Use them as hints about where bugs hide — every finding still needs evidence in the code.${opts.skills.length ? ` Whenever a checklist item covers a defect you report — even one you would have spotted anyway — set the finding's "checklist" field to that checklist's id: the text in brackets after its title, without the brackets (e.g. \`${opts.skills[0]!.skill.id}\`).` : ''}`,
+      ...opts.skills.map((s) => `### ${s.skill.name} [${s.skill.id}]\n${s.skill.body}`),
+    ];
+    if (summaries.length) {
+      parts.push(
+        `### Other topics that apply here\nThese checklists match this chunk too but were left out for space. Check the code for their topics as well:\n${summaries.join('\n')}`,
+      );
+    }
+    sections.push(parts.join('\n\n'));
   }
   return sections.join('\n\n');
+}
+
+/** Most tokens the topic lines of over-budget skills take in a review prompt. */
+export const SKILL_SUMMARY_TOKENS = 1_500;
+
+/**
+ * One line per skill that matched a chunk but did not fit the skill budget — its name and topics — in the
+ * given order, up to `maxTokens`. A matched topic then still reaches the reviewer, for a fraction of the tokens.
+ */
+export function skillSummaries(skills: readonly Skill[], maxTokens = SKILL_SUMMARY_TOKENS): string[] {
+  const out: string[] = [];
+  let used = 0;
+  for (const s of skills) {
+    const line = `- ${s.name}: ${s.description.replace(/\s+/g, ' ').trim().slice(0, 300)}`;
+    const tokens = estimateTokens(line);
+    if (used + tokens > maxTokens) break;
+    out.push(line);
+    used += tokens;
+  }
+  return out;
 }
 
 /** One line per hint; the message comes from an analyzer run on untrusted code, so it is clipped. */

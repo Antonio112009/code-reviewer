@@ -2,13 +2,15 @@
 
 A **skill** is a small Markdown checklist that tells the reviewing model where bugs hide for one topic of
 one technology, e.g. `javascript/react/effects` or `databases/postgresql/core`. For each chunk of a review,
-only the skills whose technology is present and whose topic the changed code touches are injected.
+only the skills whose technology is present and whose topic the changed code touches are injected. When they
+do not all fit `review.skillTokenBudget`, the best-scoring ones are injected in full and the rest are named
+by their `description`, so write it as the list of topics the skill covers.
 
 ## The tree
 
 ```
 skills/
-  practice/     cross-cutting defects: general-bugs (always on), concurrency, error-handling, performance, …
+  practice/     cross-cutting defects: general-bugs (always on), refactoring, concurrency, error-handling, …
   security/     cross-cutting security: core (always on), auth, crypto, secrets, supply-chain, llm-apps
   web/          browser code in any stack: accessibility, browser-security, performance
   javascript/   core/, typescript/, node/ (express/, nestjs/, …), react/, nextjs/, vue/, angular/, svelte/, …

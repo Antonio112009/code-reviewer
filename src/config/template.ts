@@ -225,7 +225,9 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           example: D.review.skills,
         },
         skillsExclude: { doc: 'Skill ids never to inject (see `code-reviewer skills`).', example: [] },
-        skillTokenBudget: { doc: 'Token budget for injected skills per chunk.' },
+        skillTokenBudget: {
+          doc: 'Token budget for injected skills per chunk. Matching skills beyond it are named by their topics (up to 1,500 tokens more).',
+        },
         tools: {
           doc: 'Let reviewers read other files and search the repository (read-only).',
           example: D.review.tools,

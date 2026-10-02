@@ -1,5 +1,9 @@
 import { afterAll, describe, expect, it } from 'vitest';
+import { MockProvider } from '../src/providers/mock';
+import { ProviderRegistry } from '../src/providers/registry';
+import type { AgentResult, AgentTask, Provider } from '../src/providers/types';
 import { runReview } from '../src/review/pipeline';
+import { loadSkills } from '../src/skills/loader';
 import { silentLogger } from '../src/util/logger';
 import { makeRepo, type TempRepo, testConfig } from './helpers';
 
@@ -149,5 +153,54 @@ describe('skill selection (golden)', () => {
     expect(chunk.skillsDropped?.length).toBeGreaterThan(0);
     const picked = new Set(chunk.skills.map((s) => s.id));
     for (const id of chunk.skillsDropped!) expect(picked.has(id)).toBe(false);
+  });
+
+  it('names the topics of the skills the budget left out in the review prompt', async () => {
+    const repo = makeRepo();
+    repos.push(repo);
+    const react = CASES[0]!;
+    repo.write(react.base);
+    repo.commit('base');
+    repo.git('checkout', '-q', '-b', 'feature');
+    repo.write(react.head);
+    repo.commit('change');
+    repo.git('checkout', '-q', 'main');
+    const tasks: AgentTask[] = [];
+    const mock = new MockProvider('mock');
+    const provider: Provider = {
+      id: 'mock',
+      kind: 'mock',
+      run: (task: AgentTask): Promise<AgentResult> => {
+        tasks.push(task);
+        return mock.run(task);
+      },
+      dispose: async () => {},
+    };
+    const config = testConfig((cfg) => {
+      cfg.review.depth = 'full';
+      cfg.review.skillTokenBudget = 900;
+      cfg.review.selfCritique = false;
+      cfg.output.formats = [];
+    });
+    const registry = new ProviderRegistry(config, silentLogger);
+    (registry as unknown as { instances: Map<string, Provider> }).instances.set('mock', provider);
+    const { run } = await runReview({
+      command: 'review',
+      cwd: repo.root,
+      base: 'main',
+      head: 'feature',
+      config,
+      logger: silentLogger,
+      providers: registry,
+      skipPreflight: true,
+    });
+    const dropped = run!.chunks[0]!.skillsDropped!;
+    expect(dropped.length).toBeGreaterThan(0);
+    const skills = await loadSkills(repo.root);
+    const first = skills.find((s) => s.id === dropped[0])!;
+    const review = tasks.find((t) => t.instructions.includes('## Technology checklists'))!;
+    expect(review.instructions).toContain('### Other topics that apply here');
+    expect(review.instructions).toContain(`- ${first.name}: `);
+    expect(review.instructions).not.toContain(`[${first.id}]`);
   });
 });

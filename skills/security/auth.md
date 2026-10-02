@@ -44,6 +44,7 @@ activation:
 - **Identity normalization**: emails or usernames case-folded or Unicode-normalized differently across signup, login and reset; reset mail sent to the typed address, not the stored one → takeover. Fix: canonicalize once.
 - **Brute force**: login, OTP and reset without per-account and per-IP limits, limits keyed on spoofable `X-Forwarded-For`, responses or timing revealing unknown users → stuffing, enumeration. Fix: throttling.
 - **MFA bypass**: session authenticated before the second factor, step two trusting a client flag, reusable OTPs, recovery paths skipping MFA → takeover. Fix: server-side MFA state.
-- **OAuth/OIDC**: no `state`/PKCE, `redirect_uri` matched by prefix or regex, ID token `aud`/`nonce` unchecked, accounts linked by unverified email → login CSRF, code theft. Fix: exact redirect match.
+- **OAuth/OIDC**: no or guessable `state`, no PKCE, `redirect_uri` matched by prefix or regex, ID token `aud`/`nonce` unchecked, accounts linked by unverified email → login CSRF, code theft. Fix: exact redirect match.
 - **SAML**: unsigned or partly signed responses, attributes read outside the signed element (wrapping), no audience, expiry or replay checks → impersonation. Fix: maintained library, strict settings.
 - **Credentials**: `==` or plaintext password checks, bcrypt's 72-byte truncation (prefixed peppers or ids), email or password changes without re-authentication → takeover. Fix: library verify.
+- **Cached permissions**: grants cached past role or permission changes, or not invalidated on revoke → revoked users keep access until expiry. Fix: short TTLs; invalidate on change.
