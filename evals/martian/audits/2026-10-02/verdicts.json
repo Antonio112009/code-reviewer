@@ -1,0 +1,426 @@
+[
+ {
+  "n": 1,
+  "verdict": "debatable",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "FileHelper.download never raises on size; it stops writing once f.size > max_file_size (lib/file_helper.rb:18), so the stated nil-tempfile/NoMethodError path is false and silent truncation already happened in base at max_image_size_kb (3 MB default). The fixed 10 MB matches the client-side 10 MB cap the same PR adds in utilities.js. It only regresses on sites where max_image_size_kb > 10 MB."
+ },
+ {
+  "n": 2,
+  "verdict": "debatable",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "If convert fails, the only cost is up to 5 wasted convert runs. The still-oversized file then fails UploadValidator#maximum_image_file_size in Upload.create_for and returns a normal error, and in-place downsize(path, path) is already used by resize_emoji.rb. The frame-0 flattening only happens when the admin has turned off allow_animated_thumbnails (default true)."
+ },
+ {
+  "n": 3,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "Correct: String#replace with a string pattern replaces only the first '_' (rest.js.es6:22). But every ADMIN_MODELS entry ('plugin', 'site-customization', 'embeddable-host') has at most one hyphen, so no current type fails. The defect is latent."
+ },
+ {
+  "n": 4,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "The new validates_format_of regex needs a final label of 2-5 letters, so 'localhost', IP addresses and longer TLDs (.museum, .technology) can no longer be saved. The removed host_list setting had no such validation."
+ },
+ {
+  "n": 5,
+  "verdict": "wrong",
+  "preexisting": false,
+  "severity": "none",
+  "same_as": null,
+  "reason": "The only producer of add_unsubscribe_link: true is UserNotifications#send_notification_email, which now passes unsubscribe_url: post.topic.unsubscribe_url (user_notifications.rb:294-295). The spec was updated too, and git grep finds no other caller in app/lib/plugins."
+ },
+ {
+  "n": 6,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "tu.save! skips the notifications_reason_id = user_changed bookkeeping that TopicUser.change does (topic_user.rb:87-90), and skips its MessageBus publish. For auto-tracked users the reason stays NULL, so update_last_read (topic_user.rb:160-167) sets the level back to tracking the next time they read the topic, which undoes the unsubscribe."
+ },
+ {
+  "n": 7,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "A GET changes state, and the level ladder (> regular -> regular, else -> muted) means a reload or second visit escalates regular to muted. The link-scanner part is overstated: unsubscribe is behind ensure_logged_in, so anonymous scanners change nothing."
+ },
+ {
+  "n": 8,
+  "verdict": "debatable",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "rejectedEmails: Em.A([]) does sit on the prototype. But CreateAccountController is a container singleton, so only one instance exists, and keeping rejected emails for the page session is harmless or even intended. The only practical effect is test pollution."
+ },
+ {
+  "n": 9,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "Post includes Trashable (a default_scope deleted_at IS NULL), so once a moderator deletes the imported post, embed.post is nil. When the source article later changes, PostRevisor.new(nil).revise! hits nil.raw in should_revise?. PollFeed#poll_feed has no rescue, so the rest of the feed is skipped every hour."
+ },
+ {
+  "n": 10,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "major",
+  "same_as": null,
+  "reason": "Post#cook returns raw unchanged for raw_html (post.rb:133). PollFeed stores CGI.unescapeHTML(item.content) with no sanitizing, and embed/best.html.erb outputs `raw post.cooked` on the forum origin. Any script or event handler in the feed therefore runs there. The remote-page path is partly filtered by Readability's tag/attribute whitelist, but javascript: hrefs survive it. Exploiting it needs control of content on the admin-trusted feed or host."
+ },
+ {
+  "n": 11,
+  "verdict": "debatable",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "Not unprotected: TopicRetriever#invalid_host? requires URI(embed_url).host == SiteSetting.embeddable_host, and a '|cmd' string cannot pass that check. The remaining risk is that open-uri follows cross-host redirects and the port is not checked, so SSRF needs an open redirect on the admin-trusted host. A missing timeout is a further minor gap."
+ },
+ {
+  "n": 12,
+  "verdict": "not-a-defect",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "Applied migrations are not re-run (schema_migrations), and top_topics is a derived table that TopTopic.refresh! rebuilds. force: true has no realistic data-loss path; the rest is a scope/history remark."
+ },
+ {
+  "n": 13,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "In this mechanical dark-light-choose refactor, mobile .topic-map h3 went from scale-color($primary, 20%) to 50%/50% (topic-post.scss:182), while the desktop h3 counterpart keeps 20%/80%. This is a copy-paste regression in the light theme and is cosmetic."
+ },
+ {
+  "n": 14,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "GroupsController#members now defaults to limit 50 for every group (before, only automatic groups were limited, at 200). The public group/members.hbs renders only `members`, which Group#findMembers fills, and has no paging controls, so members after the 50th are not visible. Only the admin page got paging."
+ },
+ {
+  "n": 15,
+  "verdict": "real-minor",
+  "preexisting": true,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "Only ApplicationController#set_locale calls I18n.fallbacks.ensure_loaded!. Jobs (jobs/base.rb:151 sets the locale to default_locale) and with_locale in PostAlerter rely on translate, which lazy-loads only config.locale, so :en may never be loaded in Sidekiq. The same gap already existed in base production, where config.i18n.fallbacks = true was used with the same lazy loading. This PR only fixes the controller path."
+ },
+ {
+  "n": 16,
+  "verdict": "real-minor",
+  "preexisting": true,
+  "severity": "minor",
+  "same_as": 15,
+  "reason": "Same concern as 15. The extra claim is partly true: the no-args LRU cache (translate_accelerator.rb:71-76) can freeze a 'translation missing' string per process, as in base. It is unlikely to reach controller requests, though, because Sidekiq runs in separate processes and web processes load fallbacks on every request."
+ },
+ {
+  "n": 17,
+  "verdict": "debatable",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "end_timestamp_precise is part of the ingest-spans SpanEvent contract the payload is cast to, and process_segments already reads span['end_timestamp_precise'] without a guard. The neighbouring trace_id/span_id/project_id use the same unguarded access, so a guard is defensive only. (The schema package is not available locally.)"
+ },
+ {
+  "n": 18,
+  "verdict": "debatable",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "Transforming only count() is the scope this PR intends: its tests cover only count() variants, and count_unique cannot be upsampled by weight. The claim about NULL sample_weight rests on a schema assumption the code states and that cannot be checked from this repo."
+ },
+ {
+  "n": 19,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "major",
+  "same_as": null,
+  "reason": "discover.py:1046-1050 aggregates toInt64(sum(sample_weight)) with no null fallback; the PR's own upstream commit 4cb317c5 used sum(ifNull(sample_weight, 1)), so the column is nullable and events without a client sample rate are dropped from count() in allowlisted projects."
+ },
+ {
+  "n": 20,
+  "verdict": "not-a-defect",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "get_environment_info is called once per issue in get_comment_body (github/gitlab integration), but the issue list is small (top issues for a merged PR) and runs in a background comment task; the broad except is deliberate best-effort. The finding's own title says bounded and best-effort, so nothing fails."
+ },
+ {
+  "n": 21,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "fetch_error_details takes nodestore data['timestamp'] (epoch seconds), while gen_request_data compares it with rrweb segment event['timestamp'] (epoch ms), so error_ts < event_ts always holds and every error is emitted before the first breadcrumb. The tests use seconds for both and hide this; the impact is wrong ordering in an experimental AI-summary prompt."
+ },
+ {
+  "n": 22,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "attributes.tsx:61-63 returns `sorted` before the filter that applies HIDDEN_ATTRIBUTES (line 67), so is_segment/project_id/received are shown with an empty search and only hidden once the user types a query. This is cosmetic, but the new hidden list never takes effect in the default view."
+ },
+ {
+  "n": 23,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "queryKey is ['use-trace-item-attribute-keys', queryOptions] and makeTraceItemAttributeKeysQueryOptions has no org slug, while the queryFn builds `/organizations/${organization.slug}/...`; the old useApiQuery key was the URL. Project ids are globally unique, so a collision needs the same project selection (e.g. empty or 'all') and is served only until the staleTime-0 refetch; the dropped retry:false is a minor behaviour change."
+ },
+ {
+  "n": 24,
+  "verdict": "debatable",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "req.body.backupCode.replaceAll (disable.ts:61) does throw on a non-string truthy value, but only for the authenticated user's own malformed request, which gets a 500 instead of a 400. Brute-forcing is impractical because the endpoint needs a session plus password and the codes are 10 hex chars; the TOTP path has no rate limit either, so that part is pre-existing design."
+ },
+ {
+  "n": 25,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "handleEnable now only does setStep(DisplayBackupCodes) and onEnable is called only from the Close button. Dismissing with Escape or the overlay goes through onOpenChange (two-factor-auth.tsx:64), which just toggles the modal, so utils.viewer.me is never invalidated and the switch shows 2FA off until reload. The codes are not truly lost, because the modal state persists and reopening shows them again."
+ },
+ {
+  "n": 26,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "major",
+  "same_as": null,
+  "reason": "In updateEvent (CalendarService.ts:254-256) the else branch runs only when externalCalendarId is falsy, so find(cal => cal.externalId === externalCalendarId) never matches and selectedCalendar is undefined. calendar.events.update is then called without a calendarId and fails for references lacking externalCalendarId, where the old code fell back to destinationCalendar.externalId."
+ },
+ {
+  "n": 27,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "major",
+  "same_as": 26,
+  "reason": "deleteEvent (CalendarService.ts:315-317) has the same always-undefined find, so calendarId falls back to 'primary' instead of the booking's destination calendar. For an event on a non-primary calendar the delete returns 404, which is resolved silently at line 335, and the event stays on the calendar."
+ },
+ {
+  "n": 28,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "evt.destinationCalendar is null when neither the eventType nor the organizer has a destination calendar, so `evt.destinationCalendar?.push(...teamDestinationCalendars)` silently drops the collective members' calendars that this PR set out to support. It is an edge case, and the suggested `[]` fix would also skip EventManager's organizer fallback (createAllCalendarEvents only falls back when the array is empty)."
+ },
+ {
+  "n": 29,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "The recurring branch, which deletes all updatedBookings across every user calendar credential, now sits inside `for (const reference of bookingCalendarReference)`, so with N calendar references the full sweep runs N times. The extra calls hit 404/410, which are resolved, so the result is correct but redundant API traffic."
+ },
+ {
+  "n": 30,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "`${err.data?.code}: ${t(err.message)}` is always a non-empty string, so `|| t('unable_to_add_guests')` is dead code. When err.data is undefined (a client or network error) the toast reads 'undefined: ...'; the impact is cosmetic."
+ },
+ {
+  "n": 31,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "The new prisma.workflowReminder.update in the catch block (scheduleSMSReminders.ts:190-197) is unguarded, so if it throws (DB error, or P2025 when the reminder was deleted concurrently) the loop aborts and the remaining reminders are skipped. Before the change the catch only logged; the duplicate-SMS-after-failed-update path existed before as well."
+ },
+ {
+  "n": 32,
+  "verdict": "debatable",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "buildFilterConditions does return an unparenthesized `(a) OR (b)` for the single eventTypeId case, but the only consumer, getBaseConditions (line 73), wraps it in parentheses, and no other caller of getFilterConditions exists. The finding itself admits the current path is safe, so the risk is hypothetical."
+ },
+ {
+  "n": 33,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "cleanup() always ends with `exit 0`, and it is also called on the rate-limit failure (line 49) and the missing-URL failure (line 58), so failures report success. This is a developer helper script, so the impact is small."
+ },
+ {
+  "n": 34,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "In scheduleEmailReminders.ts:53-77 each SendGrid cancel is awaited inside one try, so the first failure jumps to the catch, skips the cancels for the remaining cancelled reminders, and skips the lazy prisma deletes that were already queued (Promise.all is never reached). Their emails can then go out for cancelled or rescheduled bookings. Some sub-claims are off: SMS reminders are never marked cancelled, and null referenceIds are deleted directly in deleteScheduledEmailReminder."
+ },
+ {
+  "n": 35,
+  "verdict": "not-a-defect",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "The try/catch around the forEach is indeed dead, because deleteScheduledEmailReminder and deleteScheduledSMSReminder are not awaited, but both catch every error internally, so nothing escapes and no failure follows. Rows left after an immediateDelete cancel stay scheduled=true and are cleaned up by the cron's past-date deleteMany."
+ },
+ {
+  "n": 36,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "Each `import('./x')` in the appStore object literal runs as soon as index.ts is evaluated, so every app module is still loaded eagerly and the lazy-load goal of the change is not met (callers just `await appStore[key]`). This is no regression from the old static imports, and the unhandled-rejection scenario needs a bundled module that fails to load, which is unlikely."
+ },
+ {
+  "n": 37,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "major",
+  "same_as": null,
+  "reason": "Overrides are organizer wall-clock times stored as UTC (getUserAvailability.ts:215-224); the new code adds inviteeOffset-organizerOffset and keeps only hour()/minute(), so e.g. a 07:00-17:00 London override seen from Los Angeles becomes 23:00-09:00 and buildSlots drops it ('if (start >= end) continue', slots.ts:68) after the user's working hours for that day were already removed (lines 228-243). The tz(undefined) part is moot because the only caller passing dateOverrides (trpc slots.ts:410-416) always sets timeZone."
+ },
+ {
+  "n": 38,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "get_user_info (identity/github/provider.py:7-17) calls raise_for_status and OAuthLoginView.dispatch (integration.py:434) does not catch it, and PipelineAdvancerView just returns pipeline.current_step(), so a GitHub /user 401/5xx yields a 500 instead of the error() page. It needs a GitHub failure right after a successful token exchange, so impact is low."
+ },
+ {
+  "n": 39,
+  "verdict": "wrong",
+  "preexisting": false,
+  "severity": "none",
+  "same_as": null,
+  "reason": "GitHubInstallation binds the installation_id it uses and checks the OAuth-bound github_authenticated_user against integration.metadata['sender']['login'] for that same id (integration.py:448-505). Swapping the id therefore just re-runs the check against the new installation and gives no bypass. The unchecked Integration.DoesNotExist branch existed before and does not depend on when the id is supplied."
+ },
+ {
+  "n": 40,
+  "verdict": "not-a-defect",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "redirect_uri is absolute_uri(reverse('sentry-extension-setup')), a fixed URL with no '&' or '?'. ':' and '/' are legal unencoded in a query component, and state is a pipeline signature, so nothing is corrupted. Using urlencode would only be hardening."
+ },
+ {
+  "n": 41,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "major",
+  "same_as": null,
+  "reason": "The OffsetTracker is owned by the factory-level FixedQueuePool, which is shared across strategy instances, and is never reset on rebalance. A new strategy's _commit_loop (queue_consumer.py:273-291) then commits offsets for revoked partitions, which arroyo rejects ('cannot stage offsets for unassigned partitions'), so the whole commit fails and is retried every second. The authors' next-day fix #95753 (82e2139720c7) confirms this ('commit thread ... attempting to commit offsets for partitions no longer owned') and adds OffsetTracker.clear(). Also, close() shuts down the shared queue_pool."
+ },
+ {
+  "n": 42,
+  "verdict": "debatable",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "The loop at queue_consumer.py:89-93 does stop at the first missing offset, so a real gap would stall commits and let all_offsets grow. But every delivered message is tracked, even undecodable or failed ones (submit adds and completes), and the uptime results topic is a plain non-compacted, non-transactional topic, so gaps arise mainly from the stale cross-rebalance state already covered by n=41. Re-delivered offsets at or below last_committed are dropped at the next mark_committed."
+ },
+ {
+  "n": 43,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "useAllGrafanaPromRuleAbilities gates ModifyExport/Pause/Restore/DeletePermanently on prometheusRuleType.grafana.alertingRule, whereas the ruler version used rulerRuleType.grafana.rule (recording rules included). The V2 list (GrafanaRuleListItem passes only promRule) therefore loses Export for Grafana recording rules. Pause is moot because AlertRuleMenu renders it only when a ruler rule is present (line 123), and the view is behind the alertingListViewV2 flag."
+ },
+ {
+  "n": 44,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "useAllAlertRuleAbilities used isFederatedRuleGroup(rule.group) in base but now delegates to useAllRulerRuleAbilities with isFederated = false (TODO in code), so the old RuleActionsButtons (useAlertRuleAbility Update) shows Edit for federated Mimir rules again. Delete/Pause in AlertRuleMenu already went through useRulerRuleAbilities with federation hardcoded false in base, and the editor only shows a FederatedRuleWarning, so impact is limited."
+ },
+ {
+  "n": 45,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "In the V2 list, RuleActionsButtons gets only promRule. AlertRuleMenu enables Silence from the prom abilities, but the drawer renders only if rulerRuleType.grafana.alertingRule(rule) with rule undefined (RuleActionsButtons.V2.tsx:104), so clicking does nothing. Delete is gated on 'canDelete && rulerRule' (AlertRuleMenu.tsx:165), so it disappears where the base list (GrafanaRuleLoader with rulerRule) had it. The view is behind a feature flag."
+ },
+ {
+  "n": 46,
+  "verdict": "wrong",
+  "preexisting": false,
+  "severity": "none",
+  "same_as": null,
+  "reason": "infra ConcreteLogger.FromContext (pkg/infra/log/log.go:203-217) always returns either cl.New(args...) or cl, both *ConcreteLogger, so the type assertion in logger.go:49 cannot fail and the d.New() fallback is dead code. No context attributes are dropped."
+ },
+ {
+  "n": 47,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "deleteByIDs builds one '?' per id, and only SQLite with batch > 999 inlines the ids. A cleanupjob_batchsize above 65535 on Postgres/MySQL would exceed the bind-parameter limit and fail every cleanup, which the old subquery DELETE did not. The default is 100 (setting.go:710), so this is an unlikely configuration."
+ },
+ {
+  "n": 48,
+  "verdict": "real",
+  "preexisting": false,
+  "severity": "major",
+  "same_as": null,
+  "reason": "The goroutines in Create/Update/Delete/DeleteCollection derive their context from the request ctx with context.WithTimeoutCause(ctx, ...). That ctx is cancelled when the apiserver handler returns, so the legacy writes race with cancellation and are often aborted, leaving legacy storage diverged. Grafana later switched to context.WithoutCancel(ctx) for exactly this (a03652494c36; d60351d8e842 'fix DualWriter context cancelation')."
+ },
+ {
+  "n": 49,
+  "verdict": "real-minor",
+  "preexisting": false,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "On a Storage.Create or Storage.Update error, the code calls d.recordLegacyDuration(true, ...) with startStorage (dualwriter_mode3.go Create/Update error branches), and the DeleteCollection goroutine records the legacy call with recordStorageDuration. These are copy-paste mix-ups that only skew metrics."
+ },
+ {
+  "n": 50,
+  "verdict": "not-a-defect",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "remove() now calls idpDelegate.getByAlias on every call because registerIDPLoginInvalidation(storedIdp) needs the model. One extra lookup on a rare admin delete is not a performance problem, and getLoginPredicate starts with Objects::nonNull, so a null IDP is safe there. The NPE in registerIDPInvalidation(null) in the invalid branch is unchanged from base."
+ },
+ {
+  "n": 51,
+  "verdict": "debatable",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "getResourceTypeResource returns null when the schema is unsupported or the 'Groups' resource is missing, and StoreFactoryCacheSession.findByResource would then NPE on resource.getId(). But GroupPermissionsV2 is used only when FGAP v2 is enabled for the realm (schema supported), and SCHEMA.init creates all type resources. Only a realm initialised before this PR (init returns early if the client exists) under the EXPERIMENTAL feature lacks 'Groups'. UserPermissionsV2 and ClientPermissionsV2 use the same pattern."
+ },
+ {
+  "n": 52,
+  "verdict": "debatable",
+  "preexisting": false,
+  "severity": "info",
+  "same_as": null,
+  "reason": "getCredentials does not null-check getMyUser, unlike its siblings. However, this is a testsuite-only provider, and users reach it only through getUserById/getUserByUsername, which return null unless the username is in the map. An NPE needs a stale cached UserModel for a user removed from the map."
+ },
+ {
+  "n": 53,
+  "verdict": "real-minor",
+  "preexisting": true,
+  "severity": "minor",
+  "same_as": null,
+  "reason": "Only getSubGroupsCount was made null-safe. The three getSubGroupsStream overloads (GroupAdapter.java:254-269) still call modelSupplier.get().getSubGroupsStream(...), and GroupResource.java:180 calls one of them, so deleting the parent group while its subgroups are listed still NPEs. This race existed before the PR."
+ }
+]

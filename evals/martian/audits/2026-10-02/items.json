@@ -1,0 +1,797 @@
+[
+ {
+  "repo": "discourse",
+  "base": "3f71fa15c93bb0b751bb92abae1b5dc9a21bd4ca",
+  "head": "ffbaf8c54269df2ce510de91245760fddce09896",
+  "file": "app/controllers/uploads_controller.rb",
+  "lines": [
+   55,
+   55
+  ],
+  "title": "API URL download limit hardcoded to 10MB; larger files are silently truncated",
+  "description": "FileHelper.download for API-provided URLs now uses a fixed 10.megabytes instead of the site settings. Attachments over 10MB, or images when the settings are configured higher, can no longer be fetched. A download failure is swallowed (`rescue nil`), so tempfile is nil and the next line raises NoMethodError.",
+  "failurePath": "API upload with url to a 15MB file while max_attachment_size_kb is 20MB \u2192 download aborted \u2192 rescue nil \u2192 tempfile nil \u2192 file.tempfile/tempfile.size NoMethodError",
+  "suggestion": "",
+  "n": 1
+ },
+ {
+  "repo": "discourse",
+  "base": "3f71fa15c93bb0b751bb92abae1b5dc9a21bd4ca",
+  "head": "ffbaf8c54269df2ce510de91245760fddce09896",
+  "file": "app/controllers/uploads_controller.rb",
+  "lines": [
+   64,
+   70
+  ],
+  "title": "Downsize loop ignores failure and runs on the upload path in place",
+  "description": "The loop ignores the return value of downsize. If convert fails or the file is not a valid image, it runs 5 times in vain, and an oversized file continues on to Upload.create_for. Writing the output over the input path also risks corrupting the upload if convert fails midway. Non-image or animated files with `[0]` frame extraction lose animation when allow_animated_thumbnails is false.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 2
+ },
+ {
+  "repo": "discourse",
+  "base": "913c3d6f636d02b3dd6c2c022ca1af2bec95d752",
+  "head": "d1c69189f3c90ecf56013a8da904da9bff9a8e19",
+  "file": "app/assets/javascripts/discourse/adapters/rest.js.es6",
+  "lines": [
+   22,
+   22
+  ],
+  "title": "replace('_','-') only replaces first underscore",
+  "description": "String replace with a string pattern replaces only the first underscore; multi-underscore types won't match ADMIN_MODELS.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 3
+ },
+ {
+  "repo": "discourse",
+  "base": "913c3d6f636d02b3dd6c2c022ca1af2bec95d752",
+  "head": "d1c69189f3c90ecf56013a8da904da9bff9a8e19",
+  "file": "app/models/embeddable_host.rb",
+  "lines": [
+   2,
+   2
+  ],
+  "title": "Host regex rejects valid hosts",
+  "description": "The regex requires a TLD of 2-5 letters, and doesn't support localhost, IPs or longer TLDs. Also \\Z allows a trailing newline.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 4
+ },
+ {
+  "repo": "discourse",
+  "base": "56abd247e1829cb6de82dfcc8ce04deb5f0d1e91",
+  "head": "6669a2d94d76eea3b99b8c476d12b1eb66726b07",
+  "file": "lib/email/message_builder.rb",
+  "lines": [
+   67,
+   67
+  ],
+  "title": "unsubscribe_link translation requires unsubscribe_url not always provided",
+  "description": "The en locale 'unsubscribe_link' now interpolates %{unsubscribe_url}, but template_args only contains it if the caller passes it. Other callers using add_unsubscribe_link (without unsubscribe_url) will raise I18n::MissingInterpolationArgument or output a broken link; other locales lack the key, fine, but the English one is affected.",
+  "failurePath": "MessageBuilder with add_unsubscribe_link: true and no unsubscribe_url \u2192 body/html_part call I18n.t('unsubscribe_link', template_args) \u2192 missing interpolation argument",
+  "suggestion": "Default unsubscribe_url in template_args to user_preferences_url or only include the topic line when present.",
+  "n": 5
+ },
+ {
+  "repo": "discourse",
+  "base": "56abd247e1829cb6de82dfcc8ce04deb5f0d1e91",
+  "head": "6669a2d94d76eea3b99b8c476d12b1eb66726b07",
+  "file": "app/controllers/topics_controller.rb",
+  "lines": [
+   113,
+   113
+  ],
+  "title": "tu.save! bypasses TopicUser.change bookkeeping",
+  "description": "Direct save skips notifications_changed_at, notifications_reason_id update and the MessageBus publish, so reason remains stale and other open clients are not updated.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 6
+ },
+ {
+  "repo": "discourse",
+  "base": "56abd247e1829cb6de82dfcc8ce04deb5f0d1e91",
+  "head": "6669a2d94d76eea3b99b8c476d12b1eb66726b07",
+  "file": "app/controllers/topics_controller.rb",
+  "lines": [
+   98,
+   116
+  ],
+  "title": "Unsubscribe GET is non-idempotent: reloading the page escalates regular to muted",
+  "description": "A GET endpoint changes notification level immediately. Email link scanners/prefetchers will unsubscribe/mute users without consent. Also repeated loads (reload, refresh) toggle: first regular-or-lower\u2192 muted, and a tracking\u2192regular, so a second visit after first unsubscribe escalates to muted.",
+  "failurePath": "link scanner or user reload GETs /t/slug/1/unsubscribe \u2192 level tracking\u2192regular; second GET \u2192 regular\u2192muted",
+  "suggestion": "GET should show a confirmation; perform change via POST/PUT.",
+  "n": 7
+ },
+ {
+  "repo": "discourse",
+  "base": "e25638dab0d4b98f99c8fe8976ccaae8f4fb9db3",
+  "head": "5f8a130277dbddc95d133cd2832be639baf89213",
+  "file": "app/assets/javascripts/discourse/controllers/create_account_controller.js",
+  "lines": [
+   17,
+   17
+  ],
+  "title": "Shared array on controller prototype",
+  "description": "rejectedEmails: Em.A([]) is created once on the class and shared across all instances and persists; pushObject mutates shared state. Should be initialized in init.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 8
+ },
+ {
+  "repo": "discourse",
+  "base": "62db063e1e1abe691313ab42682a68f796d63769",
+  "head": "4f8aed295a29954023b2849c060ef4fb299d1b5d",
+  "file": "app/models/topic_embed.rb",
+  "lines": [
+   32,
+   37
+  ],
+  "title": "embed.post may be nil or deleted when updating",
+  "description": "If the embedded post was deleted, embed.post is nil (or trashed) and PostRevisor.new(post) raises NoMethodError on later polls, breaking the whole import loop. Return value of revise! is also unchecked before updating content_sha1.",
+  "failurePath": "post destroyed \u2192 TopicEmbed row remains \u2192 next poll with changed content \u2192 nil.raw error",
+  "suggestion": "Guard for post.blank? and only update sha1 when revise! succeeds.",
+  "n": 9
+ },
+ {
+  "repo": "discourse",
+  "base": "62db063e1e1abe691313ab42682a68f796d63769",
+  "head": "4f8aed295a29954023b2849c060ef4fb299d1b5d",
+  "file": "app/models/post.rb",
+  "lines": [
+   131,
+   133
+  ],
+  "title": "Raw HTML from feeds/remote pages is stored and rendered unsanitized (stored XSS)",
+  "description": "For cook_method raw_html, cook returns raw with no sanitization. Content comes from external RSS feeds or fetched pages (TopicEmbed.import) and is output via `raw post.cooked` in the embed view and shown in normal topic pages on the Discourse origin. Script tags, event handlers or javascript: links in the feed execute in the forum's origin.",
+  "failurePath": "attacker-controlled feed or page contains <script>/onerror \u2192 PollFeed/import_remote \u2192 TopicEmbed.import creates post with cook_method raw_html \u2192 cook returns raw \u2192 rendered with raw in embed/best and topic view \u2192 script runs on the forum origin",
+  "suggestion": "Sanitize raw_html (e.g. Sanitize gem with a whitelist) before storing/returning it from cook.",
+  "n": 10
+ },
+ {
+  "repo": "discourse",
+  "base": "62db063e1e1abe691313ab42682a68f796d63769",
+  "head": "4f8aed295a29954023b2849c060ef4fb299d1b5d",
+  "file": "app/models/topic_embed.rb",
+  "lines": [
+   48,
+   48
+  ],
+  "title": "Kernel#open on URL fetches server-side without protection (SSRF)",
+  "description": "open(url) is used with a URL derived from the embed_url request param (only the host is compared to embeddable_host). Redirects to internal addresses are followed by open-uri, and Kernel#open semantic is risky generally. Responses are imported as posts, exposing the content.",
+  "failurePath": "embeddable host serves a redirect to an internal URL \u2192 open follows it \u2192 content imported as a post and shown publicly",
+  "suggestion": "Use Net::HTTP/open-uri via URI.parse(url).open after verifying http(s) scheme, restrict redirects and resolved IPs, add timeouts.",
+  "n": 11
+ },
+ {
+  "repo": "discourse",
+  "base": "62db063e1e1abe691313ab42682a68f796d63769",
+  "head": "4f8aed295a29954023b2849c060ef4fb299d1b5d",
+  "file": "db/migrate/20131223171005_create_top_topics.rb",
+  "lines": [
+   3,
+   3
+  ],
+  "title": "Edited applied migration adds force: true, dropping table on rerun",
+  "description": "Existing migration modified to create_table force: true, which drops an existing top_topics table (and its data) if the migration is rerun; editing history is also unrelated to this feature.",
+  "failurePath": "migration rerun on environment with data \u2192 top_topics dropped and recreated empty",
+  "suggestion": "Revert the change to this migration.",
+  "n": 12
+ },
+ {
+  "repo": "discourse",
+  "base": "7554b5e3c458dc79b591d5e874e79ab10cf30c2f",
+  "head": "d38c4d5f7443223c81529c22470293771baf9f38",
+  "file": "app/assets/stylesheets/mobile/topic-post.scss",
+  "lines": [
+   182,
+   182
+  ],
+  "title": "Topic map h3 light color changed from 20% to 50%",
+  "description": "The original color was scale-color($primary, $lightness: 20%). The light branch is now $primary 50%, so the light theme heading becomes lighter than before.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 13
+ },
+ {
+  "repo": "discourse",
+  "base": "4975fc28903a84418f546b2809370f19abf10e08",
+  "head": "060cda77729cb1c4a827560e09e89a7b22078ba9",
+  "file": "app/controllers/groups_controller.rb",
+  "lines": [
+   22,
+   26
+  ],
+  "title": "Public members endpoint now caps non-automatic groups at 50 with no paging in UI",
+  "description": "The public group members page (group/members.hbs) iterates members from findMembers, which now returns only the first 50. Previously non-automatic groups returned all members. The public template has no pagination, so members beyond 50 are not visible.",
+  "failurePath": "public group with 120 members \u2192 /groups/x/members.json default limit 50 \u2192 members.hbs renders only 50",
+  "suggestion": "",
+  "n": 14
+ },
+ {
+  "repo": "discourse",
+  "base": "728845d008f06828630a632e5c7d67e11bf15deb",
+  "head": "ecfa17b5a79dfdc91e7a4d50b42ae78a35d0a293",
+  "file": "app/controllers/application_controller.rb",
+  "lines": [
+   159,
+   159
+  ],
+  "title": "Fallback locales loaded only in the controller",
+  "description": "ensure_loaded! is only called in set_locale in the controller. Background jobs, mailers, and other code paths that set I18n.locale (e.g. with_locale) do not load fallback locales, so fallbacks (en) are missing there, producing 'translation missing'.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 15
+ },
+ {
+  "repo": "discourse",
+  "base": "728845d008f06828630a632e5c7d67e11bf15deb",
+  "head": "ecfa17b5a79dfdc91e7a4d50b42ae78a35d0a293",
+  "file": "lib/freedom_patches/translate_accelerator.rb",
+  "lines": [
+   67,
+   77
+  ],
+  "title": "Fallback locales not loaded outside controllers; 'translation missing' can be cached",
+  "description": "translate only lazy-loads config.locale. Fallback locales (site default, :en) are loaded only by ApplicationController#set_locale via ensure_loaded!. In Sidekiq jobs, mailers, rake tasks or other entry points that set I18n.locale without going through a controller, a key missing in the current locale falls back to locales that are not loaded, so the lookup yields 'translation missing' and that string is frozen into the LRU cache under the locale key. It is then served to later requests too.",
+  "failurePath": "job sets I18n.with_locale(:fr) \u2192 I18n.t('some.key') missing in fr \u2192 fallback :en never loaded \u2192 'translation missing: ...' cached for fr \u2192 controller requests later get that string",
+  "suggestion": "Call I18n.fallbacks.ensure_loaded! (or load fallback locales) inside translate/load_locale, and don't cache missing-translation results.",
+  "n": 16
+ },
+ {
+  "repo": "sentry",
+  "base": "28e3db2520d4ea28c57b08da57b83917ba7b2e15",
+  "head": "8ab88145113dd23a930e23b9cbbcf8b30e4c0b17",
+  "file": "src/sentry/spans/consumers/process/factory.py",
+  "lines": [
+   141,
+   141
+  ],
+  "title": "Missing end_timestamp_precise raises KeyError in the batch",
+  "description": "val[\"end_timestamp_precise\"] is accessed unguarded; any span lacking it raises KeyError and crashes the whole batch processing, blocking the consumer on a poison message.",
+  "failurePath": "span without end_timestamp_precise \u2192 KeyError in process_batch \u2192 consumer crash loop",
+  "suggestion": "Use val.get with a fallback or skip invalid spans.",
+  "n": 17
+ },
+ {
+  "repo": "sentry",
+  "base": "83f40559985e1365a43f35ba3febb7ea4fabb5d5",
+  "head": "6ad6fe3899f630ccf922ce7ac681147dc7987435",
+  "file": "src/sentry/api/helpers/error_upsampling.py",
+  "lines": [
+   92,
+   95
+  ],
+  "title": "Only exact 'count()' is transformed",
+  "description": "Other aggregates (count_unique, eps, epm, etc.) are not upsampled and yAxis with multiple columns mixes upsampled and raw counts; also sample_weight is assumed to exist for all events though events without a sample rate would sum NULL/0, yielding zero counts.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 18
+ },
+ {
+  "repo": "sentry",
+  "base": "83f40559985e1365a43f35ba3febb7ea4fabb5d5",
+  "head": "6ad6fe3899f630ccf922ce7ac681147dc7987435",
+  "file": "src/sentry/search/events/datasets/discover.py",
+  "lines": [
+   1041,
+   1052
+  ],
+  "title": "upsampled_count sums sample_weight, which is NULL for events without a client sample rate",
+  "description": "upsampled_count is sum(sample_weight) with no fallback. Events in allowlisted projects that carry no sample_weight (unsampled events, older events) contribute nothing, so the chart count undercounts, and can be 0. The code comment assumes the column is always populated, but nothing enforces that.",
+  "failurePath": "allowlisted project with events lacking sample_rate \u2192 count() rewritten to upsampled_count() \u2192 sum(sample_weight) ignores NULLs \u2192 count shown as 0 or too low",
+  "suggestion": "Use sum(coalesce(sample_weight, 1)) or toInt64(round(sum(...))) with a fallback of 1.",
+  "n": 19
+ },
+ {
+  "repo": "sentry",
+  "base": "49a275847631e231672d01b5dcd66558c069d25b",
+  "head": "ea188e2d736fd6ed27c1dba8aae63b7268e2a7a9",
+  "file": "src/sentry/integrations/source_code_management/commit_context.py",
+  "lines": [
+   584,
+   597
+  ],
+  "title": "get_environment_info does one recommended-event lookup per issue (bounded, best-effort)",
+  "description": "get_environment_info calls get_recommended_event() for every issue while building the comment. This is a Snuba or nodestore query per issue (N+1), and each call is wrapped in a broad `except Exception` that only logs at info level, so real outages silently drop environment info.",
+  "failurePath": "get_comment_body loops over up to 5 issues \u2192 one recommended-event lookup each \u2192 slow comment task; failures hidden at info level",
+  "suggestion": "",
+  "n": 20
+ },
+ {
+  "repo": "sentry",
+  "base": "49a275847631e231672d01b5dcd66558c069d25b",
+  "head": "ea188e2d736fd6ed27c1dba8aae63b7268e2a7a9",
+  "file": "src/sentry/replays/endpoints/project_replay_summarize_breadcrumbs.py",
+  "lines": [
+   153,
+   155
+  ],
+  "title": "Error timestamps (seconds) compared with replay event timestamps (milliseconds)",
+  "description": "Nodestore event timestamps are epoch seconds, while rrweb replay segment events carry millisecond timestamps. The chronological merge compares them directly, so every error sorts before all breadcrumbs. The tests use same-unit fake values and hide this.",
+  "failurePath": "real replay segment with timestamp 1.7e12 and error timestamp 1.7e9 \u2192 error_events[idx].timestamp < event timestamp always true \u2192 all errors emitted first, ordering wrong",
+  "suggestion": "Normalize units (multiply error timestamp by 1000 or divide event timestamp by 1000).",
+  "n": 21
+ },
+ {
+  "repo": "sentry",
+  "base": "49a275847631e231672d01b5dcd66558c069d25b",
+  "head": "ea188e2d736fd6ed27c1dba8aae63b7268e2a7a9",
+  "file": "static/app/views/performance/newTraceDetails/traceDrawer/details/span/eapSections/attributes.tsx",
+  "lines": [
+   59,
+   70
+  ],
+  "title": "HIDDEN_ATTRIBUTES only applied when a search query is present",
+  "description": "The early return `if (!searchQuery.trim()) return sorted;` happens before the HIDDEN_ATTRIBUTES filter, so is_segment, project_id and received are shown by default and only disappear once the user types a search. The hidden list is therefore ineffective in the default view and the behaviour is inconsistent.",
+  "failurePath": "open span drawer with empty search \u2192 early return sorted \u2192 hidden attributes rendered; type 'a' \u2192 they vanish",
+  "suggestion": "Filter HIDDEN_ATTRIBUTES first, then apply the search filter.",
+  "n": 22
+ },
+ {
+  "repo": "sentry",
+  "base": "49a275847631e231672d01b5dcd66558c069d25b",
+  "head": "ea188e2d736fd6ed27c1dba8aae63b7268e2a7a9",
+  "file": "static/app/views/explore/hooks/useTraceItemAttributeKeys.tsx",
+  "lines": [
+   39,
+   54
+  ],
+  "title": "Query key omits organization slug",
+  "description": "The query key is ['use-trace-item-attribute-keys', queryOptions], where queryOptions holds only item type, attribute type, projects and datetime. The queryFn fetches from /organizations/${organization.slug}/trace-items/attributes/, so the org slug is an input missing from the key. After switching organizations in the same session, with the same project ids and datetime, the cache returns the previous org's attributes. The old code used the URL as the key, which included the slug. The old code also set staleTime 0, retry false and refetchOnWindowFocus false. These are now dropped, so default retry and focus-refetch behavior applies.",
+  "failurePath": "Org A visited, then org B with same project ids/period \u2192 same query key \u2192 cached attributes of org A shown for org B.",
+  "suggestion": "Include organization.slug in the queryKey, and restore retry: false / staleTime / refetchOnWindowFocus options if needed.",
+  "n": 23
+ },
+ {
+  "repo": "cal.com",
+  "base": "efa6d464a38e60ceeeb88f40668c1c4ac4bfaf54",
+  "head": "54486a059cd2032042189bb565646ba4e0f6bd61",
+  "file": "apps/web/pages/api/auth/two-factor/totp/disable.ts",
+  "lines": [
+   48,
+   64
+  ],
+  "title": "Non-string backupCode crashes; no rate limiting on backup-code guessing",
+  "description": "req.body.backupCode.replaceAll is called without type check; a non-string truthy value throws a 500. The endpoint also has no rate limiting for brute-forcing backup codes.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 24
+ },
+ {
+  "repo": "cal.com",
+  "base": "efa6d464a38e60ceeeb88f40668c1c4ac4bfaf54",
+  "head": "54486a059cd2032042189bb565646ba4e0f6bd61",
+  "file": "apps/web/components/settings/EnableTwoFactorModal.tsx",
+  "lines": [
+   134,
+   136
+  ],
+  "title": "onEnable deferred to backup-codes Close button; dismissing dialog leaves parent stale",
+  "description": "After a successful enable, onEnable() is no longer called; it is only called from the Close button. If the user dismisses the dialog via Escape/overlay (onOpenChange), the 2FA is enabled server-side but the parent never refreshes, the switch shows disabled, and the backup codes are lost (shown only once). Also form totpCode is not reset by resetState.",
+  "failurePath": "Enter valid TOTP \u2192 step=DisplayBackupCodes \u2192 press Escape \u2192 onOpenChange only \u2192 onEnable never called \u2192 UI shows 2FA off while enabled",
+  "suggestion": "Call onEnable when the totp is accepted (or on any close from the backup step) and reset the form in resetState.",
+  "n": 25
+ },
+ {
+  "repo": "cal.com",
+  "base": "a308075bc39b77ed7059b0cae9d443d669a7bf98",
+  "head": "de628295646d0848226618108a52f2f1e5d04ac0",
+  "file": "packages/app-store/googlecalendar/lib/CalendarService.ts",
+  "lines": [
+   254,
+   256
+  ],
+  "title": "updateEvent calendar lookup compares against falsy externalCalendarId",
+  "description": "In the else branch externalCalendarId is falsy, so `find(cal => cal.externalId === externalCalendarId)` never matches a real calendar; selectedCalendar is undefined. Previously it fell back to event.destinationCalendar.externalId. Updates for references without externalCalendarId now fail or hit the wrong calendar.",
+  "failurePath": "updateEvent without externalCalendarId \u2192 find matches nothing \u2192 calendarId undefined \u2192 Google update call fails",
+  "suggestion": "Fall back to the main (first) destination calendar's externalId, e.g. filtered by credential.",
+  "n": 26
+ },
+ {
+  "repo": "cal.com",
+  "base": "a308075bc39b77ed7059b0cae9d443d669a7bf98",
+  "head": "de628295646d0848226618108a52f2f1e5d04ac0",
+  "file": "packages/app-store/googlecalendar/lib/CalendarService.ts",
+  "lines": [
+   315,
+   317
+  ],
+  "title": "deleteEvent destination calendar fallback never matches",
+  "description": "Same flawed find against falsy externalCalendarId: always undefined, so deletion falls back to \"primary\" instead of the booking's destination calendar as before; event on a non-primary calendar is not deleted (404 is swallowed as success).",
+  "failurePath": "cancel booking with reference lacking externalCalendarId \u2192 calendarId undefined \u2192 delete on primary \u2192 404 resolved silently \u2192 event remains",
+  "suggestion": "",
+  "n": 27
+ },
+ {
+  "repo": "cal.com",
+  "base": "a308075bc39b77ed7059b0cae9d443d669a7bf98",
+  "head": "de628295646d0848226618108a52f2f1e5d04ac0",
+  "file": "packages/features/bookings/lib/handleNewBooking.ts",
+  "lines": [
+   1077,
+   1079
+  ],
+  "title": "Team destination calendars dropped when host has none",
+  "description": "evt.destinationCalendar is null when neither eventType nor organizer has one; `?.push` then does nothing so collective team members' calendars are not used.",
+  "failurePath": "collective event, organizer without destination calendar \u2192 destinationCalendar null \u2192 push skipped \u2192 team calendars ignored",
+  "suggestion": "Initialize to [] and push unconditionally.",
+  "n": 28
+ },
+ {
+  "repo": "cal.com",
+  "base": "a308075bc39b77ed7059b0cae9d443d669a7bf98",
+  "head": "de628295646d0848226618108a52f2f1e5d04ac0",
+  "file": "packages/features/bookings/lib/handleCancelBooking.ts",
+  "lines": [
+   449,
+   460
+  ],
+  "title": "Recurring deletes repeated per calendar reference",
+  "description": "The recurring branch deletes events for all updatedBookings across all calendar credentials, but it now runs inside a loop over every calendar reference, so with multiple references the same deletions are executed repeatedly (404/410 swallowed, but redundant API calls).",
+  "failurePath": "recurring booking with N calendar references \u2192 N\u00d7 full deletion sweeps",
+  "suggestion": "",
+  "n": 29
+ },
+ {
+  "repo": "cal.com",
+  "base": "b004587262e8221083bafbe9a0c515e7becaa7b3",
+  "head": "92f44dcea7ff19e9123a30c63c167a2938df5a55",
+  "file": "apps/web/components/dialog/AddGuestsDialog.tsx",
+  "lines": [
+   42,
+   45
+  ],
+  "title": "Error toast fallback never used and t() applied to raw messages",
+  "description": "The message template string is always truthy, so `|| t(\"unable_to_add_guests\")` is dead; non-translation server errors show as 'INTERNAL_SERVER_ERROR: <raw>' and undefined code prints 'undefined: ...'.",
+  "failurePath": "network error \u2192 err.data undefined \u2192 toast 'undefined: ...'",
+  "suggestion": "",
+  "n": 30
+ },
+ {
+  "repo": "cal.com",
+  "base": "917c7b0764f4c6bfdca95db2c5f73dbfdbe11757",
+  "head": "c790227e0cda780e6fea9bb03af27948d9e286b9",
+  "file": "packages/features/ee/workflows/api/scheduleSMSReminders.ts",
+  "lines": [
+   189,
+   199
+  ],
+  "title": "Unguarded retryCount update in catch can abort the whole reminder loop",
+  "description": "The retryCount update in the catch block is not guarded. If the update itself fails (e.g., DB error, or the error came from the prior prisma update after Twilio already scheduled the SMS), the exception escapes the loop, the handler fails, and remaining reminders are not processed. Also, if the post-schedule DB update failed, retryCount is incremented and the SMS is rescheduled next run, causing duplicate SMS.",
+  "failurePath": "twilio.scheduleSMS succeeds \u2192 prisma update throws \u2192 catch increments retryCount \u2192 next cron reschedules the same SMS (duplicate); or catch update throws \u2192 500 and loop aborted",
+  "suggestion": "Wrap the catch update in its own try/catch; separate scheduling errors from persistence errors.",
+  "n": 31
+ },
+ {
+  "repo": "cal.com",
+  "base": "c9a47dd0cebd121ff73f24e1f8c1829579daf8e3",
+  "head": "da09bc0808e7c6df1bc10e00d5acf764d94c7cc7",
+  "file": "packages/lib/server/service/insightsBooking.ts",
+  "lines": [
+   104,
+   108
+  ],
+  "title": "Single eventType filter returned as unparenthesized OR fragment",
+  "description": "With only an eventTypeId filter, buildFilterConditions returns `(\"eventTypeId\" = X) OR (\"eventParentId\" = X)` with no outer parentheses. getBaseConditions wraps it, so the current path is safe. But a caller that uses getFilterConditions() directly and ANDs it with other SQL would get wrong precedence. That could widen results beyond the authorization scope.",
+  "failurePath": "",
+  "suggestion": "Wrap the OR in parentheses when building it.",
+  "n": 32
+ },
+ {
+  "repo": "cal.com",
+  "base": "30a92a4d66b417f7c19dee2b343099adc6e88aa6",
+  "head": "5fd11f9faa79c4aefd39975d1b0e963e5034f793",
+  "file": "scripts/test-gcal-webhooks.sh",
+  "lines": [
+   56,
+   59
+  ],
+  "title": "Failure paths exit with status 0",
+  "description": "cleanup always runs `exit 0`, so the rate-limit and URL-extraction failures report success to callers.",
+  "failurePath": "tmole fails to start \u2192 TUNNEL_URL empty \u2192 cleanup \u2192 exit 0",
+  "suggestion": "Pass an exit code to cleanup and use exit 1 on failures.",
+  "n": 33
+ },
+ {
+  "repo": "cal.com",
+  "base": "d1440bb5d2f2190ad7ae1d26c165f970055b5370",
+  "head": "6048e2a86b50e81e1e3b1b467dfea5a895add3dc",
+  "file": "packages/features/ee/workflows/api/scheduleEmailReminders.ts",
+  "lines": [
+   33,
+   77
+  ],
+  "title": "Cron cancel loop aborts on the first failed SendGrid request, leaving later cancelled reminders uncancelled",
+  "description": "The deleteMany of all EMAIL reminders with scheduledDate <= now runs first, then the cancelled lookup uses scheduledDate <= now+1h. Cancelled reminders whose date is already passed are deleted without cancelling the SendGrid batch. Also the cancel query lacks method filter (SMS reminders would be sent to SendGrid) and referenceId may be null (unscheduled ones are deleted directly, but guard missing). One failing request aborts the loop, leaving the rest uncancelled.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 34
+ },
+ {
+  "repo": "cal.com",
+  "base": "d1440bb5d2f2190ad7ae1d26c165f970055b5370",
+  "head": "6048e2a86b50e81e1e3b1b467dfea5a895add3dc",
+  "file": "packages/features/bookings/lib/handleNewBooking.ts",
+  "lines": [
+   963,
+   975
+  ],
+  "title": "try/catch around fire-and-forget async calls is ineffective",
+  "description": "deleteScheduledEmailReminder/SMS are async and not awaited, so the try/catch catches nothing (they swallow errors internally). Reschedule proceeds without waiting for cancellation; also with immediateDelete=true the DB rows are never removed, so stale reminders remain for the old booking.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 35
+ },
+ {
+  "repo": "cal.com",
+  "base": "ba9688a04a8398c9a8332ee7061bfae2f2efd524",
+  "head": "820d7fa87e0c824c5dee8082a33efadb1a2566f7",
+  "file": "packages/app-store/index.ts",
+  "lines": [
+   1,
+   31
+  ],
+  "title": "appStore dynamic imports start eagerly at module load, so the async import is not lazy",
+  "description": "Each property is `import(...)` evaluated immediately when the object literal is built, so all ~30 app packages are loaded as soon as index.ts is imported, defeating the lazy-load intent. If any import rejects (missing env or dependency), that promise rejects with no handler unless that key is later awaited, which causes an unhandled rejection (fatal on Node 18).",
+  "failurePath": "any module imports appStore -> object literal runs all import() calls -> an app module that fails to load rejects -> no handler attached -> unhandled rejection",
+  "suggestion": "Make the values lazy thunks, e.g. `applecalendar: () => import(\"./applecalendar\")`, and call and await them at the use sites.",
+  "n": 36
+ },
+ {
+  "repo": "cal.com",
+  "base": "93cb21f55a2a40d9116c014741f5679fbeff5fd9",
+  "head": "ee38fd295fd294b9fc787eba482bde24bbfea69b",
+  "file": "packages/lib/slots.ts",
+  "lines": [
+   211,
+   225
+  ],
+  "title": "Override offset shift can wrap across midnight, producing end < start",
+  "description": "override.timeZone is optional; tz(undefined) falls back to default/local zone, giving a wrong offset. Also adding the offset and taking hour/minute modulo 24h can wrap start/end across midnight (end < start), producing invalid timeframes. Offset is computed at override.start only, so DST changes between start and end are ignored.",
+  "failurePath": "override with no timeZone \u2192 organizerUtcOffset uses server zone \u2192 shifted override times",
+  "suggestion": "Skip the shift when timeZone is missing; handle day wrap.",
+  "n": 37
+ },
+ {
+  "repo": "sentry",
+  "base": "f3b740199ef0b8057c2c68a377fd3b4d42346deb",
+  "head": "bb75657fc8f13923c1d7983f422290908a1e7310",
+  "file": "src/sentry/integrations/github/integration.py",
+  "lines": [
+   434,
+   436
+  ],
+  "title": "get_user_info exceptions not handled",
+  "description": "get_user_info calls raise_for_status and does no other error handling. An invalid or expired token, a rate limit, or a network error raises an uncaught exception here, so the user gets a 500 and not the failure page. The token exchange just above is wrapped in try/except, so this call is inconsistent with it.",
+  "failurePath": "GitHub /user returns 401/5xx \u2192 raise_for_status raises HTTPError \u2192 unhandled 500.",
+  "suggestion": "Wrap in try/except and return error(...).",
+  "n": 38
+ },
+ {
+  "repo": "sentry",
+  "base": "f3b740199ef0b8057c2c68a377fd3b4d42346deb",
+  "head": "bb75657fc8f13923c1d7983f422290908a1e7310",
+  "file": "src/sentry/integrations/github/integration.py",
+  "lines": [
+   448,
+   454
+  ],
+  "title": "installation_id from query parameter can override/rebind state",
+  "description": "A GET installation_id on the later step overrides the one bound in OAuth step; the sender check is tied to the integration looked up by that id, allowing the installation_id to be swapped after OAuth.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 39
+ },
+ {
+  "repo": "sentry",
+  "base": "f3b740199ef0b8057c2c68a377fd3b4d42346deb",
+  "head": "bb75657fc8f13923c1d7983f422290908a1e7310",
+  "file": "src/sentry/integrations/github/integration.py",
+  "lines": [
+   407,
+   409
+  ],
+  "title": "redirect_uri not URL-encoded in authorize URL",
+  "description": "redirect_uri is interpolated raw into the query string. Its own ':' and '/' characters, and any special characters in a customer-domain URL, are not percent-encoded. A redirect_uri containing '&' or '?' would corrupt the other parameters.",
+  "failurePath": "",
+  "suggestion": "Build the query with urllib.parse.urlencode.",
+  "n": 40
+ },
+ {
+  "repo": "sentry",
+  "base": "fd358e8a388939959369f08f616e29552cdaf96e",
+  "head": "9966ec5a13e331659c3ea00981f9b11b0faf821f",
+  "file": "src/sentry/remote_subscriptions/consumers/queue_consumer.py",
+  "lines": [
+   273,
+   291
+  ],
+  "title": "Commit called from a background thread; stale offsets kept across rebalances",
+  "description": "The commit function is invoked from a separate daemon thread, but Arroyo's commit callback is meant to be called from the consumer thread and is not thread-safe. The OffsetTracker is also never reset on rebalance, so offsets for revoked partitions may be committed later.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 41
+ },
+ {
+  "repo": "sentry",
+  "base": "fd358e8a388939959369f08f616e29552cdaf96e",
+  "head": "9966ec5a13e331659c3ea00981f9b11b0faf821f",
+  "file": "src/sentry/remote_subscriptions/consumers/queue_consumer.py",
+  "lines": [
+   83,
+   93
+  ],
+  "title": "Commit stalls permanently on any offset gap",
+  "description": "The contiguity check requires every offset between last_committed+1 and max to be in all_offsets. Legitimate gaps (compacted or transactional topics, offsets skipped after a rebalance rewind) are never filled. Committing stalls and all_offsets grows without bound. Offsets at or below last_committed after a re-delivery are also never committable.",
+  "failurePath": "offset 101 never delivered (gap) \u2192 loop breaks at 101 \u2192 highest_committable never advances \u2192 no more commits and all_offsets grows",
+  "suggestion": "Track committable position from the contiguous completed prefix of delivered offsets rather than assuming consecutive offsets, e.g. commit the minimum outstanding offset.",
+  "n": 42
+ },
+ {
+  "repo": "grafana",
+  "base": "15e1aa88551d925a80796a966e52f2b7a178203b",
+  "head": "8df850371034b73dc4dd9908cc30fa09f12a1f97",
+  "file": "public/app/features/alerting/unified/hooks/useAbilities.ts",
+  "lines": [
+   323,
+   328
+  ],
+  "title": "Pause/Restore/Export limited to alerting rules for Grafana prom rules",
+  "description": "The ruler version enabled Pause, Restore, ModifyExport and DeletePermanently for all Grafana-managed rules, including recording rules. The prom version gates them on alertingRule, so Grafana recording rules lose pause/export in the list view.",
+  "failurePath": "Grafana recording rule in list \u2192 isAlertingRule false \u2192 export/pause unsupported",
+  "suggestion": "Use prometheusRuleType.grafana.rule(rule) for these gates; keep alertingRule only for Silence.",
+  "n": 43
+ },
+ {
+  "repo": "grafana",
+  "base": "15e1aa88551d925a80796a966e52f2b7a178203b",
+  "head": "8df850371034b73dc4dd9908cc30fa09f12a1f97",
+  "file": "public/app/features/alerting/unified/hooks/useAbilities.ts",
+  "lines": [
+   242,
+   245
+  ],
+  "title": "Federated rule groups no longer treated as immutable in useAllAlertRuleAbilities",
+  "description": "The old code used isFederatedRuleGroup(rule.group) for CombinedRule. The refactor delegates to useAllRulerRuleAbilities, which hardcodes isFederated = false. The deprecated hook still serves CombinedRule callers (e.g. RuleActionsButtons, RuleDetails), so federated Mimir/Loki rules now get edit/delete/pause abilities enabled.",
+  "failurePath": "CombinedRule from federated group \u2192 useAllAlertRuleAbilities \u2192 isFederated false \u2192 Update/Delete supported",
+  "suggestion": "Pass the federated flag through from CombinedRule.group into the shared implementation.",
+  "n": 44
+ },
+ {
+  "repo": "grafana",
+  "base": "15e1aa88551d925a80796a966e52f2b7a178203b",
+  "head": "8df850371034b73dc4dd9908cc30fa09f12a1f97",
+  "file": "public/app/features/alerting/unified/rule-list/components/RuleActionsButtons.V2.tsx",
+  "lines": [
+   51,
+   70
+  ],
+  "title": "Silence is a no-op and Delete is unavailable for prom-only Grafana rules in the list view",
+  "description": "For list-view rules, rule (ruler) is undefined: the silence drawer only renders when rulerRuleType.grafana.alertingRule(rule) so 'Silence notifications' menu item does nothing; and handleDelete in AlertRuleMenu requires rulerRule, so Delete likely does nothing for prom-only rules. Menu entries are enabled by Grafana abilities but actions are no-ops.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 45
+ },
+ {
+  "repo": "grafana",
+  "base": "58ba11ecbd60863e2bfc6e32f0399ed4feb3927a",
+  "head": "303cdc2caf256aa5df660611120c2e3f7392365d",
+  "file": "pkg/plugins/log/logger.go",
+  "lines": [
+   48,
+   56
+  ],
+  "title": "FromContext silently drops context when type assertion fails",
+  "description": "If the infra logger's FromContext returns something other than *log.ConcreteLogger, the wrapper falls back to d.New(), discarding the contextual attributes (plugin id, endpoint, ds name, etc.) and the log line loses them without any signal.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 46
+ },
+ {
+  "repo": "grafana",
+  "base": "a886bd3c79a417a70b51509384d1f1ec3e87e96b",
+  "head": "04cfa3bfd469c035ff8b35f9a66867c4e8d5dcf4",
+  "file": "pkg/services/annotations/annotationsimpl/xorm_store.go",
+  "lines": [
+   605,
+   618
+  ],
+  "title": "Bind-parameter limit only handled for SQLite; batch size can exceed limits elsewhere",
+  "description": "With the new IN (?,?,...) delete, any batch size above the driver's limit (65535 for Postgres/MySQL) now fails, whereas the previous single-statement subquery had no parameter limit. Only SQLite with batch>999 is special-cased. Also the SQLite decision is based on configured batch size rather than len(ids), which is fine but inlines IDs unnecessarily.",
+  "failurePath": "AnnotationCleanupJobBatchSize configured >65535 on Postgres/MySQL \u2192 fetchIDs returns >65535 ids \u2192 DELETE with too many placeholders errors \u2192 cleanup never succeeds.",
+  "suggestion": "Chunk deletes into groups under the parameter limit for all dialects.",
+  "n": 47
+ },
+ {
+  "repo": "grafana",
+  "base": "66c4dff17e9147b11fb9b14c6ed63089a599da65",
+  "head": "e369f24665ec70e1e3700f457d25ef83301d931a",
+  "file": "pkg/apiserver/rest/dualwriter_mode3.go",
+  "lines": [
+   50,
+   57
+  ],
+  "title": "Async legacy write uses request context that is cancelled when handler returns",
+  "description": "The goroutine derives its timeout context from the request ctx. Once the handler returns, the request context is cancelled, so the legacy write is often cancelled or fails, losing legacy writes (data divergence). Same in Update, Delete and DeleteCollection goroutines.",
+  "failurePath": "client POST \u2192 Storage.Create succeeds \u2192 handler returns, request ctx cancelled \u2192 goroutine's Legacy.Create runs with cancelled ctx \u2192 fails/aborts, legacy store never gets the object",
+  "suggestion": "Use context.WithoutCancel(ctx) as parent before WithTimeoutCause.",
+  "n": 48
+ },
+ {
+  "repo": "grafana",
+  "base": "66c4dff17e9147b11fb9b14c6ed63089a599da65",
+  "head": "e369f24665ec70e1e3700f457d25ef83301d931a",
+  "file": "pkg/apiserver/rest/dualwriter_mode3.go",
+  "lines": [
+   43,
+   46
+  ],
+  "title": "Storage failure recorded as legacy duration",
+  "description": "On Storage.Create/Update error, recordLegacyDuration is called instead of recordStorageDuration, polluting legacy metrics and omitting storage error metrics.",
+  "failurePath": "Storage.Create returns error \u2192 recordLegacyDuration(true,...) \u2192 storage error metric missing, legacy metric wrong",
+  "suggestion": "Use recordStorageDuration.",
+  "n": 49
+ },
+ {
+  "repo": "keycloak",
+  "base": "272cfc68dcc88615396ae62ed1571918e9c58ad3",
+  "head": "e944e2acf1e64421860a8e827f93ad06c169621b",
+  "file": "model/infinispan/src/main/java/org/keycloak/models/cache/infinispan/idp/InfinispanIdentityProviderStorageProvider.java",
+  "lines": [
+   100,
+   103
+  ],
+  "title": "remove() always queries the DB for the IDP; null-IDP NPE only in the already-invalid branch (existing behaviour)",
+  "description": "idpDelegate.getByAlias(alias) is now run on every remove, even when the alias is cached and not invalidated, which adds a DB query. If the alias does not exist, storedIdp is null, and registerIDPInvalidation(storedIdp) NPEs in the invalid branch instead of remove returning false.",
+  "failurePath": "remove(unknownAlias) while the alias key is already invalidated \u2192 storedIdp null \u2192 registerIDPInvalidation(null) \u2192 NPE",
+  "suggestion": "Fetch the IDP only where needed and null-check it before invalidating.",
+  "n": 50
+ },
+ {
+  "repo": "keycloak",
+  "base": "7ea067aae9be56cb2622bce6563864817c3dfeaf",
+  "head": "7355f05e6aafe2a7acc6434fb40c686665416606",
+  "file": "services/src/main/java/org/keycloak/services/resources/admin/permissions/GroupPermissionsV2.java",
+  "lines": [
+   141,
+   150
+  ],
+  "title": "Possible NPE when the Groups resource-type resource is missing",
+  "description": "getResourceTypeResource can return null, for example when the schema is unsupported or the resource is missing. Its result is then passed to policyStore.findByResource and dereferenced without a null check.",
+  "failurePath": "",
+  "suggestion": "",
+  "n": 51
+ },
+ {
+  "repo": "keycloak",
+  "base": "85737f52b59aa2e3403c9b8e48acf71ccc5bfae3",
+  "head": "ce2dcc537b4b1f98a335e88cfe8e0b804483252a",
+  "file": "testsuite/integration-arquillian/servers/auth-server/services/testsuite-providers/src/main/java/org/keycloak/testsuite/federation/BackwardsCompatibilityUserStorage.java",
+  "lines": [
+   232,
+   235
+  ],
+  "title": "getCredentials dereferences possibly-null MyUser",
+  "description": "getMyUser(user) returns null when the user is not in the in-memory map (e.g. removed or a different federated user). The other methods (getDisableableCredentialTypesStream, isConfiguredFor, isValid) null-check; getCredentials does not and throws NPE on myUser.recoveryCodes.",
+  "failurePath": "user id not in users map \u2192 credentialManager().getFederatedCredentialsStream() \u2192 getCredentials \u2192 myUser.recoveryCodes \u2192 NPE",
+  "suggestion": "Return Stream.empty() if myUser == null.",
+  "n": 52
+ },
+ {
+  "repo": "keycloak",
+  "base": "7fd37690c44c7068cb19ecee3aa6ff99c46a821d",
+  "head": "4def149a50c4b9b2c24fbb753ac60fe4f4df0cac",
+  "file": "model/infinispan/src/main/java/org/keycloak/models/cache/infinispan/GroupAdapter.java",
+  "lines": [
+   254,
+   269
+  ],
+  "title": "Other getSubGroupsStream overloads still NPE when group deleted concurrently",
+  "description": "getSubGroupsCount was made null-safe for a concurrently deleted group (modelSupplier.get() returns null), but the sibling getSubGroupsStream overloads still dereference modelSupplier.get() directly and throw NPE in the same race.",
+  "failurePath": "group deleted concurrently while cached adapter is in use, getGroupModel returns null, modelSupplier.get().getSubGroupsStream(...) throws NullPointerException",
+  "suggestion": "Return Stream.empty() when the model is null.",
+  "n": 53
+ }
+]

@@ -1,0 +1,532 @@
+[
+ {
+  "n": 1,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.5,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/1",
+  "title": "API URL download limit hardcoded to 10MB; larger files are silently truncated"
+ },
+ {
+  "n": 2,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.35,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/1",
+  "title": "Downsize loop ignores failure and runs on the upload path in place"
+ },
+ {
+  "n": 3,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.35,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/10",
+  "title": "replace('_','-') only replaces first underscore"
+ },
+ {
+  "n": 4,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.3,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/10",
+  "title": "Host regex rejects valid hosts"
+ },
+ {
+  "n": 5,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.35,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/2",
+  "title": "unsubscribe_link translation requires unsubscribe_url not always provided"
+ },
+ {
+  "n": 6,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.6,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/2",
+  "title": "tu.save! bypasses TopicUser.change bookkeeping"
+ },
+ {
+  "n": 7,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.45,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/2",
+  "title": "Unsubscribe GET is non-idempotent: reloading the page escalates regular to muted"
+ },
+ {
+  "n": 8,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.35,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/3",
+  "title": "Shared array on controller prototype"
+ },
+ {
+  "n": 9,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.4,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/4",
+  "title": "embed.post may be nil or deleted when updating"
+ },
+ {
+  "n": 10,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "major",
+  "confidence": 0.55,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/4",
+  "title": "Raw HTML from feeds/remote pages is stored and rendered unsanitized (stored XSS)"
+ },
+ {
+  "n": 11,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.3,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/4",
+  "title": "Kernel#open on URL fetches server-side without protection (SSRF)"
+ },
+ {
+  "n": 12,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.3,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/4",
+  "title": "Edited applied migration adds force: true, dropping table on rerun"
+ },
+ {
+  "n": 13,
+  "pool": "main",
+  "sweep": true,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.75,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/7",
+  "title": "Topic map h3 light color changed from 20% to 50%"
+ },
+ {
+  "n": 14,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "major",
+  "confidence": 0.7,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/8",
+  "title": "Public members endpoint now caps non-automatic groups at 50 with no paging in UI"
+ },
+ {
+  "n": 15,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.4,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/9",
+  "title": "Fallback locales loaded only in the controller"
+ },
+ {
+  "n": 16,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.6,
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/9",
+  "title": "Fallback locales not loaded outside controllers; 'translation missing' can be cached"
+ },
+ {
+  "n": 17,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.3,
+  "url": "https://github.com/ai-code-review-evaluation/sentry-greptile/pull/2",
+  "title": "Missing end_timestamp_precise raises KeyError in the batch"
+ },
+ {
+  "n": 18,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.3,
+  "url": "https://github.com/ai-code-review-evaluation/sentry-greptile/pull/3",
+  "title": "Only exact 'count()' is transformed"
+ },
+ {
+  "n": 19,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "major",
+  "confidence": 0.7,
+  "url": "https://github.com/ai-code-review-evaluation/sentry-greptile/pull/3",
+  "title": "upsampled_count sums sample_weight, which is NULL for events without a client sample rate"
+ },
+ {
+  "n": 20,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.35,
+  "url": "https://github.com/ai-code-review-evaluation/sentry-greptile/pull/5",
+  "title": "get_environment_info does one recommended-event lookup per issue (bounded, best-effort)"
+ },
+ {
+  "n": 21,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "major",
+  "confidence": 0.8,
+  "url": "https://github.com/ai-code-review-evaluation/sentry-greptile/pull/5",
+  "title": "Error timestamps (seconds) compared with replay event timestamps (milliseconds)"
+ },
+ {
+  "n": 22,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.85,
+  "url": "https://github.com/ai-code-review-evaluation/sentry-greptile/pull/5",
+  "title": "HIDDEN_ATTRIBUTES only applied when a search query is present"
+ },
+ {
+  "n": 23,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.5,
+  "url": "https://github.com/ai-code-review-evaluation/sentry-greptile/pull/5",
+  "title": "Query key omits organization slug"
+ },
+ {
+  "n": 24,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.35,
+  "url": "https://github.com/calcom/cal.com/pull/10600",
+  "title": "Non-string backupCode crashes; no rate limiting on backup-code guessing"
+ },
+ {
+  "n": 25,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.7,
+  "url": "https://github.com/calcom/cal.com/pull/10600",
+  "title": "onEnable deferred to backup-codes Close button; dismissing dialog leaves parent stale"
+ },
+ {
+  "n": 26,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.75,
+  "url": "https://github.com/calcom/cal.com/pull/10967",
+  "title": "updateEvent calendar lookup compares against falsy externalCalendarId"
+ },
+ {
+  "n": 27,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.65,
+  "url": "https://github.com/calcom/cal.com/pull/10967",
+  "title": "deleteEvent destination calendar fallback never matches"
+ },
+ {
+  "n": 28,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.6,
+  "url": "https://github.com/calcom/cal.com/pull/10967",
+  "title": "Team destination calendars dropped when host has none"
+ },
+ {
+  "n": 29,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.6,
+  "url": "https://github.com/calcom/cal.com/pull/10967",
+  "title": "Recurring deletes repeated per calendar reference"
+ },
+ {
+  "n": 30,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.7,
+  "url": "https://github.com/calcom/cal.com/pull/14740",
+  "title": "Error toast fallback never used and t() applied to raw messages"
+ },
+ {
+  "n": 31,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.6,
+  "url": "https://github.com/calcom/cal.com/pull/14943",
+  "title": "Unguarded retryCount update in catch can abort the whole reminder loop"
+ },
+ {
+  "n": 32,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.3,
+  "url": "https://github.com/calcom/cal.com/pull/22345",
+  "title": "Single eventType filter returned as unparenthesized OR fragment"
+ },
+ {
+  "n": 33,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.7,
+  "url": "https://github.com/calcom/cal.com/pull/22532",
+  "title": "Failure paths exit with status 0"
+ },
+ {
+  "n": 34,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.35,
+  "url": "https://github.com/calcom/cal.com/pull/7232",
+  "title": "Cron cancel loop aborts on the first failed SendGrid request, leaving later cancelled reminders uncancelled"
+ },
+ {
+  "n": 35,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.3,
+  "url": "https://github.com/calcom/cal.com/pull/7232",
+  "title": "try/catch around fire-and-forget async calls is ineffective"
+ },
+ {
+  "n": 36,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.65,
+  "url": "https://github.com/calcom/cal.com/pull/8087",
+  "title": "appStore dynamic imports start eagerly at module load, so the async import is not lazy"
+ },
+ {
+  "n": 37,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.35,
+  "url": "https://github.com/calcom/cal.com/pull/8330",
+  "title": "Override offset shift can wrap across midnight, producing end < start"
+ },
+ {
+  "n": 38,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.55,
+  "url": "https://github.com/getsentry/sentry/pull/67876",
+  "title": "get_user_info exceptions not handled"
+ },
+ {
+  "n": 39,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.3,
+  "url": "https://github.com/getsentry/sentry/pull/67876",
+  "title": "installation_id from query parameter can override/rebind state"
+ },
+ {
+  "n": 40,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.35,
+  "url": "https://github.com/getsentry/sentry/pull/67876",
+  "title": "redirect_uri not URL-encoded in authorize URL"
+ },
+ {
+  "n": 41,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.3,
+  "url": "https://github.com/getsentry/sentry/pull/95633",
+  "title": "Commit called from a background thread; stale offsets kept across rebalances"
+ },
+ {
+  "n": 42,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.3,
+  "url": "https://github.com/getsentry/sentry/pull/95633",
+  "title": "Commit stalls permanently on any offset gap"
+ },
+ {
+  "n": 43,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "minor",
+  "confidence": 0.45,
+  "url": "https://github.com/grafana/grafana/pull/106778",
+  "title": "Pause/Restore/Export limited to alerting rules for Grafana prom rules"
+ },
+ {
+  "n": 44,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.6,
+  "url": "https://github.com/grafana/grafana/pull/106778",
+  "title": "Federated rule groups no longer treated as immutable in useAllAlertRuleAbilities"
+ },
+ {
+  "n": 45,
+  "pool": "main",
+  "sweep": true,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.7,
+  "url": "https://github.com/grafana/grafana/pull/106778",
+  "title": "Silence is a no-op and Delete is unavailable for prom-only Grafana rules in the list view"
+ },
+ {
+  "n": 46,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.3,
+  "url": "https://github.com/grafana/grafana/pull/76186",
+  "title": "FromContext silently drops context when type assertion fails"
+ },
+ {
+  "n": 47,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.35,
+  "url": "https://github.com/grafana/grafana/pull/80329",
+  "title": "Bind-parameter limit only handled for SQLite; batch size can exceed limits elsewhere"
+ },
+ {
+  "n": 48,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "major",
+  "confidence": 0.65,
+  "url": "https://github.com/grafana/grafana/pull/90045",
+  "title": "Async legacy write uses request context that is cancelled when handler returns"
+ },
+ {
+  "n": 49,
+  "pool": "main",
+  "sweep": false,
+  "tier": "main",
+  "severity": "minor",
+  "confidence": 0.92,
+  "url": "https://github.com/grafana/grafana/pull/90045",
+  "title": "Storage failure recorded as legacy duration"
+ },
+ {
+  "n": 50,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.3,
+  "url": "https://github.com/keycloak/keycloak/pull/32918",
+  "title": "remove() always queries the DB for the IDP; null-IDP NPE only in the already-invalid branch (existing behaviour)"
+ },
+ {
+  "n": 51,
+  "pool": "sweep-advisory",
+  "sweep": true,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.3,
+  "url": "https://github.com/keycloak/keycloak/pull/37038",
+  "title": "Possible NPE when the Groups resource-type resource is missing"
+ },
+ {
+  "n": 52,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.4,
+  "url": "https://github.com/keycloak/keycloak/pull/38446",
+  "title": "getCredentials dereferences possibly-null MyUser"
+ },
+ {
+  "n": 53,
+  "pool": "chunk-advisory",
+  "sweep": false,
+  "tier": "advisory",
+  "severity": "info",
+  "confidence": 0.3,
+  "url": "https://github.com/keycloak/keycloak/pull/40940",
+  "title": "Other getSubGroupsStream overloads still NPE when group deleted concurrently"
+ }
+]

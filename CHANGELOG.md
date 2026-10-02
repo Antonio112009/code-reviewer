@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Evaluation
+
+- BENCHMARKS.md re-judges Qodo v2 (#4 on Martian's leaderboard: 54.1 F1 under the same judge, 58.5 as
+  published) and adds a blind audit of the Martian findings the judge matched to no known bug: all 20 sampled
+  from the main report are real defects, so the benchmark understates the main report's precision. Two
+  experiments are recorded and dropped: the sweep at high reasoning and a second independent sweep
+  (`evals/experiments/`).
+
 ## 0.8.0 — 2026-10-02
 
 ### Review quality

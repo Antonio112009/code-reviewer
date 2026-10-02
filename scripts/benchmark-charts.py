@@ -34,9 +34,10 @@ PUBLISHED = [  # precision, recall
 REJUDGED = [  # label next to the ring: (dx, dy, text-anchor)
     ("#1", (67.1, 64.6), (61.4, 59.5), (0, -11, "middle")),  # Qodo Extended
     ("#3", (59.5, 65.2), (58.1, 63.3), (7, 17, "start")),  # Augment
+    ("#4", (55.4, 62.0), (51.4, 57.0), (-9, 4, "end")),  # Qodo v2
     ("#12", (46.3, 48.1), (41.8, 41.8), (9, 4, "start")),  # Claude Code CLI
 ]
-REJUDGED_NAMES = "Qodo Extended #1, Augment #3, Claude Code CLI #12"
+REJUDGED_NAMES = "Qodo Extended #1, Augment #3, Qodo v2 #4, Claude Code CLI #12"
 # code-reviewer 0.7.0 (eb5c564), runs m-1 and m-2 averaged, and the same model asked once (plain LLM), p-1 and
 # p-2 averaged; judged by claude-opus-4-5-20251101 through `claude -p` (BENCHMARKS.md, "Judges").
 OURS_MAIN = (73.3, 37.3)  # main report
