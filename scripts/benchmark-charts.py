@@ -40,8 +40,10 @@ REJUDGED = [  # label next to the ring: (dx, dy, text-anchor)
 REJUDGED_NAMES = "Qodo Extended #1, Augment #3, Qodo v2 #4, Claude Code CLI #12"
 # code-reviewer 0.7.0 (eb5c564), runs m-1 and m-2 averaged, and the same model asked once (plain LLM), p-1 and
 # p-2 averaged; judged by claude-opus-4-5-20251101 through `claude -p` (BENCHMARKS.md, "Judges").
-OURS_MAIN = (73.3, 37.3)  # main report
-OURS_ALL = (64.0, 54.1)  # main report + "worth a look"
+# code-reviewer 0.8.0 with its defaults (measured on 84d96f3), runs mn-1 and mn-2; the maintainability notes are
+# left out of the second point, as the sweep runs had none (BENCHMARKS.md has both).
+OURS_MAIN = (71.2, 39.9)  # main report
+OURS_ALL = (57.9, 53.5)  # main report + "worth a look"
 PLAIN = (39.0, 71.5)
 # code-reviewer 0.8.0 (measured on d330ae1) with the opt-in --sweep, runs ws2-1 and ws2-2 averaged, same judge.
 SWEEP_MAIN = (70.8, 43.7)
@@ -119,7 +121,7 @@ def positioning(out_dir: str) -> None:
             text(16, 67, "Our judging is stricter than the published one: compare code-reviewer with the rings, the same tools re-judged our way.", t["secondary"]),
         ]
         legend = (
-            (dot, t["ours"], "code-reviewer 0.7.0, released (two runs)"),
+            (dot, t["ours"], "code-reviewer 0.8.0, defaults (two runs)"),
             (square, t["ours"], "code-reviewer 0.8.0 + --sweep, opt-in (two runs)"),
             (dot, t["plain"], "same model, one call (two runs)"),
             (dot, t["other"], "20 published review tools, as published"),
@@ -164,9 +166,9 @@ def positioning(out_dir: str) -> None:
         parts.append(dot(sx(rp), sy(pp), 6.5, t["plain"], t["surface"]))
         # labels in the empty space around the points, each with its own leader line: dots and rings crowd the rest
         for x, y, lx, ly, anchor, label in (
-            (sx(rm), sy(pm), sx(rm) - 12, sy(pm) + 4, "end", "code-reviewer 0.7.0: main report"),
-            (sx(wm), sy(qm), sx(wm), sy(qm) - 36, "middle", "code-reviewer + --sweep: main report"),
-            (sx(ra), sy(pa), sx(ra) + 14, sy(pa) - 28, "start", "0.7.0: + “worth a look”"),
+            (sx(rm), sy(pm), sx(rm) - 12, sy(pm) + 4, "end", "code-reviewer 0.8.0: main report"),
+            (sx(wm), sy(qm), sx(wm) + 20, sy(qm) - 40, "middle", "0.8.0 + --sweep: main report"),
+            (sx(ra), sy(pa), sx(52), sy(87), "middle", "0.8.0: + “worth a look”"),
             (sx(wa), sy(qa), sx(wa) + 90, sy(qa) - 20, "start", "--sweep: + “worth a look”"),
         ):
             if anchor != "end":
@@ -176,7 +178,7 @@ def positioning(out_dir: str) -> None:
         parts.append(text(sx(rp) + 10, sy(pp) + 18, "same model, one call", t["primary"], 12))
         parts.append(text(16, H - 30, "Method, judge calibration, builds and commands: BENCHMARKS.md. Published points: Martian's leaderboard", t["muted"], 11))
         parts.append(text(16, H - 14, "(github.com/withmartian/code-review-benchmark, offline/analysis), Opus 4.5 judge, at commit e616e849.", t["muted"], 11))
-        label = (f"Precision against recall on real bugs, Martian Code Review Bench, Opus 4.5 judge: code-reviewer 0.7.0 main report "
+        label = (f"Precision against recall on real bugs, Martian Code Review Bench, Opus 4.5 judge: code-reviewer 0.8.0 main report "
                  f"{pm} precision {rm} recall, with worth-a-look findings {pa} and {ra}; code-reviewer 0.8.0 with --sweep "
                  f"{qm} and {wm}, with worth-a-look findings {qa} and {wa}; the same model asked once {pp} and {rp}; "
                  f"20 published tools between {min(p for p, _ in PUBLISHED)} and {max(p for p, _ in PUBLISHED)} precision as published; "
