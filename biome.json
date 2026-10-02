@@ -1,7 +1,15 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
-    "includes": ["**", "!dist", "!node_modules", "!coverage", "!.code-reviewer", "!evals/martian/judgings", "!evals/martian/audits"]
+    "includes": [
+      "**",
+      "!dist",
+      "!node_modules",
+      "!coverage",
+      "!.code-reviewer",
+      "!evals/martian/judgings",
+      "!evals/martian/audits"
+    ]
   },
   "formatter": {
     "enabled": true,
