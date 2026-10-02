@@ -1,6 +1,6 @@
 ---
 name: Multiprocessing and process pools
-description: multiprocessing/ProcessPoolExecutor traps — start-method assumptions (forkserver default on POSIX since 3.14), missing __main__ guard, unpicklable tasks, Pool context manager terminate(), queue join deadlocks, broken pools and per-task overhead.
+description: multiprocessing/ProcessPoolExecutor traps — start-method assumptions (forkserver default on POSIX since 3.14), missing __main__ guard, unpicklable tasks, Pool context manager terminate(), queue join deadlocks, broken pools, per-task overhead and context Process classes failing isinstance checks.
 priority: 58
 activation:
   content:
@@ -25,3 +25,4 @@ sources:
 - **Broken pools**: one crashed or OOM-killed worker fails every pending future with `BrokenProcessPool`. Fix: handle it; `max_tasks_per_child`.
 - **Per-task overhead**: `ProcessPoolExecutor.map` defaults to `chunksize=1` and reads the whole input up front (`buffersize` from 3.14). Fix: larger `chunksize`, batched input.
 - **Copied state**: globals mutated in a child are invisible to the parent. Fix: return results or use a `Manager`/database.
+- **Context Process classes**: `get_context("spawn"|"forkserver"|"fork").Process` builds `SpawnProcess`/`ForkServerProcess`/`ForkProcess`, which subclass `BaseProcess` but not `multiprocessing.Process` → `isinstance(p, multiprocessing.Process)` is False and kill or cleanup branches skip them. Fix: check `multiprocessing.process.BaseProcess`.

@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Review quality
+
+- **Skills that do not fit the budget are no longer silently left out.** When more skills match a chunk than
+  `review.skillTokenBudget` holds, the rest are named in the prompt by their topics (one line each, up to
+  1,500 tokens). On Martian's 50 pull requests half of the chunks left out about 8 matching skills each.
+- **New and extended skills**, from an analysis of the 59 known bugs that 0.8.0 missed in both Martian runs:
+  - a new `practice/refactoring` skill for changes that move, split or rewrite code: guards lost in a move,
+    odd hunks in bulk rewrites, best-effort steps made blocking, mismatched feature gates, lookups keyed
+    differently from writes, results computed and dropped, dead fallbacks;
+  - new bullets: cached failures (`practice/error-handling`), bypassed routing and arguments left
+    unchecked by mocks (`practice/testing`), cached permissions and guessable OAuth `state`
+    (`security/auth`), nullable flag columns (`databases/migrations`), hard-coded locales
+    (`javascript/core/dates`), object URLs never revoked (`javascript/performance/memory-leaks`),
+    unanchored domain allowlists (`ruby/core`) and context `Process` classes (`python/core/multiprocessing`);
+  - new triggers: ORM read-modify-write updates (`n: row.n + 1`) load `practice/concurrency`;
+    `URL.createObjectURL` loads `memory-leaks`; `Intl.DateTimeFormat` loads `dates`.
+
+  Not measured yet. Martian cannot measure it fairly, because these changes come from its misses. A
+  measurement needs other pull requests, such as the held-out AACR-Bench half.
+
 ### Evaluation
 
 - BENCHMARKS.md re-judges Qodo v2 (#4 on Martian's leaderboard: 54.1 F1 under the same judge, 58.5 as

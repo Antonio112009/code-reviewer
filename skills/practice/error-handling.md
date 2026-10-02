@@ -1,6 +1,6 @@
 ---
 name: Error handling
-description: Failure-path defects — swallowed errors, over-broad catches, lost causes, unchecked failure results, escaping rejections, partial writes, masked errors, fragile handlers and unsafe retries.
+description: Failure-path defects — swallowed errors, over-broad catches, lost causes, unchecked failure results, escaping rejections, partial writes, masked errors, fragile handlers, unsafe retries and cached failures.
 category: practice
 priority: 60
 tier: essential
@@ -67,5 +67,6 @@ checks:
 - **Escaping rejection**: `return promise` without `await` inside `try`, `.then()` without `.catch`, streams or emitters without `'error'` handlers, `.pipe()` instead of `pipeline()` → catch and cleanup bypassed, process crash. Fix: `return await`, `pipeline`.
 - **Partial failure**: multi-step writes (DB + file + API + message) or batch loops without transaction, compensation or resumable steps → half-applied state after the first error. Fix: transaction, outbox, idempotent resume.
 - **Masked error**: `return`/`throw` inside `finally`, or cleanup and rollback code that throws while handling an error → original exception replaced, root cause lost. Fix: no control flow in `finally`; guard cleanup.
-- **Fragile handlers**: catch blocks assuming an error shape (`e.response.status` on axios network errors, `e.message` on thrown strings, `e.code` on unknown values) → a TypeError replaces the real error. Fix: narrow `unknown` first.
+- **Fragile handlers**: catch blocks assuming an error shape (`e.response.status` on axios network errors, `e.message` on thrown strings) → a TypeError replaces the real error. Fix: narrow `unknown` first.
 - **Bad retries**: retrying 4xx errors, non-idempotent calls or timed-out writes that may have succeeded; no cap, backoff, jitter or `Retry-After`; retries stacked across layers → duplicates, retry storms. Fix: classify errors; one capped layer.
+- **Cached failures**: a cache or memo set from a call's result even when it failed (`cache = res; return cache, err`) → a failed load wipes a good entry or pins the failure. Fix: store only on success.

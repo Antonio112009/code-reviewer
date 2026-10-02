@@ -121,7 +121,9 @@ import {
   reviewInstructions,
   reviewPrompt,
   reviewPromptIdentity,
+  SKILL_SUMMARY_TOKENS,
   secondOpinionInstructions,
+  skillSummaries,
   sweepInstructions,
   sweepPrompt,
 } from './prompts';
@@ -621,6 +623,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
   const overhead =
     estimateTokens(instructionsBase) +
     config.review.skillTokenBudget +
+    SKILL_SUMMARY_TOKENS +
     config.analyzers.maxHintsPerChunk * TOKENS_PER_HINT +
     PROMPT_OVERHEAD;
   const promptRoom = contextWindow - outputReserve - overhead;
@@ -697,8 +700,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
 
   // Per chunk: skills (stack-aware, hint-aware), static hints, timeout.
   const chunkSkills = new Map<string, SkillMatch[]>();
-  /** Skills that matched a chunk but did not fit the skill budget. */
-  const chunkSkillsDropped = new Map<string, string[]>();
+  /** Skills that matched a chunk but did not fit the skill budget (best first): listed by their topics. */
+  const chunkSkillsDropped = new Map<string, Skill[]>();
   const chunkHints = new Map<string, StaticHit[]>();
   const chunkStack = new Map<string, string>();
   /**
@@ -752,7 +755,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     }
     chunkSkills.set(chunk.id, matches);
     const picked = new Set(matches.map((m) => m.skill.id));
-    const over = dropped.map((m) => m.skill.id).filter((id) => !picked.has(id));
+    const over = dropped.map((m) => m.skill).filter((s) => !picked.has(s.id));
     if (over.length) chunkSkillsDropped.set(chunk.id, over);
   }
 
@@ -774,7 +777,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       ...(c.impact?.length ? { impact: c.impact } : {}),
       tokens: c.tokens,
       skills: (chunkSkills.get(c.id) ?? []).map((m) => ({ id: m.skill.id, reasons: m.reasons })),
-      ...(chunkSkillsDropped.has(c.id) ? { skillsDropped: chunkSkillsDropped.get(c.id)! } : {}),
+      ...(chunkSkillsDropped.has(c.id)
+        ? { skillsDropped: chunkSkillsDropped.get(c.id)!.map((s) => s.id) }
+        : {}),
       groupReasons: c.groupReasons ?? [],
       hints: chunkHints.get(c.id)?.length ?? 0,
       timeoutMs: taskTimeoutMs(config.review, c.tokens),
@@ -793,6 +798,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       c.tokens +
       instructionTokens +
       (chunkSkills.get(c.id) ?? []).reduce((k, m) => k + m.skill.tokens, 0) +
+      estimateTokens(skillSummaries(chunkSkillsDropped.get(c.id) ?? []).join('\n')) +
       (chunkHints.get(c.id)?.length ?? 0) * TOKENS_PER_HINT,
     0,
   );
@@ -890,7 +896,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       tokens: c.tokens,
       skills: (chunkSkills.get(c.id) ?? []).map((m) => m.skill.id),
       skillReasons: Object.fromEntries((chunkSkills.get(c.id) ?? []).map((m) => [m.skill.id, m.reasons])),
-      ...(chunkSkillsDropped.has(c.id) ? { skillsDropped: chunkSkillsDropped.get(c.id)! } : {}),
+      ...(chunkSkillsDropped.has(c.id)
+        ? { skillsDropped: chunkSkillsDropped.get(c.id)!.map((s) => s.id) }
+        : {}),
       status: 'pending',
       findings: 0,
       hints: chunkHints.get(c.id)?.length ?? 0,
@@ -1026,6 +1034,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           rules: rules.text,
           rulesOrigin: rules.origin,
           skills: chunkSkills.get(chunk.id) ?? [],
+          skillsOverBudget: chunkSkillsDropped.get(chunk.id) ?? [],
           project: config.project,
           readTools: config.review.tools,
           notes: config.review.notes,

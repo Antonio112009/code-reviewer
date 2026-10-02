@@ -292,6 +292,10 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
 - **Selection** (`selectSkills`):
   - greedy by score within `review.skillTokenBudget`, then the `extends` closure;
   - skills tied to fired analyzer rules are added too;
+  - matching skills that did not fit are still named in the prompt, one line each with their description
+    (best first, up to 1,500 tokens; `prompts.ts#skillSummaries`). On Martian's 50 pull requests half of
+    the chunks left out about 8 matching skills each, and 2 of 59 missed known bugs were covered only by such
+    a skill;
   - output is in a deterministic category order, for prompt caching.
 - **Sources and overrides.** Loading order is builtin < global < project. User skills inherit builtin
   groups for folders they do not define. Project skills cannot be always-on or replace always-on skills.

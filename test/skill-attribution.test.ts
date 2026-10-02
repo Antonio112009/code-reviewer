@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { skillUsage, skillUsageAcross } from '../src/report/common';
 import { toFinding } from '../src/review/findings';
-import { reviewInstructions } from '../src/review/prompts';
+import { reviewInstructions, skillSummaries } from '../src/review/prompts';
 import type { SkillMatch } from '../src/skills/detector';
 import type { ChunkRecord, Finding, ReportedFinding } from '../src/types';
 
@@ -38,6 +38,37 @@ describe('skill attribution', () => {
     expect(text).toContain('### JSON [go/core/json]');
     expect(text).toContain('"checklist" field');
     expect(text).toContain('without the brackets (e.g. `go/core/json`)');
+  });
+
+  it('lists the skills over the budget by their topics, within a token cap', () => {
+    const skill = { id: 'go/core/json', name: 'JSON', body: '- bullet' } as SkillMatch['skill'];
+    const over = (n: number) =>
+      ({
+        id: `python/core/s${n}`,
+        name: `Topic ${n}`,
+        description: `hash() per process,\n  key collisions ${n}`,
+        body: '- never shown',
+      }) as SkillMatch['skill'];
+    const text = reviewInstructions({
+      mode: 'diff',
+      skills: [{ skill, score: 1, reasons: [] }],
+      skillsOverBudget: [over(1), over(2)],
+    });
+    expect(text).toContain('### JSON [go/core/json]');
+    expect(text).toContain('### Other topics that apply here');
+    expect(text).toContain('- Topic 1: hash() per process, key collisions 1\n- Topic 2:');
+    expect(text).not.toContain('never shown');
+    expect(reviewInstructions({ mode: 'diff', skills: [] })).not.toContain('Technology checklists');
+    // only topics: no id to cite
+    const onlyOver = reviewInstructions({ mode: 'diff', skills: [], skillsOverBudget: [over(1)] });
+    expect(onlyOver).toContain('- Topic 1:');
+    expect(onlyOver).not.toContain('"checklist" field');
+
+    const many = Array.from({ length: 200 }, (_, i) => over(i));
+    const lines = skillSummaries(many, 100);
+    expect(lines.length).toBeGreaterThan(0);
+    expect(lines.length).toBeLessThan(200);
+    expect(lines[0]).toBe('- Topic 0: hash() per process, key collisions 0');
   });
 
   it('keeps a checklist only when the chunk had it', () => {

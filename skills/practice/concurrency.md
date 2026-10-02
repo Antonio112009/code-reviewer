@@ -43,6 +43,7 @@ activation:
     - \btokio::(?:spawn|select!|join!|sync|task)|\b(?:spawn_blocking|block_on)\b|\bthread::spawn\b|\brayon::|\b(?:GlobalScope|runBlocking|coroutineScope|supervisorScope)\b|\blaunch\s*\{
     - "@MainActor\\b|\\bDispatchQueue\\b|\\bTask\\.detached\\b|\\bTask\\s*\\{|\\bactor\\s+[A-Z]\\w*|@Sendable\\b|\\bnonisolated\\b"
     - \b(?:get_or_create|update_or_create|findOrCreate|firstOrCreate|updateOrCreate|FirstOrCreate|select_for_update|lockForUpdate|with_lock|SKIP LOCKED|FOR UPDATE|FOR SHARE|SERIALIZABLE|OptimisticLock\w*|PESSIMISTIC_WRITE)\b|\bfor update\b(?=\s*(?:of\b|nowait\b|skip\b|["'`;)]|$))|@Version\b
+    - \b(\w+)\s*[:=]\s*\w+\.\1\s*[-+]\s*\w
     - "@Scheduled\\b|\\bcron\\.schedule\\(|\\bnew CronJob\\(|\\bschedule\\.every\\(|\\b(?:Background|AsyncIO)Scheduler\\b|\\bsetInterval\\([^\\n]{0,80}\\b(?:db|query|fetch|send|sync|process)\\w*"
   examples:
     - 'await Promise.all(items.map(process));'
@@ -54,8 +55,9 @@ activation:
     - 'Task { await self.refresh() }'
     - 'User.objects.select_for_update().get(id=user_id)'
     - "cron.schedule('*/5 * * * *', syncInventory);"
+    - 'data: { retryCount: reminder.retryCount + 1 },'
 ---
-- **Check-then-act**: exists-then-insert, get-or-create, read-modify-write of counters, or lazy init (`if (!x) x = await make()`) without unique key, atomic update or once-guard → duplicates, lost updates. Fix: upsert, atomic increments, cache the promise.
+- **Check-then-act**: exists-then-insert, get-or-create, read-modify-write of counters (`n: row.n + 1` in an ORM update), or lazy init (`if (!x) x = await make()`) without unique key, atomic update or once-guard → duplicates, lost updates. Fix: upsert, atomic increments (`{ increment: 1 }`, `F("n") + 1`), cache the promise.
 - **Write skew**: invariant across rows ("one active plan", "no overlapping bookings") checked then written under READ COMMITTED or snapshot isolation → both transactions pass. Fix: `SERIALIZABLE` + retry, exclusion constraint, lock a parent row.
 - **Orphaned tasks**: promise, `create_task`, goroutine, `Task.Run` or `launch` without await, join or owning scope → lost errors, work cut at shutdown; unreferenced asyncio tasks may be garbage-collected. Fix: `TaskGroup`, `errgroup`.
 - **Shared mutable state**: per-request data in module, static or singleton fields; non-thread-safe maps, lists or formatters mutated concurrently → cross-user leaks, corruption, fatal Go "concurrent map writes". Fix: request scope, locks.

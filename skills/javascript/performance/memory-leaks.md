@@ -1,6 +1,6 @@
 ---
 name: Memory leaks
-description: Unbounded module-level caches, listeners and timers never removed (MaxListenersExceededWarning), promises that never settle retaining closures, and small buffer views keeping large allocations alive.
+description: Unbounded module-level caches, listeners and timers never removed (MaxListenersExceededWarning), promises that never settle retaining closures, small buffer views keeping large allocations alive, and object URLs never revoked.
 priority: 55
 tags: [CWE-401, CWE-770]
 activation:
@@ -10,20 +10,24 @@ activation:
     - '\bsetMaxListeners\s*\(|\bsetInterval\s*\('
     - '\bnew\s+Promise\s*\('
     - '\.subarray\s*\('
+    - '\bURL\.createObjectURL\s*\('
   examples:
     - 'const cache = new Map();'
     - 'server.on(''connection'', handleConn);'
     - 'setInterval(poll, 1000);'
     - 'const pending = new Promise((resolve) => { queue.push(resolve); });'
     - 'const view = buffer.subarray(0, 16);'
+    - 'setPreview(URL.createObjectURL(file));'
 sources:
   - https://nodejs.org/api/events.html#eventsdefaultmaxlisteners
   - https://nodejs.org/api/timers.html#timeoutunref
   - https://nodejs.org/api/buffer.html#bufsubarraystart-end
   - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management
+  - https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static
 ---
 - **Unbounded caches**: module-level `Map`s, objects or arrays keyed by user, request or query data that only grow (memoization, dedupe sets, "recent" lists) → heap grows until OOM in long-lived processes. Fix: LRU/TTL with a max size; `WeakMap` for object keys.
 - **Listeners never removed**: `emitter.on`/`addEventListener`/`socket.on` registered per request or component without removal → leaks and duplicate handling; Node's `MaxListenersExceededWarning` (>10 per event) flags it and raising `setMaxListeners` only hides it. Fix: `once`, same-reference removal, `{ signal }`.
 - **Timers kept alive**: intervals/timeouts that are never cleared keep their closures (and everything referenced) alive and, in Node, keep the process from exiting. Fix: `clearInterval` on teardown; `unref()` for background timers.
 - **Promises that never settle**: waiting for an event or callback that never comes (no timeout) retains the whole async closure per request. Fix: timeouts/`AbortSignal` on every wait; reject on teardown.
 - **Small views retaining big parents**: a `buf.subarray()`/`Buffer#slice` of a large upload or pooled buffer kept in a long-lived structure pins the entire parent allocation. Fix: copy what you keep (`Buffer.from(view)`).
+- **Object URLs never revoked**: `URL.createObjectURL(blob)` keeps the Blob in memory until `URL.revokeObjectURL` or page unload; URLs made per upload, preview or download and replaced without revoking → memory grows in long-lived single-page apps. Fix: revoke when replacing and on unmount.
