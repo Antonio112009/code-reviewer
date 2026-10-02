@@ -144,7 +144,7 @@ Output: call the \`submit_findings\` tool as soon as you have verified a finding
 }
 
 /** Most tokens the topic lines of over-budget skills take in a review prompt. */
-export const SKILL_SUMMARY_TOKENS = 1_500;
+export const SKILL_SUMMARY_TOKENS = 2_000;
 
 /**
  * One line per skill that matched a chunk but did not fit the skill budget — its name and topics — in the

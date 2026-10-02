@@ -6,7 +6,8 @@
 
 - **Skills that do not fit the budget are no longer silently left out.** When more skills match a chunk than
   `review.skillTokenBudget` holds, the rest are named in the prompt by their topics (one line each, up to
-  1,500 tokens). On Martian's 50 pull requests half of the chunks left out about 8 matching skills each.
+  2,000 tokens). On Martian's 50 pull requests half of the chunks left out about 8 matching skills each;
+  their topic lines took 260 tokens on average and at most about 1,730.
 - **New and extended skills**, from an analysis of the 59 known bugs that 0.8.0 missed in both Martian runs:
   - a new `practice/refactoring` skill for changes that move, split or rewrite code: guards lost in a move,
     odd hunks in bulk rewrites, best-effort steps made blocking, mismatched feature gates, lookups keyed
