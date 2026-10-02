@@ -151,9 +151,9 @@ leaderboard, with Code Reviewer placed by F1:
 |  | the same model, Claude Sonnet, given the diff in one call † | 39.0% | 71.5% | 50.5% |
 
 † Measured by us and scored by the same judge model, Claude Opus 4.5, through `claude -p`. That judging is
-stricter than the leaderboard's own: the three tools scored both ways lost 1.6 to 5.4 F1 points (Qodo Extended
-65.8 → 60.5, Augment 62.2 → 60.6, Claude Code CLI 47.2 → 41.8). These rows are not adjusted, so their real
-place is, if anything, higher. Under one judge for every row, code-reviewer 0.8.0 with `--sweep` scores 60.5,
+stricter than the leaderboard's own: the four tools scored both ways lost 1.6 to 5.4 F1 points (Qodo Extended
+65.8 → 60.5, Augment 62.2 → 60.6, Qodo v2 58.5 → 54.1, Claude Code CLI 47.2 → 41.8). These rows are not
+adjusted, so their real place is, if anything, higher. Under one judge for every row, code-reviewer 0.8.0 with `--sweep` scores 60.5,
 level with Qodo Extended (60.5) and Augment (60.6). The full table, 21 tools:
 [BENCHMARKS.md](BENCHMARKS.md#leaderboard-real-bugs).
 
@@ -163,9 +163,10 @@ level with Qodo Extended (60.5) and Augment (60.6). The full table, 21 tools:
 </picture>
 
 Code Reviewer's main report, the part it posts on pull requests, is the most precise here: 71–73% of its
-findings are known bugs. The same model given the diff in one call finds more of the bugs, 72%, but only 39% of
-its six findings per pull request match one: what the pipeline adds is precision. A second judge, Claude Opus
-5.5, moves every row by at most 1.3 points and keeps the order. On AACR-Bench, which scores agreement with
+findings are known bugs, and a blind audit found the rest to be real defects too, ones the benchmark's list
+misses. The same model given the diff in one call finds more of the bugs, 72%, but only 39% of its six
+findings per pull request match one: what the pipeline adds is precision. A second judge, Claude Opus 5.5,
+moves every row by at most 1.3 points and keeps the order. On AACR-Bench, which scores agreement with
 reviewers' comments rather than bugs, the single call matches as many of them as 0.8.0 and more than 0.7.0.
 
 Every number with its build, command and judge, the AACR-Bench results, the blind audits and the caveats:
@@ -321,8 +322,9 @@ anything goes to the critic like every other finding; what it finds at the same 
 | main report without | 71.6% | 39.9% | 51.2% |
 | main report with `--sweep` | 70.8% | 43.7% | 54.0% |
 
-- **Where it helps:** real bugs. On AACR-Bench, whose references are mostly reviewers' remarks rather than bugs,
-  it adds little: F1 +1.0 on 30 pull requests and +0.6 on 82 held-out ones.
+- **Where it helps:** real bugs. In three pairs of Martian runs its findings raised recall by 7.6 to 9.5 points
+  each time and F1 by 0.7 to 2.8. On AACR-Bench, whose references are mostly reviewers' remarks rather than
+  bugs, it adds little: F1 +1.0 on 30 pull requests and +0.6 on 82 held-out ones.
 - **Cost:** 40–50% more per review: one more call over the whole diff, and the critic's look at what it adds.
 - Off by default (experimental). `review.sweep: true` turns it on for a repository; `run.sweep` in the JSON
   counts what it reported and what was dropped as a duplicate.

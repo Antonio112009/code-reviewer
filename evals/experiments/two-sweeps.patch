@@ -1,0 +1,35 @@
+diff --git a/src/review/pipeline.ts b/src/review/pipeline.ts
+index e94e317..67e35ff 100644
+--- a/src/review/pipeline.ts
++++ b/src/review/pipeline.ts
+@@ -1573,9 +1573,12 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
+         const parts = sweepParts(chunks, Math.max(budget, promptRoom));
+         const record = { parts: parts.length, failed: 0, findings: 0, duplicates: 0 };
+         const instructions = sweepInstructions(mode, depth);
++        // EXPERIMENT: two independent sweeps; the second's findings are marked "sweep-2" and checked for
++        // duplicates against the chunk reviews and the first sweep.
++        for (const round of [1, 2])
+         for (const [index, part] of parts.entries()) {
+           if (req.signal?.aborted || router.fatal) break;
+-          const label = `sweep-${index + 1}`;
++          const label = round === 1 ? `sweep-${index + 1}` : `sweep2-${index + 1}`;
+           const files = new Set(part.flatMap((c) => c.files));
+           const timeoutMs = taskTimeoutMs(
+             config.review,
+@@ -1626,7 +1629,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
+             const found = resolved.items.map((r) => {
+               const f = toFinding(r, {
+                 root,
+-                chunkId: SWEEP_SOURCE,
++                chunkId: round === 1 ? SWEEP_SOURCE : 'sweep-2',
+                 provider: result.provider,
+                 model: result.model,
+                 skills: [],
+@@ -1638,6 +1641,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
+             // What a chunk review already reported at the same spot is the same defect, as a rule: not again.
+             const fresh = found.filter((f) => !atReportedSpot(f, reportedSoFar));
+             collected.push(...fresh);
++            reportedSoFar.push(...fresh);
+             record.findings += found.length;
+             record.duplicates += found.length - fresh.length;
+             await store.saveArtifact(run.id, label, {

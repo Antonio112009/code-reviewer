@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="698" viewBox="0 0 760 698" role="img" aria-label="Precision against recall on real bugs, Martian Code Review Bench, Opus 4.5 judge: code-reviewer 0.7.0 main report 73.3 precision 37.3 recall, with worth-a-look findings 64.0 and 54.1; code-reviewer 0.8.0 with --sweep 70.8 and 43.7, with worth-a-look findings 57.4 and 63.9; the same model asked once 39.0 and 71.5; 20 published tools between 32.6 and 100.0 precision as published; re-judged our way (Qodo Extended #1, Augment #3, Claude Code CLI #12): #1 67.1/64.6 published, 61.4/59.5 re-judged; #3 59.5/65.2 published, 58.1/63.3 re-judged; #12 46.3/48.1 published, 41.8/41.8 re-judged" font-family="system-ui, -apple-system, &quot;Segoe UI&quot;, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="698" viewBox="0 0 760 698" role="img" aria-label="Precision against recall on real bugs, Martian Code Review Bench, Opus 4.5 judge: code-reviewer 0.7.0 main report 73.3 precision 37.3 recall, with worth-a-look findings 64.0 and 54.1; code-reviewer 0.8.0 with --sweep 70.8 and 43.7, with worth-a-look findings 57.4 and 63.9; the same model asked once 39.0 and 71.5; 20 published tools between 32.6 and 100.0 precision as published; re-judged our way (Qodo Extended #1, Augment #3, Qodo v2 #4, Claude Code CLI #12): #1 67.1/64.6 published, 61.4/59.5 re-judged; #3 59.5/65.2 published, 58.1/63.3 re-judged; #4 55.4/62.0 published, 51.4/57.0 re-judged; #12 46.3/48.1 published, 41.8/41.8 re-judged" font-family="system-ui, -apple-system, &quot;Segoe UI&quot;, sans-serif">
 <text x="16.0" y="28.0" font-size="16" fill="#1f2328" font-weight="600">Real bugs: precision and recall on Martian's Code Review Bench</text>
 <text x="16.0" y="50.0" font-size="12" fill="#52514e">50 pull requests, 158 golden comments (core profile), judged by Claude Opus 4.5, the leaderboard's judge model.</text>
 <text x="16.0" y="67.0" font-size="12" fill="#52514e">Our judging is stricter than the published one: compare code-reviewer with the rings, the same tools re-judged our way.</text>
@@ -11,7 +11,7 @@
 <circle cx="352.0" cy="118.0" r="5.5" fill="#a5a39c" stroke="#ffffff" stroke-width="2"/>
 <text x="364.0" y="122.0" font-size="12" fill="#52514e">20 published review tools, as published</text>
 <circle cx="22.0" cy="140.0" r="4.5" fill="#ffffff" stroke="#a5a39c" stroke-width="2"/>
-<text x="34.0" y="144.0" font-size="12" fill="#52514e">re-judged our way: Qodo Extended #1, Augment #3, Claude Code CLI #12</text>
+<text x="34.0" y="144.0" font-size="12" fill="#52514e">re-judged our way: Qodo Extended #1, Augment #3, Qodo v2 #4, Claude Code CLI #12</text>
 <line x1="216.5" y1="602" x2="216.5" y2="174" stroke="#e1e0d9" stroke-width="1"/>
 <line x1="72" y1="495.0" x2="650" y2="495.0" stroke="#e1e0d9" stroke-width="1"/>
 <line x1="361.0" y1="602" x2="361.0" y2="174" stroke="#e1e0d9" stroke-width="1"/>
@@ -46,6 +46,7 @@
 <text x="656.0" y="375.5" font-size="11" fill="#898781">F1 70</text>
 <line x1="445.4" y1="314.8" x2="415.9" y2="339.2" stroke="#a5a39c" stroke-width="1.5" stroke-dasharray="3 3"/>
 <line x1="448.9" y1="347.3" x2="437.9" y2="353.3" stroke="#a5a39c" stroke-width="1.5" stroke-dasharray="3 3"/>
+<line x1="430.4" y1="364.9" x2="401.5" y2="382.0" stroke="#a5a39c" stroke-width="1.5" stroke-dasharray="3 3"/>
 <line x1="350.0" y1="403.8" x2="313.6" y2="423.1" stroke="#a5a39c" stroke-width="1.5" stroke-dasharray="3 3"/>
 <circle cx="445.4" cy="314.8" r="4.5" fill="#a5a39c" stroke="#ffffff" stroke-width="2"/>
 <circle cx="452.3" cy="338.8" r="4.5" fill="#a5a39c" stroke="#ffffff" stroke-width="2"/>
@@ -71,6 +72,8 @@
 <text x="415.9" y="328.2" font-size="10.5" fill="#52514e" text-anchor="middle">#1</text>
 <circle cx="437.9" cy="353.3" r="4.5" fill="#ffffff" stroke="#a5a39c" stroke-width="2"/>
 <text x="444.9" y="370.3" font-size="10.5" fill="#52514e" text-anchor="start">#3</text>
+<circle cx="401.5" cy="382.0" r="4.5" fill="#ffffff" stroke="#a5a39c" stroke-width="2"/>
+<text x="392.5" y="386.0" font-size="10.5" fill="#52514e" text-anchor="end">#4</text>
 <circle cx="313.6" cy="423.1" r="4.5" fill="#ffffff" stroke="#a5a39c" stroke-width="2"/>
 <text x="322.6" y="427.1" font-size="10.5" fill="#52514e" text-anchor="start">#12</text>
 <line x1="287.6" y1="288.3" x2="384.7" y2="328.1" stroke="#2a78d6" stroke-width="2"/>
