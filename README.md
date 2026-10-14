@@ -377,6 +377,7 @@ roles:
   review:   { provider: claude, model: sonnet, reasoning: medium } # the defaults
   critique: { provider: claude, model: sonnet, reasoning: high }   # the defaults too
 review:
+  projectRules: true        # read CLAUDE.md, AGENTS.md, .cursorrules, REVIEW.md, .cursor/rules, .github/instructions …
   depth: full               # the default; essential = only serious production issues
   minConfidence: 0.3        # the default at full depth (0.7 at essential)
   exclude: ["**/*.generated.ts"]

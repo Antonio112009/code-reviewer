@@ -237,7 +237,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           example: D.review.tools,
         },
         projectRules: {
-          doc: 'Give reviewers the repository rule files (CLAUDE.md, AGENTS.md, .cursorrules, REVIEW.md, …).',
+          doc: 'Give reviewers the repository rule files: CLAUDE.md, AGENTS.md, .cursorrules, REVIEW.md, copilot-instructions.md at the root; .cursor/rules/*.mdc (globs), .github/instructions/*.instructions.md (applyTo) and .code-reviewer/rules/*.md (paths) for the files they name; AGENTS.md / CLAUDE.md in a subdirectory for the files under it.',
           example: D.review.projectRules,
         },
         authors: { doc: 'Attribute findings to commit authors (git blame).', example: D.review.authors },

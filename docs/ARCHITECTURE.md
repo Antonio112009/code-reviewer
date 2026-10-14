@@ -15,7 +15,7 @@
                   context/stack/*      manifests → techs, package roots, versions (never runs repo code)
                   analyzers/*          secretlint + pattern rules + safe external tools → StaticHit[]
                   chunking/graph.ts    import graph (TS/JS, Python, Go, JVM, C#, PHP, Ruby, Rust, C/C++, Dart)
-                  context/project-rules CLAUDE.md, AGENTS.md… (diff mode: read from the BASE commit)
+                  context/project-rules CLAUDE.md, AGENTS.md… + path-scoped rule files (diff mode: BASE commit)
                   skills/loader.ts     skill tree (builtin < global < project)
                   models/preflight.ts  is every configured model available? → fallback decisions
    4. chunking    chunking/*           clusters of related files (imports, tests, siblings) → chunks ≤ budget;
@@ -540,7 +540,9 @@ The code under review, and therefore model output, is treated as untrusted.
      (`skills/regex-guard.ts`) and only ever run on bounded text.
    - The non-git `grep` fallback rejects backtracking-prone patterns and vets globs like other untrusted
      globs; `git grep -P` relies on PCRE's backtracking limit and a 20 s timeout.
-9. **Project rules.** In diff mode they are read from the base commit.
+9. **Project rules.** In diff mode they are read from the base commit. Globs a rule file declares are vetted
+    like every other untrusted glob (`unsafeGlobReason`); a dependency directory's instruction files are never
+    read.
 10. **Analyzers.** They never execute repository code without an explicit opt-in. Hits in untrusted text
     are parsed linearly (tokenizer, import graph, JSON extraction and rendering are all bounded).
 11. **Prompts and reports.** Repository text in prompts is clipped, and prompts state that the code is
