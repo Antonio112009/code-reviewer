@@ -181,7 +181,13 @@ export async function findOpenPullRequest(
   opts: FindPullRequestOptions,
 ): Promise<ForgePullRequest | undefined> {
   const order: ForgeTool[] =
-    opts.platform === 'github' ? ['gh'] : opts.platform === 'gitlab' ? ['glab'] : ['gh', 'glab'];
+    opts.platform === 'github'
+      ? ['gh']
+      : opts.platform === 'gitlab'
+        ? ['glab']
+        : opts.platform === 'gitea'
+          ? []
+          : ['gh', 'glab'];
   for (const tool of order) {
     const pr = await ask(TOOLS[tool], opts);
     if (pr) return pr;

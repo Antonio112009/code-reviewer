@@ -1,4 +1,4 @@
-export type Platform = 'github' | 'gitlab' | 'other';
+export type Platform = 'github' | 'gitlab' | 'gitea' | 'other';
 
 export interface RemoteInfo {
   platform: Platform;
@@ -35,7 +35,9 @@ export function parseRemote(url: string | undefined): RemoteInfo | undefined {
     ? 'github'
     : lower.includes('gitlab')
       ? 'gitlab'
-      : 'other';
+      : lower.includes('gitea') || lower.includes('forgejo') || lower === 'codeberg.org'
+        ? 'gitea'
+        : 'other';
   return { platform, webUrl: `${origin ?? `https://${host}`}/${repoPath}` };
 }
 
@@ -53,6 +55,10 @@ export function lineUrl(
 ): string | undefined {
   if (!remote || remote.platform === 'other') return undefined;
   const encoded = file.split('/').map(encodeURIComponent).join('/');
+  if (remote.platform === 'gitea') {
+    const range = end > start ? `L${start}-L${end}` : `L${start}`;
+    return `${remote.webUrl}/src/commit/${sha}/${encoded}#${range}`;
+  }
   if (remote.platform === 'gitlab') {
     const range = end > start ? `L${start}-${end}` : `L${start}`;
     return `${remote.webUrl}/-/blob/${sha}/${encoded}#${range}`;

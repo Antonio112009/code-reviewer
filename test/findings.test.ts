@@ -152,6 +152,13 @@ describe('remote links', () => {
       'https://gitlab.example.com/group/sub/app/-/blob/def/x.ts#L7',
     );
     expect(commitUrl(parseRemote('https://bitbucket.org/a/b'), 'x')).toBeUndefined();
+    const gt = parseRemote('ssh://git@codeberg.org/acme/app.git');
+    expect(gt).toEqual({ platform: 'gitea', webUrl: 'https://codeberg.org/acme/app' });
+    expect(commitUrl(gt, 'abc')).toBe('https://codeberg.org/acme/app/commit/abc');
+    expect(lineUrl(gt, 'abc', 'src/a.ts', 3, 5)).toBe(
+      'https://codeberg.org/acme/app/src/commit/abc/src/a.ts#L3-L5',
+    );
+    expect(parseRemote('https://forgejo.example.com/g/p')?.platform).toBe('gitea');
   });
 });
 

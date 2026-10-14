@@ -553,7 +553,7 @@ code-reviewer review --post
 code-reviewer runs publish latest --pr 42 --repo acme/shop
 ```
 
-For CI there is a GitHub Action ([`action.yml`](action.yml)) and a GitLab CI template
+For CI there is a GitHub Action ([`action.yml`](action.yml)), a Gitea / Forgejo workflow recipe and a GitLab CI template
 ([`ci/gitlab/code-reviewer.gitlab-ci.yml`](ci/gitlab/code-reviewer.gitlab-ci.yml)). Setup, permissions,
 providers in CI and the token rules: [docs/ci.md](docs/ci.md).
 

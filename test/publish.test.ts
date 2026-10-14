@@ -639,6 +639,124 @@ describe('API client', () => {
   });
 });
 
+describe('Gitea publisher', () => {
+  const base = '/api/v1/repos/acme/shop';
+  const user = (id: number, login: string) => ({ id, login });
+  function giteaRoutes(over: Record<string, Handler | Handler[]> = {}) {
+    return {
+      [`GET ${base}/pulls/1`]: () => json({ number: 1, head: { sha: headSha } }),
+      'GET /api/v1/user': () => json(user(7, 'review-bot')),
+      [`GET ${base}/pulls/1/reviews`]: () =>
+        json([
+          { id: 10, user: user(7, 'review-bot') },
+          { id: 11, user: user(9, 'mallory') },
+        ]),
+      [`GET ${base}/pulls/1/reviews/10/comments`]: () =>
+        json([{ id: 100, body: `old <!-- code-reviewer:fp=${FP.f3} -->`, user: user(7, 'review-bot') }]),
+      [`GET ${base}/pulls/1/reviews/11/comments`]: () =>
+        json([{ id: 101, body: `spoofed <!-- code-reviewer:fp=${FP.f1} -->`, user: user(9, 'mallory') }]),
+      [`GET ${base}/issues/1/comments`]: () =>
+        json([
+          { id: 5, body: `${SUMMARY_MARKER}\nfake`, user: user(9, 'mallory') },
+          { id: 77, body: `${SUMMARY_MARKER}\nold summary`, user: user(7, 'review-bot') },
+        ]),
+      [`POST ${base}/pulls/1/reviews`]: () => json({ id: 12 }),
+      [`PATCH ${base}/issues/comments/77`]: () => json({ id: 77 }),
+      [`POST ${base}/issues/1/comments`]: () => json({ id: 78 }, 201),
+      ...over,
+    };
+  }
+  const publishGitea = (forge: ReturnType<typeof fakeForge>) =>
+    publishRun({
+      run: makeRun(),
+      repo: new GitRepo(repo.root),
+      settings: { ...SETTINGS, giteaApiUrl: 'https://git.example.com/api/v1' },
+      flags: { pr: '1', repo: 'acme/shop', forge: 'gitea' },
+      env: { GITEA_TOKEN: 'gta_secret' },
+      fetch: forge.fetch,
+      sleep: noSleep,
+      logger: silentLogger,
+    });
+
+  it('posts one review on the configured API, skips its own earlier fingerprints and updates the summary', async () => {
+    const forge = fakeForge(giteaRoutes());
+    const outcome = await publishGitea(forge);
+    expect(outcome.target).toMatchObject({ forge: 'gitea', apiUrl: 'https://git.example.com/api/v1' });
+    expect(outcome.summary).toBe('updated');
+    expect(outcome.alreadyPosted.map((f) => f.id)).toEqual(['f3']);
+    expect(outcome.inline.map((c) => c.finding.id)).toEqual(['f1', 'f4']); // mallory's spoofed marker is ignored
+    const [review] = forge.find(`POST ${base}/pulls/1/reviews`);
+    expect(review!.body).toMatchObject({ commit_id: headSha, event: 'COMMENT' });
+    expect(review!.body.comments).toEqual([
+      expect.objectContaining({ path: 'src/app.ts', new_position: 21, old_position: 0 }),
+      expect.objectContaining({ path: 'src/app.ts', new_position: 25, old_position: 0 }),
+    ]);
+    // no one-click suggestion block: the Gitea API has no applicable suggestions
+    expect(review!.body.comments[0].body).not.toContain('```suggestion');
+    expect(forge.find(`PATCH ${base}/issues/comments/77`)).toHaveLength(1);
+    expect(forge.find(`POST ${base}/issues/1/comments`)).toHaveLength(0);
+    // fixed findings cannot be resolved through the API: the summary says so, nothing fails
+    expect(outcome.resolved).toEqual([]);
+    for (const call of forge.calls) {
+      expect(call.url.origin).toBe('https://git.example.com');
+      expect(call.headers.authorization).toBe('token gta_secret');
+    }
+  });
+
+  it('retries comment by comment when the review is refused, and rejects a bad token', async () => {
+    const forge = fakeForge(
+      giteaRoutes({
+        [`POST ${base}/pulls/1/reviews`]: [
+          () => json({ message: 'invalid position' }, 422),
+          () => json({ id: 12 }),
+          () => json({ message: 'invalid position' }, 422),
+        ],
+      }),
+    );
+    const outcome = await publishGitea(forge);
+    expect(outcome.inline.map((c) => c.finding.id)).toEqual(['f1']);
+    expect(outcome.listed.map((l) => [l.finding.id, l.reason])).toContainEqual(['f4', 'rejected']);
+    const bad = fakeForge(giteaRoutes({ 'GET /api/v1/user': () => json({ message: 'unauthorized' }, 401) }));
+    await expect(publishGitea(bad)).rejects.toThrow(/GITEA_TOKEN/);
+  });
+
+  it('is chosen from Gitea Actions and the remote, and is listed by --forge', async () => {
+    const t = await resolvePublishTarget({
+      run: { repo: { root: '/r', remote: 'https://codeberg.org/acme/shop', platform: 'gitea' } },
+      flags: {},
+      settings: { githubApiUrl: undefined, gitlabApiUrl: undefined, giteaApiUrl: undefined },
+      env: {},
+      ci: undefined,
+    }).catch((e: Error) => e);
+    expect((t as Error).message).toMatch(/No open pull request/); // no local CLI knows Gitea pull requests
+    const ci = await resolvePublishTarget({
+      run: { repo: { root: '/r' } },
+      flags: {},
+      settings: { githubApiUrl: undefined, gitlabApiUrl: undefined, giteaApiUrl: undefined },
+      env: {
+        GITEA_ACTIONS: 'true',
+        GITHUB_ACTIONS: 'true',
+        GITHUB_API_URL: 'https://git.example.com/api/v1',
+        GITHUB_REPOSITORY: 'acme/shop',
+      },
+      ci: {
+        provider: 'gitea',
+        label: 'Gitea Actions',
+        baseBranch: 'main',
+        baseVar: 'GITHUB_BASE_REF',
+        number: '4',
+      },
+    });
+    expect(ci).toMatchObject({
+      forge: 'gitea',
+      apiUrl: 'https://git.example.com/api/v1',
+      repo: 'acme/shop',
+      number: 4,
+    });
+    expect(ci.explanation.join('\n')).toContain('GITEA_ACTIONS');
+  });
+});
+
 describe('GitHub publisher', () => {
   it('posts one review, skips already-posted fingerprints and updates its summary in place', async () => {
     const forge = fakeForge(githubRoutes());

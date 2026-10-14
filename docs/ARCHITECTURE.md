@@ -469,7 +469,7 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
     lines) becomes a ```` ```suggestion ```` block (GitLab: `suggestion:-N+M` around its single anchor line)
     only when validation kept it (≤ 30 lines replaced, ≤ 60 written, differs from the code, no fence) and the
     critic set `replacementOk`; never on a `--force`d publication to a moved head.
-  - `github.ts` / `gitlab.ts` implement `ForgeAdapter` (`load` → head + posted fingerprints, `postInline`,
+  - `github.ts` / `gitlab.ts` / `gitea.ts` implement `ForgeAdapter` (`load` → head + posted fingerprints, `postInline`,
     `upsertSummary`, `openThreads`, `resolveThread`). GitHub: one `COMMENT` review, single comments after a
     422, the summary as an issue comment edited in place, review threads through GraphQL
     (`reviewThreads`, `resolveReviewThread`; `/api/graphql` on Enterprise Server). GitLab: one positioned
@@ -717,10 +717,11 @@ The code under review, and therefore model output, is treated as untrusted.
   (opt-in).
 - **New report format:** add a renderer in `report/`, a value in `REPORT_FORMATS` and its file name in
   `REPORT_FILE_NAMES`.
-- **New forge:** implement `ForgeAdapter` (`publish/plan.ts`) next to `publish/github.ts`, add its
-  `ForgeSpec` to `publish/forges.ts` (and the kind to `ForgeKind` / `FORGES`), its CI to `git/ci.ts`, its
-  platform to `git/remote.ts`, and a global-config API URL key to `PublishSettingsSchema` /
-  `PUBLISH_URL_KEYS`.
+- **New forge:** implement `ForgeAdapter` (`publish/plan.ts`) next to `publish/github.ts` and register its
+  headers and adapter in `publish/index.ts#CLIENTS`; add its `ForgeSpec` to `publish/forges.ts` (the kind
+  to `ForgeKind` / `FORGES`, and to `CI_ORDER` if its CI sets another forge's variables), its CI to
+  `git/ci.ts`, its platform to `git/remote.ts`, and a global-config API URL key to `PublishSettingsSchema` /
+  `PUBLISH_URL_KEYS`. `publish/gitea.ts` is the smallest example.
 - **New eval case:** add a YAML file under `evals/<language>/` and run
   `npx vitest run test/evals-corpus.test.ts`.
 

@@ -3,7 +3,7 @@ import type { CiPullRequest } from '../git/ci';
 import type { ForgePullRequest } from '../git/forge';
 import type { Platform } from '../git/remote';
 import type { RunRecord } from '../types';
-import { FORGE_SPECS, FORGES, type ForgeKind, type ForgeSpec, isForgeKind } from './forges';
+import { CI_ORDER, FORGE_SPECS, FORGES, type ForgeKind, type ForgeSpec, isForgeKind } from './forges';
 
 /*
  * Where a review is posted: which forge, which API, which repository, which pull/merge request.
@@ -44,7 +44,7 @@ export interface ResolveTargetOptions {
   run: Pick<RunRecord, 'repo'>;
   flags: PublishFlags;
   /** Merged config: API URLs can only come from the global config (the loader rejects them elsewhere). */
-  settings: Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl'>;
+  settings: Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl' | 'giteaApiUrl'>;
   env: NodeJS.ProcessEnv;
   /** The CI's pull/merge request (`detectCiPullRequest`). */
   ci?: CiPullRequest;
@@ -102,7 +102,7 @@ function inCiOf(spec: ForgeSpec, env: NodeJS.ProcessEnv): boolean {
 
 /** The forge whose CI is running this process, if any. */
 function ciForge(env: NodeJS.ProcessEnv): ForgeKind | undefined {
-  return FORGES.find((k) => inCiOf(FORGE_SPECS[k], env));
+  return CI_ORDER.find((k) => inCiOf(FORGE_SPECS[k], env));
 }
 
 function resolveForge(opts: ResolveTargetOptions, why: string[]): ForgeKind {
@@ -232,9 +232,9 @@ export async function resolvePublishTarget(opts: ResolveTargetOptions): Promise<
   // Local fallback: the branch's open PR/MR (gh / glab) and the remote. Only a repository on the chosen
   // API's host is accepted: the remote names the repository, never where the token goes.
   let local: ForgePullRequest | undefined;
-  if ((number === undefined || repo === undefined) && opts.findPullRequest) {
+  const tool = spec.tool;
+  if (tool && (number === undefined || repo === undefined) && opts.findPullRequest) {
     local = await opts.findPullRequest(forge);
-    const tool = spec.tool;
     if (local && local.tool !== tool) local = undefined;
     // A PR of another repository than the one named by --repo / the CI is not this target.
     const localRepo = repoFromWebUrl(local?.baseRepoUrl)?.path;
@@ -249,7 +249,9 @@ export async function resolvePublishTarget(opts: ResolveTargetOptions): Promise<
   }
   if (repo === undefined) {
     const candidates: Array<[string, string | undefined]> = [
-      [`the ${spec.requestNoun} (${spec.tool})`, local?.baseRepoUrl],
+      ...(tool
+        ? [[`the ${spec.requestNoun} (${tool})`, local?.baseRepoUrl] as [string, string | undefined]]
+        : []),
       ['the git remote', opts.run.repo?.remote],
     ];
     for (const [origin, url] of candidates) {
