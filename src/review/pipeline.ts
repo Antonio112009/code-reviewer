@@ -1898,6 +1898,29 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     const advisory = final.filter(isAdvisory);
     if (advisory.length) run.advisory = sortFindings(advisory);
     run.rejected = sortFindings(rejected);
+    const verdictsOf = (list: readonly Finding[]) => list.map((f) => f.critique?.verdict);
+    const kept = [...final, ...notes];
+    run.funnel = {
+      reported: collected.filter((f) => f.origin !== 'static').length,
+      static: collected.filter((f) => f.origin === 'static').length,
+      validated: validated.kept.length,
+      deduped: unique.length,
+      critiqued: {
+        confirmed: verdictsOf(kept).filter((v) => v === 'confirmed').length,
+        uncertain: verdictsOf(kept).filter((v) => v === 'uncertain').length,
+        rejected: rejected.filter((f) => f.droppedReason === 'critique').length,
+        unverified: kept.filter((f) => !f.critique).length,
+      },
+      belowThreshold: rejected.filter(
+        (f) => f.droppedReason === 'below-threshold' || f.droppedReason === 'below-severity',
+      ).length,
+      main: run.findings.length,
+      advisory: advisory.length,
+      notes: notes.length,
+    };
+    logger.debug(
+      `funnel: reported ${run.funnel.reported} (+${run.funnel.static} static) → validated ${run.funnel.validated} → deduped ${run.funnel.deduped} → critic rejected ${run.funnel.critiqued.rejected}, uncertain ${run.funnel.critiqued.uncertain} → below threshold ${run.funnel.belowThreshold} → main ${run.funnel.main}, worth a look ${run.funnel.advisory}, notes ${run.funnel.notes}`,
+    );
     run.fallbacks = [...(preflight?.fallbacks ?? []), ...router.fallbacks];
     run.routing = { ...routes };
     const failed = run.chunks.filter((c) => c.status === 'failed').length;

@@ -13,6 +13,15 @@
   read from dependency directories; in a diff review the files come from the base commit, so a change cannot
   bring its own rules. `plan.projectRules` lists every rule file used.
 
+### Evaluation
+
+- **The funnel.** `run.funnel` in `run.json` counts what each stage let through — reported by the reviewers,
+  kept by validation and dedupe, the critic's verdicts, dropped by the thresholds, the main / "worth a look" /
+  notes split — and `evals/aacr/funnel.py` sums it over a benchmark run with tool calls per chunk and the
+  reviewer's confidence spread. First reading (hold82 and ctx30, 2026-10-14): the critic rejects 9–11% of the
+  reported findings and the other stages almost nothing; the reviewer reports about 3 findings per chunk and
+  makes 0.4 tool calls per chunk. Recall is lost inside the review call, before any filter.
+
 ## 0.9.0 — 2026-10-14
 
 ### Review quality
