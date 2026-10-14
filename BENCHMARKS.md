@@ -396,6 +396,7 @@ AACR-Bench, newest first. Values are averages over the listed runs; findings cou
 
 | Date | Runs | Build | Arguments (and experiment switches) | Dataset | Findings / run | P | R | F1 | Cost / run | What it measured |
 |---|---|---|---|---|---|---|---|---|---|---|
+| 10-14 | api-1, api-2 | `a7a6fbf` | `--full --provider anthropic` | ctx30 | 68 | 37.5% | 8.9% | 14.4% | $7.00 | the Anthropic API instead of Claude Code: F1 −1.8 (−4.8..+1.4), 2.6× cheaper, exact accounting |
 | 10-14 | walk-1, walk-2 | `b8c86e1` + `checklist-walk.patch` | `--full` | ctx30 | 88 | 32.4% | 10.0% | 15.2% | $17.69 | experiment, dropped: an item-by-item checklist pass |
 | 10-14 | base14-1, base14-2 | `b8c86e1` | `--full` | ctx30 | 78.5 | 37.6% | 10.3% | 16.2% | $16.55 | main after #78, the checklist pass's baseline |
 | 10-14 | int-h1 | `6ed48e1` | `--full`, `CODE_REVIEWER_DESCRIPTIONS` | held-out 82 | 215 | 27.0% | 8.7% | 13.1% | $62.41 | `review.intent`: the pull request's description and commit messages in the prompt |
@@ -514,6 +515,9 @@ and resolves differences of about 3 F1 points on AACR-Bench and 5 on Martian; si
 
 ## History
 
+- **2026-10-14 (night)** — the Anthropic API against Claude Code on ctx30, two runs each: F1 14.4 against 16.2
+  (−1.8, 95% interval −4.8..+1.4), the same precision, slightly lower recall, at $7.00 against $17.84 a run and
+  with exact token accounting. Benchmark runs use the API from here on, compared only with API rows.
 - **2026-10-14 (evening)** — the reviewer's reasoning effort on Martian (one run each, build `81a9bd2`):
   `high` reports 60% more candidates and finds more (full report recall 61.8% → 72.8%, critical bugs
   8/12 → 10/12) but loses 14 points of precision, so F1 falls 57.2 → 51.1 (main report 49.3 → 47.6) at

@@ -571,6 +571,23 @@ before them (`4fb887c`, runs `hold-a4` + `hold-b4`), one run each on hold82, the
 Paired: recall +0.3 points (95% CI −1.2..+1.8), F1 +0.3 (−1.7..+2.4), P(B > A) 0.63: no measurable effect on
 this benchmark. (The cost difference is the pipeline's growth since 0.7.0, not the skills.)
 
+**The Anthropic API against Claude Code** (2026-10-14; `--provider anthropic`, build `a7a6fbf`, two runs each on
+ctx30, `--full`; the Claude Code rows are `base14-1,2` on `b8c86e1`, the same pipeline but for the path-scoped
+rules):
+
+| ctx30 (two runs) | Findings | Precision | Recall | F1 | Cost / run | Minutes / PR |
+|---|---|---|---|---|---|---|
+| Claude Code over ACP (`claude`) | 78.5 | 37.6% | 10.3% | 16.2% | $17.84 (as reported by Claude Code) | 1.1 |
+| the Anthropic API (`anthropic`) | 68.0 | 37.5% | 8.9% | 14.4% | $7.00 (tokens × the built-in prices) | 0.9 |
+
+Paired: recall −1.4 points (95% CI −3.6..+0.8), F1 −1.8 (−4.8..+1.4), P(API > Claude Code) 0.14 — a small
+deficit in the same direction in both runs, not resolved by two runs. The direct loop reports as many raw
+findings (92 against 87 per run) at a lower confidence (median 0.45 against 0.50), and its critic rejects twice
+as many (22 against 10), with reasons that cite the code. The API costs 2.6 times less in real money, with exact
+accounting (Claude Code's reported cost doubled between 2026-09-30 and 2026-10-14 for the same build and pull
+request, see BENCHMARKS.md). From here benchmark runs use the API unless a row says otherwise; rows from the two
+providers are compared only within a provider.
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).
