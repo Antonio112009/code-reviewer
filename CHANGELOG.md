@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Internal
+
+- The forge-specific parts of publishing (labels, APIs, tokens, CI variables, repository patterns,
+  suggestion fences, adapters) live in one registry, `src/publish/forges.ts`; adding a forge is one entry
+  plus its adapter. No change in behaviour.
+
 ### Review quality
 
 - **Path-scoped project rules.** Besides the root rule files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`,
