@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Review quality
+
+- **Path-scoped project rules.** Besides the root rule files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`,
+  `REVIEW.md`, `.github/copilot-instructions.md`), the review now reads the rule files other tools scope to
+  part of the tree and gives each chunk only the ones that match its files: `.cursor/rules/*.mdc` (`globs:` in
+  the frontmatter, `alwaysApply: true` for everywhere), `.github/instructions/*.instructions.md` (`applyTo:`),
+  our own `.code-reviewer/rules/*.md` (`paths:`), and an `AGENTS.md` or `CLAUDE.md` in a subdirectory for the
+  files under it. Frontmatter is stripped; unsafe globs are refused like any other untrusted glob; nothing is
+  read from dependency directories; in a diff review the files come from the base commit, so a change cannot
+  bring its own rules. `plan.projectRules` lists every rule file used.
+
 ### Evaluation
 
 - **The funnel.** `run.funnel` in `run.json` counts what each stage let through — reported by the reviewers,
