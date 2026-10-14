@@ -68,6 +68,7 @@ import type {
   ReasoningLevel,
   RefsInfo,
   ReportedFinding,
+  RequestText,
   ReviewPass,
   ReviewUnit,
   Role,
@@ -98,6 +99,7 @@ import {
 } from './execute';
 import { resolveFindings, toFinding } from './findings';
 import { fingerprintFindings, reviewRootReader } from './fingerprint';
+import { type ChangeIntent, cleanRequest, commitMessages, renderIntent } from './intent';
 import {
   addedCodeOf,
   analyzeFilesFrom,
@@ -173,6 +175,8 @@ export interface ReviewRequest {
   head?: string;
   /** Review the staged / uncommitted changes instead of commits (`--staged`, `--uncommitted`). */
   local?: LocalChanges;
+  /** The pull request's title and description (`--description-file`); else from the CI or the forge CLI. */
+  description?: RequestText;
   paths?: string[];
   config: Config;
   logger: Logger;
@@ -404,6 +408,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
   // 1. What to review: refs (fresh remote base) and changed units ------------------------------------
   let target: RunTarget;
   let refsInfo: RefsInfo | undefined;
+  let intent: ChangeIntent | undefined;
   if (mode === 'diff') {
     if (!repo) {
       throw new ReviewError('`review` must run inside a git repository (use `files` for plain folders).');
@@ -448,6 +453,18 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       mergeBase: refs.mergeBase,
       ...(refs.local ? { local: refs.local.mode } : {}),
     };
+    if (config.review.intent) {
+      // A local snapshot's own commit message is ours, not the author's: only the commits up to HEAD count.
+      const messages = await commitMessages(repo, `${refs.mergeBase}..${tip}`);
+      intent = {
+        request: cleanRequest(req.description ?? refs.request),
+        commits: messages.commits,
+        omittedCommits: messages.omitted,
+      };
+      logger.debug(
+        `intent: ${intent.request ? `title/description from ${intent.request.from}` : 'no pull request text'}, ${messages.commits.length} commit message(s)${messages.omitted ? ` (+${messages.omitted} not shown)` : ''}`,
+      );
+    }
     emit({ type: 'refs', target, refs: refsInfo });
     if (refs.mergeBase === refs.headSha)
       warn(`${refs.head} has no commits on top of ${refs.base} — nothing to review.`);
@@ -458,6 +475,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       headSha: repo ? await repo.headSha().catch(() => undefined) : undefined,
     };
   }
+  const intentText = renderIntent(intent);
   throwIfAborted();
 
   const exclude = [...config.review.exclude, ...(config.project.ignore ?? [])];
@@ -625,6 +643,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     config.review.skillTokenBudget +
     SKILL_SUMMARY_TOKENS +
     config.analyzers.maxHintsPerChunk * TOKENS_PER_HINT +
+    estimateTokens(intentText) +
     PROMPT_OVERHEAD;
   const promptRoom = contextWindow - outputReserve - overhead;
   const budget = Math.max(2_000, Math.min(config.review.maxChunkTokens, promptRoom));
@@ -873,10 +892,19 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       maxNotes: config.review.maxNotes,
       passes: [...config.review.passes],
       audit: config.review.audit,
+      intent: config.review.intent,
     },
     routing: { ...routes },
     fallbacks: [...(preflight?.fallbacks ?? [])],
     ...(refsInfo ? { refs: refsInfo } : {}),
+    ...(intent
+      ? {
+          intent: {
+            ...(intent.request ? { request: intent.request.from } : {}),
+            commits: intent.commits.length,
+          },
+        }
+      : {}),
     ...(stack
       ? {
           stack: stack.techs
@@ -1049,6 +1077,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         hints,
         stack: chunkStack.get(chunk.id),
         ...(config.review.audit ? { audit: true } : {}),
+        ...(intentText ? { intent: intentText } : {}),
       });
       const buildTask = (
         chunk: Chunk,
@@ -1594,7 +1623,12 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             kind: 'findings',
             label,
             instructions,
-            prompt: sweepPrompt({ target, chunks: part, part: { index, total: parts.length } }),
+            prompt: sweepPrompt({
+              target,
+              chunks: part,
+              part: { index, total: parts.length },
+              ...(intentText ? { intent: intentText } : {}),
+            }),
             reasoning: 'medium',
             readTools: false,
             root,

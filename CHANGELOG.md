@@ -4,6 +4,13 @@
 
 ### Review quality
 
+- **The reviewer knows what the change is meant to do.** The review prompts (and `--sweep`) now carry the pull
+  request's title and description — from the CI's event (GitHub, GitLab), from `gh` / `glab` when they found the
+  pull request, or from `--description-file` — and the change's commit messages. The reviewer reports code that
+  does not do what they say, or misses a case they promise. The text is clipped, fenced and marked untrusted, and
+  the critic never sees it, so a description cannot talk a finding away. `review.intent: false` or `--no-intent`
+  turns it off; `run.intent` records what was shown.
+
 - **Skills that do not fit the budget are no longer silently left out.** When more skills match a chunk than
   `review.skillTokenBudget` holds, the rest are named in the prompt by their topics (one line each, up to
   2,000 tokens). On Martian's 50 pull requests half of the chunks left out about 8 matching skills each;

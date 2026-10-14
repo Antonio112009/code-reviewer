@@ -1,5 +1,5 @@
 import type { GitSettings } from '../config/schema';
-import type { RefsInfo } from '../types';
+import type { RefsInfo, RequestText } from '../types';
 import { untrustedGlobMatcher } from '../util/globs';
 import { PROJECT_DIR } from '../util/paths';
 import { type CiPullRequest, detectCiPullRequest } from './ci';
@@ -42,6 +42,8 @@ export interface ResolvedRefs {
   info: RefsInfo;
   /** The snapshot of the local changes (with `local`). */
   local?: LocalSnapshot;
+  /** Title and description of the pull/merge request whose target became the base (CI or forge CLI). */
+  request?: RequestText;
 }
 
 /**
@@ -109,6 +111,20 @@ type BaseSource = RefsInfo['baseSource'];
 interface Candidates {
   specs: RefSpec[];
   why: string;
+  /** The pull/merge request these candidates come from. */
+  request?: RequestText;
+}
+
+function requestText(
+  pr: { title?: string; description?: string },
+  from: RequestText['from'],
+): RequestText | undefined {
+  if (!pr.title && !pr.description) return undefined;
+  return {
+    ...(pr.title ? { title: pr.title } : {}),
+    ...(pr.description ? { description: pr.description } : {}),
+    from,
+  };
 }
 
 interface BaseOption {
@@ -320,6 +336,7 @@ class RefResolver {
         notes: this.notes,
       },
       ...(head.local ? { local: head.local } : {}),
+      ...(chosen.request ? { request: chosen.request } : {}),
     };
   }
 
@@ -550,6 +567,7 @@ class RefResolver {
     return {
       specs: [{ kind: 'branch', name: pr.baseBranch, remote }],
       why: `open ${pr.tool === 'gh' ? 'PR' : 'MR'} #${pr.number} (${pr.tool}) targets ${pr.baseBranch}`,
+      request: requestText(pr, pr.tool),
     };
   }
 
@@ -824,10 +842,11 @@ class RefResolver {
 
   private async chooseBase(
     options: BaseOption[],
-  ): Promise<{ option: BaseOption; why: string; found: Located[] }> {
+  ): Promise<{ option: BaseOption; why: string; found: Located[]; request?: RequestText }> {
     for (const option of options) {
       const expanded: Candidates | undefined = option.lazy ? await option.lazy() : option;
       if (!expanded) continue;
+      const request = expanded.request ?? (option.ci ? requestText(option.ci, 'ci') : undefined);
       // Candidates not covered by the initial probe (e.g. a forge base on another remote).
       const extra = new Map<string, string[]>();
       for (const spec of expanded.specs) {
@@ -838,11 +857,11 @@ class RefResolver {
       const located = await Promise.all(expanded.specs.map((s) => this.locate(s)));
       const found = located.filter((l): l is Located => l !== undefined);
       if (found.length > 0) {
-        return { option, why: expanded.why, found: option.nearest ? found : found.slice(0, 1) };
+        return { option, why: expanded.why, found: option.nearest ? found : found.slice(0, 1), request };
       }
       if (option.ci) {
         const fallback = await this.ciFallback(option.ci);
-        if (fallback) return { option, why: fallback.why, found: [fallback.loc] };
+        if (fallback) return { option, why: fallback.why, found: [fallback.loc], request };
       }
       const what = expanded.specs.map((s) => this.describe(s));
       if (option.required) throw new Error(this.notFound(option, what));

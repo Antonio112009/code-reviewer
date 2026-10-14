@@ -18,6 +18,9 @@ export interface CiPullRequest {
   headSha?: string;
   /** PR/MR number or id. */
   number?: string;
+  /** Title and description as the author wrote them (GitHub event, GitLab variables): untrusted text. */
+  title?: string;
+  description?: string;
 }
 
 /** Event payloads are small; anything bigger is not a GitHub event file. */
@@ -33,6 +36,10 @@ function branchName(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   const name = raw.replace(/^refs\/heads\//, '');
   return isValidBranchName(name) ? name : undefined;
+}
+
+function text(raw: unknown): string | undefined {
+  return typeof raw === 'string' && raw.trim() ? raw : undefined;
 }
 
 function sha(raw: unknown): string | undefined {
@@ -52,7 +59,13 @@ async function readJson(file: string): Promise<unknown> {
 
 interface GithubEvent {
   number?: unknown;
-  pull_request?: { number?: unknown; base?: { sha?: unknown }; head?: { sha?: unknown; ref?: unknown } };
+  pull_request?: {
+    number?: unknown;
+    title?: unknown;
+    body?: unknown;
+    base?: { sha?: unknown };
+    head?: { sha?: unknown; ref?: unknown };
+  };
 }
 
 async function github(env: NodeJS.ProcessEnv): Promise<CiPullRequest | undefined> {
@@ -74,6 +87,8 @@ async function github(env: NodeJS.ProcessEnv): Promise<CiPullRequest | undefined
       const p = event?.pull_request;
       pr.baseSha = sha(p?.base?.sha);
       pr.headSha = sha(p?.head?.sha);
+      pr.title = text(p?.title);
+      pr.description = text(p?.body);
       const n = p?.number ?? event?.number;
       if (typeof n === 'number' && Number.isInteger(n)) pr.number = String(n);
     } catch {
@@ -97,6 +112,9 @@ function gitlab(env: NodeJS.ProcessEnv): CiPullRequest | undefined {
     headBranch: branchName(value(env, 'CI_MERGE_REQUEST_SOURCE_BRANCH_NAME')),
     headSha: sha(value(env, 'CI_COMMIT_SHA')),
     number: value(env, 'CI_MERGE_REQUEST_IID'),
+    title: text(env.CI_MERGE_REQUEST_TITLE),
+    // GitLab cuts it to 2,700 characters.
+    description: text(env.CI_MERGE_REQUEST_DESCRIPTION),
   };
 }
 

@@ -205,6 +205,22 @@ second pass. A failed second pass keeps the first and its usage.
 Without `--deepen`, `review/advice.ts` suggests it after a run with findings (`run.advice.deepen`: every
 reviewed chunk and an estimate of `DEEPEN_COST_FACTOR` × the first pass's cost, left out when a chunk's cost is
 unknown); `deepenAdviceText` renders it in the summary and the markdown report.
+### The change's intent (`review.intent`, `--no-intent`; on)
+
+`review/intent.ts` collects what the change is meant to do, in its author's words, once per diff run: the pull
+request's title and description and the commit messages. The title and description come from
+`--description-file` (first line = title), else from the pull request whose target became the base —
+`CiPullRequest` (the GitHub event's `pull_request.title` / `body`, GitLab's `CI_MERGE_REQUEST_TITLE` /
+`CI_MERGE_REQUEST_DESCRIPTION`) or the `gh` / `glab` lookup (`ResolvedRefs.request`); a base from `--base` or
+rules has none. Commit messages are `git log --no-merges mergeBase..head`, oldest first, trailers dropped; a
+local snapshot's own commit is never among them. Everything is clipped (title 300, description 3,000, 30 commits
+and 3,000 characters of messages; template `<!-- -->` comments removed in one linear pass) and rendered by
+`renderIntent` in a fence the text cannot close, marked untrusted: code that does not do what it says is a
+defect, the text is never evidence that code is correct. The review prompts and the sweep get it; the critic
+never does, so a description cannot argue a finding away. Its size comes out of the chunk budget. It is left
+out of the result cache key, like commit shas: it changes with every commit while the code it describes is in
+the key. `run.intent` records where the title came from and how many commit messages were shown.
+
 ### Sweep (`review.sweep`, `--sweep`; off)
 
 With `review.sweep`, after the chunk reviews `runReview` makes one more review call per part of the change:
@@ -525,7 +541,8 @@ The code under review, and therefore model output, is treated as untrusted.
 10. **Analyzers.** They never execute repository code without an explicit opt-in. Hits in untrusted text
     are parsed linearly (tokenizer, import graph, JSON extraction and rendering are all bounded).
 11. **Prompts and reports.** Repository text in prompts is clipped, and prompts state that the code is
-    data, not instructions. Markdown reports escape HTML, backticks, images and fences in untrusted text.
+    data, not instructions. The pull request's description and commit messages (`review.intent`) are clipped,
+    fenced and marked untrusted, and only the reviewer sees them, never the critic. Markdown reports escape HTML, backticks, images and fences in untrusted text.
     Run ids are validated before they become paths.
 12. **Checkout check.** `git status` of the user's checkout is compared before and after the run.
 13. **Forge tokens** (`publish/target.ts`, `publish/http.ts`).
@@ -592,8 +609,8 @@ The code under review, and therefore model output, is treated as untrusted.
 - **Key** (`cache/review.ts`): the route (provider, model, reasoning), the full instructions (rules,
   project, skills, depth), `prompts.ts#reviewPromptIdentity` — the chunk's rendered code and context,
   files, grouping, stack line and hints by content — and the tool settings. Left out on purpose: chunk
-  numbering, commit shas, the list of other files and hint ids, which change with any commit elsewhere in
-  the change. Cached answers refer to hints by identity (`analyzer|rule|file|lines`), mapped back to the
+  numbering, commit shas, the list of other files, the change's description and commit messages
+  (`review.intent`) and hint ids, which change with any commit elsewhere in the change. Cached answers refer to hints by identity (`analyzer|rule|file|lines`), mapped back to the
   run's ids. A verdict's key is the finding as the critic sees it (`critiqueFindingIdentity`), its code
   excerpt, the critique instructions and the critic's route.
 - **Files the model read.** Our `read_file` / `grep` (`SubmissionCollector.noteRead`, also through
