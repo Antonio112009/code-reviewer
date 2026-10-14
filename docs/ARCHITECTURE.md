@@ -128,6 +128,7 @@ the config files and flags, so explicit settings always win.
 | `minConfidence` | 0.7 | 0.3 |
 | `advisoryConfidence` | 0 | 0.6 |
 | `secondOpinion` | off | on |
+| `sweep` | off | on |
 | `notes` | off | on |
 
 The depth also affects:
@@ -223,7 +224,7 @@ the key. `run.intent` records where the title came from and how many commit mess
 on AACR-Bench hold82 it did not raise recall (`evals/aacr/README.md`); the reviewer cited the text in 2 of 215
 findings.
 
-### Sweep (`review.sweep`, `--sweep`; off)
+### Sweep (`review.sweep`, `--sweep` / `--no-sweep`; on at full depth, off at essential)
 
 With `review.sweep`, after the chunk reviews `runReview` makes one more review call per part of the change:
 `sweepParts` (`review/sweep.ts`) groups the code of every chunk, each once, up to the prompt room, so most

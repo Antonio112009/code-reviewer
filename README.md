@@ -266,6 +266,7 @@ number of findings, so `essential` saves less than it leaves out.
 | Self-critique | also drops real but low-impact findings; keeps confidence ≥ 0.7 | drops only claims that are wrong about the code; low impact lowers the severity, and a true observation with no realistic way to fail becomes "worth a look"; keeps confidence ≥ 0.3 |
 | Corrected titles | an overstated headline over a real defect is kept with a corrected title (the report shows the original) | same |
 | Second opinion | off (`--second-opinion` turns it on) | findings the critic was not sure about are re-checked by a second verifier |
+| Sweep | off (`--sweep` turns it on) | one more call reads the whole change at once for what the chunk reviews missed (`--no-sweep` turns it off) |
 | "Worth a look" | — | findings below confidence 0.6 and `info` findings: in the reports, not in PR comments, SARIF / Code Quality or `--fail-on` |
 | Maintainability notes | — (`--notes` turns them on) | what the change makes harder to maintain, checked to be true: their own section in the report and a list in the PR summary comment; never inline, in SARIF / Code Quality or `--fail-on`; at most 5 (`review.maxNotes`); `--no-notes` turns them off |
 
@@ -307,12 +308,12 @@ findings were real three times in four, findings of one pass one time in three.
   default), the re-run takes its first pass from the cache and pays only for the second.
 - Off by default. `review.deepen: true` in `.code-reviewer/config.yaml` turns it on for a repository.
 
-### More of the real bugs (`--sweep`)
+### More of the real bugs (the sweep)
 
 The review goes through a change chunk by chunk, with tools. Given the whole diff in one call, the same model
 finds known bugs that the chunk reviews never report: on Martian's benchmark, of the 36 known bugs only the
-model found, the reviewer had never reported 32. With `--sweep`, after the chunk reviews one more call reads the
-whole change at once, without tools, and lists its defects. What it finds where no chunk review reported
+model found, the reviewer had never reported 32. So at full depth, after the chunk reviews one more call reads
+the whole change at once, without tools, and lists its defects (the sweep, `review.sweep`). What it finds where no chunk review reported
 anything goes to the critic like every other finding; what it finds at the same spot is dropped as a duplicate.
 
 | [Martian's Code Review Bench](BENCHMARKS.md#real-bugs-martian-code-review-bench), 50 real PRs, two runs | Precision | Recall | F1 |
@@ -326,8 +327,9 @@ anything goes to the critic like every other finding; what it finds at the same 
   each time and F1 by 0.7 to 2.8. On AACR-Bench, whose references are mostly reviewers' remarks rather than
   bugs, it adds little: F1 +1.0 on 30 pull requests and +0.6 on 82 held-out ones.
 - **Cost:** 40–50% more per review: one more call over the whole diff, and the critic's look at what it adds.
-- Off by default (experimental). `review.sweep: true` turns it on for a repository; `run.sweep` in the JSON
-  counts what it reported and what was dropped as a duplicate.
+- On at full depth, off at essential; `--no-sweep` (`review.sweep: false`) leaves it out. `run.sweep` in the
+  JSON counts what it reported and what was dropped as a duplicate. Its findings do not depend on the size of
+  the change: on Martian they came as often from changes under 100 lines as from ones of 300–800.
 
 ## Before you commit
 
@@ -393,8 +395,8 @@ Useful flags:
   of stopping at the first defect of a function;
 - `--deepen`: an independent second review pass over every chunk at high reasoning, about twice the
   price ([when to use it](#a-second-pass-for-important-changes---deepen));
-- `--sweep` (experimental): one more call reads the whole change at once for the defects the chunk reviews
-  missed, 40–50% more per review ([what it finds](#more-of-the-real-bugs---sweep));
+- `--sweep` / `--no-sweep`: one more call reads the whole change at once for the defects the chunk reviews
+  missed, 40–50% more per review; on at full depth ([what it finds](#more-of-the-real-bugs-the-sweep));
 - `--intent` (experimental), `--description-file <path>`: the reviewer is told what the change is meant to do —
   the pull request's title and description (from the CI's event or `gh` / `glab`, or this file: first line =
   title) and the commit messages — and reports code that does not do what they say. The text is clipped and

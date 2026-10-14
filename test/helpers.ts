@@ -55,8 +55,10 @@ export function testConfig(overrides: (c: Config) => void = () => {}): Config {
     critique: { provider: 'mock', reasoning: 'low' },
   };
   config.output.formats = ['md', 'json', 'html'];
-  // Reviews start from scratch unless a test is about the cache.
+  // Reviews start from scratch unless a test is about the cache, and make only the chunk calls that the tests
+  // count unless a test is about the sweep (on at full depth).
   config.cache.enabled = false;
+  config.review.sweep = false;
   overrides(config);
   return config;
 }
