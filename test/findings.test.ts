@@ -151,7 +151,13 @@ describe('remote links', () => {
     expect(lineUrl(gl, 'def', 'x.ts', 7, 7)).toBe(
       'https://gitlab.example.com/group/sub/app/-/blob/def/x.ts#L7',
     );
-    expect(commitUrl(parseRemote('https://bitbucket.org/a/b'), 'x')).toBeUndefined();
+    expect(commitUrl(parseRemote('https://bitbucket.org/a/b'), 'x')).toBe(
+      'https://bitbucket.org/a/b/commits/x',
+    );
+    expect(lineUrl(parseRemote('https://bitbucket.org/a/b'), 'x', 'src/a.ts', 3, 5)).toBe(
+      'https://bitbucket.org/a/b/src/x/src/a.ts#lines-3:5',
+    );
+    expect(commitUrl(parseRemote('https://example.com/a/b'), 'x')).toBeUndefined();
     const gt = parseRemote('ssh://git@codeberg.org/acme/app.git');
     expect(gt).toEqual({ platform: 'gitea', webUrl: 'https://codeberg.org/acme/app' });
     expect(commitUrl(gt, 'abc')).toBe('https://codeberg.org/acme/app/commit/abc');

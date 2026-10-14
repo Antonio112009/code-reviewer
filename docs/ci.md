@@ -203,6 +203,35 @@ jobs:
   threads (fixed findings are listed in the summary instead). `upload-sarif` and the composite action do not
   run on Gitea; use the steps above.
 
+## Bitbucket Pipelines
+
+```yaml
+# bitbucket-pipelines.yml
+image: node:24
+pipelines:
+  pull-requests:
+    '**':
+      - step:
+          name: Code review
+          clone: { depth: full }
+          script:
+            - npm install -g @antonio112009/code-reviewer
+            - code-reviewer review --plain --yes --format md,json --out reports --provider anthropic
+            - code-reviewer runs publish latest
+```
+
+- Pipelines provide no token for the Bitbucket API: add `BITBUCKET_TOKEN` and `BITBUCKET_EMAIL` as *secured*
+  repository variables — an [API token](https://support.atlassian.com/bitbucket-cloud/docs/api-tokens/) with
+  pull request write permission and the account's e-mail (Basic authentication) — or a repository / workspace
+  access token as `BITBUCKET_TOKEN` alone (bearer). App passwords stopped working in June 2026.
+- The base branch comes from `BITBUCKET_PR_DESTINATION_BRANCH`, the repository from `BITBUCKET_REPO_FULL_NAME`,
+  the pull request from `BITBUCKET_PR_ID`; `--forge bitbucket --repo workspace/slug --pr N` outside Pipelines.
+  The API is always `https://api.bitbucket.org/2.0` (`--api-url` for anything else).
+- Inline comments are posted one by one on the new-side line; the summary is a pull request comment updated
+  in place. Bitbucket's API returns no commit for a comment, so fixed findings are listed in the summary rather
+  than resolved, and one-click suggestions are shown as text. The workspace's rate limit (1,000 requests per
+  hour) is plenty: a publication is a handful of requests.
+
 ## Providers in CI
 
 **AWS Bedrock through OIDC** (no stored AWS keys). Create an IAM role that trusts your CI's OIDC provider
@@ -247,7 +276,7 @@ code-reviewer runs publish latest --forge gitlab --repo group/project --pr 7 \
 ```
 
 The target is resolved in this order (`--verbose` prints each decision):
-1. flags: `--pr <number>`, `--repo <owner/name | group/project | project id>`, `--forge github|gitlab`,
+1. flags: `--pr <number>`, `--repo <owner/name | group/project | project id>`, `--forge github|gitlab|gitea|bitbucket`,
    `--api-url <url>`;
 2. the CI: GitHub Actions (`GITHUB_REPOSITORY`, the pull request of the event, `GITHUB_API_URL`), GitLab CI
    (`CI_MERGE_REQUEST_PROJECT_ID`, `CI_MERGE_REQUEST_IID`, `CI_API_V4_URL`);

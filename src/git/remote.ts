@@ -1,4 +1,4 @@
-export type Platform = 'github' | 'gitlab' | 'gitea' | 'other';
+export type Platform = 'github' | 'gitlab' | 'gitea' | 'bitbucket' | 'other';
 
 export interface RemoteInfo {
   platform: Platform;
@@ -37,12 +37,15 @@ export function parseRemote(url: string | undefined): RemoteInfo | undefined {
       ? 'gitlab'
       : lower.includes('gitea') || lower.includes('forgejo') || lower === 'codeberg.org'
         ? 'gitea'
-        : 'other';
+        : lower.includes('bitbucket')
+          ? 'bitbucket'
+          : 'other';
   return { platform, webUrl: `${origin ?? `https://${host}`}/${repoPath}` };
 }
 
 export function commitUrl(remote: RemoteInfo | undefined, sha: string): string | undefined {
   if (!remote || remote.platform === 'other') return undefined;
+  if (remote.platform === 'bitbucket') return `${remote.webUrl}/commits/${sha}`;
   return remote.platform === 'gitlab' ? `${remote.webUrl}/-/commit/${sha}` : `${remote.webUrl}/commit/${sha}`;
 }
 
@@ -55,6 +58,10 @@ export function lineUrl(
 ): string | undefined {
   if (!remote || remote.platform === 'other') return undefined;
   const encoded = file.split('/').map(encodeURIComponent).join('/');
+  if (remote.platform === 'bitbucket') {
+    const range = end > start ? `lines-${start}:${end}` : `lines-${start}`;
+    return `${remote.webUrl}/src/${sha}/${encoded}#${range}`;
+  }
   if (remote.platform === 'gitea') {
     const range = end > start ? `L${start}-L${end}` : `L${start}`;
     return `${remote.webUrl}/src/commit/${sha}/${encoded}#${range}`;

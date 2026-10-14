@@ -185,7 +185,7 @@ export async function findOpenPullRequest(
       ? ['gh']
       : opts.platform === 'gitlab'
         ? ['glab']
-        : opts.platform === 'gitea'
+        : opts.platform === 'gitea' || opts.platform === 'bitbucket'
           ? []
           : ['gh', 'glab'];
   for (const tool of order) {

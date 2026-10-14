@@ -9,13 +9,13 @@ import type { ForgeTool } from '../git/forge';
  * imports nothing from the publishing code, so every other module can import it.
  */
 
-export type ForgeKind = 'github' | 'gitlab' | 'gitea';
-export const FORGES: readonly ForgeKind[] = ['github', 'gitlab', 'gitea'];
+export type ForgeKind = 'github' | 'gitlab' | 'gitea' | 'bitbucket';
+export const FORGES: readonly ForgeKind[] = ['github', 'gitlab', 'gitea', 'bitbucket'];
 /**
  * The order CI markers are checked in: Gitea / Forgejo Actions set GitHub's variables too (`GITHUB_ACTIONS`,
  * `GITHUB_API_URL`), so their own marker has to win, or the token would follow GitHub's rules.
  */
-export const CI_ORDER: readonly ForgeKind[] = ['gitea', 'github', 'gitlab'];
+export const CI_ORDER: readonly ForgeKind[] = ['gitea', 'github', 'gitlab', 'bitbucket'];
 
 export interface ForgeSpec {
   kind: ForgeKind;
@@ -32,12 +32,16 @@ export interface ForgeSpec {
   missingToken: string;
   /** The CI system that belongs to the forge, as `detectCiPullRequest` names it. */
   ci: CiProvider;
-  /** Variable that is "true" inside that CI, the CI's own API URL variable, and the repository variables. */
+  /**
+   * Variable that marks that CI ("true", or any value with `ciVarAnyValue`), the CI's own API URL variable
+   * when the CI declares one, and the repository variables.
+   */
   ciVar: string;
-  ciApiUrlVar: string;
+  ciVarAnyValue?: boolean;
+  ciApiUrlVar?: string;
   ciRepoVars: readonly string[];
-  /** Global-config key of a self-hosted API URL. */
-  apiUrlKey: keyof Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl' | 'giteaApiUrl'>;
+  /** Global-config key of a self-hosted API URL, for forges that can be self-hosted. */
+  apiUrlKey?: keyof Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl' | 'giteaApiUrl'>;
   /** The local CLI that knows the branch's open request (`findOpenPullRequest`), when one exists. */
   tool?: ForgeTool;
   /** What `--repo` must look like, and the words for the error message. */
@@ -111,6 +115,26 @@ export const FORGE_SPECS: Record<ForgeKind, ForgeSpec> = {
     repoHint: 'owner/name',
     webHostOfApi: sameHost,
     // Applicable `suggestion` blocks exist in Forgejo only, and not through the API in vanilla Gitea.
+    suggestionStyle: 'none',
+  },
+  bitbucket: {
+    kind: 'bitbucket',
+    label: 'Bitbucket',
+    publicApiUrl: 'https://api.bitbucket.org/2.0',
+    requestNoun: 'pull request',
+    refSigil: '#',
+    tokenVars: ['BITBUCKET_TOKEN'],
+    missingToken:
+      'Set BITBUCKET_TOKEN to an API token (with BITBUCKET_EMAIL, the account e-mail) or to a repository / workspace access token with pull request write permission. App passwords no longer work.',
+    ci: 'bitbucket',
+    // Pipelines set no "true" flag; the build number is always there.
+    ciVar: 'BITBUCKET_BUILD_NUMBER',
+    ciVarAnyValue: true,
+    ciRepoVars: ['BITBUCKET_REPO_FULL_NAME'],
+    repoPattern: /^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/,
+    repoHint: 'workspace/repo-slug',
+    webHostOfApi: (host) => (host === 'api.bitbucket.org' ? 'bitbucket.org' : host),
+    // Whether a `suggestion` fence posted through the API is applicable is unconfirmed: the fix is shown as text.
     suggestionStyle: 'none',
   },
 };
