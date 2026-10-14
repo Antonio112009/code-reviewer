@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.9.0 — 2026-10-14
 
 ### Review quality
 
@@ -52,6 +52,16 @@
 - One more experiment recorded and dropped: an item-by-item pass over the technology checklists at the end of
   the review task (`evals/experiments/checklist-walk.patch`): on AACR-Bench ctx30, two runs each, F1 16.2% →
   15.2% (−0.9, 95% interval −3.7..+1.8), more findings but not more of the known ones.
+- `evals/aacr/descriptions.py` fetches each AACR-Bench pull request's title and description once; with
+  `CODE_REVIEWER_DESCRIPTIONS` the adapter passes them to the review with `--description-file`, and each run's
+  `provenance.json` records the file. Builds are listed in BENCHMARKS.md with the 2026-10-14 runs.
+
+### Dependencies
+
+- All direct dependencies updated to their latest minor and patch versions (ACP SDK 1.8.0, MCP client and
+  server 2.3.1, `ai` 7.0.140 with its providers, AWS credential providers, secretlint, execa, zod, smol-toml,
+  es-module-lexer; ast-grep 0.50.0), still pinned to exact versions; dev tools and the GitHub Actions the
+  workflows pin too.
 
 ## 0.8.0 — 2026-10-02
 
