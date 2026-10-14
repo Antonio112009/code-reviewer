@@ -588,6 +588,15 @@ accounting (Claude Code's reported cost doubled between 2026-09-30 and 2026-10-1
 request, see BENCHMARKS.md). From here benchmark runs use the API unless a row says otherwise; rows from the two
 providers are compared only within a provider.
 
+**Is the gap the reasoning effort?** No. On the API path `medium` is adaptive thinking at `effort: medium` (the
+AI SDK's mapping, the same effort Claude Code gets from `--effort medium`), yet a chunk thinks for about 470
+tokens over 2 requests where Claude Code makes some 7 hidden model calls per chunk. A run with the reviewer at
+`--reasoning high` (`api-high-1`, 2026-10-15): 802 reasoning tokens and 4 requests per chunk, 3.5 tool calls per
+chunk instead of 0.5, 112 raw findings instead of 92 — and F1 12.2% (P 25.0 / R 8.0) against 14.4% at medium
+(paired −2.2, 95% CI −5.4..+0.4, P 0.05), $8.76 a run. More exploration, more candidates, lower precision, as
+on Martian with Claude Code. `medium` stays on both paths; the remaining 1.8-point gap to Claude Code is
+unexplained and within noise.
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).
