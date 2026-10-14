@@ -6,7 +6,9 @@ import { computeFingerprint, FINGERPRINT_RE, uniqueFingerprints } from '../revie
 import type { Finding, RunRecord } from '../types';
 import type { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
-import { FORGE_SPECS } from './forges';
+import { giteaAdapter, giteaHeaders } from './gitea';
+import { githubAdapter, githubHeaders } from './github';
+import { gitlabAdapter, gitlabHeaders } from './gitlab';
 import { parseState, sinceLastReview } from './history';
 import { ApiClient, ApiError, type FetchLike, type SleepLike } from './http';
 import {
@@ -20,6 +22,7 @@ import {
 import { renderInlineComment, renderResolvedReply, renderSummary } from './render';
 import { type FixedThread, fixedThreads } from './resolve';
 import {
+  type ForgeKind,
   missingTokenMessage,
   PublishError,
   type PublishFlags,
@@ -95,8 +98,21 @@ async function findingsWithFingerprints(run: RunRecord, repo: GitRepo | undefine
   );
 }
 
+/** The API client of each forge: request headers and the adapter (the rest of a forge is in `forges.ts`). */
+const CLIENTS: Record<
+  ForgeKind,
+  {
+    headers: (token: string, userAgent: string) => Record<string, string>;
+    adapter: (target: PublishTarget, client: ApiClient, logger: Logger) => ForgeAdapter;
+  }
+> = {
+  github: { headers: githubHeaders, adapter: githubAdapter },
+  gitlab: { headers: gitlabHeaders, adapter: gitlabAdapter },
+  gitea: { headers: giteaHeaders, adapter: giteaAdapter },
+};
+
 function adapterFor(target: PublishTarget, client: ApiClient, logger: Logger): ForgeAdapter {
-  return FORGE_SPECS[target.forge].adapter(target, client, logger);
+  return CLIENTS[target.forge].adapter(target, client, logger);
 }
 
 /**
@@ -182,7 +198,7 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
   const userAgent = `code-reviewer/${packageVersion()}`;
   const client = new ApiClient({
     baseUrl: target.apiUrl,
-    headers: FORGE_SPECS[target.forge].headers(token.token, userAgent),
+    headers: CLIENTS[target.forge].headers(token.token, userAgent),
     fetch: opts.fetch,
     sleep: opts.sleep,
     signal: opts.signal,

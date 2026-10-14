@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Platform } from './git/remote';
 
 /**
  * critical — exploitable vulnerability, data loss/corruption or crash on a main path
@@ -575,7 +576,7 @@ export interface RunRecord {
   status: 'running' | 'completed' | 'partial' | 'failed';
   createdAt: string;
   durationMs?: number;
-  repo: { root: string; remote?: string; platform?: 'github' | 'gitlab' | 'other' };
+  repo: { root: string; remote?: string; platform?: Platform };
   target: RunTarget;
   options: {
     /** Review depth (older runs: undefined = full). */

@@ -501,6 +501,21 @@ describe('detectCiPullRequest', () => {
     expect(await detectCiPullRequest({ GITHUB_ACTIONS: 'true', GITHUB_BASE_REF: '' })).toBeUndefined();
   });
 
+  it('reads Gitea Actions before GitHub Actions (both variable sets are present)', async () => {
+    const pr = await detectCiPullRequest({
+      GITEA_ACTIONS: 'true',
+      GITHUB_ACTIONS: 'true',
+      GITHUB_BASE_REF: 'main',
+      GITHUB_HEAD_REF: 'feature/x',
+    });
+    expect(pr).toMatchObject({
+      provider: 'gitea',
+      label: 'Gitea Actions',
+      baseBranch: 'main',
+      headBranch: 'feature/x',
+    });
+  });
+
   it('reads GitLab, Azure DevOps and Bitbucket variables', async () => {
     expect(
       await detectCiPullRequest({

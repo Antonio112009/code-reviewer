@@ -1,21 +1,21 @@
 import type { PublishSettings } from '../config/schema';
 import type { CiProvider } from '../git/ci';
 import type { ForgeTool } from '../git/forge';
-import type { Logger } from '../util/logger';
-import { githubAdapter, githubHeaders } from './github';
-import { gitlabAdapter, gitlabHeaders } from './gitlab';
-import type { ApiClient } from './http';
-import type { ForgeAdapter } from './plan';
-import type { PublishTarget } from './target';
 
 /*
  * The forge registry: everything that differs between the code hosts a review can be posted to, in one
- * place. Adding a forge is one entry here plus its adapter (`./<forge>.ts`); the target resolution, the
- * renderer and the CLI read the entry instead of switching on the kind.
+ * place. Adding a forge is one entry here plus its adapter (`./<forge>.ts`, registered in `index.ts`); the
+ * target resolution, the renderer and the CLI read the entry instead of switching on the kind. This module
+ * imports nothing from the publishing code, so every other module can import it.
  */
 
-export type ForgeKind = 'github' | 'gitlab';
-export const FORGES: readonly ForgeKind[] = ['github', 'gitlab'];
+export type ForgeKind = 'github' | 'gitlab' | 'gitea';
+export const FORGES: readonly ForgeKind[] = ['github', 'gitlab', 'gitea'];
+/**
+ * The order CI markers are checked in: Gitea / Forgejo Actions set GitHub's variables too (`GITHUB_ACTIONS`,
+ * `GITHUB_API_URL`), so their own marker has to win, or the token would follow GitHub's rules.
+ */
+export const CI_ORDER: readonly ForgeKind[] = ['gitea', 'github', 'gitlab'];
 
 export interface ForgeSpec {
   kind: ForgeKind;
@@ -37,18 +37,16 @@ export interface ForgeSpec {
   ciApiUrlVar: string;
   ciRepoVars: readonly string[];
   /** Global-config key of a self-hosted API URL. */
-  apiUrlKey: keyof Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl'>;
-  /** The local CLI that knows the branch's open request (`findOpenPullRequest`). */
-  tool: ForgeTool;
+  apiUrlKey: keyof Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl' | 'giteaApiUrl'>;
+  /** The local CLI that knows the branch's open request (`findOpenPullRequest`), when one exists. */
+  tool?: ForgeTool;
   /** What `--repo` must look like, and the words for the error message. */
   repoPattern: RegExp;
   repoHint: string;
   /** The web host an API URL belongs to (api.github.com → github.com; others: the same host). */
   webHostOfApi: (apiHost: string) => string;
-  /** How a one-click suggestion is fenced: GitHub on the comment's range, GitLab with line offsets. */
-  suggestionStyle: 'range' | 'offsets';
-  headers: (token: string, userAgent: string) => Record<string, string>;
-  adapter: (target: PublishTarget, client: ApiClient, logger: Logger) => ForgeAdapter;
+  /** How a one-click suggestion is fenced: GitHub on the comment's range, GitLab with line offsets, or not at all. */
+  suggestionStyle: 'range' | 'offsets' | 'none';
 }
 
 const sameHost = (host: string) => host;
@@ -73,8 +71,6 @@ export const FORGE_SPECS: Record<ForgeKind, ForgeSpec> = {
     repoHint: 'owner/name',
     webHostOfApi: (host) => (host === 'api.github.com' ? 'github.com' : host),
     suggestionStyle: 'range',
-    headers: githubHeaders,
-    adapter: githubAdapter,
   },
   gitlab: {
     kind: 'gitlab',
@@ -95,8 +91,27 @@ export const FORGE_SPECS: Record<ForgeKind, ForgeSpec> = {
     repoHint: 'a project id or group/project path',
     webHostOfApi: sameHost,
     suggestionStyle: 'offsets',
-    headers: gitlabHeaders,
-    adapter: gitlabAdapter,
+  },
+  gitea: {
+    kind: 'gitea',
+    label: 'Gitea',
+    // Codeberg is the public Forgejo instance; a self-hosted Gitea / Forgejo needs publish.giteaApiUrl.
+    publicApiUrl: 'https://codeberg.org/api/v1',
+    requestNoun: 'pull request',
+    refSigil: '#',
+    tokenVars: ['GITEA_TOKEN', 'FORGEJO_TOKEN'],
+    missingToken:
+      'Set GITEA_TOKEN (or FORGEJO_TOKEN) to an access token with write access to the repository (issue and pull request scopes).',
+    ci: 'gitea',
+    ciVar: 'GITEA_ACTIONS',
+    ciApiUrlVar: 'GITHUB_API_URL',
+    ciRepoVars: ['GITHUB_REPOSITORY'],
+    apiUrlKey: 'giteaApiUrl',
+    repoPattern: /^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/,
+    repoHint: 'owner/name',
+    webHostOfApi: sameHost,
+    // Applicable `suggestion` blocks exist in Forgejo only, and not through the API in vanilla Gitea.
+    suggestionStyle: 'none',
   },
 };
 

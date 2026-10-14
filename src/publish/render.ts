@@ -116,8 +116,10 @@ export function suggestionBlock(f: Finding, anchor: InlineAnchor, forge: ForgeKi
   if (anchor.startLine !== f.startLine || anchor.endLine !== f.endLine) return undefined;
   const text = f.replacement.replace(/\n$/, '');
   if (text.includes('```')) return undefined;
+  const style = FORGE_SPECS[forge].suggestionStyle;
+  if (style === 'none') return undefined;
   const fence =
-    FORGE_SPECS[forge].suggestionStyle === 'offsets'
+    style === 'offsets'
       ? `\`\`\`suggestion:-${anchor.line - anchor.startLine}+${anchor.endLine - anchor.line}`
       : '```suggestion';
   return `${fence}\n${text}\n\`\`\``;

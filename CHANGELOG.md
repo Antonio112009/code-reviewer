@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Gitea, Forgejo and Codeberg
+
+- **Reviews can be posted to Gitea, Forgejo and Codeberg pull requests** (`--forge gitea`, detected from a
+  `gitea` / `forgejo` / `codeberg.org` remote or Gitea / Forgejo Actions): inline comments in one review, a
+  summary comment updated in place, de-duplication by fingerprint; `GITEA_TOKEN` / `FORGEJO_TOKEN`;
+  `publish.giteaApiUrl` (global config) or `--api-url` for a self-hosted instance, Codeberg's API without
+  it. In Actions the token goes to the instance's own API, never to GitHub's. The Gitea API offers no
+  applicable suggestion blocks and no thread resolution, so fixes are shown as text and fixed findings stay in
+  the summary. Report links work for these remotes; `docs/ci.md` has the workflow.
+
 ### Internal
 
 - The forge-specific parts of publishing (labels, APIs, tokens, CI variables, repository patterns,

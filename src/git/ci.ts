@@ -1,7 +1,7 @@
 import { open } from 'node:fs/promises';
 import { isValidBranchName } from './repo';
 
-export type CiProvider = 'github' | 'gitlab' | 'azure' | 'bitbucket';
+export type CiProvider = 'github' | 'gitlab' | 'gitea' | 'azure' | 'bitbucket';
 
 /** The pull/merge request a CI job was started for, as described by the CI's environment. */
 export interface CiPullRequest {
@@ -68,8 +68,23 @@ interface GithubEvent {
   };
 }
 
+/**
+ * Gitea / Forgejo Actions set the GitHub Actions variables too (`GITHUB_ACTIONS`, `GITHUB_BASE_REF`, the event
+ * file), so they are read the same way, but their `GITEA_ACTIONS` marker is checked first: the token must go
+ * to the Gitea API, never to the `GITHUB_API_URL` rules of GitHub.
+ */
+async function gitea(env: NodeJS.ProcessEnv): Promise<CiPullRequest | undefined> {
+  if (value(env, 'GITEA_ACTIONS') !== 'true') return undefined;
+  const pr = await githubLike(env);
+  return pr ? { ...pr, provider: 'gitea', label: 'Gitea Actions' } : undefined;
+}
+
 async function github(env: NodeJS.ProcessEnv): Promise<CiPullRequest | undefined> {
   if (value(env, 'GITHUB_ACTIONS') !== 'true') return undefined;
+  return githubLike(env);
+}
+
+async function githubLike(env: NodeJS.ProcessEnv): Promise<CiPullRequest | undefined> {
   // Only set for pull_request / pull_request_target events.
   const baseBranch = branchName(value(env, 'GITHUB_BASE_REF'));
   if (!baseBranch) return undefined;
@@ -159,5 +174,5 @@ function bitbucket(env: NodeJS.ProcessEnv): CiPullRequest | undefined {
  * and returns its target branch. Undefined outside CI and for non-PR jobs (pushes, schedules).
  */
 export async function detectCiPullRequest(env: NodeJS.ProcessEnv): Promise<CiPullRequest | undefined> {
-  return (await github(env)) ?? gitlab(env) ?? azure(env) ?? bitbucket(env);
+  return (await gitea(env)) ?? (await github(env)) ?? gitlab(env) ?? azure(env) ?? bitbucket(env);
 }

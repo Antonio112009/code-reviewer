@@ -359,11 +359,13 @@ export const PublishSettingsSchema = z.object({
    */
   githubApiUrl: ApiUrlSchema.optional(),
   gitlabApiUrl: ApiUrlSchema.optional(),
+  /** Self-hosted Gitea / Forgejo API (e.g. https://git.example.com/api/v1); without it, Codeberg's. */
+  giteaApiUrl: ApiUrlSchema.optional(),
 });
 export type PublishSettings = z.infer<typeof PublishSettingsSchema>;
 
 /** `publish` keys that decide where an access token is sent: rejected in project configs. */
-export const PUBLISH_URL_KEYS = ['githubApiUrl', 'gitlabApiUrl'] as const;
+export const PUBLISH_URL_KEYS = ['githubApiUrl', 'gitlabApiUrl', 'giteaApiUrl'] as const;
 
 /** Reusing model answers for unchanged chunks and findings (`src/cache/`). */
 export const CacheSettingsSchema = z.object({

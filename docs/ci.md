@@ -168,6 +168,41 @@ Self-managed GitLab needs no configuration: the job uses the `CI_API_V4_URL` of 
 Variables: `CODE_REVIEWER_VERSION` (`latest` or a tag), `CODE_REVIEWER_PROVIDER`, `CODE_REVIEWER_MODEL`,
 `CODE_REVIEWER_DEPTH`, `CODE_REVIEWER_FAIL_ON`, `CODE_REVIEWER_ARGS`, `CODE_REVIEWER_EXTRA_PACKAGES`.
 
+## Gitea / Forgejo / Codeberg
+
+Gitea Actions and Forgejo Actions run GitHub-style workflows, so the review step is the same as
+[without the action](#without-the-action); only the token and the posting differ:
+
+```yaml
+# .gitea/workflows/code-reviewer.yml  (Forgejo: .forgejo/workflows/)
+on: pull_request
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm install -g @antonio112009/code-reviewer
+      - run: code-reviewer review --head ${{ github.event.pull_request.head.sha }} --plain --yes --format md,json --out reports --provider anthropic
+        env: { ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} }
+      - run: code-reviewer runs publish latest
+        env: { GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }} }
+```
+
+- The runner sets `GITEA_ACTIONS=true` next to the GitHub variables; code-reviewer reads the pull request from
+  them and posts to the instance's own API (`GITHUB_API_URL`, which Gitea points at itself). Outside Actions,
+  set `publish.giteaApiUrl` in the global config (`https://git.example.com/api/v1`) or pass `--api-url`;
+  without either, Codeberg's API is used.
+- `GITEA_TOKEN` (or `FORGEJO_TOKEN`): an access token with write access to the repository's issues and pull
+  requests. The checkout is `refs/pull/N/head`, not a merge commit, so the review's head is the pull request
+  head; pass it explicitly as above when the workflow checks out something else.
+- Inline comments go into one review; the summary is an issue comment updated in place. Two things the
+  Gitea API does not offer: one-click `suggestion` blocks (the fix is shown as text) and resolving review
+  threads (fixed findings are listed in the summary instead). `upload-sarif` and the composite action do not
+  run on Gitea; use the steps above.
+
 ## Providers in CI
 
 **AWS Bedrock through OIDC** (no stored AWS keys). Create an IAM role that trusts your CI's OIDC provider
