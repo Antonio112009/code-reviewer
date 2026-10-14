@@ -223,7 +223,7 @@ describe('createSnapshot', () => {
       await snap.dispose();
       expect(existsSync(marker)).toBe(false);
     } finally {
-      rmSync(hooks, { recursive: true, force: true });
+      rmSync(hooks, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
       rmSync(marker, { force: true });
     }
   });
@@ -353,7 +353,7 @@ describe('pruneStaleSnapshots', () => {
       expect((await pruneStaleSnapshots(repo)).map((p) => path.basename(p))).toEqual(['tree']);
       expect(existsSync(parent)).toBe(false);
     } finally {
-      rmSync(parent, { recursive: true, force: true });
+      rmSync(parent, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 

@@ -41,7 +41,8 @@ export function makeRepo(): TempRepo {
       return git('rev-parse', 'HEAD').trim();
     },
     cleanup() {
-      rmSync(root, { recursive: true, force: true });
+      // macOS can still hold a file git just wrote (ENOTEMPTY on the first try): retry a few times.
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     },
   };
 }
