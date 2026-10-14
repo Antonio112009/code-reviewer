@@ -468,9 +468,12 @@ export function addRunLimitOptions(cmd: Command): Command {
     )
     .option(
       '--intent',
-      "show the reviewer the change's description and commit messages, as what the code should do (default)",
+      "experimental: show the reviewer the change's description and commit messages, as what the code should do",
     )
-    .option('--no-intent', "leave the change's description and commit messages out of the review prompts")
+    .option(
+      '--no-intent',
+      "leave the change's description and commit messages out of the review prompts (default)",
+    )
     .option(
       '--second-opinion',
       'a second verifier re-checks findings the critic was not sure about (default at full depth)',

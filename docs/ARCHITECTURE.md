@@ -205,7 +205,7 @@ second pass. A failed second pass keeps the first and its usage.
 Without `--deepen`, `review/advice.ts` suggests it after a run with findings (`run.advice.deepen`: every
 reviewed chunk and an estimate of `DEEPEN_COST_FACTOR` × the first pass's cost, left out when a chunk's cost is
 unknown); `deepenAdviceText` renders it in the summary and the markdown report.
-### The change's intent (`review.intent`, `--no-intent`; on)
+### The change's intent (`review.intent`, `--intent`; experimental, off)
 
 `review/intent.ts` collects what the change is meant to do, in its author's words, once per diff run: the pull
 request's title and description and the commit messages. The title and description come from
@@ -219,7 +219,9 @@ and 3,000 characters of messages; template `<!-- -->` comments removed in one li
 defect, the text is never evidence that code is correct. The review prompts and the sweep get it; the critic
 never does, so a description cannot argue a finding away. Its size comes out of the chunk budget. It is left
 out of the result cache key, like commit shas: it changes with every commit while the code it describes is in
-the key. `run.intent` records where the title came from and how many commit messages were shown.
+the key. `run.intent` records where the title came from and how many commit messages were shown. Off by default:
+on AACR-Bench hold82 it did not raise recall (`evals/aacr/README.md`); the reviewer cited the text in 2 of 215
+findings.
 
 ### Sweep (`review.sweep`, `--sweep`; off)
 

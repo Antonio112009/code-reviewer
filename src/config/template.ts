@@ -215,7 +215,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           example: D.review.sweep,
         },
         intent: {
-          doc: "Show the reviewer what the change is meant to do, in its author's words: the pull request's title and description (CI event, gh / glab, --description-file) and the commit messages (untrusted, clipped; never shown to the critic).",
+          doc: "Experimental: show the reviewer what the change is meant to do, in its author's words: the pull request's title and description (CI event, gh / glab, --description-file) and the commit messages (untrusted, clipped; never shown to the critic).",
           example: D.review.intent,
         },
         expand: {

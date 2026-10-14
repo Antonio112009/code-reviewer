@@ -395,10 +395,11 @@ Useful flags:
   price ([when to use it](#a-second-pass-for-important-changes---deepen));
 - `--sweep` (experimental): one more call reads the whole change at once for the defects the chunk reviews
   missed, 40–50% more per review ([what it finds](#more-of-the-real-bugs---sweep));
-- `--description-file <path>`, `--no-intent`: the reviewer is told what the change is meant to do — the pull
-  request's title and description (from the CI's event or `gh` / `glab`, or this file: first line = title) and
-  the commit messages — and reports code that does not do what they say. The text is clipped and marked
-  untrusted, and the critic never sees it. `--no-intent` (`review.intent: false`) leaves it out;
+- `--intent` (experimental), `--description-file <path>`: the reviewer is told what the change is meant to do —
+  the pull request's title and description (from the CI's event or `gh` / `glab`, or this file: first line =
+  title) and the commit messages — and reports code that does not do what they say. The text is clipped and
+  marked untrusted, and the critic never sees it. Off by default (`review.intent`): on AACR-Bench's held-out
+  half it did not raise recall ([measurement](evals/aacr/README.md));
 - `--second-opinion` / `--no-second-opinion`: findings the critic was not sure about (confidence around the
   bar of the main report) go to a second verifier that reads further — callers, implementations, what
   produces the value — and decides. On by default at full depth (precision 40% → 46% on AACR-Bench for 10%

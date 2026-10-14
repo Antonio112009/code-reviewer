@@ -529,6 +529,20 @@ the critic rejects 17–26; only 10–22 of the kept findings were reported by b
 against 0.8) and the check drops few of them (1 of 37 on ctx30, 23 of 56 findings and notes on hold82 are
 critic rejections in total); defect recall 11.7% → 14.0% on hold82.
 
+**The change's description and commit messages in the prompt** (`review.intent`, 2026-10-14; one run each on
+hold82, the same build `6ed48e1`, `--full`; the descriptions from `descriptions.py`):
+
+| hold82 | Findings | Precision | Recall | F1 | Recall, human refs | Cost / run |
+|---|---|---|---|---|---|---|
+| without (`--no-intent`) | 199 | 31.2% | 9.3% | 14.3% | 12.0% | $61.0 |
+| with the title, description and commit messages | 215 | 27.0% | 8.7% | 13.1% | 10.2% | $62.4 |
+
+Paired: recall −0.6 points (95% CI −1.9..+0.7), F1 −1.2 (−2.9..+0.8), P(B > A) 0.12. The text changed little
+of what the reviewer did: 2 of the 215 findings cite it, and the extra findings are mostly maintainability notes
+(45 against 29). Contrary to what ContextCRBench reports, the description buys no recall here, so
+`review.intent` stays an experimental option, off by default. A run is now about $61 on hold82 (it was $31 for
+0.7.0): the second opinion, notes and the larger skills add up.
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).

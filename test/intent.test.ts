@@ -144,6 +144,7 @@ describe('the change’s intent in the review (review.intent)', () => {
     const provider = new Recorder();
     const config = testConfig((c) => {
       c.output.formats = [];
+      c.review.intent = true; // off by default
       adjust(c);
     });
     const registry = new ProviderRegistry(config, silentLogger);
