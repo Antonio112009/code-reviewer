@@ -4,7 +4,7 @@ import { findOpenPullRequest } from '../../git/forge';
 import type { GitRepo } from '../../git/repo';
 import { type PublishFlags, type PublishOutcome, publishRun } from '../../publish';
 import { SUMMARY_REASON_LABELS } from '../../publish/plan';
-import { FORGE_LABELS, targetLabel } from '../../publish/target';
+import { FORGE_LABELS, FORGE_SPECS, FORGES, targetLabel } from '../../publish/target';
 import { stripUnsafeChars } from '../../report/common';
 import type { RunRecord } from '../../types';
 import type { Logger } from '../../util/logger';
@@ -25,7 +25,7 @@ export function addPublishTargetOptions(cmd: Command): Command {
       '--repo <path>',
       'GitHub owner/name or GitLab project path/id (default: from CI or the git remote)',
     )
-    .option('--forge <forge>', 'github | gitlab (default: detected from CI or the remote)')
+    .option('--forge <forge>', `${FORGES.join(' | ')} (default: detected from CI or the remote)`)
     .option(
       '--api-url <url>',
       'API of GitHub Enterprise / self-managed GitLab, e.g. https://gitlab.example.com/api/v4 (receives your token)',
@@ -51,7 +51,7 @@ function plural(n: number, word: string): string {
 }
 
 function kindOf(outcome: PublishOutcome): string {
-  return outcome.target.forge === 'github' ? 'pull request' : 'merge request';
+  return FORGE_SPECS[outcome.target.forge].requestNoun;
 }
 
 /** Terminal text of a dry run: the target, then every comment body as it would be posted. */

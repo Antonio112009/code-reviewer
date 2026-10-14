@@ -3,6 +3,7 @@ import type { CiPullRequest } from '../git/ci';
 import type { ForgePullRequest } from '../git/forge';
 import type { Platform } from '../git/remote';
 import type { RunRecord } from '../types';
+import { FORGE_SPECS, FORGES, type ForgeKind, type ForgeSpec, isForgeKind } from './forges';
 
 /*
  * Where a review is posted: which forge, which API, which repository, which pull/merge request.
@@ -15,15 +16,7 @@ import type { RunRecord } from '../types';
  * host matches the chosen API (so a GitHub Enterprise remote never leads to posting on github.com).
  */
 
-export type ForgeKind = 'github' | 'gitlab';
-export const FORGES: readonly ForgeKind[] = ['github', 'gitlab'];
-
-export const PUBLIC_API_URLS: Record<ForgeKind, string> = {
-  github: 'https://api.github.com',
-  gitlab: 'https://gitlab.com/api/v4',
-};
-
-export const FORGE_LABELS: Record<ForgeKind, string> = { github: 'GitHub', gitlab: 'GitLab' };
+export { FORGE_LABELS, FORGE_SPECS, FORGES, type ForgeKind, type ForgeSpec } from './forges';
 
 export class PublishError extends Error {}
 
@@ -59,9 +52,6 @@ export interface ResolveTargetOptions {
   findPullRequest?: (platform: Platform) => Promise<ForgePullRequest | undefined>;
 }
 
-const GITHUB_REPO_RE = /^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/;
-const GITLAB_PROJECT_RE = /^(?:\d{1,20}|[A-Za-z0-9_.-]{1,255}(?:\/[A-Za-z0-9_.-]{1,255}){1,20})$/;
-
 function envValue(env: NodeJS.ProcessEnv, name: string): string | undefined {
   const v = env[name]?.trim();
   return v ? v : undefined;
@@ -95,83 +85,87 @@ export function validateApiUrl(raw: string, origin: string): string {
 }
 
 /** The web host that belongs to an API URL (api.github.com → github.com; others: the same host). */
-export function webHostOfApi(apiUrl: string): string {
+export function webHostOfApi(apiUrl: string, forge?: ForgeKind): string {
   const host = new URL(apiUrl).host.toLowerCase();
-  return host === 'api.github.com' ? 'github.com' : host;
+  const specs = forge ? [FORGE_SPECS[forge]] : FORGES.map((k) => FORGE_SPECS[k]);
+  for (const spec of specs) {
+    const web = spec.webHostOfApi(host);
+    if (web !== host) return web;
+  }
+  return host;
+}
+
+/** Whether this process runs in the forge's own CI. */
+function inCiOf(spec: ForgeSpec, env: NodeJS.ProcessEnv): boolean {
+  return envValue(env, spec.ciVar) === 'true';
 }
 
 /** The forge whose CI is running this process, if any. */
 function ciForge(env: NodeJS.ProcessEnv): ForgeKind | undefined {
-  if (envValue(env, 'GITHUB_ACTIONS') === 'true') return 'github';
-  if (envValue(env, 'GITLAB_CI') === 'true') return 'gitlab';
-  return undefined;
+  return FORGES.find((k) => inCiOf(FORGE_SPECS[k], env));
 }
 
 function resolveForge(opts: ResolveTargetOptions, why: string[]): ForgeKind {
   const { flags, env, run, settings } = opts;
   if (flags.forge !== undefined) {
-    if (!(FORGES as readonly string[]).includes(flags.forge)) {
+    if (!isForgeKind(flags.forge)) {
       throw new PublishError(`--forge must be one of: ${FORGES.join(', ')} (got "${flags.forge}")`);
     }
     why.push(`forge ${flags.forge}: --forge`);
-    return flags.forge as ForgeKind;
+    return flags.forge;
   }
   const ci = ciForge(env);
   if (ci) {
-    why.push(`forge ${ci}: running in ${ci === 'github' ? 'GitHub Actions' : 'GitLab CI'}`);
+    why.push(`forge ${ci}: running in ${FORGE_SPECS[ci].label} CI (${FORGE_SPECS[ci].ciVar})`);
     return ci;
   }
   const platform = run.repo?.platform;
-  if (platform === 'github' || platform === 'gitlab') {
-    why.push(`forge ${platform}: the repository remote is on ${FORGE_LABELS[platform]}`);
+  if (platform && isForgeKind(platform)) {
+    why.push(`forge ${platform}: the repository remote is on ${FORGE_SPECS[platform].label}`);
     return platform;
   }
-  if (settings.gitlabApiUrl && !settings.githubApiUrl) {
-    why.push('forge gitlab: only publish.gitlabApiUrl is configured');
-    return 'gitlab';
+  // Exactly one self-hosted API configured: that forge.
+  const configured = FORGES.filter((k) => settings[FORGE_SPECS[k].apiUrlKey]);
+  if (configured.length === 1) {
+    why.push(`forge ${configured[0]}: only publish.${FORGE_SPECS[configured[0]!].apiUrlKey} is configured`);
+    return configured[0]!;
   }
-  why.push('forge github: nothing else detected (use --forge gitlab for GitLab)');
+  const others = FORGES.filter((k) => k !== 'github');
+  why.push(
+    `forge github: nothing else detected (use --forge ${others.join('|')} for ${others.map((k) => FORGE_SPECS[k].label).join(' / ')})`,
+  );
   return 'github';
 }
 
 function resolveApiUrl(forge: ForgeKind, opts: ResolveTargetOptions, why: string[]): string {
   const { flags, env, settings } = opts;
+  const spec = FORGE_SPECS[forge];
   if (flags.apiUrl) {
     const url = validateApiUrl(flags.apiUrl, '--api-url');
     why.push(`API ${url}: --api-url`);
     return url;
   }
   // The CI's own API URL counts only inside that CI (a stray variable elsewhere is not trusted).
-  const ciVar =
-    forge === 'github'
-      ? envValue(env, 'GITHUB_ACTIONS') === 'true'
-        ? 'GITHUB_API_URL'
-        : undefined
-      : envValue(env, 'GITLAB_CI') === 'true'
-        ? 'CI_API_V4_URL'
-        : undefined;
-  const ciUrl = ciVar ? envValue(env, ciVar) : undefined;
-  if (ciVar && ciUrl) {
-    const url = validateApiUrl(ciUrl, ciVar);
-    why.push(`API ${url}: ${ciVar} (declared by the CI)`);
+  const ciUrl = inCiOf(spec, env) ? envValue(env, spec.ciApiUrlVar) : undefined;
+  if (ciUrl) {
+    const url = validateApiUrl(ciUrl, spec.ciApiUrlVar);
+    why.push(`API ${url}: ${spec.ciApiUrlVar} (declared by the CI)`);
     return url;
   }
-  const key = forge === 'github' ? 'githubApiUrl' : 'gitlabApiUrl';
-  const configured = settings[key];
+  const configured = settings[spec.apiUrlKey];
   if (configured) {
-    const url = validateApiUrl(configured, `publish.${key}`);
-    why.push(`API ${url}: publish.${key} (global config)`);
+    const url = validateApiUrl(configured, `publish.${spec.apiUrlKey}`);
+    why.push(`API ${url}: publish.${spec.apiUrlKey} (global config)`);
     return url;
   }
-  why.push(`API ${PUBLIC_API_URLS[forge]}: the public ${FORGE_LABELS[forge]} API`);
-  return PUBLIC_API_URLS[forge];
+  why.push(`API ${spec.publicApiUrl}: the public ${spec.label} API`);
+  return spec.publicApiUrl;
 }
 
 function checkRepo(forge: ForgeKind, repo: string, origin: string): string {
-  const ok = forge === 'github' ? GITHUB_REPO_RE.test(repo) : GITLAB_PROJECT_RE.test(repo);
-  if (!ok || repo.split('/').some((s) => s === '.' || s === '..')) {
-    const expected = forge === 'github' ? 'owner/name' : 'a project id or group/project path';
-    throw new PublishError(`${origin}: expected ${expected} (got ${JSON.stringify(repo)})`);
+  const spec = FORGE_SPECS[forge];
+  if (!spec.repoPattern.test(repo) || repo.split('/').some((s) => s === '.' || s === '..')) {
+    throw new PublishError(`${origin}: expected ${spec.repoHint} (got ${JSON.stringify(repo)})`);
   }
   return repo;
 }
@@ -210,29 +204,29 @@ export async function resolvePublishTarget(opts: ResolveTargetOptions): Promise<
   const why: string[] = [];
   const { flags, env } = opts;
   const forge = resolveForge(opts, why);
+  const spec = FORGE_SPECS[forge];
   const apiUrl = resolveApiUrl(forge, opts, why);
-  const inCi = ciForge(env) === forge;
+  const inCi = inCiOf(spec, env);
 
   let repo: string | undefined;
   if (flags.repo) {
     repo = checkRepo(forge, flags.repo.trim(), '--repo');
     why.push(`repository ${repo}: --repo`);
   } else if (inCi) {
-    const name = forge === 'github' ? 'GITHUB_REPOSITORY' : 'CI_MERGE_REQUEST_PROJECT_ID';
-    const value = envValue(env, name) ?? (forge === 'gitlab' ? envValue(env, 'CI_PROJECT_ID') : undefined);
-    if (value) {
-      repo = checkRepo(forge, value, name);
-      why.push(`repository ${repo}: ${envValue(env, name) ? name : 'CI_PROJECT_ID'}`);
+    const name = spec.ciRepoVars.find((v) => envValue(env, v));
+    if (name) {
+      repo = checkRepo(forge, envValue(env, name)!, name);
+      why.push(`repository ${repo}: ${name}`);
     }
   }
 
   let number: number | undefined;
   if (flags.pr) {
     number = parseNumber(flags.pr, '--pr');
-    why.push(`${forge === 'github' ? 'pull request' : 'merge request'} ${number}: --pr`);
-  } else if (inCi && opts.ci?.provider === forge && opts.ci.number) {
+    why.push(`${spec.requestNoun} ${number}: --pr`);
+  } else if (inCi && opts.ci?.provider === spec.ci && opts.ci.number) {
     number = parseNumber(opts.ci.number, `${opts.ci.label} pull request number`);
-    why.push(`${forge === 'github' ? 'pull request' : 'merge request'} ${number}: ${opts.ci.label}`);
+    why.push(`${spec.requestNoun} ${number}: ${opts.ci.label}`);
   }
 
   // Local fallback: the branch's open PR/MR (gh / glab) and the remote. Only a repository on the chosen
@@ -240,7 +234,7 @@ export async function resolvePublishTarget(opts: ResolveTargetOptions): Promise<
   let local: ForgePullRequest | undefined;
   if ((number === undefined || repo === undefined) && opts.findPullRequest) {
     local = await opts.findPullRequest(forge);
-    const tool = forge === 'github' ? 'gh' : 'glab';
+    const tool = spec.tool;
     if (local && local.tool !== tool) local = undefined;
     // A PR of another repository than the one named by --repo / the CI is not this target.
     const localRepo = repoFromWebUrl(local?.baseRepoUrl)?.path;
@@ -250,26 +244,21 @@ export async function resolvePublishTarget(opts: ResolveTargetOptions): Promise<
     }
     if (local && number === undefined) {
       number = local.number;
-      why.push(
-        `${forge === 'github' ? 'pull request' : 'merge request'} ${number}: open for this branch (${tool})`,
-      );
+      why.push(`${spec.requestNoun} ${number}: open for this branch (${tool})`);
     }
   }
   if (repo === undefined) {
     const candidates: Array<[string, string | undefined]> = [
-      [
-        `the ${forge === 'github' ? 'pull request' : 'merge request'} (${forge === 'github' ? 'gh' : 'glab'})`,
-        local?.baseRepoUrl,
-      ],
+      [`the ${spec.requestNoun} (${spec.tool})`, local?.baseRepoUrl],
       ['the git remote', opts.run.repo?.remote],
     ];
     for (const [origin, url] of candidates) {
       const parsed = repoFromWebUrl(url);
       if (!parsed) continue;
-      const apiHost = webHostOfApi(apiUrl);
+      const apiHost = webHostOfApi(apiUrl, forge);
       if (parsed.host !== apiHost) {
         throw new PublishError(
-          `The repository (${origin}) is on ${parsed.host}, but the API is ${apiUrl}. Set publish.${forge}ApiUrl in the global config or pass --api-url, or name the repository with --repo.`,
+          `The repository (${origin}) is on ${parsed.host}, but the API is ${apiUrl}. Set publish.${spec.apiUrlKey} in the global config or pass --api-url, or name the repository with --repo.`,
         );
       }
       repo = checkRepo(forge, parsed.path, origin);
@@ -279,13 +268,11 @@ export async function resolvePublishTarget(opts: ResolveTargetOptions): Promise<
   }
   if (repo === undefined) {
     throw new PublishError(
-      `Could not tell which ${FORGE_LABELS[forge]} repository to post to: pass --repo ${forge === 'github' ? 'owner/name' : 'group/project'}.`,
+      `Could not tell which ${spec.label} repository to post to: pass --repo ${spec.repoHint}.`,
     );
   }
   if (number === undefined) {
-    throw new PublishError(
-      `No open ${forge === 'github' ? 'pull request' : 'merge request'} found for this branch: pass --pr <number>.`,
-    );
+    throw new PublishError(`No open ${spec.requestNoun} found for this branch: pass --pr <number>.`);
   }
   return { forge, apiUrl, repo, number, explanation: why };
 }
@@ -295,8 +282,7 @@ export function tokenFor(
   forge: ForgeKind,
   env: NodeJS.ProcessEnv,
 ): { token: string; source: string } | undefined {
-  const names = forge === 'github' ? ['GITHUB_TOKEN', 'GH_TOKEN'] : ['GITLAB_TOKEN'];
-  for (const name of names) {
+  for (const name of FORGE_SPECS[forge].tokenVars) {
     const token = envValue(env, name);
     if (token) return { token, source: name };
   }
@@ -304,12 +290,10 @@ export function tokenFor(
 }
 
 export function missingTokenMessage(forge: ForgeKind): string {
-  return forge === 'github'
-    ? 'Set GITHUB_TOKEN (or GH_TOKEN) to a token that may write pull request comments (pull-requests: write).'
-    : 'Set GITLAB_TOKEN to a project or group access token with the api scope (CI_JOB_TOKEN cannot create merge request discussions).';
+  return FORGE_SPECS[forge].missingToken;
 }
 
 /** `owner/name#12` / `group/project!12`. */
 export function targetLabel(t: Pick<PublishTarget, 'forge' | 'repo' | 'number'>): string {
-  return `${t.repo}${t.forge === 'github' ? '#' : '!'}${t.number}`;
+  return `${t.repo}${FORGE_SPECS[t.forge].refSigil}${t.number}`;
 }

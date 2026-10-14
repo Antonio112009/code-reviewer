@@ -6,8 +6,7 @@ import { computeFingerprint, FINGERPRINT_RE, uniqueFingerprints } from '../revie
 import type { Finding, RunRecord } from '../types';
 import type { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
-import { githubAdapter, githubHeaders } from './github';
-import { gitlabAdapter, gitlabHeaders } from './gitlab';
+import { FORGE_SPECS } from './forges';
 import { parseState, sinceLastReview } from './history';
 import { ApiClient, ApiError, type FetchLike, type SleepLike } from './http';
 import {
@@ -97,9 +96,7 @@ async function findingsWithFingerprints(run: RunRecord, repo: GitRepo | undefine
 }
 
 function adapterFor(target: PublishTarget, client: ApiClient, logger: Logger): ForgeAdapter {
-  return target.forge === 'github'
-    ? githubAdapter(target, client, logger)
-    : gitlabAdapter(target, client, logger);
+  return FORGE_SPECS[target.forge].adapter(target, client, logger);
 }
 
 /**
@@ -185,10 +182,7 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
   const userAgent = `code-reviewer/${packageVersion()}`;
   const client = new ApiClient({
     baseUrl: target.apiUrl,
-    headers:
-      target.forge === 'github'
-        ? githubHeaders(token.token, userAgent)
-        : gitlabHeaders(token.token, userAgent),
+    headers: FORGE_SPECS[target.forge].headers(token.token, userAgent),
     fetch: opts.fetch,
     sleep: opts.sleep,
     signal: opts.signal,
