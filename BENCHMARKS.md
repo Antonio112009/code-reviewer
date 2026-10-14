@@ -313,6 +313,9 @@ identical).
 | `main-84d96f3` | [`84d96f3`](https://github.com/Antonio112009/code-reviewer/commit/84d96f3) | 0.7.0 | the code of **0.8.0** except the snapshot fix (#67), which changes no review output |
 | `sweephigh-84d96f3` | `84d96f3` + [`evals/experiments/sweep-high.patch`](evals/experiments/sweep-high.patch) | 0.7.0 | experiment, never merged: the sweep at high reasoning |
 | `twosweeps-87ff26c` | [`87ff26c`](https://github.com/Antonio112009/code-reviewer/commit/87ff26c) = `v0.8.0` + [`evals/experiments/two-sweeps.patch`](evals/experiments/two-sweeps.patch) | 0.8.0 | experiment, never merged: two independent sweeps |
+| `intent-6ed48e1` | [`6ed48e1`](https://github.com/Antonio112009/code-reviewer/commit/6ed48e1) | 0.8.0 | `review.intent` (the pull request's description and commit messages in the prompt), run with and without `--no-intent`; merged off by default in #78 |
+| `main-b8c86e1` | [`b8c86e1`](https://github.com/Antonio112009/code-reviewer/commit/b8c86e1) | 0.8.0 | main after #78 |
+| `walk-e0fa3b5` | `b8c86e1` + [`evals/experiments/checklist-walk.patch`](evals/experiments/checklist-walk.patch) | 0.8.0 | experiment, never merged: an item-by-item checklist pass at the end of the review task |
 
 The version string lags behind: a commit between releases prints the previous release's version. Name builds
 by commit; [`evals/pin-build.sh <commit>`](evals/pin-build.sh) builds one into its own directory and records it.

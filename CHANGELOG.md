@@ -39,6 +39,9 @@
   from the main report are real defects, so the benchmark understates the main report's precision. Two
   experiments are recorded and dropped: the sweep at high reasoning and a second independent sweep
   (`evals/experiments/`).
+- One more experiment recorded and dropped: an item-by-item pass over the technology checklists at the end of
+  the review task (`evals/experiments/checklist-walk.patch`): on AACR-Bench ctx30, two runs each, F1 16.2% →
+  15.2% (−0.9, 95% interval −3.7..+1.8), more findings but not more of the known ones.
 
 ## 0.8.0 — 2026-10-02
 

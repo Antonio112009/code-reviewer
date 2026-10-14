@@ -543,6 +543,21 @@ of what the reviewer did: 2 of the 215 findings cite it, and the extra findings 
 `review.intent` stays an experimental option, off by default. A run is now about $61 on hold82 (it was $31 for
 0.7.0): the second opinion, notes and the larger skills add up.
 
+**An item-by-item checklist pass** (2026-10-14; `b8c86e1` against `b8c86e1` +
+[`evals/experiments/checklist-walk.patch`](../experiments/checklist-walk.patch), two runs each on ctx30, `--full`).
+In the Martian misses of 0.8.0, 29% had a checklist bullet in the prompt that names the bug. The patch calls the
+checklists a second pass instead of hints and ends the task with it: take the items one at a time against the
+changed lines before finishing.
+
+| ctx30 (two runs) | Findings | Precision | Recall | Code-defect recall | F1 | Cost / run |
+|---|---|---|---|---|---|---|
+| main | 78.5 | 37.6% | 10.3% | 12.6% | 16.2% | $16.5 |
+| + checklist pass | 88.0 | 32.4% | 10.0% | 13.7% | 15.2% | $17.7 |
+
+Paired: recall −0.3 points (95% CI −2.3..+1.6), F1 −0.9 (−3.7..+1.8), P(B > A) 0.26. More findings, not more
+of the known ones, and as many findings name a checklist as before (28 and 33 per two runs). Dropped. A ctx30
+run now costs $15–18 (it was $8.7 for 0.7.0 with notes).
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).
