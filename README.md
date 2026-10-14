@@ -589,7 +589,7 @@ Architecture, contracts and the safety model: [docs/ARCHITECTURE.md](docs/ARCHIT
 ## Roadmap
 
 - Structural checks (ast-grep) available to the model as a tool, and more checks in the skills.
-- Azure DevOps comments; Bitbucket Data Center.
+- Bitbucket Data Center.
 
 ## License
 

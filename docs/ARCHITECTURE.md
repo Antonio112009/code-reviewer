@@ -469,7 +469,7 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
     lines) becomes a ```` ```suggestion ```` block (GitLab: `suggestion:-N+M` around its single anchor line)
     only when validation kept it (≤ 30 lines replaced, ≤ 60 written, differs from the code, no fence) and the
     critic set `replacementOk`; never on a `--force`d publication to a moved head.
-  - `github.ts` / `gitlab.ts` / `gitea.ts` / `bitbucket.ts` implement `ForgeAdapter` (`load` → head + posted fingerprints, `postInline`,
+  - `github.ts` / `gitlab.ts` / `gitea.ts` / `bitbucket.ts` / `azure.ts` implement `ForgeAdapter` (`load` → head + posted fingerprints, `postInline`,
     `upsertSummary`, `openThreads`, `resolveThread`). GitHub: one `COMMENT` review, single comments after a
     422, the summary as an issue comment edited in place, review threads through GraphQL
     (`reviewThreads`, `resolveReviewThread`; `/api/graphql` on Enterprise Server). GitLab: one positioned
@@ -569,7 +569,8 @@ The code under review, and therefore model output, is treated as untrusted.
     - `GITHUB_TOKEN`/`GH_TOKEN` and `GITLAB_TOKEN` are only sent to api.github.com / gitlab.com, to the API URL
       the running CI declares (`GITHUB_API_URL` only when `GITHUB_ACTIONS=true`, `CI_API_V4_URL` only when
       `GITLAB_CI=true`), or to `publish.githubApiUrl`/`gitlabApiUrl` from the global config or `--api-url`.
-    - The remote URL (and `gh`/`glab`) only names the repository, and only when its host matches the API host;
+    - The remote URL (and `gh`/`glab`) only names the repository, and only when its host matches the API host
+      (Azure DevOps: a `dev.azure.com` remote also names the organisation, i.e. the path under Microsoft's host);
       otherwise publishing stops with an error.
     - API URLs must be https (http only for loopback) without credentials; requests never follow redirects or
       pagination links to another origin; tokens are never logged.
@@ -728,6 +729,6 @@ The code under review, and therefore model output, is treated as untrusted.
 
 ## Known limitations / roadmap
 
-- Azure DevOps and Bitbucket Data Center comments; GitHub/GitLab username resolution.
+- Bitbucket Data Center comments; GitHub/GitLab username resolution.
 - An LLM run summary (`roles.summary` is reserved); a cost budget that stops a run.
 - The Codex, Copilot and Gemini presets need more live verification.

@@ -44,7 +44,7 @@ export interface ResolveTargetOptions {
   run: Pick<RunRecord, 'repo'>;
   flags: PublishFlags;
   /** Merged config: API URLs can only come from the global config (the loader rejects them elsewhere). */
-  settings: Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl' | 'giteaApiUrl'>;
+  settings: Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl' | 'giteaApiUrl' | 'azureApiUrl'>;
   env: NodeJS.ProcessEnv;
   /** The CI's pull/merge request (`detectCiPullRequest`). */
   ci?: CiPullRequest;
@@ -162,8 +162,20 @@ function resolveApiUrl(forge: ForgeKind, opts: ResolveTargetOptions, why: string
     why.push(`API ${url}: publish.${spec.apiUrlKey} (global config)`);
     return url;
   }
-  why.push(`API ${spec.publicApiUrl}: the public ${spec.label} API`);
-  return spec.publicApiUrl;
+  if (spec.publicApiUrl) {
+    why.push(`API ${spec.publicApiUrl}: the public ${spec.label} API`);
+    return spec.publicApiUrl;
+  }
+  // A scoped API (one per organisation): the vendor's host from the remote, never another host.
+  const derived =
+    spec.remoteTarget && opts.run.repo?.remote ? spec.remoteTarget(opts.run.repo.remote) : undefined;
+  if (derived) {
+    why.push(`API ${derived.apiUrl}: the organisation of the git remote`);
+    return derived.apiUrl;
+  }
+  throw new PublishError(
+    `${spec.label} has no public API: pass --api-url ${spec.apiUrlKey ? `or set publish.${spec.apiUrlKey} ` : ''}(the organisation's collection URL, e.g. https://dev.azure.com/your-org).`,
+  );
 }
 
 function checkRepo(forge: ForgeKind, repo: string, origin: string): string {
@@ -218,9 +230,13 @@ export async function resolvePublishTarget(opts: ResolveTargetOptions): Promise<
     why.push(`repository ${repo}: --repo`);
   } else if (inCi) {
     const name = spec.ciRepoVars.find((v) => envValue(env, v));
+    const composed = name === undefined ? spec.ciRepo?.(env) : undefined;
     if (name) {
       repo = checkRepo(forge, envValue(env, name)!, name);
       why.push(`repository ${repo}: ${name}`);
+    } else if (composed) {
+      repo = checkRepo(forge, composed, `${spec.label} CI variables`);
+      why.push(`repository ${repo}: ${spec.label} CI variables`);
     }
   }
 
@@ -259,6 +275,18 @@ export async function resolvePublishTarget(opts: ResolveTargetOptions): Promise<
       ['the git remote', opts.run.repo?.remote],
     ];
     for (const [origin, url] of candidates) {
+      if (spec.remoteTarget && url) {
+        const derived = spec.remoteTarget(url);
+        if (!derived) continue;
+        if (derived.apiUrl.toLowerCase() !== apiUrl.toLowerCase()) {
+          throw new PublishError(
+            `The repository (${origin}) belongs to ${derived.apiUrl}, but the API is ${apiUrl}: name the repository with --repo, or drop --api-url / publish.${spec.apiUrlKey}.`,
+          );
+        }
+        repo = checkRepo(forge, derived.repo, origin);
+        why.push(`repository ${repo}: ${origin}`);
+        break;
+      }
       const parsed = repoFromWebUrl(url);
       if (!parsed) continue;
       const apiHost = webHostOfApi(apiUrl, forge);

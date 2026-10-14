@@ -158,6 +158,13 @@ describe('remote links', () => {
       'https://bitbucket.org/a/b/src/x/src/a.ts#lines-3:5',
     );
     expect(commitUrl(parseRemote('https://example.com/a/b'), 'x')).toBeUndefined();
+    const az = parseRemote('git@ssh.dev.azure.com:v3/fabrikam/Shop/shop');
+    expect(az).toEqual({ platform: 'azure', webUrl: 'https://dev.azure.com/fabrikam/Shop/_git/shop' });
+    expect(parseRemote('https://fabrikam@dev.azure.com/fabrikam/Shop/_git/shop')).toEqual(az);
+    expect(commitUrl(az, 'abc')).toBe('https://dev.azure.com/fabrikam/Shop/_git/shop/commit/abc');
+    expect(lineUrl(az, 'abc', 'src/a.ts', 3, 5)).toBe(
+      'https://dev.azure.com/fabrikam/Shop/_git/shop?path=/src/a.ts&version=GCabc&line=3&lineEnd=5&lineStartColumn=1&lineEndColumn=1',
+    );
     const gt = parseRemote('ssh://git@codeberg.org/acme/app.git');
     expect(gt).toEqual({ platform: 'gitea', webUrl: 'https://codeberg.org/acme/app' });
     expect(commitUrl(gt, 'abc')).toBe('https://codeberg.org/acme/app/commit/abc');

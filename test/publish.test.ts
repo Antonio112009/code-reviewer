@@ -357,7 +357,7 @@ describe('publish target', () => {
     await expect(bad({ pr: '1', repo: '../x' })).rejects.toThrow(/owner\/name/);
     await expect(bad({ pr: '1', repo: 'a/b/c' })).rejects.toThrow(/owner\/name/);
     await expect(bad({ pr: '0', repo: 'o/r' })).rejects.toThrow(/number/);
-    await expect(bad({ pr: '1', repo: 'o/r', forge: 'azure' })).rejects.toThrow(/--forge/);
+    await expect(bad({ pr: '1', repo: 'o/r', forge: 'phabricator' })).rejects.toThrow(/--forge/);
     await expect(bad({ pr: '1', repo: 'o/r', apiUrl: 'http://evil.example' })).rejects.toThrow(/https/);
     const gl = await bad({ pr: '1', repo: 'group/sub/project', forge: 'gitlab' });
     expect(gl.apiUrl).toBe('https://gitlab.com/api/v4');
@@ -875,6 +875,187 @@ describe('Bitbucket publisher', () => {
       env: {},
     });
     expect(remote).toMatchObject({ forge: 'bitbucket', repo: 'acme/shop', number: 3 });
+  });
+});
+
+describe('Azure DevOps publisher', () => {
+  const base = '/fabrikam/Shop/_apis/git/repositories/shop/pullRequests/1';
+  const me = { id: 'u-7' };
+  const mallory = { id: 'u-9' };
+  const thread = (id: number, content: string, author: object, ctx?: object, status = 'active') => ({
+    id,
+    status,
+    comments: [{ id: 1, content, author }],
+    ...(ctx ? { threadContext: ctx } : {}),
+  });
+  function azureRoutes(over: Record<string, Handler | Handler[]> = {}) {
+    return {
+      [`GET ${base}`]: () => json({ pullRequestId: 1, lastMergeSourceCommit: { commitId: headSha } }),
+      'GET /fabrikam/_apis/connectionData': () => json({ authenticatedUser: me }),
+      [`GET ${base}/threads`]: () =>
+        json({
+          count: 3,
+          value: [
+            thread(10, `old <!-- code-reviewer:fp=${FP.f3} -->`, me, {
+              filePath: '/src/app.ts',
+              rightFileStart: { line: 3 },
+              rightFileEnd: { line: 3 },
+            }),
+            thread(11, `spoofed <!-- code-reviewer:fp=${FP.f1} -->`, mallory, {
+              filePath: '/src/app.ts',
+              rightFileStart: { line: 4 },
+              rightFileEnd: { line: 4 },
+            }),
+            thread(12, `${SUMMARY_MARKER}\nold summary`, me, undefined, 'closed'),
+          ],
+        }),
+      [`POST ${base}/threads`]: () => json({ id: 20 }),
+      [`PATCH ${base}/threads/12/comments/1`]: () => json({ id: 1 }),
+      ...over,
+    };
+  }
+  const settings = { ...SETTINGS, azureApiUrl: undefined };
+  const publishAzure = (
+    forge: ReturnType<typeof fakeForge>,
+    env: Record<string, string>,
+    flags = { pr: '1', repo: 'Shop/shop', forge: 'azure', apiUrl: 'https://dev.azure.com/fabrikam' },
+  ) =>
+    publishRun({
+      run: makeRun(),
+      repo: new GitRepo(repo.root),
+      settings,
+      flags,
+      env,
+      fetch: forge.fetch,
+      sleep: noSleep,
+      logger: silentLogger,
+    });
+
+  it('posts threads on the organisation API with a PAT, skips its own fingerprints and updates the summary', async () => {
+    const forge = fakeForge(azureRoutes());
+    const outcome = await publishAzure(forge, { AZURE_DEVOPS_TOKEN: 'pat-secret' });
+    expect(outcome.target).toMatchObject({
+      forge: 'azure',
+      apiUrl: 'https://dev.azure.com/fabrikam',
+      repo: 'Shop/shop',
+    });
+    expect(outcome.summary).toBe('updated');
+    expect(outcome.alreadyPosted.map((f) => f.id)).toEqual(['f3']);
+    expect(outcome.inline.map((c) => c.finding.id)).toEqual(['f1', 'f4']); // mallory's spoofed marker is ignored
+    const posts = forge.find(`POST ${base}/threads`);
+    expect(posts.map((p) => p.body)).toEqual([
+      expect.objectContaining({
+        status: 'active',
+        threadContext: {
+          filePath: '/src/app.ts',
+          rightFileStart: { line: 20, offset: 1 },
+          rightFileEnd: { line: 21, offset: 1 },
+        },
+      }),
+      expect.objectContaining({
+        threadContext: expect.objectContaining({
+          rightFileStart: { line: 24, offset: 1 },
+          rightFileEnd: { line: 25, offset: 1 },
+        }),
+      }),
+    ]);
+    expect(posts[0]!.body.comments[0].content).not.toContain('```suggestion');
+    expect(forge.find(`PATCH ${base}/threads/12/comments/1`)).toHaveLength(1);
+    for (const call of forge.calls) {
+      expect(call.url.origin).toBe('https://dev.azure.com');
+      expect(call.url.searchParams.get('api-version')).toMatch(/^7\.1/);
+      expect(call.headers.authorization).toBe(`Basic ${Buffer.from(':pat-secret').toString('base64')}`);
+    }
+  });
+
+  it('uses System.AccessToken as a bearer token and moves a refused thread to the summary', async () => {
+    const forge = fakeForge(
+      azureRoutes({
+        [`POST ${base}/threads`]: [
+          () => json({ id: 20 }),
+          () => json({ message: 'TF401027: bad position' }, 400),
+        ],
+      }),
+    );
+    const outcome = await publishAzure(forge, { SYSTEM_ACCESSTOKEN: 'oauth-secret' });
+    expect(forge.calls[0]!.headers.authorization).toBe('Bearer oauth-secret');
+    expect(outcome.inline.map((c) => c.finding.id)).toEqual(['f1']);
+    expect(outcome.listed.map((l) => [l.finding.id, l.reason])).toContainEqual(['f4', 'rejected']);
+    const bad = fakeForge(
+      azureRoutes({ 'GET /fabrikam/_apis/connectionData': () => json({ message: 'unauthorized' }, 401) }),
+    );
+    await expect(publishAzure(bad, { AZURE_DEVOPS_TOKEN: 'x' })).rejects.toThrow(/AZURE_DEVOPS_TOKEN/);
+  });
+
+  it('derives the organisation API and the repository from the remote, and from Azure Pipelines', async () => {
+    const none = {
+      githubApiUrl: undefined,
+      gitlabApiUrl: undefined,
+      giteaApiUrl: undefined,
+      azureApiUrl: undefined,
+    };
+    const remote = await resolvePublishTarget({
+      run: {
+        repo: {
+          root: '/r',
+          remote: 'https://fabrikam@dev.azure.com/fabrikam/Shop/_git/shop',
+          platform: 'azure',
+        },
+      },
+      flags: { pr: '3' },
+      settings: none,
+      env: {},
+    });
+    expect(remote).toMatchObject({
+      forge: 'azure',
+      apiUrl: 'https://dev.azure.com/fabrikam',
+      repo: 'Shop/shop',
+      number: 3,
+    });
+    const ci = await resolvePublishTarget({
+      run: { repo: { root: '/r' } },
+      flags: {},
+      settings: none,
+      env: {
+        TF_BUILD: 'True',
+        SYSTEM_TEAMFOUNDATIONCOLLECTIONURI: 'https://dev.azure.com/fabrikam/',
+        SYSTEM_TEAMPROJECT: 'Shop',
+        BUILD_REPOSITORY_NAME: 'shop',
+      },
+      ci: {
+        provider: 'azure',
+        label: 'Azure Pipelines',
+        baseBranch: 'main',
+        baseVar: 'SYSTEM_PULLREQUEST_TARGETBRANCHNAME',
+        number: '9',
+      },
+    });
+    expect(ci).toMatchObject({
+      forge: 'azure',
+      apiUrl: 'https://dev.azure.com/fabrikam',
+      repo: 'Shop/shop',
+      number: 9,
+    });
+    // no organisation anywhere: say what to pass
+    await expect(
+      resolvePublishTarget({
+        run: { repo: { root: '/r' } },
+        flags: { pr: '1', repo: 'Shop/shop', forge: 'azure' },
+        settings: none,
+        env: {},
+      }),
+    ).rejects.toThrow(/--api-url/);
+    // a remote of another organisation than --api-url is refused
+    await expect(
+      resolvePublishTarget({
+        run: {
+          repo: { root: '/r', remote: 'https://dev.azure.com/contoso/Shop/_git/shop', platform: 'azure' },
+        },
+        flags: { pr: '1', forge: 'azure', apiUrl: 'https://dev.azure.com/fabrikam' },
+        settings: none,
+        env: {},
+      }),
+    ).rejects.toThrow(/belongs to https:\/\/dev\.azure\.com\/contoso/);
   });
 });
 

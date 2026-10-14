@@ -6,6 +6,7 @@ import { computeFingerprint, FINGERPRINT_RE, uniqueFingerprints } from '../revie
 import type { Finding, RunRecord } from '../types';
 import type { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
+import { azureAdapter, azureHeaders } from './azure';
 import { bitbucketAdapter, bitbucketHeaders } from './bitbucket';
 import { giteaAdapter, giteaHeaders } from './gitea';
 import { githubAdapter, githubHeaders } from './github';
@@ -112,6 +113,7 @@ const CLIENTS: Record<
   gitlab: { headers: gitlabHeaders, adapter: gitlabAdapter },
   gitea: { headers: giteaHeaders, adapter: giteaAdapter },
   bitbucket: { headers: bitbucketHeaders, adapter: bitbucketAdapter, pageSizeParam: 'pagelen' },
+  azure: { headers: azureHeaders, adapter: azureAdapter, pageSizeParam: '$top' },
 };
 
 function adapterFor(target: PublishTarget, client: ApiClient, logger: Logger): ForgeAdapter {
