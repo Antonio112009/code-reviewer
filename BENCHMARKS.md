@@ -442,6 +442,10 @@ Martian, 50 pull requests, all judged by `claude-opus-4-5-20251101` without exte
 
 | Date | Runs | Build | Command | Findings / PR | P | R | F1 (core) | Cost / PR |
 |---|---|---|---|---|---|---|---|---|
+| 10-14 | ef-high-1 | `81a9bd2` | `--full --reasoning high` (the reviewer and the sweep at high effort), judged `--tier all` | 6.3 | 39.4% | 72.8% | 51.1% | $1.37 † |
+| 10-14 | ef-high-1 | `81a9bd2` | same run, judged `--tier main` | 2.8 | 52.1% | 43.9% | 47.6% | $1.37 † |
+| 10-14 | ef-med-1 | `81a9bd2` | `evals/martian/run.sh` (`--full`, the defaults of 0.10.0: sweep and notes on), judged `--tier all` | 3.9 | 53.2% | 61.8% | 57.2% | $1.30 † |
+| 10-14 | ef-med-1 | `81a9bd2` | same run, judged `--tier main` | 1.8 | 69.5% | 38.2% | 49.3% | $1.30 † |
 | 10-02 | mn-1, mn-2 | `84d96f3` | `evals/martian/run.sh` (`--full`, the defaults: notes on), judged `--tier all` | 3.1 | 56.0% | 56.3% | 56.2% (56.7, 55.6) | $0.42 |
 | 10-02 | mn-1, mn-2 | `84d96f3` | same runs, judged `--tier main` | 1.7 | 71.2% | 39.9% | 51.1% (53.8, 48.4) | $0.42 |
 | 10-02 | wh-1, wh-2 | `84d96f3` + `sweep-high.patch` | `--full --no-notes --sweep`, judged `--tier all` | 3.6 | 53.4% | 61.4% | 57.1% (56.7, 57.6) | $0.65 |
@@ -510,6 +514,15 @@ and resolves differences of about 3 F1 points on AACR-Bench and 5 on Martian; si
 
 ## History
 
+- **2026-10-14 (evening)** — the reviewer's reasoning effort on Martian (one run each, build `81a9bd2`):
+  `high` reports 60% more candidates and finds more (full report recall 61.8% → 72.8%, critical bugs
+  8/12 → 10/12) but loses 14 points of precision, so F1 falls 57.2 → 51.1 (main report 49.3 → 47.6) at
+  the same cost and 1.5× the time: `medium` stays the default, as Anthropic's "tune one model first" advice
+  suggested checking. † Cost figures from 2026-10-14 on are not comparable with earlier rows: the same build
+  and the same pull request cost twice as much through Claude Code as on 2026-09-30 (cache reads per task
+  ×4 at an unchanged number of turns; the 0.8.0 build re-run today costs the same as main), so the rise is
+  in the Claude Code agent's accounting or behaviour, not in the pipeline. On the Anthropic API the same eval
+  case costs about $0.10 against the $0.34 Claude Code reports.
 - **2026-10-14** — on AACR-Bench's held-out half: the pull request's description and commit messages in the
   prompt (`review.intent`) bought no recall (F1 −1.2) and stays off; the skills changes of #72 and #73 made no
   measurable difference (+0.3); on ctx30, an item-by-item checklist pass was tried and dropped (−0.9). The
