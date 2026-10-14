@@ -357,7 +357,7 @@ describe('publish target', () => {
     await expect(bad({ pr: '1', repo: '../x' })).rejects.toThrow(/owner\/name/);
     await expect(bad({ pr: '1', repo: 'a/b/c' })).rejects.toThrow(/owner\/name/);
     await expect(bad({ pr: '0', repo: 'o/r' })).rejects.toThrow(/number/);
-    await expect(bad({ pr: '1', repo: 'o/r', forge: 'bitbucket' })).rejects.toThrow(/--forge/);
+    await expect(bad({ pr: '1', repo: 'o/r', forge: 'azure' })).rejects.toThrow(/--forge/);
     await expect(bad({ pr: '1', repo: 'o/r', apiUrl: 'http://evil.example' })).rejects.toThrow(/https/);
     const gl = await bad({ pr: '1', repo: 'group/sub/project', forge: 'gitlab' });
     expect(gl.apiUrl).toBe('https://gitlab.com/api/v4');
@@ -754,6 +754,127 @@ describe('Gitea publisher', () => {
       number: 4,
     });
     expect(ci.explanation.join('\n')).toContain('GITEA_ACTIONS');
+  });
+});
+
+describe('Bitbucket publisher', () => {
+  const base = '/2.0/repositories/acme/shop/pullrequests/1';
+  const me = { uuid: '{u-7}', account_id: 'a7' };
+  const mallory = { uuid: '{u-9}', account_id: 'a9' };
+  const bb = (id: number, raw: string, user: object, inline?: object) => ({
+    id,
+    content: { raw },
+    user,
+    inline: inline ?? null,
+  });
+  function bitbucketRoutes(over: Record<string, Handler | Handler[]> = {}) {
+    return {
+      [`GET ${base}`]: () => json({ id: 1, source: { commit: { hash: headSha.slice(0, 12) } } }),
+      'GET /2.0/user': () => json(me),
+      [`GET ${base}/comments`]: (c: Call) =>
+        c.url.searchParams.get('page') === '2'
+          ? json({
+              values: [
+                bb(5, `${SUMMARY_MARKER}\nfake`, mallory),
+                bb(77, `${SUMMARY_MARKER}\nold summary`, me),
+              ],
+            })
+          : json({
+              values: [
+                bb(100, `old <!-- code-reviewer:fp=${FP.f3} -->`, me, { path: 'src/app.ts', to: 3 }),
+                bb(101, `spoofed <!-- code-reviewer:fp=${FP.f1} -->`, mallory, { path: 'src/app.ts', to: 4 }),
+              ],
+              next: `https://api.bitbucket.org${base}/comments?pagelen=100&page=2`,
+            }),
+      [`POST ${base}/comments`]: () => json({ id: 200 }, 201),
+      [`PUT ${base}/comments/77`]: () => json({ id: 77 }),
+      ...over,
+    };
+  }
+  const publishBitbucket = (forge: ReturnType<typeof fakeForge>, env: Record<string, string>) =>
+    publishRun({
+      run: makeRun(),
+      repo: new GitRepo(repo.root),
+      settings: SETTINGS,
+      flags: { pr: '1', repo: 'acme/shop', forge: 'bitbucket' },
+      env,
+      fetch: forge.fetch,
+      sleep: noSleep,
+      logger: silentLogger,
+    });
+
+  it('posts inline comments one by one, pages through `next` in the body and updates its summary', async () => {
+    const forge = fakeForge(bitbucketRoutes());
+    const outcome = await publishBitbucket(forge, {
+      BITBUCKET_TOKEN: 'api-token',
+      BITBUCKET_EMAIL: 'me@example.com',
+    });
+    expect(outcome.target).toMatchObject({ forge: 'bitbucket', apiUrl: 'https://api.bitbucket.org/2.0' });
+    expect(outcome.stale).toBeUndefined(); // the short head hash is a prefix of the reviewed commit
+    expect(outcome.summary).toBe('updated');
+    expect(outcome.alreadyPosted.map((f) => f.id)).toEqual(['f3']);
+    expect(outcome.inline.map((c) => c.finding.id)).toEqual(['f1', 'f4']); // mallory's spoofed marker is ignored
+    const posts = forge.find(`POST ${base}/comments`);
+    expect(posts.map((p) => p.body)).toEqual([
+      expect.objectContaining({ inline: { path: 'src/app.ts', to: 21 } }),
+      expect.objectContaining({ inline: { path: 'src/app.ts', to: 25 } }),
+    ]);
+    expect(posts[0]!.body.content.raw).not.toContain('```suggestion');
+    expect(forge.find(`GET ${base}/comments`).length).toBeGreaterThanOrEqual(2); // both pages read
+    expect(forge.find(`PUT ${base}/comments/77`)).toHaveLength(1);
+    for (const call of forge.calls) {
+      expect(call.url.origin).toBe('https://api.bitbucket.org');
+      expect(call.headers.authorization).toBe(
+        `Basic ${Buffer.from('me@example.com:api-token').toString('base64')}`,
+      );
+    }
+  });
+
+  it('uses a bearer token without an e-mail, moves a refused comment to the summary and rejects a bad token', async () => {
+    const forge = fakeForge(
+      bitbucketRoutes({
+        [`POST ${base}/comments`]: [
+          () => json({ id: 200 }, 201),
+          () => json({ error: { message: 'bad line' } }, 400),
+        ],
+      }),
+    );
+    const outcome = await publishBitbucket(forge, { BITBUCKET_TOKEN: 'access-token' });
+    expect(forge.calls[0]!.headers.authorization).toBe('Bearer access-token');
+    expect(outcome.inline.map((c) => c.finding.id)).toEqual(['f1']);
+    expect(outcome.listed.map((l) => [l.finding.id, l.reason])).toContainEqual(['f4', 'rejected']);
+    const bad = fakeForge(bitbucketRoutes({ 'GET /2.0/user': () => json({ error: 'unauthorized' }, 401) }));
+    await expect(publishBitbucket(bad, { BITBUCKET_TOKEN: 'x' })).rejects.toThrow(/BITBUCKET_TOKEN/);
+  });
+
+  it('is chosen in Bitbucket Pipelines and from a bitbucket.org remote', async () => {
+    const none = { githubApiUrl: undefined, gitlabApiUrl: undefined, giteaApiUrl: undefined };
+    const ci = await resolvePublishTarget({
+      run: { repo: { root: '/r' } },
+      flags: {},
+      settings: none,
+      env: { BITBUCKET_BUILD_NUMBER: '12', BITBUCKET_REPO_FULL_NAME: 'acme/shop', BITBUCKET_PR_ID: '9' },
+      ci: {
+        provider: 'bitbucket',
+        label: 'Bitbucket Pipelines',
+        baseBranch: 'main',
+        baseVar: 'BITBUCKET_PR_DESTINATION_BRANCH',
+        number: '9',
+      },
+    });
+    expect(ci).toMatchObject({
+      forge: 'bitbucket',
+      apiUrl: 'https://api.bitbucket.org/2.0',
+      repo: 'acme/shop',
+      number: 9,
+    });
+    const remote = await resolvePublishTarget({
+      run: { repo: { root: '/r', remote: 'https://bitbucket.org/acme/shop', platform: 'bitbucket' } },
+      flags: { pr: '3' },
+      settings: none,
+      env: {},
+    });
+    expect(remote).toMatchObject({ forge: 'bitbucket', repo: 'acme/shop', number: 3 });
   });
 });
 

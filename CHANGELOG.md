@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Bitbucket Cloud
+
+- **Reviews can be posted to Bitbucket Cloud pull requests** (`--forge bitbucket`, detected from a
+  `bitbucket.org` remote or Bitbucket Pipelines): inline comments on the new-side line, a summary comment
+  updated in place, de-duplication by fingerprint. `BITBUCKET_TOKEN` is an API token with `BITBUCKET_EMAIL`
+  (Basic) or a repository / workspace access token (bearer); app passwords are gone. Bitbucket's API returns no
+  commit for a comment, so fixed findings are listed in the summary rather than resolved, and suggestions are
+  shown as text. Report links work for these remotes; `docs/ci.md` has the Pipelines step. The API client
+  now pages through `{ values, next }` bodies as well as `Link` headers.
+
 ## 0.10.0 — 2026-10-14
 
 ### Gitea, Forgejo and Codeberg

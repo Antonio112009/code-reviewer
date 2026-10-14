@@ -97,7 +97,8 @@ export function webHostOfApi(apiUrl: string, forge?: ForgeKind): string {
 
 /** Whether this process runs in the forge's own CI. */
 function inCiOf(spec: ForgeSpec, env: NodeJS.ProcessEnv): boolean {
-  return envValue(env, spec.ciVar) === 'true';
+  const v = envValue(env, spec.ciVar);
+  return spec.ciVarAnyValue ? v !== undefined : v === 'true';
 }
 
 /** The forge whose CI is running this process, if any. */
@@ -125,7 +126,10 @@ function resolveForge(opts: ResolveTargetOptions, why: string[]): ForgeKind {
     return platform;
   }
   // Exactly one self-hosted API configured: that forge.
-  const configured = FORGES.filter((k) => settings[FORGE_SPECS[k].apiUrlKey]);
+  const configured = FORGES.filter((k) => {
+    const key = FORGE_SPECS[k].apiUrlKey;
+    return key !== undefined && settings[key];
+  });
   if (configured.length === 1) {
     why.push(`forge ${configured[0]}: only publish.${FORGE_SPECS[configured[0]!].apiUrlKey} is configured`);
     return configured[0]!;
@@ -146,13 +150,13 @@ function resolveApiUrl(forge: ForgeKind, opts: ResolveTargetOptions, why: string
     return url;
   }
   // The CI's own API URL counts only inside that CI (a stray variable elsewhere is not trusted).
-  const ciUrl = inCiOf(spec, env) ? envValue(env, spec.ciApiUrlVar) : undefined;
-  if (ciUrl) {
+  const ciUrl = spec.ciApiUrlVar && inCiOf(spec, env) ? envValue(env, spec.ciApiUrlVar) : undefined;
+  if (ciUrl && spec.ciApiUrlVar) {
     const url = validateApiUrl(ciUrl, spec.ciApiUrlVar);
     why.push(`API ${url}: ${spec.ciApiUrlVar} (declared by the CI)`);
     return url;
   }
-  const configured = settings[spec.apiUrlKey];
+  const configured = spec.apiUrlKey ? settings[spec.apiUrlKey] : undefined;
   if (configured) {
     const url = validateApiUrl(configured, `publish.${spec.apiUrlKey}`);
     why.push(`API ${url}: publish.${spec.apiUrlKey} (global config)`);
@@ -260,7 +264,7 @@ export async function resolvePublishTarget(opts: ResolveTargetOptions): Promise<
       const apiHost = webHostOfApi(apiUrl, forge);
       if (parsed.host !== apiHost) {
         throw new PublishError(
-          `The repository (${origin}) is on ${parsed.host}, but the API is ${apiUrl}. Set publish.${spec.apiUrlKey} in the global config or pass --api-url, or name the repository with --repo.`,
+          `The repository (${origin}) is on ${parsed.host}, but the API is ${apiUrl}. ${spec.apiUrlKey ? `Set publish.${spec.apiUrlKey} in the global config or pass --api-url` : 'Pass --api-url'}, or name the repository with --repo.`,
         );
       }
       repo = checkRepo(forge, parsed.path, origin);

@@ -6,6 +6,7 @@ import { computeFingerprint, FINGERPRINT_RE, uniqueFingerprints } from '../revie
 import type { Finding, RunRecord } from '../types';
 import type { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
+import { bitbucketAdapter, bitbucketHeaders } from './bitbucket';
 import { giteaAdapter, giteaHeaders } from './gitea';
 import { githubAdapter, githubHeaders } from './github';
 import { gitlabAdapter, gitlabHeaders } from './gitlab';
@@ -102,13 +103,15 @@ async function findingsWithFingerprints(run: RunRecord, repo: GitRepo | undefine
 const CLIENTS: Record<
   ForgeKind,
   {
-    headers: (token: string, userAgent: string) => Record<string, string>;
+    headers: (token: string, userAgent: string, env: NodeJS.ProcessEnv) => Record<string, string>;
     adapter: (target: PublishTarget, client: ApiClient, logger: Logger) => ForgeAdapter;
+    pageSizeParam?: string;
   }
 > = {
   github: { headers: githubHeaders, adapter: githubAdapter },
   gitlab: { headers: gitlabHeaders, adapter: gitlabAdapter },
   gitea: { headers: giteaHeaders, adapter: giteaAdapter },
+  bitbucket: { headers: bitbucketHeaders, adapter: bitbucketAdapter, pageSizeParam: 'pagelen' },
 };
 
 function adapterFor(target: PublishTarget, client: ApiClient, logger: Logger): ForgeAdapter {
@@ -198,7 +201,8 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
   const userAgent = `code-reviewer/${packageVersion()}`;
   const client = new ApiClient({
     baseUrl: target.apiUrl,
-    headers: CLIENTS[target.forge].headers(token.token, userAgent),
+    headers: CLIENTS[target.forge].headers(token.token, userAgent, env),
+    ...(CLIENTS[target.forge].pageSizeParam ? { pageSizeParam: CLIENTS[target.forge].pageSizeParam } : {}),
     fetch: opts.fetch,
     sleep: opts.sleep,
     signal: opts.signal,
@@ -207,7 +211,8 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
   });
   const adapter = adapterFor(target, client, logger);
   const state = await adapter.load();
-  const stale = state.headSha !== t.headSha.toLowerCase();
+  // Some forges report the head as a short hash: a prefix of the reviewed commit is the same commit.
+  const stale = !t.headSha.toLowerCase().startsWith(state.headSha) || state.headSha.length < 7;
   if (stale) {
     logger.debug(`publish: head ${state.headSha} ≠ reviewed ${t.headSha}${opts.force ? ' (--force)' : ''}`);
   }

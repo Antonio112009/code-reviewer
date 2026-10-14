@@ -23,6 +23,8 @@ export interface ApiClientOptions {
   maxAttempts?: number;
   /** A `Retry-After` longer than this fails the request instead of waiting (default 60 s). */
   maxRetryWaitMs?: number;
+  /** Query parameter naming the page size (default `per_page`; Bitbucket: `pagelen`). */
+  pageSizeParam?: string;
   /** Pages read by {@link ApiClient.paginate} at most (default 50). */
   maxPages?: number;
   logger?: Logger;
@@ -185,15 +187,27 @@ export class ApiClient {
     }
   }
 
-  /** GET of a list endpoint, following `Link: rel="next"` (same origin only) up to `maxPages`. */
+  /**
+   * GET of a list endpoint up to `maxPages`, following `Link: rel="next"` (GitHub, GitLab, Gitea) or a
+   * `{ values, next }` body (Bitbucket) — same origin only.
+   */
   async paginate<T>(path: string): Promise<T[]> {
     const out: T[] = [];
-    let next: string | undefined = `${path}${path.includes('?') ? '&' : '?'}per_page=${PAGE_SIZE}`;
+    const sizeParam = this.opts.pageSizeParam ?? 'per_page';
+    let next: string | undefined = `${path}${path.includes('?') ? '&' : '?'}${sizeParam}=${PAGE_SIZE}`;
     for (let page = 0; next && page < (this.opts.maxPages ?? DEFAULT_MAX_PAGES); page++) {
       const res: ApiResponse<unknown> = await this.request<unknown>('GET', next);
-      if (!Array.isArray(res.data)) throw new ApiError(`GET ${path}: expected a list`, res.status);
-      out.push(...(res.data as T[]));
-      next = nextLink(res.headers.get('link'));
+      const data = res.data;
+      if (Array.isArray(data)) {
+        out.push(...(data as T[]));
+        next = nextLink(res.headers.get('link'));
+      } else if (data && typeof data === 'object' && Array.isArray((data as { values?: unknown }).values)) {
+        const d = data as { values: T[]; next?: unknown };
+        out.push(...d.values);
+        next = typeof d.next === 'string' ? d.next : undefined;
+      } else {
+        throw new ApiError(`GET ${path}: expected a list`, res.status);
+      }
     }
     return out;
   }
