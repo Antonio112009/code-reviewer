@@ -20,6 +20,7 @@ package, and `code-reviewer eval` ignores it (it only reads `*.yaml` cases).
 | `subsets/*.txt` | named subsets (one PR URL per line) for `run.sh --subset` |
 | `report.py` | recall by context level (Diff / File / Repo) and category, averaged over repeated runs |
 | `recritique.mts` | re-runs only the self-critique on the findings of a finished run: compares critic prompts on the same findings for about $1.5 |
+| `funnel.py` | where a run's findings are lost, stage by stage (`run.funnel`, tool calls per chunk, the reviewer's confidence spread), summed over its PRs |
 | `descriptions.py` | fetches each pull request's title and description once (`gh api`); with `CODE_REVIEWER_DESCRIPTIONS=$AACR_DIR/descriptions.json` the adapter passes them with `--description-file`, as a CI review reads them from its event (`review.intent`) |
 
 ## Running
