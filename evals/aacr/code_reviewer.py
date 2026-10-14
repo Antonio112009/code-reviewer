@@ -6,6 +6,8 @@ report.json (kept findings, rejected findings, usage, cost) as the harness's per
 Environment:
   CODE_REVIEWER_CLI    path to code-reviewer's dist/cli.js (required)
   CODE_REVIEWER_ARGS   extra CLI arguments, space-separated (e.g. "--full --model sonnet")
+  CODE_REVIEWER_DESCRIPTIONS  descriptions.json from descriptions.py: each PR's title and description is passed
+                       with --description-file, as a CI review would read them from its event
 """
 from __future__ import annotations
 
@@ -45,6 +47,14 @@ def _latest_run_dir(repo_path: Path) -> Optional[Path]:
         return None
     dirs = [d for d in runs.iterdir() if d.is_dir()]
     return max(dirs, key=lambda d: d.stat().st_mtime) if dirs else None
+
+
+def _description(instance_id: str) -> Optional[Dict[str, str]]:
+    path = os.getenv("CODE_REVIEWER_DESCRIPTIONS", "")
+    if not path:
+        return None
+    with open(path, "r", encoding="utf-8") as handle:
+        return json.load(handle).get(instance_id)
 
 
 def review_instance(
@@ -88,6 +98,11 @@ def review_instance(
     ]
     if preview:
         command.append("--dry-run")
+    description = _description(instance.instance_id)
+    if description is not None:
+        desc_file = out_dir / "description.md"
+        desc_file.write_text(f"{description.get('title', '')}\n\n{description.get('body', '')}\n", encoding="utf-8")
+        command += ["--description-file", str(desc_file)]
 
     started_at = datetime.now(timezone.utc).isoformat()
     start = time.monotonic()
