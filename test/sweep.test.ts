@@ -112,6 +112,18 @@ describe('sweep over the whole change (review.sweep)', () => {
     expect(byTitle.get('y is computed from the old b')!.source.chunkIds).toEqual([SWEEP_SOURCE]);
     expect(byTitle.get('division by zero')!.source.chunkIds).not.toContain(SWEEP_SOURCE);
     expect(run.sweep).toEqual({ parts: 1, failed: 0, findings: 2, duplicates: 1 });
+    // the funnel: 1 chunk finding + 1 new sweep finding reported, nothing lost, no critic in this test
+    expect(run.funnel).toEqual({
+      reported: 2,
+      static: 0,
+      validated: 2,
+      deduped: 2,
+      critiqued: { confirmed: 0, uncertain: 0, rejected: 0, unverified: 2 },
+      belowThreshold: 0,
+      main: 2,
+      advisory: 0,
+      notes: 0,
+    });
     expect(run.options.sweep).toBe(true);
     expect(stagesLabel(run)).toContain('whole-change sweep (--sweep)');
   });
@@ -132,6 +144,11 @@ describe('sweep over the whole change (review.sweep)', () => {
     ]);
     const rejected = run.rejected.find((f) => f.title === 'A false positive');
     expect(rejected?.critique?.verdict).toBe('rejected');
+    expect(run.funnel).toMatchObject({
+      reported: 3,
+      critiqued: { confirmed: 2, rejected: 1, unverified: 0 },
+      main: 2,
+    });
     expect(rejected?.source.chunkIds).toEqual([SWEEP_SOURCE]);
   });
 
