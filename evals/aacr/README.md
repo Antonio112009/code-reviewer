@@ -558,6 +558,18 @@ Paired: recall −0.3 points (95% CI −2.3..+1.6), F1 −0.9 (−3.7..+1.8), P(
 of the known ones, and as many findings name a checklist as before (28 and 33 per two runs). Dropped. A ctx30
 run now costs $15–18 (it was $8.7 for 0.7.0 with notes).
 
+**The skills changes of 0.8.0's successor** (#72, #73: over-budget skills named by topic, the `practice/refactoring`
+skill and the gap bullets; 2026-10-14): build `6ed48e1` with `--no-intent` (run `noint-h1`) against the build
+before them (`4fb887c`, runs `hold-a4` + `hold-b4`), one run each on hold82, the pipeline otherwise the same:
+
+| hold82 | Findings | Precision | Recall | F1 | Recall, human refs | Cost / run |
+|---|---|---|---|---|---|---|
+| before (`4fb887c`) | 191 | 31.4% | 9.0% | 13.9% | 9.0% | $32.7 |
+| after #72, #73 (`6ed48e1`) | 199 | 31.2% | 9.3% | 14.3% | 12.0% | $61.0 |
+
+Paired: recall +0.3 points (95% CI −1.2..+1.8), F1 +0.3 (−1.7..+2.4), P(B > A) 0.63: no measurable effect on
+this benchmark. (The cost difference is the pipeline's growth since 0.7.0, not the skills.)
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).

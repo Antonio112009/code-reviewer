@@ -38,8 +38,9 @@
   - new triggers: ORM read-modify-write updates (`n: row.n + 1`) load `practice/concurrency`;
     `URL.createObjectURL` loads `memory-leaks`; `Intl.DateTimeFormat` loads `dates`.
 
-  Not measured yet. Martian cannot measure it fairly, because these changes come from its misses. A
-  measurement needs other pull requests, such as the held-out AACR-Bench half.
+  Measured on AACR-Bench's held-out 82 pull requests (Martian cannot measure it fairly, because these changes
+  come from its misses), one run each against the build before them: F1 13.9% → 14.3%, recall +0.3 points
+  (95% CI −1.2..+1.8), precision 31.4% → 31.2%; no measurable effect there.
 
 ### Evaluation
 

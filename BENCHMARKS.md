@@ -397,6 +397,10 @@ AACR-Bench, newest first. Values are averages over the listed runs; findings cou
 
 | Date | Runs | Build | Arguments (and experiment switches) | Dataset | Findings / run | P | R | F1 | Cost / run | What it measured |
 |---|---|---|---|---|---|---|---|---|---|---|
+| 10-14 | walk-1, walk-2 | `b8c86e1` + `checklist-walk.patch` | `--full` | ctx30 | 88 | 32.4% | 10.0% | 15.2% | $17.69 | experiment, dropped: an item-by-item checklist pass |
+| 10-14 | base14-1, base14-2 | `b8c86e1` | `--full` | ctx30 | 78.5 | 37.6% | 10.3% | 16.2% | $16.55 | main after #78, the checklist pass's baseline |
+| 10-14 | int-h1 | `6ed48e1` | `--full`, `CODE_REVIEWER_DESCRIPTIONS` | held-out 82 | 215 | 27.0% | 8.7% | 13.1% | $62.41 | `review.intent`: the pull request's description and commit messages in the prompt |
+| 10-14 | noint-h1 | `6ed48e1` | `--full --no-intent` | held-out 82 | 199 | 31.2% | 9.3% | 14.3% | $60.96 | the same build without them; against hold-a4 + hold-b4, the skills changes (#72, #73): +0.3 F1 |
 | 10-01 | hs-a1, hs-b1 | `d330ae1` | `--full --sweep` | held-out 82 | 209 | 29.7% | 9.3% | 14.1% | $47.60 | `--sweep`; its own findings +0.6 F1 |
 | 10-01 | sv2-1, sv2-2 | `d330ae1` | `--full --sweep` | ctx30 | 88.5 | 41.8% | 12.9% | 19.8% | $11.85 | `--sweep`; its own findings +1.0 F1 |
 | 10-01 | sw-1, sw-2 | `c2bad4a` | `--full --sweep` | ctx30 | 93 | 35.5% | 11.5% | 17.4% | $12.47 | the first sweep; its own findings +1.0 F1 |
@@ -507,6 +511,11 @@ and resolves differences of about 3 F1 points on AACR-Bench and 5 on Martian; si
 
 ## History
 
+- **2026-10-14** — on AACR-Bench's held-out half: the pull request's description and commit messages in the
+  prompt (`review.intent`) bought no recall (F1 −1.2) and stays off; the skills changes of #72 and #73 made no
+  measurable difference (+0.3); on ctx30, an item-by-item checklist pass was tried and dropped (−0.9). The
+  sweep is on by default at full depth (#80), without a size rule: its extra findings came from changes of
+  every size.
 - **2026-10-02** — every Martian row judged again by Claude Opus 5.5 (the same order); 0.8.0 with its defaults
   measured on Martian; Qodo v2 re-judged; a blind audit of unmatched Martian findings; the sweep at high
   reasoning and a second sweep tried and dropped.
