@@ -1,0 +1,56 @@
+diff --git a/src/review/pipeline.ts b/src/review/pipeline.ts
+index 81c8cce..ae3cee3 100644
+--- a/src/review/pipeline.ts
++++ b/src/review/pipeline.ts
+@@ -1078,6 +1078,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
+         stack: chunkStack.get(chunk.id),
+         ...(config.review.audit ? { audit: true } : {}),
+         ...(intentText ? { intent: intentText } : {}),
++        ...((chunkSkills.get(chunk.id)?.length ?? 0) > 0 ? { checklists: true } : {}),
+       });
+       const buildTask = (
+         chunk: Chunk,
+diff --git a/src/review/prompts.ts b/src/review/prompts.ts
+index 2e5c1a5..a810a63 100644
+--- a/src/review/prompts.ts
++++ b/src/review/prompts.ts
+@@ -130,7 +130,7 @@ Output: call the \`submit_findings\` tool as soon as you have verified a finding
+   const summaries = skillSummaries(opts.skillsOverBudget ?? []);
+   if (opts.skills.length || summaries.length) {
+     const parts = [
+-      `## Technology checklists\nChecklists selected for the technologies in this chunk. Use them as hints about where bugs hide — every finding still needs evidence in the code.${opts.skills.length ? ` Whenever a checklist item covers a defect you report — even one you would have spotted anyway — set the finding's "checklist" field to that checklist's id: the text in brackets after its title, without the brackets (e.g. \`${opts.skills[0]!.skill.id}\`).` : ''}`,
++      `## Technology checklists\nChecklists selected for the technologies in this chunk: where defects in this kind of code usually hide. They are a second pass, not background reading: after your first read of the change, go through them one item at a time (the last step of the task says how). Every finding still needs evidence in the code.${opts.skills.length ? ` Whenever a checklist item covers a defect you report — even one you would have spotted anyway — set the finding's "checklist" field to that checklist's id: the text in brackets after its title, without the brackets (e.g. \`${opts.skills[0]!.skill.id}\`).` : ''}`,
+       ...opts.skills.map((s) => `### ${s.skill.name} [${s.skill.id}]\n${s.skill.body}`),
+     ];
+     if (summaries.length) {
+@@ -186,6 +186,8 @@ export function reviewPrompt(opts: {
+   audit?: boolean;
+   /** What the change is meant to do (`renderIntent`), the same for every chunk of a run. */
+   intent?: string;
++  /** The instructions carry technology checklists: end with the item-by-item pass over them. */
++  checklists?: boolean;
+ }): string {
+   const { target, chunk } = opts;
+   const header =
+@@ -254,7 +256,12 @@ In "__new code__" blocks, lines marked "+" were added or modified by the change;
+   if (opts.hints?.length) {
+     lines.push('', '## Static analysis hints (unverified — confirm or ignore each)', renderHints(opts.hints));
+   }
+-  lines.push('', 'Review the files above and submit your findings.');
++  lines.push(
++    '',
++    opts.checklists
++      ? 'Review the files above and submit your findings. Then, before you finish, make the checklist pass: take the technology checklists one item at a time, skip the items about code this change does not contain, and for every other item look again at the changed lines it concerns. Report what it turns up, including defects of a kind you already reported elsewhere in the change. Most defects a first read misses are ones a checklist item names.'
++      : 'Review the files above and submit your findings.',
++  );
+   return lines.join('\n');
+ }
+ 
+@@ -279,6 +286,7 @@ export function reviewPromptIdentity(opts: Parameters<typeof reviewPrompt>[0]):
+     pass: chunk.pass ?? null,
+     declarations: chunk.declarations ?? [],
+     audit: opts.audit === true,
++    checklists: opts.checklists === true,
+     impact: chunk.impact ?? [],
+     hints: (opts.hints ?? []).map((h) => [
+       h.analyzer,
