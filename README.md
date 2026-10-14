@@ -425,8 +425,10 @@ live in the global config only.
 ### Cost
 
 Every run records tokens, model requests and cost, failed attempts included. The cost comes from the
-provider when it reports one (Claude Code does). Otherwise it is tokens × your `pricing`. Without a price
-it is shown as unknown, with the routes that need one. Providers that report no token counts (e.g. Copilot)
+provider when it reports one (Claude Code does). Otherwise it is tokens × the price: Anthropic's current
+models (Fable 5.1, Opus 5.5 / 5, Sonnet 5.5 / 5 / 4.6, Haiku 5.5 / 4.5) are priced in, on the Anthropic API,
+Bedrock and Vertex alike; anything else, or a different rate, comes from your `pricing`. Without a price it
+is shown as unknown, with the routes that need one. Providers that report no token counts (e.g. Copilot)
 get an estimate, marked as such. `--dry-run` shows a lower bound before anything is sent.
 
 ```yaml

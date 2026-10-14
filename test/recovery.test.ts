@@ -168,6 +168,27 @@ describe('chunk recovery', () => {
 });
 
 describe('cost', () => {
+  it('prices Anthropic models without configuration, and lets `pricing` override', () => {
+    const usage = {
+      inputTokens: 1_000_000,
+      outputTokens: 100_000,
+      cachedInputTokens: 2_000_000,
+      cacheWriteTokens: 500_000,
+      requests: 3,
+    };
+    // Sonnet 5.5: $2 in, $0.10 cache read, $2.50 cache write, $10 out
+    expect(costOf({ provider: 'anthropic', model: 'claude-sonnet-5-5', usage }, {})?.amount).toBeCloseTo(
+      2 + 0.2 + 1.25 + 1,
+      6,
+    );
+    expect(priceFor({}, 'bedrock', 'global.anthropic.claude-opus-5-5')?.output).toBe(20);
+    expect(priceFor({}, 'vertex', 'claude-haiku-4-5@20251001')?.input).toBe(1);
+    expect(priceFor({}, 'openai', 'gpt-5.5')).toBeUndefined();
+    expect(
+      priceFor({ 'claude-sonnet-5-5': { input: 1, output: 2 } }, 'anthropic', 'claude-sonnet-5-5')?.input,
+    ).toBe(1);
+  });
+
   it('prices reported tokens with the configured pricing', async () => {
     const { run } = await review(new ScriptedProvider(() => undefined), (c) => {
       c.pricing = { mock: { input: 3, output: 15 } };

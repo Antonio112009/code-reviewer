@@ -13,13 +13,57 @@ export interface PricedSpend {
   usage: Usage;
 }
 
-/** The price for a route: `provider:model`, then `model`, then `provider` (case-insensitive). */
+/**
+ * Built-in prices of Anthropic's current models, USD per million tokens, from the official pricing page
+ * (platform.claude.com/docs/en/about-claude/pricing, 2026-10-14): input / cache read / 5-minute cache write /
+ * output. Keyed by model id, so they apply to every provider that uses these ids (the Anthropic API, Vertex);
+ * Bedrock's inference-profile ids are listed too. A user's `pricing` entry for the same key wins. Haiku 5.5 is
+ * priced at its rate for prompts up to 100k tokens; a request over that pays five times more, which these
+ * figures cannot know, so its cost is a lower bound.
+ */
+export const BUILTIN_PRICING: Record<string, Price> = (() => {
+  const p = (input: number, cachedInput: number, cacheWrite: number, output: number): Price => ({
+    input,
+    cachedInput,
+    cacheWrite,
+    output,
+  });
+  const models: Record<string, Price> = {
+    'claude-fable-5-1': p(10, 0.25, 12.5, 50),
+    'claude-opus-5-5': p(4, 0.2, 5, 20),
+    'claude-opus-5': p(5, 0.5, 6.25, 25),
+    'claude-sonnet-5-5': p(2, 0.1, 2.5, 10),
+    'claude-sonnet-5': p(2, 0.2, 2.5, 10),
+    'claude-sonnet-4-6': p(3, 0.3, 3.75, 15),
+    'claude-haiku-5-5': p(0.1, 0.01, 0.125, 0.5),
+    'claude-haiku-4-5': p(1, 0.1, 1.25, 5),
+  };
+  const out: Record<string, Price> = {};
+  for (const [id, price] of Object.entries(models)) {
+    out[id] = price;
+    // Bedrock inference profiles and Vertex's dated Haiku id.
+    for (const prefix of ['global.anthropic.', 'us.anthropic.', 'eu.anthropic.', 'anthropic.'])
+      out[`${prefix}${id}`] = price;
+  }
+  out['anthropic.claude-haiku-4-5-20251001-v1:0'] = models['claude-haiku-4-5']!;
+  for (const prefix of ['global.', 'us.', 'eu.'])
+    out[`${prefix}anthropic.claude-haiku-4-5-20251001-v1:0`] = models['claude-haiku-4-5']!;
+  out['claude-haiku-4-5@20251001'] = models['claude-haiku-4-5']!;
+  return out;
+})();
+
+/**
+ * The price for a route: `provider:model`, then `model`, then `provider` (case-insensitive), from the user's
+ * `pricing` first and the built-in table second.
+ */
 export function priceFor(
   pricing: Record<string, Price>,
   provider: string,
   model: string | undefined,
 ): Price | undefined {
-  const byKey = new Map(Object.entries(pricing).map(([k, v]) => [k.toLowerCase(), v]));
+  const byKey = new Map(
+    [...Object.entries(BUILTIN_PRICING), ...Object.entries(pricing)].map(([k, v]) => [k.toLowerCase(), v]),
+  );
   const keys = [...(model ? [`${provider}:${model}`, model] : []), provider].map((k) => k.toLowerCase());
   for (const key of keys) {
     const price = byKey.get(key);

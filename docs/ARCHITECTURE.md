@@ -658,7 +658,8 @@ The code under review, and therefore model output, is treated as untrusted.
   estimated from the prompt and the reply and marked `estimated`: a lower bound, since tool results and
   hidden reasoning are not seen.
 - **Cost of a call:** the cost the provider reported itself (ACP `usage_update.cost`, e.g. Claude Code),
-  else tokens × the configured `pricing` (keys `provider:model`, `model`, `provider`; per million input,
+  else tokens × the price — `models/pricing.ts#BUILTIN_PRICING` for Anthropic's current models (model ids, Bedrock
+  profiles, Vertex ids), overridden by the configured `pricing` (keys `provider:model`, `model`, `provider`; per million input,
   cached input and output tokens, or per request for request-billed agents), else unknown.
 - **Run cost** (`CostMeter`): the known amount, its `basis` (`reported`, `priced`, `estimated`), the number
   of calls without a known cost and the routes without a price. One currency per run.

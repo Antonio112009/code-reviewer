@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Cost
+
+- **Anthropic's current models are priced in.** A run on the Anthropic API, Bedrock or Vertex now shows its
+  cost without a `pricing` entry: Fable 5.1, Opus 5.5 and 5, Sonnet 5.5, 5 and 4.6, Haiku 5.5 and 4.5, at the
+  official rates of 2026-10-14 (input, cache read, cache write, output). A `pricing` entry for the same key
+  still wins; Haiku 5.5's long-prompt rate is not modelled, so its cost is a lower bound.
+
+## Unreleased
+
 ### Bitbucket Cloud
 
 - **Reviews can be posted to Bitbucket Cloud pull requests** (`--forge bitbucket`, detected from a

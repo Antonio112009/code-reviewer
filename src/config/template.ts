@@ -416,8 +416,9 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
     'pricing',
     {
       doc: [
-        'Prices for the cost of a run when the provider reports none (Claude Code reports its own). Keys:',
-        '"provider:model", "model" or "provider"; per million tokens, or per model request (Copilot). Example values only.',
+        "Prices for the cost of a run when the provider reports none (Claude Code reports its own). Anthropic's current",
+        'models are priced in; entries here add others or override. Keys: "provider:model", "model" or "provider";',
+        'per million tokens, or per model request (Copilot). Example values only.',
       ],
       keys: {
         'bedrock:global.anthropic.claude-sonnet-4-5': {
