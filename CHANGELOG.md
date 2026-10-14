@@ -4,6 +4,15 @@
 
 ### Review quality
 
+- **The sweep is on at full depth.** After the chunk reviews, one more call reads the whole change at once,
+  without tools, for the defects they missed (`review.sweep`, since 0.8.0 opt-in as `--sweep`). On Martian's
+  real bugs its findings raised the full report's recall by 7.6 to 9.5 points in each of three pairs of runs
+  (F1 +0.7 to +2.8), level with the leaderboard's top tools under one judge; on AACR-Bench, mostly reviewers'
+  remarks, it adds about 1 F1 point. It costs 40–50% more per review, so it stays off at `essential`;
+  `--no-sweep` (`review.sweep: false`) leaves it out at full depth. A size rule was considered and dropped: on
+  Martian the sweep's extra findings came from changes of every size (11% of the known bugs in changes under
+  100 lines, 7–10% above), while its cost grows with the diff.
+
 - **`--intent` (experimental, off): tell the reviewer what the change is meant to do.** The review prompts (and
   `--sweep`) then carry the pull request's title and description — from the CI's event (GitHub, GitLab), from
   `gh` / `glab` when they found the pull request, or from `--description-file` — and the change's commit

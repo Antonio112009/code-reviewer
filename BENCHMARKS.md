@@ -328,7 +328,8 @@ model `sonnet` (`claude-sonnet-5-5`) at medium reasoning; the critic is the same
 in builds before 0.6.0, unless `--critique-model sonnet`). In 0.7.0, full depth means: keep findings from
 confidence 0.3, list those below 0.6 and `info` findings as "worth a look", every severity, 6,000 tokens of
 skills per chunk, 25 tool steps, a second opinion on borderline findings. Since 0.8.0: maintainability
-notes on (at most 5); `--deepen` off.
+notes on (at most 5); `--deepen` off. After 0.8.0 (unreleased): the sweep on (`--sweep` in the runs that
+measured it).
 
 ### Commands
 

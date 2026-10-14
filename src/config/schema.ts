@@ -198,8 +198,9 @@ export const ReviewSettingsSchema = z.object({
   /**
    * One more review call over the whole change at once, without tools and independent of the chunk reviews, asked
    * broadly for its defects; what it finds at a spot no chunk review reported goes to the critic with everything
-   * else. Experimental, off by default: the model given the whole diff in one call finds known bugs the per-chunk
-   * review never reports.
+   * else. The model given the whole diff in one call finds known bugs the per-chunk review never reports: on
+   * Martian's real bugs its findings raised the full report's recall by 7.6 to 9.5 points in each of three pairs of
+   * runs, for 40–50% more per review. On at `full` depth, off at `essential`.
    */
   sweep: z.boolean(),
   /**
@@ -501,7 +502,7 @@ export const DEFAULT_CONFIG: Config = {
     passes: ['general'],
     audit: false,
     deepen: false,
-    sweep: false,
+    sweep: true,
     intent: false,
     secondOpinion: true,
     notes: true,
@@ -579,6 +580,7 @@ export const DEPTH_PRESETS: Record<ReviewDepth, { review: Partial<ReviewSettings
       minConfidence: 0.7,
       advisoryConfidence: 0,
       secondOpinion: false,
+      sweep: false,
       notes: false,
     },
   },
@@ -592,6 +594,7 @@ export const DEPTH_PRESETS: Record<ReviewDepth, { review: Partial<ReviewSettings
       minConfidence: 0.3,
       advisoryConfidence: 0.6,
       secondOpinion: true,
+      sweep: true,
       notes: true,
     },
   },

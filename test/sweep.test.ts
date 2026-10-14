@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { Config } from '../src/config/schema';
+import { type Config, DEFAULT_CONFIG, DEPTH_PRESETS } from '../src/config/schema';
 import { MockProvider } from '../src/providers/mock';
 import { ProviderRegistry } from '../src/providers/registry';
 import type { AgentResult, AgentTask, Provider } from '../src/providers/types';
@@ -143,9 +143,14 @@ describe('sweep over the whole change (review.sweep)', () => {
     expect(run.warnings.some((w) => w.startsWith('sweep-1 failed (agent crashed)'))).toBe(true);
   });
 
-  it('is off by default', async () => {
+  it('is on at full depth and off at essential', async () => {
+    expect(DEFAULT_CONFIG.review.sweep).toBe(true);
+    expect(DEPTH_PRESETS.full.review.sweep).toBe(true);
+    expect(DEPTH_PRESETS.essential.review.sweep).toBe(false);
     const provider = new SweepProvider([extra({})]);
-    const run = await review(provider);
+    const run = await review(provider, (c) => {
+      c.review.sweep = false;
+    });
     expect(provider.tasks.some((t) => t.label.startsWith('sweep-'))).toBe(false);
     expect(run.sweep).toBeUndefined();
     expect(run.findings.map((f) => f.title)).toEqual(['division by zero']);

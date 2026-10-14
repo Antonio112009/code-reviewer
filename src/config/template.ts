@@ -211,7 +211,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           example: D.review.deepen,
         },
         sweep: {
-          doc: 'Experimental: one more call reads the whole change at once, without tools, for the defects the chunk reviews missed; what it finds goes to the critic (40–50% more per review).',
+          doc: 'One more call reads the whole change at once, without tools, for the defects the chunk reviews missed; what it finds goes to the critic (40–50% more per review). On at full depth, off at essential.',
           example: D.review.sweep,
         },
         intent: {
