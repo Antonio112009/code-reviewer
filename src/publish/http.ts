@@ -188,8 +188,8 @@ export class ApiClient {
   }
 
   /**
-   * GET of a list endpoint up to `maxPages`, following `Link: rel="next"` (GitHub, GitLab, Gitea) or a
-   * `{ values, next }` body (Bitbucket) — same origin only.
+   * GET of a list endpoint up to `maxPages`, following `Link: rel="next"` (GitHub, GitLab, Gitea), a
+   * `{ values, next }` body (Bitbucket) or one `{ count, value }` page (Azure DevOps) — same origin only.
    */
   async paginate<T>(path: string): Promise<T[]> {
     const out: T[] = [];
@@ -205,6 +205,10 @@ export class ApiClient {
         const d = data as { values: T[]; next?: unknown };
         out.push(...d.values);
         next = typeof d.next === 'string' ? d.next : undefined;
+      } else if (data && typeof data === 'object' && Array.isArray((data as { value?: unknown }).value)) {
+        // Azure DevOps: one `{ count, value }` page.
+        out.push(...(data as { value: T[] }).value);
+        next = undefined;
       } else {
         throw new ApiError(`GET ${path}: expected a list`, res.status);
       }

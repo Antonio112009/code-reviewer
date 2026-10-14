@@ -438,7 +438,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
       ],
       notes: {
         project: [
-          `API URLs (githubApiUrl, gitlabApiUrl, giteaApiUrl) receive your access token: set them in ${GLOBAL_CONFIG_HINT}.`,
+          `API URLs (githubApiUrl, gitlabApiUrl, giteaApiUrl, azureApiUrl) receive your access token: set them in ${GLOBAL_CONFIG_HINT}.`,
         ],
       },
       keys: {
@@ -468,6 +468,11 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           doc: 'Self-hosted Gitea / Forgejo API (default: Codeberg). Your token is sent here.',
           scope: 'global',
           example: 'https://git.example.com/api/v1',
+        },
+        azureApiUrl: {
+          doc: 'Azure DevOps collection URL (default: the organisation of a dev.azure.com remote). Your token is sent here.',
+          scope: 'global',
+          example: 'https://dev.azure.com/your-org',
         },
       },
     },

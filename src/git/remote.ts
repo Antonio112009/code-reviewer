@@ -1,4 +1,4 @@
-export type Platform = 'github' | 'gitlab' | 'gitea' | 'bitbucket' | 'other';
+export type Platform = 'github' | 'gitlab' | 'gitea' | 'bitbucket' | 'azure' | 'other';
 
 export interface RemoteInfo {
   platform: Platform;
@@ -31,6 +31,17 @@ export function parseRemote(url: string | undefined): RemoteInfo | undefined {
   if (!host || !repoPath) return undefined;
   repoPath = repoPath.replace(/\.git$/, '').replace(/\/$/, '');
   const lower = host.toLowerCase();
+  // Azure Repos: `git@ssh.dev.azure.com:v3/org/project/repo` and `https://org@dev.azure.com/org/project/_git/repo`
+  // both mean https://dev.azure.com/org/project/_git/repo.
+  if (lower === 'ssh.dev.azure.com' || lower === 'vs-ssh.visualstudio.com') {
+    const m = /^v3\/([^/]+)\/([^/]+)\/([^/]+)$/.exec(repoPath);
+    return m
+      ? { platform: 'azure', webUrl: `https://dev.azure.com/${m[1]}/${m[2]}/_git/${m[3]}` }
+      : undefined;
+  }
+  if (lower === 'dev.azure.com' || lower.endsWith('.visualstudio.com')) {
+    return { platform: 'azure', webUrl: `https://${lower}/${repoPath}` };
+  }
   const platform: Platform = lower.includes('github')
     ? 'github'
     : lower.includes('gitlab')
@@ -46,6 +57,7 @@ export function parseRemote(url: string | undefined): RemoteInfo | undefined {
 export function commitUrl(remote: RemoteInfo | undefined, sha: string): string | undefined {
   if (!remote || remote.platform === 'other') return undefined;
   if (remote.platform === 'bitbucket') return `${remote.webUrl}/commits/${sha}`;
+  if (remote.platform === 'azure') return `${remote.webUrl}/commit/${sha}`;
   return remote.platform === 'gitlab' ? `${remote.webUrl}/-/commit/${sha}` : `${remote.webUrl}/commit/${sha}`;
 }
 
@@ -58,6 +70,9 @@ export function lineUrl(
 ): string | undefined {
   if (!remote || remote.platform === 'other') return undefined;
   const encoded = file.split('/').map(encodeURIComponent).join('/');
+  if (remote.platform === 'azure') {
+    return `${remote.webUrl}?path=/${encoded}&version=GC${sha}&line=${start}&lineEnd=${end}&lineStartColumn=1&lineEndColumn=1`;
+  }
   if (remote.platform === 'bitbucket') {
     const range = end > start ? `lines-${start}:${end}` : `lines-${start}`;
     return `${remote.webUrl}/src/${sha}/${encoded}#${range}`;

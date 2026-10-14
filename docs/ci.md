@@ -232,6 +232,38 @@ pipelines:
   than resolved, and one-click suggestions are shown as text. The workspace's rate limit (1,000 requests per
   hour) is plenty: a publication is a handful of requests.
 
+## Azure Pipelines
+
+```yaml
+# azure-pipelines.yml
+trigger: none
+pr: [main]
+pool: { vmImage: ubuntu-latest }
+steps:
+  - checkout: self
+    fetchDepth: 0
+  - task: NodeTool@0
+    inputs: { versionSpec: '24.x' }
+  - script: npm install -g @antonio112009/code-reviewer
+  - script: code-reviewer review --head $(System.PullRequest.SourceCommitId) --plain --yes --format md,json --out reports --provider anthropic
+    env: { ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY) }
+  - script: code-reviewer runs publish latest
+    env: { SYSTEM_ACCESSTOKEN: $(System.AccessToken) }
+```
+
+- A pull request build checks out the *merge* commit, so the review names the source commit as `--head`
+  (`System.PullRequest.SourceCommitId`): comments then anchor on the lines of the pull request itself.
+- `System.AccessToken` must be mapped into the posting step explicitly (as above), and the project's build
+  service identity needs **Contribute to pull requests** on the repository. Outside Pipelines, set
+  `AZURE_DEVOPS_TOKEN` to a personal access token with *Code (read & write)* and *Pull Request Threads*.
+- The API is the organisation's collection URL. In Pipelines it comes from `SYSTEM_TEAMFOUNDATIONCOLLECTIONURI`;
+  elsewhere from the `dev.azure.com` remote (`https://dev.azure.com/{org}`), `publish.azureApiUrl` in the global
+  config, or `--api-url` — the only way for Azure DevOps Server (`https://server/tfs/Collection`). The repository
+  is `project/repository` (`--repo "Shop/shop"`).
+- Inline comments are threads on the new-side lines (status *Active*); the summary is a thread without a file
+  (status *Closed*), updated in place. Threads record no commit, so fixed findings are listed in the summary
+  rather than resolved, and one-click suggestions are shown as text.
+
 ## Providers in CI
 
 **AWS Bedrock through OIDC** (no stored AWS keys). Create an IAM role that trusts your CI's OIDC provider
@@ -276,7 +308,7 @@ code-reviewer runs publish latest --forge gitlab --repo group/project --pr 7 \
 ```
 
 The target is resolved in this order (`--verbose` prints each decision):
-1. flags: `--pr <number>`, `--repo <owner/name | group/project | project id>`, `--forge github|gitlab|gitea|bitbucket`,
+1. flags: `--pr <number>`, `--repo <owner/name | group/project | project id>`, `--forge github|gitlab|gitea|bitbucket|azure`,
    `--api-url <url>`;
 2. the CI: GitHub Actions (`GITHUB_REPOSITORY`, the pull request of the event, `GITHUB_API_URL`), GitLab CI
    (`CI_MERGE_REQUEST_PROJECT_ID`, `CI_MERGE_REQUEST_IID`, `CI_API_V4_URL`);

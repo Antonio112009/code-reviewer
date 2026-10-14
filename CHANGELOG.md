@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Azure DevOps
+
+- **Reviews can be posted to Azure DevOps pull requests** (`--forge azure`, detected from a `dev.azure.com`
+  / `visualstudio.com` remote or Azure Pipelines): inline threads on the new-side lines, a summary thread
+  updated in place, de-duplication by fingerprint. `AZURE_DEVOPS_TOKEN` (a personal access token) or
+  `SYSTEM_ACCESSTOKEN` mapped from `System.AccessToken`; the organisation's API from the remote, from
+  `SYSTEM_TEAMFOUNDATIONCOLLECTIONURI`, from `publish.azureApiUrl` or `--api-url` (Azure DevOps Server).
+  Threads record no commit, so fixed findings stay in the summary and suggestions are shown as text. Report
+  links work for these remotes; `docs/ci.md` has the pipeline.
+
+## Unreleased
+
 ### Cost
 
 - **Anthropic's current models are priced in.** A run on the Anthropic API, Bedrock or Vertex now shows its

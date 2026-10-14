@@ -361,11 +361,16 @@ export const PublishSettingsSchema = z.object({
   gitlabApiUrl: ApiUrlSchema.optional(),
   /** Self-hosted Gitea / Forgejo API (e.g. https://git.example.com/api/v1); without it, Codeberg's. */
   giteaApiUrl: ApiUrlSchema.optional(),
+  /**
+   * Azure DevOps collection URL (https://dev.azure.com/your-org, or https://server/tfs/Collection on Azure DevOps
+   * Server); without it, the organisation of a dev.azure.com remote.
+   */
+  azureApiUrl: ApiUrlSchema.optional(),
 });
 export type PublishSettings = z.infer<typeof PublishSettingsSchema>;
 
 /** `publish` keys that decide where an access token is sent: rejected in project configs. */
-export const PUBLISH_URL_KEYS = ['githubApiUrl', 'gitlabApiUrl', 'giteaApiUrl'] as const;
+export const PUBLISH_URL_KEYS = ['githubApiUrl', 'gitlabApiUrl', 'giteaApiUrl', 'azureApiUrl'] as const;
 
 /** Reusing model answers for unchanged chunks and findings (`src/cache/`). */
 export const CacheSettingsSchema = z.object({

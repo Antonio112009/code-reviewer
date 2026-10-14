@@ -9,20 +9,30 @@ import type { ForgeTool } from '../git/forge';
  * imports nothing from the publishing code, so every other module can import it.
  */
 
-export type ForgeKind = 'github' | 'gitlab' | 'gitea' | 'bitbucket';
-export const FORGES: readonly ForgeKind[] = ['github', 'gitlab', 'gitea', 'bitbucket'];
+export type ForgeKind = 'github' | 'gitlab' | 'gitea' | 'bitbucket' | 'azure';
+export const FORGES: readonly ForgeKind[] = ['github', 'gitlab', 'gitea', 'bitbucket', 'azure'];
 /**
  * The order CI markers are checked in: Gitea / Forgejo Actions set GitHub's variables too (`GITHUB_ACTIONS`,
  * `GITHUB_API_URL`), so their own marker has to win, or the token would follow GitHub's rules.
  */
-export const CI_ORDER: readonly ForgeKind[] = ['gitea', 'github', 'gitlab', 'bitbucket'];
+export const CI_ORDER: readonly ForgeKind[] = ['gitea', 'github', 'gitlab', 'bitbucket', 'azure'];
 
 export interface ForgeSpec {
   kind: ForgeKind;
   /** Human name, e.g. "GitHub". */
   label: string;
-  /** The public API, used when neither the CI nor the global config names one. */
-  publicApiUrl: string;
+  /**
+   * The public API, used when neither the CI nor the global config names one. A forge whose API is scoped
+   * (Azure DevOps: one URL per organisation) has none and derives it from the remote with `remoteTarget`.
+   */
+  publicApiUrl?: string;
+  /**
+   * API and repository from a repository web URL, for forges whose API is scoped: only for the vendor's own
+   * hosts, so the remote can name the organisation but never send the token elsewhere.
+   */
+  remoteTarget?: (webUrl: string) => { apiUrl: string; repo: string } | undefined;
+  /** The repository from the CI's variables when they do not hold it in one piece. */
+  ciRepo?: (env: NodeJS.ProcessEnv) => string | undefined;
   /** What a change request is called ("pull request" / "merge request") and its sigil (`#` / `!`). */
   requestNoun: string;
   refSigil: string;
@@ -41,7 +51,7 @@ export interface ForgeSpec {
   ciApiUrlVar?: string;
   ciRepoVars: readonly string[];
   /** Global-config key of a self-hosted API URL, for forges that can be self-hosted. */
-  apiUrlKey?: keyof Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl' | 'giteaApiUrl'>;
+  apiUrlKey?: keyof Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl' | 'giteaApiUrl' | 'azureApiUrl'>;
   /** The local CLI that knows the branch's open request (`findOpenPullRequest`), when one exists. */
   tool?: ForgeTool;
   /** What `--repo` must look like, and the words for the error message. */
@@ -137,7 +147,67 @@ export const FORGE_SPECS: Record<ForgeKind, ForgeSpec> = {
     // Whether a `suggestion` fence posted through the API is applicable is unconfirmed: the fix is shown as text.
     suggestionStyle: 'none',
   },
+  azure: {
+    kind: 'azure',
+    label: 'Azure DevOps',
+    requestNoun: 'pull request',
+    refSigil: '#',
+    tokenVars: ['AZURE_DEVOPS_TOKEN', 'SYSTEM_ACCESSTOKEN'],
+    missingToken:
+      'Set AZURE_DEVOPS_TOKEN to a personal access token with Code (read & write) and Pull Request Threads scopes, or map System.AccessToken into the step as SYSTEM_ACCESSTOKEN in Azure Pipelines.',
+    ci: 'azure',
+    ciVar: 'TF_BUILD',
+    ciVarAnyValue: true,
+    // The collection URL, e.g. https://dev.azure.com/fabrikam/ (Azure DevOps Server: https://server/tfs/Collection/).
+    ciApiUrlVar: 'SYSTEM_TEAMFOUNDATIONCOLLECTIONURI',
+    ciRepoVars: [],
+    ciRepo: (env) => {
+      const project = env.SYSTEM_TEAMPROJECT?.trim();
+      const repo = env.BUILD_REPOSITORY_NAME?.trim();
+      return project && repo ? `${project}/${repo}` : undefined;
+    },
+    apiUrlKey: 'azureApiUrl',
+    repoPattern: /^[^/\s][^/]{0,255}\/[^/\s][^/]{0,255}$/,
+    repoHint: 'project/repository',
+    webHostOfApi: sameHost,
+    remoteTarget: azureRemoteTarget,
+    // Applicable `suggestion` blocks exist in the UI; through the API they are unconfirmed, so the fix is shown as text.
+    suggestionStyle: 'none',
+  },
 };
+
+/**
+ * `https://dev.azure.com/{org}/{project}/_git/{repo}` (or `{org}.visualstudio.com/{project}/_git/{repo}`) → the
+ * organisation's API and `project/repo`. Only Microsoft's hosts: a self-hosted server needs `publish.azureApiUrl`.
+ */
+export function azureRemoteTarget(webUrl: string): { apiUrl: string; repo: string } | undefined {
+  let u: URL;
+  try {
+    u = new URL(webUrl);
+  } catch {
+    return undefined;
+  }
+  const host = u.hostname.toLowerCase();
+  const parts = decodeURIComponent(u.pathname)
+    .replace(/^\/+|\/+$/g, '')
+    .split('/');
+  const git = parts.indexOf('_git');
+  if (git < 1 || git + 1 >= parts.length) return undefined;
+  const repo = parts[git + 1]!.replace(/\.git$/, '');
+  if (host === 'dev.azure.com') {
+    const org = parts[0];
+    const project = parts[git - 1];
+    if (!org || !project || git !== 2) return undefined;
+    return { apiUrl: `https://dev.azure.com/${encodeURIComponent(org)}`, repo: `${project}/${repo}` };
+  }
+  const m = /^([a-z0-9-]+)\.visualstudio\.com$/.exec(host);
+  if (m) {
+    const project = parts[git - 1];
+    if (!project) return undefined;
+    return { apiUrl: `https://dev.azure.com/${m[1]}`, repo: `${project}/${repo}` };
+  }
+  return undefined;
+}
 
 export const FORGE_LABELS: Record<ForgeKind, string> = Object.fromEntries(
   FORGES.map((k) => [k, FORGE_SPECS[k].label]),
