@@ -24,6 +24,7 @@ import {
   commitReader,
   loadProjectRules,
   type ProjectRules,
+  rulesFor,
   workingTreeReader,
 } from '../context/project-rules';
 import { type DetectedStack, detectStack } from '../context/stack';
@@ -581,9 +582,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         : loadProjectRules(repoRoot, PROJECT_RULES_BUDGET)
       ).catch((err: unknown) => {
         warn(`Could not read project rules: ${errorMessage(err)}`);
-        return { text: '', sources: [], tokens: 0 };
+        return { text: '', sources: [], tokens: 0, scoped: [], refused: [] };
       })
-    : Promise.resolve({ text: '', sources: [], tokens: 0 });
+    : Promise.resolve({ text: '', sources: [], tokens: 0, scoped: [], refused: [] });
 
   const preflightP =
     req.dryRun || req.skipPreflight
@@ -612,6 +613,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     skillsP,
   ]);
   if (stack) emit({ type: 'stack', stack });
+  for (const r of rules.refused) warn(`project rule ${r.source}: glob "${r.glob}" ignored (${r.reason})`);
   emit({ type: 'analyzers', runs: analysis.runs, hits: analysis.hits.length });
   for (const note of stack?.notes ?? []) logger.debug(`stack: ${note}`);
   throwIfAborted();
@@ -804,7 +806,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       timeoutMs: taskTimeoutMs(config.review, c.tokens),
     })),
     totalTokens: chunks.reduce((s, c) => s + c.tokens, 0),
-    projectRules: rules.sources,
+    projectRules: [...rules.sources, ...rules.scoped.map((r) => r.source)],
     routing,
     ...(stack ? { stack } : {}),
     analyzers: analysis.runs,
@@ -1059,7 +1061,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           mode,
           depth,
           ...(chunk.pass ? { pass: chunk.pass } : {}),
-          rules: rules.text,
+          rules: rulesFor(rules, chunk.files, PROJECT_RULES_BUDGET),
           rulesOrigin: rules.origin,
           skills: chunkSkills.get(chunk.id) ?? [],
           skillsOverBudget: chunkSkillsDropped.get(chunk.id) ?? [],
@@ -1896,6 +1898,29 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     const advisory = final.filter(isAdvisory);
     if (advisory.length) run.advisory = sortFindings(advisory);
     run.rejected = sortFindings(rejected);
+    const verdictsOf = (list: readonly Finding[]) => list.map((f) => f.critique?.verdict);
+    const kept = [...final, ...notes];
+    run.funnel = {
+      reported: collected.filter((f) => f.origin !== 'static').length,
+      static: collected.filter((f) => f.origin === 'static').length,
+      validated: validated.kept.length,
+      deduped: unique.length,
+      critiqued: {
+        confirmed: verdictsOf(kept).filter((v) => v === 'confirmed').length,
+        uncertain: verdictsOf(kept).filter((v) => v === 'uncertain').length,
+        rejected: rejected.filter((f) => f.droppedReason === 'critique').length,
+        unverified: kept.filter((f) => !f.critique).length,
+      },
+      belowThreshold: rejected.filter(
+        (f) => f.droppedReason === 'below-threshold' || f.droppedReason === 'below-severity',
+      ).length,
+      main: run.findings.length,
+      advisory: advisory.length,
+      notes: notes.length,
+    };
+    logger.debug(
+      `funnel: reported ${run.funnel.reported} (+${run.funnel.static} static) → validated ${run.funnel.validated} → deduped ${run.funnel.deduped} → critic rejected ${run.funnel.critiqued.rejected}, uncertain ${run.funnel.critiqued.uncertain} → below threshold ${run.funnel.belowThreshold} → main ${run.funnel.main}, worth a look ${run.funnel.advisory}, notes ${run.funnel.notes}`,
+    );
     run.fallbacks = [...(preflight?.fallbacks ?? []), ...router.fallbacks];
     run.routing = { ...routes };
     const failed = run.chunks.filter((c) => c.status === 'failed').length;

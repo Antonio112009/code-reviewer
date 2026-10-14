@@ -15,7 +15,7 @@
                   context/stack/*      manifests → techs, package roots, versions (never runs repo code)
                   analyzers/*          secretlint + pattern rules + safe external tools → StaticHit[]
                   chunking/graph.ts    import graph (TS/JS, Python, Go, JVM, C#, PHP, Ruby, Rust, C/C++, Dart)
-                  context/project-rules CLAUDE.md, AGENTS.md… (diff mode: read from the BASE commit)
+                  context/project-rules CLAUDE.md, AGENTS.md… + path-scoped rule files (diff mode: BASE commit)
                   skills/loader.ts     skill tree (builtin < global < project)
                   models/preflight.ts  is every configured model available? → fallback decisions
    4. chunking    chunking/*           clusters of related files (imports, tests, siblings) → chunks ≤ budget;
@@ -223,6 +223,17 @@ out of the result cache key, like commit shas: it changes with every commit whil
 the key. `run.intent` records where the title came from and how many commit messages were shown. Off by default:
 on AACR-Bench hold82 it did not raise recall (`evals/aacr/README.md`); the reviewer cited the text in 2 of 215
 findings.
+
+### The funnel (`run.funnel`)
+
+Every run records how many findings each stage let through — reported by the chunk reviews and the sweep
+(static findings counted apart), kept by validation, left after dedupe, the critic's verdicts (confirmed /
+uncertain / rejected / never verified), dropped by the thresholds, and the final main / "worth a look" /
+notes split — and logs it at debug level. `evals/aacr/funnel.py` sums it over a benchmark run, with tool
+calls per chunk and the reviewer's confidence spread, so a change can be judged by where it moves candidates,
+not only by the final score. Measured on 2026-10-14 (hold82 and ctx30, main after #80): the critic rejects
+9–11% of what the reviewers report and the rest of the pipeline almost nothing; the reviewer reports about 3
+findings per chunk and makes 0.4 tool calls per chunk, so candidates are lost before the critic.
 
 ### Sweep (`review.sweep`, `--sweep` / `--no-sweep`; on at full depth, off at essential)
 
@@ -544,7 +555,9 @@ The code under review, and therefore model output, is treated as untrusted.
      (`skills/regex-guard.ts`) and only ever run on bounded text.
    - The non-git `grep` fallback rejects backtracking-prone patterns and vets globs like other untrusted
      globs; `git grep -P` relies on PCRE's backtracking limit and a 20 s timeout.
-9. **Project rules.** In diff mode they are read from the base commit.
+9. **Project rules.** In diff mode they are read from the base commit. Globs a rule file declares are vetted
+    like every other untrusted glob (`unsafeGlobReason`); a dependency directory's instruction files are never
+    read.
 10. **Analyzers.** They never execute repository code without an explicit opt-in. Hits in untrusted text
     are parsed linearly (tokenizer, import graph, JSON extraction and rendering are all bounded).
 11. **Prompts and reports.** Repository text in prompts is clipped, and prompts state that the code is

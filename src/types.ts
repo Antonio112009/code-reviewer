@@ -621,6 +621,22 @@ export interface RunRecord {
    */
   sweep?: { parts: number; failed: number; findings: number; duplicates: number };
   /**
+   * How many findings each stage let through, so a run says where candidates are lost: what the reviewers
+   * reported (`reported`, the chunk reviews and the sweep, static findings apart), what validation and dedupe
+   * kept, the critic's verdicts on the defects it saw, and what the thresholds and the advisory split left.
+   */
+  funnel?: {
+    reported: number;
+    static: number;
+    validated: number;
+    deduped: number;
+    critiqued: { confirmed: number; uncertain: number; rejected: number; unverified: number };
+    belowThreshold: number;
+    main: number;
+    advisory: number;
+    notes: number;
+  };
+  /**
    * `review.intent`: what the review prompts said the change is meant to do — where the pull request's title and
    * description came from (absent: none found) and how many commit messages were shown.
    */

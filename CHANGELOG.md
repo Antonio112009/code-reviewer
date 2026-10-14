@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Review quality
+
+- **Path-scoped project rules.** Besides the root rule files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`,
+  `REVIEW.md`, `.github/copilot-instructions.md`), the review now reads the rule files other tools scope to
+  part of the tree and gives each chunk only the ones that match its files: `.cursor/rules/*.mdc` (`globs:` in
+  the frontmatter, `alwaysApply: true` for everywhere), `.github/instructions/*.instructions.md` (`applyTo:`),
+  our own `.code-reviewer/rules/*.md` (`paths:`), and an `AGENTS.md` or `CLAUDE.md` in a subdirectory for the
+  files under it. Frontmatter is stripped; unsafe globs are refused like any other untrusted glob; nothing is
+  read from dependency directories; in a diff review the files come from the base commit, so a change cannot
+  bring its own rules. `plan.projectRules` lists every rule file used.
+
+### Evaluation
+
+- **The funnel.** `run.funnel` in `run.json` counts what each stage let through — reported by the reviewers,
+  kept by validation and dedupe, the critic's verdicts, dropped by the thresholds, the main / "worth a look" /
+  notes split — and `evals/aacr/funnel.py` sums it over a benchmark run with tool calls per chunk and the
+  reviewer's confidence spread. First reading (hold82 and ctx30, 2026-10-14): the critic rejects 9–11% of the
+  reported findings and the other stages almost nothing; the reviewer reports about 3 findings per chunk and
+  makes 0.4 tool calls per chunk. Recall is lost inside the review call, before any filter.
+
 ## 0.9.0 — 2026-10-14
 
 ### Review quality
