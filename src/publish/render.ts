@@ -3,6 +3,7 @@ import { code, mdLine, mdText } from '../report/markdown';
 import { FINGERPRINT_RE } from '../review/fingerprint';
 import { CATEGORIES, type Finding, type RunRecord, SEVERITIES, type Severity } from '../types';
 import { packageVersion } from '../util/paths';
+import { FORGE_SPECS, type ForgeKind } from './forges';
 import { type RememberedFinding, type SinceLastReview, stateMarker } from './history';
 import { type InlineAnchor, type PlannedInline, SUMMARY_REASON_LABELS, type SummaryReason } from './plan';
 
@@ -110,17 +111,13 @@ function location(f: Finding): string {
  * comment is anchored on. GitHub anchors on the whole range; GitLab on one line, with the range given as
  * offsets from it (`suggestion:-2+1`).
  */
-export function suggestionBlock(
-  f: Finding,
-  anchor: InlineAnchor,
-  forge: 'github' | 'gitlab',
-): string | undefined {
+export function suggestionBlock(f: Finding, anchor: InlineAnchor, forge: ForgeKind): string | undefined {
   if (f.replacement === undefined || f.replacementOk !== true) return undefined;
   if (anchor.startLine !== f.startLine || anchor.endLine !== f.endLine) return undefined;
   const text = f.replacement.replace(/\n$/, '');
   if (text.includes('```')) return undefined;
   const fence =
-    forge === 'gitlab'
+    FORGE_SPECS[forge].suggestionStyle === 'offsets'
       ? `\`\`\`suggestion:-${anchor.line - anchor.startLine}+${anchor.endLine - anchor.line}`
       : '```suggestion';
   return `${fence}\n${text}\n\`\`\``;
@@ -130,7 +127,7 @@ export function suggestionBlock(
 export function renderInlineComment(
   f: Finding,
   fingerprint: string,
-  place?: { anchor: InlineAnchor; forge: 'github' | 'gitlab' },
+  place?: { anchor: InlineAnchor; forge: ForgeKind },
 ): string {
   const lines = [
     `**${severityOf(f).toUpperCase()}** · ${categoryOf(f)} · **${forgeLine(f.title, MAX_TITLE)}**`,
@@ -167,8 +164,8 @@ export function renderReviewBody(count: number): string {
 
 export interface SummaryInput {
   run: RunRecord;
-  /** Wording: "pull request" (GitHub, default) or "merge request" (GitLab). */
-  forge?: 'github' | 'gitlab';
+  /** Wording: "pull request" (GitHub, the default) or "merge request" (GitLab). */
+  forge?: ForgeKind;
   /** Inline comments posted by this publication. */
   posted: PlannedInline[];
   /** Findings whose inline comment was already on the pull request. */
@@ -206,7 +203,7 @@ function summaryEntry(f: Finding, reason: SummaryReason): string {
  */
 export function renderSummary(input: SummaryInput): string {
   const { run } = input;
-  const request = input.forge === 'gitlab' ? 'merge request' : 'pull request';
+  const request = FORGE_SPECS[input.forge ?? 'github'].requestNoun;
   const counts = severityCounts(run.findings);
   const total = run.findings.length;
   const target = run.target;

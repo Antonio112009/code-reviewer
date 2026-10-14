@@ -440,6 +440,10 @@ the pass's focus. The copies go through scheduling, recovery, the cache and dedu
   notifications. **Code Quality** (`report/codequality.ts`): GitLab's JSON array with the same rule ids and
   fingerprints. Both export kept findings only, as clipped plain text.
 - **Publishing** (`publish/`):
+  - `forges.ts` is the registry: one `ForgeSpec` per forge with its label, public API, request noun and
+    sigil, token variables, CI variables (the "in this CI" flag, the CI's API URL, the repository), global
+    config key, local CLI (`gh` / `glab`), repository pattern, suggestion fence style, request headers and
+    adapter. Everything else reads the spec instead of switching on the kind.
   - `target.ts` resolves forge, API URL, repository and PR/MR number: flags, then CI variables, then the
     remote and `gh`/`glab`. It also holds the token destination rules (Safety model, 13).
   - `plan.ts` computes the commentable lines from the local `mergeBase..headSha` diff (3 context lines, new
@@ -700,8 +704,10 @@ The code under review, and therefore model output, is treated as untrusted.
   (opt-in).
 - **New report format:** add a renderer in `report/`, a value in `REPORT_FORMATS` and its file name in
   `REPORT_FILE_NAMES`.
-- **New forge:** implement `ForgeAdapter` (`publish/plan.ts`) next to `publish/github.ts`, add it to
-  `ForgeKind`, target resolution and the token rules in `publish/target.ts`, and to `adapterFor`.
+- **New forge:** implement `ForgeAdapter` (`publish/plan.ts`) next to `publish/github.ts`, add its
+  `ForgeSpec` to `publish/forges.ts` (and the kind to `ForgeKind` / `FORGES`), its CI to `git/ci.ts`, its
+  platform to `git/remote.ts`, and a global-config API URL key to `PublishSettingsSchema` /
+  `PUBLISH_URL_KEYS`.
 - **New eval case:** add a YAML file under `evals/<language>/` and run
   `npx vitest run test/evals-corpus.test.ts`.
 
