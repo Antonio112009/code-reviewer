@@ -89,6 +89,7 @@ def main() -> None:
             **benchmark_info(opt("--benchmark")),
             "code_reviewer": build_info(os.environ.get("CODE_REVIEWER_CLI", "")),
             "args": os.environ.get("CODE_REVIEWER_ARGS", ""),
+            "descriptions": os.environ.get("CODE_REVIEWER_DESCRIPTIONS") or None,
             "experiment_env": {k: v for k, v in os.environ.items() if k == "CR_EXP" or k.startswith("CR_EXP_")},
             "judgings": data.get("judgings", []),
         }

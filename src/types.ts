@@ -520,6 +520,16 @@ export interface ChunkRecord {
   attempts?: number;
 }
 
+/**
+ * The title and description of the pull/merge request under review, as its author wrote them (untrusted): from
+ * the CI's event (`ci`), the forge CLI (`gh` / `glab`) or `--description-file` (`file`).
+ */
+export interface RequestText {
+  title?: string;
+  description?: string;
+  from: 'ci' | 'gh' | 'glab' | 'file';
+}
+
 export interface RefsInfo {
   /** How base and head were chosen, one line per decision. */
   explanation: string[];
@@ -588,6 +598,8 @@ export interface RunRecord {
     maxNotes?: number;
     passes?: string[];
     audit?: boolean;
+    /** `review.intent`: the change's description and commit messages were in the review prompts. */
+    intent?: boolean;
   };
   routing: Partial<Record<Role, RoleRouting>>;
   /** Model fallbacks applied during the run. */
@@ -608,6 +620,11 @@ export interface RunRecord {
    * dropped); the rest went to validation and the critic (`source.chunkIds` = ["sweep"]).
    */
   sweep?: { parts: number; failed: number; findings: number; duplicates: number };
+  /**
+   * `review.intent`: what the review prompts said the change is meant to do — where the pull request's title and
+   * description came from (absent: none found) and how many commit messages were shown.
+   */
+  intent?: { request?: RequestText['from']; commits: number };
   /** Suggested follow-ups (`--deepen`); advice only. */
   advice?: { deepen?: DeepenAdvice };
   findings: Finding[];

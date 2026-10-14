@@ -184,6 +184,8 @@ export function reviewPrompt(opts: {
   stack?: string;
   /** List the changed functions to audit (`review.audit`). */
   audit?: boolean;
+  /** What the change is meant to do (`renderIntent`), the same for every chunk of a run. */
+  intent?: string;
 }): string {
   const { target, chunk } = opts;
   const header =
@@ -215,6 +217,7 @@ In "__new code__" blocks, lines marked "+" were added or modified by the change;
     );
   }
   if (chunk.mentions.length) lines.push(`Files deleted by the change: ${chunk.mentions.join(', ')}`);
+  if (opts.intent) lines.push('', opts.intent);
   const auditList = opts.audit && chunk.pass !== 'contracts' ? auditTargets(chunk) : [];
   if (auditList.length) {
     lines.push('', '## Changed functions to audit (each one)', ...auditList);
@@ -257,9 +260,9 @@ In "__new code__" blocks, lines marked "+" were added or modified by the change;
 
 /**
  * The parts of {@link reviewPrompt} that decide the answer, for the result cache key. Left out on purpose:
- * the chunk numbering, commit shas and the list of other files in the review (they change with every
- * commit anywhere in the change), and hint ids (numbered per run; hints count by content). Keep in sync
- * with `reviewPrompt`.
+ * the chunk numbering, commit shas, the list of other files in the review and the change's description and
+ * commit messages (they change with every commit anywhere in the change, while the code they describe is in
+ * the key), and hint ids (numbered per run; hints count by content). Keep in sync with `reviewPrompt`.
  */
 export function reviewPromptIdentity(opts: Parameters<typeof reviewPrompt>[0]): unknown {
   const { chunk } = opts;
@@ -460,6 +463,8 @@ export function sweepPrompt(opts: {
   chunks: readonly Chunk[];
   /** This part and how many there are, when the change is read in several. */
   part?: { index: number; total: number };
+  /** What the change is meant to do (`renderIntent`). */
+  intent?: string;
 }): string {
   const { target } = opts;
   const files = [...new Set(opts.chunks.flatMap((c) => c.files))];
@@ -472,6 +477,7 @@ In "__new code__" blocks, lines marked "+" were added or modified by the change;
     `# The whole change${opts.part && opts.part.total > 1 ? ` (part ${opts.part.index + 1} of ${opts.part.total})` : ''}`,
     header,
     `Files: ${files.join(', ')}`,
+    ...(opts.intent ? ['', opts.intent] : []),
     '',
     '## Code',
     opts.chunks.map((c) => chunkTextFor(c, 'review')).join('\n'),

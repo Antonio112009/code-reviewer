@@ -1,4 +1,4 @@
-import { cp, mkdir } from 'node:fs/promises';
+import { cp, mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import * as p from '@clack/prompts';
 import type { Command } from 'commander';
@@ -14,6 +14,7 @@ import { type LocalChanges, NothingLocalError } from '../../git/local-changes';
 import { detectProviders } from '../../providers/detect';
 import { SEVERITY_ORDER } from '../../report/common';
 import type { ReviewEvent } from '../../review/events';
+import { parseDescriptionFile } from '../../review/intent';
 import { runReview } from '../../review/pipeline';
 import { EXPAND_LEVELS, REASONING_LEVELS, REVIEW_PASSES, SEVERITIES, type Severity } from '../../types';
 import { EXIT, type GlobalOptions, loadCliConfig, makeLogger } from '../context';
@@ -69,6 +70,10 @@ export interface ReviewFlags {
   audit?: boolean;
   deepen?: boolean;
   sweep?: boolean;
+  /** `--intent` / `--no-intent`: the change's description and commit messages in the prompts (`review.intent`). */
+  intent?: boolean;
+  /** `--description-file <path>`: the pull request's title and description. */
+  descriptionFile?: string;
   secondOpinion?: boolean;
   /** `--notes` / `--no-notes`: maintainability notes (`review.notes`). */
   notes?: boolean;
@@ -249,6 +254,7 @@ export function applyRunFlags(config: Config, f: ReviewFlags): void {
   if (f.audit) config.review.audit = true;
   if (f.deepen) config.review.deepen = true;
   if (f.sweep) config.review.sweep = true;
+  if (f.intent !== undefined) config.review.intent = f.intent;
   if (f.secondOpinion !== undefined) config.review.secondOpinion = f.secondOpinion;
   if (f.notes !== undefined) config.review.notes = f.notes;
   if (f.analyzers === false) {
@@ -299,6 +305,13 @@ async function execute(
     for (const src of loaded.sources) logger.debug(`config: ${src}`);
 
     const config = loaded.config;
+    const description = flags.descriptionFile
+      ? parseDescriptionFile(
+          await readFile(path.resolve(loaded.cwd, flags.descriptionFile), 'utf8').catch((err: Error) => {
+            throw new Error(`--description-file: ${err.message}`);
+          }),
+        )
+      : undefined;
     ui = createReviewUi({
       mode: flags.plain ? 'plain' : config.ui.mode,
       hyperlinks: config.ui.hyperlinks,
@@ -329,6 +342,7 @@ async function execute(
       base: flags.base,
       head: flags.head,
       ...(local ? { local } : {}),
+      ...(description ? { description } : {}),
       paths,
       config,
       logger,
@@ -453,6 +467,14 @@ export function addRunLimitOptions(cmd: Command): Command {
       'experimental: one more call reads the whole change at once for defects the chunk reviews missed; its findings also go to the critic',
     )
     .option(
+      '--intent',
+      "experimental: show the reviewer the change's description and commit messages, as what the code should do",
+    )
+    .option(
+      '--no-intent',
+      "leave the change's description and commit messages out of the review prompts (default)",
+    )
+    .option(
       '--second-opinion',
       'a second verifier re-checks findings the critic was not sure about (default at full depth)',
     )
@@ -535,6 +557,10 @@ export function registerReviewCommands(program: Command): void {
       .option(
         '--uncommitted',
         'review all uncommitted changes, untracked files included (base: HEAD; with --base, the branch too)',
+      )
+      .option(
+        '--description-file <path>',
+        "the pull request's title (first line) and description, shown to the reviewer (default: from the CI event or gh / glab)",
       )
       .option('--remote <name>', 'remote to compare against (default: upstream remote, else origin)')
       .option('--offline', 'do not fetch or query the forge; use local refs only')

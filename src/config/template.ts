@@ -214,6 +214,10 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           doc: 'Experimental: one more call reads the whole change at once, without tools, for the defects the chunk reviews missed; what it finds goes to the critic (40–50% more per review).',
           example: D.review.sweep,
         },
+        intent: {
+          doc: "Experimental: show the reviewer what the change is meant to do, in its author's words: the pull request's title and description (CI event, gh / glab, --description-file) and the commit messages (untrusted, clipped; never shown to the critic).",
+          example: D.review.intent,
+        },
         expand: {
           doc: 'Related unchanged code per chunk: off; map = impact map (file:line of the usages of the changed declarations and of the definitions the new code calls); refs = the map plus excerpts of that code; deep = also the callers of those usages.',
           example: D.review.expand,

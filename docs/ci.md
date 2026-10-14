@@ -69,6 +69,10 @@ Inputs:
 | `output-dir` | `code-reviewer-reports` | Where the reports go; they are also uploaded as an artifact. |
 | `github-token` | `github.token` | Token for posting; only the posting step receives it. |
 
+With `--intent` in `args` (experimental), the review also reads the pull request's title and description from the
+CI's event (GitHub `pull_request`, GitLab `CI_MERGE_REQUEST_TITLE` / `CI_MERGE_REQUEST_DESCRIPTION`) and the commit
+messages, and reports code that does not do what they say.
+
 The action installs the release tarball, runs `code-reviewer review --plain --format md,json,sarif`, then
 posts with `code-reviewer runs publish latest`, uploads the SARIF and the reports, and finally fails the job
 if the review or the posting failed. The review step has no forge token: the agents that read the pull

@@ -203,6 +203,14 @@ export const ReviewSettingsSchema = z.object({
    */
   sweep: z.boolean(),
   /**
+   * Tell the reviewer what the change is meant to do, in its author's words: the pull request's title and
+   * description (from the CI's event, `gh` / `glab`, or `--description-file`) and the commit messages, clipped
+   * and marked untrusted. Code that does not do what they say is a defect; they are never evidence that code is
+   * correct. Only the review and the sweep see them, never the critic. Experimental, off by default: on AACR-Bench
+   * hold82 it did not raise recall (F1 14.3% → 13.1%, recall −0.6 points, 95% CI −1.9..+0.7).
+   */
+  intent: z.boolean(),
+  /**
    * A second verifier for findings the critic kept just around the bar of the main report (from 0.1 below
    * `advisoryConfidence` / `minConfidence` to 0.15 above it): asked to refute each one with code the first
    * did not read; its verdict replaces the first. On at `full` depth (measured there: precision 40% → 46% on
@@ -494,6 +502,7 @@ export const DEFAULT_CONFIG: Config = {
     audit: false,
     deepen: false,
     sweep: false,
+    intent: false,
     secondOpinion: true,
     notes: true,
     maxNotes: 5,

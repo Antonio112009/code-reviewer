@@ -196,6 +196,14 @@ describe('resolveRefs with a remote', () => {
     expect(r.base).toBe('origin/main');
     expect(r.baseSha).toBe(shas.m3);
     expect(r.info.explanation.join('\n')).toMatch(/GitHub Actions: GITHUB_BASE_REF=main/);
+    expect(r.request).toBeUndefined();
+    // the PR's title and description come with its base
+    const event = path.join(tmp, 'ci-event.json');
+    writeFileSync(event, JSON.stringify({ pull_request: { title: 'Retry uploads', body: 'Three times.' } }));
+    const described = await resolve(repo, {
+      env: { GITHUB_ACTIONS: 'true', GITHUB_BASE_REF: 'main', GITHUB_EVENT_PATH: event },
+    });
+    expect(described.request).toEqual({ title: 'Retry uploads', description: 'Three times.', from: 'ci' });
     const ignored = await resolve(repo, {
       env: { GITHUB_ACTIONS: 'true', GITHUB_BASE_REF: 'main' },
       settings: settings((s) => (s.base.useCi = false)),
@@ -466,7 +474,13 @@ describe('detectCiPullRequest', () => {
       event,
       JSON.stringify({
         number: 12,
-        pull_request: { number: 12, base: { sha: 'a'.repeat(40) }, head: { sha: 'b'.repeat(40) } },
+        pull_request: {
+          number: 12,
+          title: 'Retry uploads',
+          body: 'Retries **three** times.',
+          base: { sha: 'a'.repeat(40) },
+          head: { sha: 'b'.repeat(40) },
+        },
       }),
     );
     const pr = await detectCiPullRequest({
@@ -481,6 +495,8 @@ describe('detectCiPullRequest', () => {
       headBranch: 'feature/x',
       baseSha: 'a'.repeat(40),
       number: '12',
+      title: 'Retry uploads',
+      description: 'Retries **three** times.',
     });
     expect(await detectCiPullRequest({ GITHUB_ACTIONS: 'true', GITHUB_BASE_REF: '' })).toBeUndefined();
   });
@@ -492,8 +508,19 @@ describe('detectCiPullRequest', () => {
         CI_MERGE_REQUEST_TARGET_BRANCH_NAME: 'develop',
         CI_MERGE_REQUEST_DIFF_BASE_SHA: 'c'.repeat(40),
         CI_MERGE_REQUEST_IID: '4',
+        CI_MERGE_REQUEST_TITLE: 'Cache tokens',
+        CI_MERGE_REQUEST_DESCRIPTION: '   ',
       }),
-    ).toMatchObject({ provider: 'gitlab', baseBranch: 'develop', baseSha: 'c'.repeat(40), number: '4' });
+    ).toEqual(
+      expect.objectContaining({
+        provider: 'gitlab',
+        baseBranch: 'develop',
+        baseSha: 'c'.repeat(40),
+        number: '4',
+        title: 'Cache tokens',
+        description: undefined,
+      }),
+    );
     expect(
       await detectCiPullRequest({
         BUILD_REASON: 'PullRequest',
@@ -519,9 +546,18 @@ describe('forge output parsing', () => {
           state: 'OPEN',
           baseRefName: 'develop',
           url: 'https://github.com/o/r/pull/3',
+          title: 'Fix totals',
+          body: 'Skips removed items.',
         }),
       ),
-    ).toMatchObject({ tool: 'gh', number: 3, baseBranch: 'develop', baseRepoUrl: 'https://github.com/o/r' });
+    ).toMatchObject({
+      tool: 'gh',
+      number: 3,
+      baseBranch: 'develop',
+      baseRepoUrl: 'https://github.com/o/r',
+      title: 'Fix totals',
+      description: 'Skips removed items.',
+    });
     expect(
       parseGhPullRequest(JSON.stringify({ number: 3, state: 'MERGED', baseRefName: 'develop' })),
     ).toBeUndefined();
@@ -534,6 +570,8 @@ describe('forge output parsing', () => {
           target_branch: 'main',
           web_url: 'https://gitlab.com/g/sub/p/-/merge_requests/5',
           diff_refs: { base_sha: 'd'.repeat(40) },
+          title: 'Cache tokens',
+          description: 'Per user.',
         }),
       ),
     ).toMatchObject({
@@ -542,6 +580,8 @@ describe('forge output parsing', () => {
       baseBranch: 'main',
       baseSha: 'd'.repeat(40),
       baseRepoUrl: 'https://gitlab.com/g/sub/p',
+      title: 'Cache tokens',
+      description: 'Per user.',
     });
     expect(
       parseGlabMergeRequest(JSON.stringify({ iid: 5, state: 'merged', target_branch: 'main' })),

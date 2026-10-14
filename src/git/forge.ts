@@ -18,6 +18,9 @@ export interface ForgePullRequest {
   baseSha?: string;
   /** Web URL of the repository the request targets, e.g. `https://github.com/owner/repo`. */
   baseRepoUrl?: string;
+  /** Title and description as the author wrote them: untrusted text. */
+  title?: string;
+  description?: string;
 }
 
 export interface FindPullRequestOptions {
@@ -71,6 +74,10 @@ function toRecord(raw: unknown): Record<string, unknown> | undefined {
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : undefined;
 }
 
+function str(raw: unknown): string | undefined {
+  return typeof raw === 'string' && raw.trim() ? raw : undefined;
+}
+
 function parseJson(text: string): Record<string, unknown> | undefined {
   try {
     return toRecord(JSON.parse(text));
@@ -79,7 +86,7 @@ function parseJson(text: string): Record<string, unknown> | undefined {
   }
 }
 
-/** Parses `gh pr view --json number,url,state,baseRefName,baseRefOid`; only open PRs count. */
+/** Parses `gh pr view --json number,url,state,baseRefName,baseRefOid,title,body`; only open PRs count. */
 export function parseGhPullRequest(text: string): ForgePullRequest | undefined {
   const pr = parseJson(text);
   if (pr?.state !== 'OPEN') return undefined;
@@ -96,6 +103,8 @@ export function parseGhPullRequest(text: string): ForgePullRequest | undefined {
     baseBranch: base,
     baseSha: typeof pr.baseRefOid === 'string' && SHA_RE.test(pr.baseRefOid) ? pr.baseRefOid : undefined,
     baseRepoUrl: repo,
+    title: str(pr.title),
+    description: str(pr.body),
   };
 }
 
@@ -117,6 +126,8 @@ export function parseGlabMergeRequest(text: string): ForgePullRequest | undefine
     baseBranch: base,
     baseSha: typeof baseSha === 'string' && SHA_RE.test(baseSha) ? baseSha : undefined,
     baseRepoUrl: repo,
+    title: str(mr.title),
+    description: str(mr.description),
   };
 }
 
@@ -131,7 +142,7 @@ const TOOLS: Record<ForgeTool, ToolSpec> = {
   gh: {
     tool: 'gh',
     // No branch argument: gh then resolves the PR from the current branch and its push/tracking config.
-    args: ['pr', 'view', '--json', 'number,url,state,baseRefName,baseRefOid'],
+    args: ['pr', 'view', '--json', 'number,url,state,baseRefName,baseRefOid,title,body'],
     env: { GH_PROMPT_DISABLED: '1', GH_NO_UPDATE_NOTIFIER: '1', GH_SPINNER_DISABLED: '1' },
     parse: parseGhPullRequest,
   },
