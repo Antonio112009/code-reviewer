@@ -127,6 +127,26 @@ describe('applyRoleFlags', () => {
     });
   });
 
+  it('routes the sweep on its own provider only when named, and not when the sweep is off', async () => {
+    const { config } = await loadConfig({ cwd: dir, stopDir: dir, ignoreGlobal: true });
+    config.review.sweep = true;
+    applyRoleFlags(config, { provider: 'anthropic' });
+    expect(config.roles.sweep).toBeUndefined();
+    expect(resolveRouting(config).sweep).toBeUndefined();
+    applyRoleFlags(config, { sweepProvider: 'openai', sweepModel: 'gpt-5.5' });
+    expect(resolveRouting(config).sweep).toEqual({
+      provider: 'openai',
+      model: 'gpt-5.5',
+      reasoning: 'medium',
+    });
+    // the review's model when the sweep stays on the review provider
+    applyRoleFlags(config, { sweepProvider: 'anthropic' });
+    expect(resolveRouting(config).sweep).toMatchObject({ provider: 'anthropic', model: 'claude-sonnet-5-5' });
+    config.review.sweep = false;
+    expect(resolveRouting(config).sweep).toBeUndefined();
+    expect(() => applyRoleFlags(config, { sweepProvider: 'nope' })).toThrow(/Unknown provider/);
+  });
+
   it('keeps an explicit critic', async () => {
     const { config } = await loadConfig({ cwd: dir, stopDir: dir });
     applyRoleFlags(config, { provider: 'mock', critiqueProvider: 'codex', critiqueModel: 'o9' });

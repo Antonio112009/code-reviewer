@@ -207,7 +207,11 @@ export interface ReviewOutcome {
 
 export class ReviewError extends Error {}
 
-export function resolveRouting(config: Config): { review: RoleRouting; critique?: RoleRouting } {
+export function resolveRouting(config: Config): {
+  review: RoleRouting;
+  critique?: RoleRouting;
+  sweep?: RoleRouting;
+} {
   const review = config.roles.review;
   if (!review) throw new ReviewError('No review role configured (roles.review).');
   const modelsOf = (id: string) => {
@@ -221,7 +225,19 @@ export function resolveRouting(config: Config): { review: RoleRouting; critique?
     model: review.model ?? modelsOf(review.provider).defaultModel,
     reasoning: review.reasoning ?? 'medium',
   };
-  if (!config.review.selfCritique) return { review: reviewRoute };
+  // The sweep runs on the review route unless a sweep role names another (e.g. a second vendor).
+  const s = config.review.sweep ? config.roles.sweep : undefined;
+  const sweep: RoleRouting | undefined = s
+    ? {
+        provider: s.provider,
+        model:
+          s.model ??
+          (s.provider === reviewRoute.provider ? reviewRoute.model : modelsOf(s.provider).defaultModel),
+        reasoning: s.reasoning ?? 'medium',
+      }
+    : undefined;
+  const withSweep = sweep ? { sweep } : {};
+  if (!config.review.selfCritique) return { review: reviewRoute, ...withSweep };
   // The critic runs on the review provider unless a critique role names another. Without a model of its
   // own it takes the provider's `critiqueModel` (claude: sonnet), else the review's model (same provider) or
   // the provider's default.
@@ -236,7 +252,7 @@ export function resolveRouting(config: Config): { review: RoleRouting; critique?
       (provider === reviewRoute.provider ? reviewRoute.model : models.defaultModel),
     reasoning: r?.reasoning ?? 'high',
   };
-  return { review: reviewRoute, critique };
+  return { review: reviewRoute, critique, ...withSweep };
 }
 
 /**
@@ -596,6 +612,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             ...(routing.critique
               ? { critique: { provider: routing.critique.provider, model: routing.critique.model } }
               : {}),
+            ...(routing.sweep
+              ? { sweep: { provider: routing.sweep.provider, model: routing.sweep.model } }
+              : {}),
           },
           availableProviders,
           logger,
@@ -848,6 +867,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
   const routes: Partial<Record<Role, RoleRouting>> = {
     review: routing.review,
     ...(routing.critique ? { critique: routing.critique } : {}),
+    ...(routing.sweep ? { sweep: routing.sweep } : {}),
   };
   if (preflight) {
     const unresolved = preflight.unresolved[0];
@@ -1613,6 +1633,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         const parts = sweepParts(chunks, Math.max(budget, promptRoom));
         const record = { parts: parts.length, failed: 0, findings: 0, duplicates: 0 };
         const instructions = sweepInstructions(mode, depth);
+        const sweepRole: Role = routes.sweep ? 'sweep' : 'review';
         for (const [index, part] of parts.entries()) {
           if (req.signal?.aborted || router.fatal) break;
           const label = `sweep-${index + 1}`;
@@ -1631,7 +1652,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
               part: { index, total: parts.length },
               ...(intentText ? { intent: intentText } : {}),
             }),
-            reasoning: 'medium',
+            reasoning: routes.sweep?.reasoning ?? 'medium',
             readTools: false,
             root,
             git,
@@ -1639,18 +1660,18 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             timeoutMs,
             extendMs: Math.round(timeoutMs * config.review.activeExtension),
             stallTimeoutMs: config.review.stallTimeoutMs,
-            maxOutputTokens: reviewRole?.maxOutputTokens,
+            maxOutputTokens: (routes.sweep ? config.roles.sweep : reviewRole)?.maxOutputTokens,
             signal: req.signal,
           };
           const spend: Spend[] = [];
           try {
-            const result = await runRouted('review', task, router, registry);
+            const result = await runRouted(sweepRole, task, router, registry);
             spend.push(...result.spend);
             let resolved = resolveFindings(result);
             let reply = result.text;
             if (resolved.via === 'none' && result.text.trim()) {
               const repaired = await runRouted(
-                'review',
+                sweepRole,
                 {
                   ...task,
                   label: `${label}-repair`,

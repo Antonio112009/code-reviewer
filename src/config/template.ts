@@ -136,6 +136,10 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           doc: 'Writes the run summary when review.summary is on. Unset: the review model.',
           example: { provider: 'claude', model: 'haiku', reasoning: 'low' },
         },
+        sweep: {
+          doc: "The whole-diff pass (review.sweep). Unset: the review's provider and model; another vendor's model gives a more independent second look. Reasoning defaults to medium.",
+          example: { provider: 'openai', model: 'gpt-5.5' },
+        },
       },
     },
   ],

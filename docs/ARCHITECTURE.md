@@ -244,7 +244,9 @@ broadly for its defects, telling nothing about the chunk reviews. A finding at t
 reported (`atReportedSpot`: same file, lines overlapping give or take two) is dropped as the same defect; the
 rest join the collected findings with `source.chunkIds = ["sweep"]` and go through validation, dedupe and the
 critic. A failed sweep leaves the chunk reviews standing. `run.sweep` records the calls, failures, findings and
-duplicates. Sweep answers are not cached.
+duplicates. Sweep answers are not cached. The sweep runs on the `sweep` role when `roles.sweep` names one
+(`--sweep-provider` / `--sweep-model`; its model defaults to the review's on the same provider, else that
+provider's `defaultModel`, at medium reasoning), else on the review route; `run.routing.sweep` records it.
 
 Every benchmark number, with history and caveats, is in `BENCHMARKS.md` (logs: `evals/aacr/README.md`,
 `evals/martian/README.md`).

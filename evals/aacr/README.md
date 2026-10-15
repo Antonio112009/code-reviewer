@@ -597,6 +597,23 @@ chunk instead of 0.5, 112 raw findings instead of 92 — and F1 12.2% (P 25.0 / 
 on Martian with Claude Code. `medium` stays on both paths; the remaining 1.8-point gap to Claude Code is
 unexplained and within noise.
 
+**A second vendor for the sweep** (2026-10-15; `--provider anthropic --sweep-provider openai --sweep-model
+gpt-5.6-terra`, build `4b3a13c`, runs `xs-1,2` on ctx30, `--full`): the chunk reviews and the critic stay on
+Sonnet 5.5, only the whole-diff pass moves to OpenAI's Sonnet-class model. Each run against itself without the
+findings only the sweep reported (`aacr_sweep_effect.py`), next to the same split of `api-1,2`, where Sonnet
+made the sweep:
+
+| ctx30 (two runs) | Sweep findings kept | Recall without → with | F1 without → with | F1 gain (95% CI) | Cost / run |
+|---|---|---|---|---|---|
+| sweep on Sonnet 5.5 (`api-1,2`) | 13.0 | 7.3% → 8.9% | 12.3% → 14.4% | +2.1 (+0.5..+4.3) | $7.00 |
+| sweep on gpt-5.6-terra (`xs-1,2`) | 11.5 | 8.6% → 9.4% | 14.2% → 15.1% | +0.9 (−0.2..+2.4) | $5.07 |
+
+A model of another vendor does not make the sweep find more: it adds fewer findings that survive the critic and
+half the recall, and the intervals overlap. The pass is cheaper on gpt-5.6-terra ($2 / $12 per million tokens
+against $3 / $15). 71% of its findings repeat a chunk finding at the same spot, as on Sonnet. The absolute rows
+differ by about 2 F1 between runs of the same pipeline, so only the within-run gains count. The sweep stays on
+the review's model by default; `roles.sweep` remains for anyone who wants another.
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).

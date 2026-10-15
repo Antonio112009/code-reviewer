@@ -1,3 +1,4 @@
+import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModel } from 'ai';
 import type { OpenAiProviderConfig } from '../config/schema';
@@ -16,9 +17,22 @@ export function openAiEndpoint(cfg: OpenAiProviderConfig): { baseUrl: string; ke
   };
 }
 
+/** Whether the endpoint is OpenAI's own API, which gets the Responses API instead of chat completions. */
+export function isOpenAiApi(baseUrl: string): boolean {
+  try {
+    return new URL(baseUrl).host.toLowerCase() === 'api.openai.com';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * An OpenAI-compatible chat completions API (OpenAI, OpenRouter, Ollama, vLLM, LM Studio, LiteLLM, …) through the
  * shared AI SDK tool loop. The model must support tool calling: findings come in through `submit_findings`.
+ *
+ * OpenAI's own API goes through the Responses API: its current reasoning models (GPT-5.6 and later) refuse
+ * function tools together with reasoning on chat completions. There the role's reasoning level is sent by
+ * default (`reasoningEffort: false` turns it off for a model without reasoning).
  */
 export class OpenAiProvider implements Provider {
   readonly kind = 'api' as const;
@@ -49,20 +63,23 @@ export class OpenAiProvider implements Provider {
         this.id,
       );
     }
+    const responses = isOpenAiApi(baseUrl);
     const model =
       this.modelFor?.(modelId) ??
-      createOpenAICompatible({
-        name: this.id,
-        baseURL: baseUrl,
-        ...(apiKey ? { apiKey } : {}),
-        includeUsage: true,
-      }).chatModel(modelId);
+      (responses
+        ? createOpenAI({ baseURL: baseUrl, ...(apiKey ? { apiKey } : {}) }).responses(modelId)
+        : createOpenAICompatible({
+            name: this.id,
+            baseURL: baseUrl,
+            ...(apiKey ? { apiKey } : {}),
+            includeUsage: true,
+          }).chatModel(modelId));
     return runAiSdkTask(task, {
       providerId: this.id,
-      label: `OpenAI-compatible API (${new URL(baseUrl).host})`,
+      label: responses ? 'OpenAI API' : `OpenAI-compatible API (${new URL(baseUrl).host})`,
       model,
       modelId,
-      reasoning: this.cfg.reasoningEffort === true,
+      reasoning: this.cfg.reasoningEffort ?? responses,
     });
   }
 

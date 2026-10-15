@@ -64,7 +64,11 @@ class SweepProvider implements Provider {
   async dispose(): Promise<void> {}
 }
 
-async function review(provider: Provider, adjust: (c: Config) => void = () => {}) {
+async function review(
+  provider: Provider,
+  adjust: (c: Config) => void = () => {},
+  others: Record<string, Provider> = {},
+) {
   const config = testConfig((c) => {
     c.review.selfCritique = false;
     c.review.maxChunkTokens = 60; // one chunk per file
@@ -72,7 +76,9 @@ async function review(provider: Provider, adjust: (c: Config) => void = () => {}
     adjust(c);
   });
   const registry = new ProviderRegistry(config, silentLogger);
-  (registry as unknown as { instances: Map<string, Provider> }).instances.set('mock', provider);
+  const instances = (registry as unknown as { instances: Map<string, Provider> }).instances;
+  instances.set('mock', provider);
+  for (const [id, p] of Object.entries(others)) instances.set(id, p);
   const outcome = await runReview({
     command: 'review',
     cwd: repo.root,
@@ -158,6 +164,39 @@ describe('sweep over the whole change (review.sweep)', () => {
     expect(run.findings.map((f) => f.title)).toEqual(['division by zero']);
     expect(run.sweep).toEqual({ parts: 1, failed: 1, findings: 0, duplicates: 0 });
     expect(run.warnings.some((w) => w.startsWith('sweep-1 failed (agent crashed)'))).toBe(true);
+  });
+
+  it('runs on the sweep role when one is configured, e.g. another vendor', async () => {
+    const chunks = new SweepProvider([]);
+    const other = new SweepProvider([extra({})]);
+    const run = await review(
+      chunks,
+      (c) => {
+        sweepOn(c);
+        c.providers.other = { type: 'mock' };
+        c.roles.sweep = { provider: 'other', model: 'other-model', reasoning: 'low' };
+      },
+      { other },
+    );
+    expect(chunks.tasks.some((t) => t.label.startsWith('sweep-'))).toBe(false);
+    const sweeps = other.tasks.filter((t) => t.label.startsWith('sweep-'));
+    expect(sweeps).toHaveLength(1);
+    expect(sweeps[0]!.reasoning).toBe('low');
+    expect(other.tasks.every((t) => t.label.startsWith('sweep-'))).toBe(true);
+    expect(run.routing.sweep).toMatchObject({ provider: 'other', model: 'other-model' });
+    const found = run.findings.find((f) => f.title === 'y is computed from the old b');
+    expect(found?.source.chunkIds).toEqual([SWEEP_SOURCE]);
+    // without review.sweep the role is not routed at all
+    const off = await review(
+      new SweepProvider([]),
+      (c) => {
+        c.review.sweep = false;
+        c.providers.other = { type: 'mock' };
+        c.roles.sweep = { provider: 'other' };
+      },
+      { other: new SweepProvider([]) },
+    );
+    expect(off.routing.sweep).toBeUndefined();
   });
 
   it('is on at full depth and off at essential', async () => {

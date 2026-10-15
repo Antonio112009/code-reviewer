@@ -36,6 +36,8 @@ export interface ReviewFlags {
   model?: string;
   reasoning?: string;
   critiqueProvider?: string;
+  sweepProvider?: string;
+  sweepModel?: string;
   critiqueModel?: string;
   critiqueReasoning?: string;
   selfCritique?: boolean;
@@ -178,6 +180,15 @@ export function applyRoleFlags(config: Config, f: ReviewFlags): void {
     } else if (f.critiqueModel) critique.model = f.critiqueModel;
     if (critiqueReasoning) critique.reasoning = critiqueReasoning;
     config.roles.critique = critique;
+  }
+  // The sweep keeps the review route unless named: --provider alone does not create a sweep role.
+  if (f.sweepProvider || f.sweepModel) {
+    const sweep = config.roles.sweep ?? { provider: review.provider };
+    if (f.sweepProvider) {
+      sweep.provider = f.sweepProvider;
+      sweep.model = f.sweepModel;
+    } else sweep.model = f.sweepModel;
+    config.roles.sweep = sweep;
   }
   for (const [role, rc] of Object.entries(config.roles)) {
     if (rc && !config.providers[rc.provider]) {
@@ -430,6 +441,8 @@ export function addTuningOptions(cmd: Command): Command {
     .option('--critique-provider <id>', 'provider for the self-critique pass')
     .option('--critique-model <id>', 'model for the self-critique pass')
     .option('--critique-reasoning <level>', 'reasoning effort for the self-critique pass')
+    .option('--sweep-provider <id>', 'provider for the whole-diff pass (--sweep), e.g. another vendor')
+    .option('--sweep-model <id>', 'model for the whole-diff pass')
     .optionsGroup('Depth and filters:')
     .option(
       '--depth <depth>',
