@@ -11,6 +11,8 @@
   `SYSTEM_TEAMFOUNDATIONCOLLECTIONURI`, from `publish.azureApiUrl` or `--api-url` (Azure DevOps Server).
   Threads record no commit, so fixed findings stay in the summary and suggestions are shown as text. Report
   links work for these remotes; `docs/ci.md` has the pipeline.
+- A rejected token on Gitea, Bitbucket or Azure DevOps now reports the token variable to check, instead of the
+  pull request's raw 401.
 
 ## Unreleased
 

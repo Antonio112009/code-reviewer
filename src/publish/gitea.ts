@@ -71,12 +71,13 @@ export function giteaAdapter(target: PublishTarget, client: ApiClient, logger: L
 
   return {
     async load() {
+      // The identity first: a rejected token must say so instead of surfacing a 401 from the pull request.
+      selfId = await whoAmI();
       const pr = await client.request<GiteaPull>('GET', `${repoPath}/pulls/${n}`);
       const headSha = pr.data?.head?.sha;
       if (typeof headSha !== 'string' || !SHA_RE.test(headSha)) {
         throw new PublishError(`Gitea did not return the head commit of pull request ${label}.`);
       }
-      selfId = await whoAmI();
       const posted = new Set<string>();
       const reviews = (await client.paginate<GiteaReview>(`${repoPath}/pulls/${n}/reviews`)).slice(
         0,
