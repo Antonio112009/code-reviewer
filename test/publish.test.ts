@@ -716,7 +716,11 @@ describe('Gitea publisher', () => {
     const outcome = await publishGitea(forge);
     expect(outcome.inline.map((c) => c.finding.id)).toEqual(['f1']);
     expect(outcome.listed.map((l) => [l.finding.id, l.reason])).toContainEqual(['f4', 'rejected']);
-    const bad = fakeForge(giteaRoutes({ 'GET /api/v1/user': () => json({ message: 'unauthorized' }, 401) }));
+    // A bad token fails every route (a live Gitea answers 401 on the pull request too): the message names the token.
+    const unauthorized = () => json({ message: 'user does not exist' }, 401);
+    const bad = fakeForge(
+      giteaRoutes({ 'GET /api/v1/user': unauthorized, 'GET /api/v1/repos/acme/shop/pulls/1': unauthorized }),
+    );
     await expect(publishGitea(bad)).rejects.toThrow(/GITEA_TOKEN/);
   });
 
@@ -843,7 +847,13 @@ describe('Bitbucket publisher', () => {
     expect(forge.calls[0]!.headers.authorization).toBe('Bearer access-token');
     expect(outcome.inline.map((c) => c.finding.id)).toEqual(['f1']);
     expect(outcome.listed.map((l) => [l.finding.id, l.reason])).toContainEqual(['f4', 'rejected']);
-    const bad = fakeForge(bitbucketRoutes({ 'GET /2.0/user': () => json({ error: 'unauthorized' }, 401) }));
+    const unauthorized = () => json({ error: 'unauthorized' }, 401);
+    const bad = fakeForge(
+      bitbucketRoutes({
+        'GET /2.0/user': unauthorized,
+        'GET /2.0/repositories/acme/shop/pullrequests/1': unauthorized,
+      }),
+    );
     await expect(publishBitbucket(bad, { BITBUCKET_TOKEN: 'x' })).rejects.toThrow(/BITBUCKET_TOKEN/);
   });
 
@@ -981,8 +991,12 @@ describe('Azure DevOps publisher', () => {
     expect(forge.calls[0]!.headers.authorization).toBe('Bearer oauth-secret');
     expect(outcome.inline.map((c) => c.finding.id)).toEqual(['f1']);
     expect(outcome.listed.map((l) => [l.finding.id, l.reason])).toContainEqual(['f4', 'rejected']);
+    const unauthorized = () => json({ message: 'unauthorized' }, 401);
     const bad = fakeForge(
-      azureRoutes({ 'GET /fabrikam/_apis/connectionData': () => json({ message: 'unauthorized' }, 401) }),
+      azureRoutes({
+        'GET /fabrikam/_apis/connectionData': unauthorized,
+        'GET /fabrikam/Shop/_apis/git/repositories/shop/pullRequests/1': unauthorized,
+      }),
     );
     await expect(publishAzure(bad, { AZURE_DEVOPS_TOKEN: 'x' })).rejects.toThrow(/AZURE_DEVOPS_TOKEN/);
   });

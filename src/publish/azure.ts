@@ -117,12 +117,13 @@ export function azureAdapter(target: PublishTarget, client: ApiClient, logger: L
 
   return {
     async load() {
+      // The identity first: a rejected token must say so instead of surfacing a 401 from the pull request.
+      selfId = await whoAmI();
       const pr = await client.request<AzurePull>('GET', `${prPath}?${API_VERSION}`);
       const headSha = pr.data?.lastMergeSourceCommit?.commitId;
       if (typeof headSha !== 'string' || !SHA_RE.test(headSha)) {
         throw new PublishError(`Azure DevOps did not return the source commit of pull request ${label}.`);
       }
-      selfId = await whoAmI();
       const all = await threads();
       const posted = new Set(
         all

@@ -82,12 +82,13 @@ export function bitbucketAdapter(target: PublishTarget, client: ApiClient, logge
 
   return {
     async load() {
+      // The identity first: a rejected token must say so instead of surfacing a 401 from the pull request.
+      self = await whoAmI();
       const pr = await client.request<BitbucketPull>('GET', prPath);
       const headSha = pr.data?.source?.commit?.hash;
       if (typeof headSha !== 'string' || !SHORT_SHA_RE.test(headSha)) {
         throw new PublishError(`Bitbucket did not return the head commit of pull request ${label}.`);
       }
-      self = await whoAmI();
       const list = await comments();
       const posted = new Set(
         list
