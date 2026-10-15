@@ -80,7 +80,7 @@ export async function isWritableDir(dir: string): Promise<boolean> {
   const probe = path.join(dir, `.probe-${process.pid}-${randomBytes(4).toString('hex')}`);
   try {
     await mkdir(dir, { recursive: true });
-    await writeFile(probe, '');
+    await writeFile(probe, '', { flag: 'wx', mode: 0o600 });
     await unlink(probe);
     return true;
   } catch {

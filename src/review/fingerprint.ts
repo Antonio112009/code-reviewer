@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readFileSync, statSync } from 'node:fs';
+import { closeSync, constants, fstatSync, openSync, readFileSync } from 'node:fs';
 import { SEVERITY_ORDER } from '../report/common';
 import type { Finding } from '../types';
 import { resolveInside } from '../util/paths';
@@ -109,9 +109,14 @@ export function reviewRootReader(root: string): LineReader {
   return (file) => {
     try {
       const abs = resolveInside(root, file);
-      const st = statSync(abs);
-      if (!st.isFile() || st.size > MAX_FILE_BYTES) return undefined;
-      return readFileSync(abs, 'utf8').split('\n');
+      const fd = openSync(abs, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+      try {
+        const st = fstatSync(fd);
+        if (!st.isFile() || st.size > MAX_FILE_BYTES) return undefined;
+        return readFileSync(fd, 'utf8').split('\n');
+      } finally {
+        closeSync(fd);
+      }
     } catch {
       return undefined;
     }

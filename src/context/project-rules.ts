@@ -1,5 +1,6 @@
 import type { Dirent } from 'node:fs';
-import { lstat, readdir, readFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { lstat, open, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import YAML from 'yaml';
 import { estimateTokens } from '../chunking/tokens';
@@ -79,9 +80,14 @@ export function workingTreeReader(root: string): RuleReader {
     async read(rel) {
       try {
         const abs = resolveInside(root, rel);
-        const st = await lstat(abs);
-        if (!st.isFile() || st.size > MAX_RULE_BYTES) return undefined;
-        return await readFile(abs, 'utf8');
+        const file = await open(abs, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+        try {
+          const st = await file.stat();
+          if (!st.isFile() || st.size > MAX_RULE_BYTES) return undefined;
+          return await file.readFile('utf8');
+        } finally {
+          await file.close();
+        }
       } catch {
         return undefined;
       }

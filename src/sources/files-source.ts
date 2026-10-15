@@ -1,4 +1,5 @@
-import { lstat, readdir, readFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { lstat, open, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { GitRepo } from '../git/repo';
 import type { ReviewUnit } from '../types';
@@ -64,7 +65,24 @@ export async function collectFileUnits(opts: {
       skipped.push({ path: rel, reason: `too large (${Math.round(size / 1024)} KiB)` });
       continue;
     }
-    const buf = await readFile(abs);
+    let file: Awaited<ReturnType<typeof open>>;
+    try {
+      file = await open(abs, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+    } catch {
+      continue;
+    }
+    let buf: Buffer;
+    try {
+      const st = await file.stat();
+      if (!st.isFile()) continue;
+      if (st.size > MAX_FILE_BYTES) {
+        skipped.push({ path: rel, reason: `too large (${Math.round(st.size / 1024)} KiB)` });
+        continue;
+      }
+      buf = await file.readFile();
+    } finally {
+      await file.close();
+    }
     if (buf.includes(0)) {
       skipped.push({ path: rel, reason: 'binary' });
       continue;

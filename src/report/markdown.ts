@@ -81,7 +81,14 @@ export function code(s: string): string {
 }
 
 function codeCell(s: string): string {
-  return code(s).replace(/\|/g, '\\|');
+  const escaped = stripControls(s)
+    .replace(/\s+/g, ' ')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\\/g, '&#92;')
+    .replace(/\|/g, '&#124;');
+  return `<code>${escaped}</code>`;
 }
 
 /** Fenced block that cannot be closed early by the content. */

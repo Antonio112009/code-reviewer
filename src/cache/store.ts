@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { mkdir, readdir, readFile, rename, rm, stat, unlink, utimes, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { mkdir, open, readdir, readFile, rename, rm, stat, unlink, utimes, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { globalConfigDir } from '../util/paths';
 
@@ -129,9 +130,15 @@ export class ResultCache {
     if (!KEY_RE.test(key)) return undefined;
     const file = this.fileFor(kind, key);
     try {
-      const info = await stat(file);
-      if (!info.isFile() || info.size > MAX_ENTRY_BYTES) return undefined;
-      const entry = JSON.parse(await readFile(file, 'utf8')) as Partial<Envelope> | null;
+      const handle = await open(file, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+      let entry: Partial<Envelope> | null;
+      try {
+        const info = await handle.stat();
+        if (!info.isFile() || info.size > MAX_ENTRY_BYTES) return undefined;
+        entry = JSON.parse(await handle.readFile('utf8')) as Partial<Envelope> | null;
+      } finally {
+        await handle.close();
+      }
       if (!entry || entry.format !== CACHE_FORMAT || entry.kind !== kind || entry.key !== key)
         return undefined;
       if (typeof entry.mac !== 'string' || !/^[0-9a-f]{64}$/.test(entry.mac)) return undefined;
@@ -248,12 +255,42 @@ export class ResultCache {
   /** Prunes at most once a day (a marker file records the last time). */
   async autoPrune(opts: { maxAgeMs: number; maxBytes: number }): Promise<PruneResult | undefined> {
     const marker = path.join(this.dir, PRUNE_MARKER);
-    const last = await stat(marker).then(
-      (s) => s.mtimeMs,
-      () => 0,
-    );
-    if (Date.now() - last < PRUNE_INTERVAL_MS) return undefined;
-    await writeFile(marker, '').catch(() => undefined);
+    let shouldPrune = false;
+    try {
+      let handle: Awaited<ReturnType<typeof open>>;
+      try {
+        handle = await open(
+          marker,
+          constants.O_CREAT |
+            constants.O_EXCL |
+            constants.O_RDWR |
+            (constants.O_NOFOLLOW ?? 0),
+          0o600,
+        );
+        shouldPrune = true;
+      } catch {
+        handle = await open(
+          marker,
+          constants.O_RDWR | (constants.O_NOFOLLOW ?? 0),
+        );
+      }
+      try {
+        const info = await handle.stat();
+        if (!info.isFile()) return undefined;
+        if (!shouldPrune) {
+          if (Date.now() - info.mtimeMs < PRUNE_INTERVAL_MS) return undefined;
+          const now = new Date();
+          await handle.truncate(0);
+          await handle.utimes(now, now);
+          shouldPrune = true;
+        }
+      } finally {
+        await handle.close();
+      }
+    } catch {
+      return undefined;
+    }
+    if (!shouldPrune) return undefined;
     return this.prune(opts);
   }
 

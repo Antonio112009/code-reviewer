@@ -1,5 +1,6 @@
 import type { Dirent } from 'node:fs';
-import { lstat, readdir, readFile, realpath, stat } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { lstat, open, readdir, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 import YAML from 'yaml';
 import { z } from 'zod';
@@ -318,9 +319,14 @@ function ancestors(folder: string): string[] {
 
 async function readSmallFile(file: string, follow: boolean, source: SkillSource): Promise<string> {
   const max = source === 'project' ? MAX_PROJECT_SKILL_BYTES : MAX_SKILL_BYTES;
-  const size = (await (follow ? stat : lstat)(file)).size;
-  if (size > max) throw new Error(`file is larger than ${max / 1024} KiB`);
-  return readFile(file, 'utf8');
+  const handle = await open(file, constants.O_RDONLY | (follow ? 0 : (constants.O_NOFOLLOW ?? 0)));
+  try {
+    const info = await handle.stat();
+    if (info.size > max) throw new Error(`file is larger than ${max / 1024} KiB`);
+    return await handle.readFile('utf8');
+  } finally {
+    await handle.close();
+  }
 }
 
 async function loadGroups(

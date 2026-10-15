@@ -1,4 +1,5 @@
-import { readFile, stat } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { open } from 'node:fs/promises';
 import { z } from 'zod';
 import type { Config } from '../config/schema';
 import {
@@ -68,10 +69,16 @@ export async function hashReads(
   for (const rel of [...new Set(reads)].sort()) {
     try {
       const abs = resolveInside(root, rel);
-      const info = await stat(abs);
-      if (!info.isFile() || info.size > MAX_HASHED_FILE) return undefined;
-      out[rel] = sha256(await readFile(abs));
-    } catch {
+      const file = await open(abs, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+      try {
+        const info = await file.stat();
+        if (!info.isFile() || info.size > MAX_HASHED_FILE) return undefined;
+        out[rel] = sha256(await file.readFile());
+      } finally {
+        await file.close();
+      }
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ELOOP') return undefined;
       // A file that is gone now was read in an earlier state: nothing to compare against later.
       out[rel] = 'missing';
     }

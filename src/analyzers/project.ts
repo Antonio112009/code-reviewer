@@ -1,4 +1,4 @@
-import { existsSync, lstatSync } from 'node:fs';
+import { closeSync, constants, existsSync, fstatSync, lstatSync, openSync, readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
@@ -62,8 +62,22 @@ async function matchingFiles(ctx: AnalyzerContext): Promise<SourceFile[]> {
   const out: SourceFile[] = [];
   for (const f of ctx.files) {
     const abs = repoFile(root, f.path);
-    if (!abs || lstatSync(abs).isSymbolicLink()) continue;
-    const disk = await readFile(abs, 'utf8').catch(() => undefined);
+    if (!abs) continue;
+    let fd: number;
+    try {
+      fd = openSync(abs, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+    } catch {
+      continue;
+    }
+    let disk: string | undefined;
+    try {
+      if (!fstatSync(fd).isFile()) continue;
+      disk = readFileSync(fd, 'utf8');
+    } catch {
+      continue;
+    } finally {
+      closeSync(fd);
+    }
     if (disk === f.content) out.push(f);
   }
   if (out.length === 0) {

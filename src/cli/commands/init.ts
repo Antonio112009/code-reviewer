@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
-import { appendFile, lstat, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { lstat, mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Readable, Writable } from 'node:stream';
 import * as p from '@clack/prompts';
@@ -408,18 +409,34 @@ async function addToGitignore(root: string, entry: string, warnings: string[]): 
     warnings.push(`Not updating .gitignore: ${(err as Error).message}`);
     return false;
   }
-  const st = await lstat(file).catch(() => undefined);
-  if (st && !st.isFile()) {
-    warnings.push('Not updating .gitignore: it is not a regular file.');
+  let handle: Awaited<ReturnType<typeof open>>;
+  try {
+    handle = await open(
+      file,
+      constants.O_RDWR | constants.O_APPEND | constants.O_CREAT | (constants.O_NOFOLLOW ?? 0),
+      0o666,
+    );
+  } catch (err) {
+    warnings.push(`Not updating .gitignore: ${(err as Error).message}`);
     return false;
   }
-  const content = st ? await readFile(file, 'utf8') : '';
-  const lines = content.split(/\r?\n/).map((l) => l.trim());
-  const bare = entry.replace(/\/$/, '');
-  if ([entry, bare, `/${entry}`, `/${bare}`].some((variant) => lines.includes(variant))) return false;
-  const eol = content.includes('\r\n') ? '\r\n' : '\n';
-  await appendFile(file, `${content && !content.endsWith('\n') ? eol : ''}${entry}${eol}`);
-  return true;
+  try {
+    const st = await handle.stat();
+    if (!st.isFile()) {
+      warnings.push('Not updating .gitignore: it is not a regular file.');
+      return false;
+    }
+    const content = await handle.readFile('utf8');
+    const lines = content.split(/\r?\n/).map((l) => l.trim());
+    const bare = entry.replace(/\/$/, '');
+    if ([entry, bare, `/${entry}`, `/${bare}`].some((variant) => lines.includes(variant))) return false;
+    const eol = content.includes('\r\n') ? '\r\n' : '\n';
+    const append = `${content && !content.endsWith('\n') ? eol : ''}${entry}${eol}`;
+    await handle.writeFile(append);
+    return true;
+  } finally {
+    await handle.close();
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -583,9 +600,14 @@ export async function detectProjectInfo(root: string): Promise<ProjectInfo> {
 async function readManifest(root: string, rel: string): Promise<string | undefined> {
   try {
     const abs = resolveInside(root, rel);
-    const st = await lstat(abs);
-    if (!st.isFile() || st.size > MAX_MANIFEST_BYTES) return undefined;
-    return await readFile(abs, 'utf8');
+    const file = await open(abs, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+    try {
+      const st = await file.stat();
+      if (!st.isFile() || st.size > MAX_MANIFEST_BYTES) return undefined;
+      return await file.readFile('utf8');
+    } finally {
+      await file.close();
+    }
   } catch {
     return undefined;
   }

@@ -94,7 +94,7 @@ describe('run.log and chunk artifacts', () => {
     });
     const run = outcome.run!;
     const log = readFileSync(path.join(outcome.runDir!, 'run.log'), 'utf8');
-    expect(log).toMatch(new RegExp(`DEBUG code-reviewer ${packageVersion().replace(/\./g, '\\.')} · node`));
+    expect(log).toContain(`DEBUG code-reviewer ${packageVersion()} · node`);
     expect(log).toMatch(/EVENT plan: 1 file\(s\) in 1 chunk\(s\)/);
     expect(log).toMatch(new RegExp(`EVENT chunk ${run.chunks[0]!.id} done: 1 finding`));
     expect(log).toMatch(/EVENT done: completed, 1 finding\(s\)/);

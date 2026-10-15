@@ -268,6 +268,7 @@ describe('markdown report', () => {
       makeRun({
         findings: [
           finding({
+            file: 'src\\evil|name.ts',
             title: '<img src=x onerror=alert(1)> in [link](http://evil)',
             description: 'Loads ![pixel](http://evil/p.png) and <script>x</script>; keep `a<b` as code.',
             evidence: 'const s = ```; // fence breaker\n````',
@@ -280,6 +281,7 @@ describe('markdown report', () => {
     expect(md).not.toContain('<img');
     expect(md).not.toContain('<script>');
     expect(md).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(md).toContain('<code>src&#92;evil&#124;name.ts</code>');
     expect(md).toContain('!\\[pixel](http://evil/p.png)');
     expect(md).toContain('\\`a&lt;b\\`'); // code spans are escaped too (no CommonMark look-alike)
     expect(md).toContain('`````\nconst s = ```; // fence breaker\n````\n`````');

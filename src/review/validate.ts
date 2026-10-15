@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from 'node:fs';
+import { closeSync, constants, fstatSync, openSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Finding, ReviewUnit, Severity } from '../types';
 import { resolveInside, toPosix } from '../util/paths';
@@ -28,18 +28,25 @@ export function validateFindings(
   for (const reported of findings) {
     // Model output is untrusted: the path must name a regular file inside the review root.
     let abs: string;
+    let fd: number | undefined;
     try {
       abs = resolveInside(opts.root, reported.file);
-      if (!statSync(abs).isFile()) throw new Error('not a file');
+      fd = openSync(abs, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+      if (!fstatSync(fd).isFile()) throw new Error('not a file');
     } catch {
+      if (fd !== undefined) closeSync(fd);
       drop(reported, 'unknown-file');
       continue;
     }
     const f = { ...reported, file: toPosix(path.relative(opts.root, abs)) };
     let lines = fileLines.get(f.file);
-    if (lines === undefined) {
-      lines = (units.get(f.file)?.content ?? readFileSync(abs, 'utf8')).split('\n');
-      fileLines.set(f.file, lines);
+    try {
+      if (lines === undefined) {
+        lines = (units.get(f.file)?.content ?? readFileSync(fd!, 'utf8')).split('\n');
+        fileLines.set(f.file, lines);
+      }
+    } finally {
+      closeSync(fd!);
     }
     const count = lines.length;
     if (f.startLine > count) {

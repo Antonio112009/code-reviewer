@@ -1127,7 +1127,7 @@ class ImportResolver {
       }
       if (best) {
         for (const target of best.rule.targets) {
-          const sub = target.replace('*', best.star);
+          const sub = target.replace(/\*/g, best.star);
           const resolved = CONFIG_DIR_RE.test(sub)
             ? joinInside(ts.configDir, sub.replace(CONFIG_DIR_RE, ''))
             : joinInside(base, sub);
@@ -1155,7 +1155,7 @@ class ImportResolver {
       const post = pattern.slice(star + 1);
       if (key.startsWith(pre) && key.endsWith(post) && key.length >= pre.length + post.length) {
         const m = key.slice(pre.length, key.length - post.length);
-        targets.push(...list.map((t) => t.replace('*', m)));
+        targets.push(...list.map((t) => t.replace(/\*/g, m)));
       }
     }
     if (!subpath) targets.push(...pkg.entries);

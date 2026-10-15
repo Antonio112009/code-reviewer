@@ -90,7 +90,9 @@ function plain(s: unknown, max: number): string {
       .replace(/\r\n?/g, '\n')
       .trim(),
     max,
-  ).replace(/[[\]]/g, '\\$&');
+  )
+    .replace(/\\/g, '\\\\')
+    .replace(/[[\]]/g, '\\$&');
 }
 
 function pascal(id: string): string {
