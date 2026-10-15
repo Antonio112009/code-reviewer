@@ -610,7 +610,7 @@ made the sweep:
 
 A model of another vendor does not make the sweep find more: it adds fewer findings that survive the critic and
 half the recall, and the intervals overlap. The pass is cheaper on gpt-5.6-terra ($2 / $12 per million tokens
-against $3 / $15). 69% of its findings repeat a chunk finding at the same spot, as on Sonnet. The absolute rows
+against $3 / $15). 71% of its findings repeat a chunk finding at the same spot, as on Sonnet. The absolute rows
 differ by about 2 F1 between runs of the same pipeline, so only the within-run gains count. The sweep stays on
 the review's model by default; `roles.sweep` remains for anyone who wants another.
 
