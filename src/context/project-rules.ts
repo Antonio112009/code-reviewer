@@ -1,9 +1,10 @@
 import type { Dirent } from 'node:fs';
-import { lstat, readdir, readFile } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import YAML from 'yaml';
 import { estimateTokens } from '../chunking/tokens';
 import type { GitRepo } from '../git/repo';
+import { readRegularText } from '../util/files';
 import { unsafeGlobReason, untrustedGlobMatcher } from '../util/globs';
 import { resolveInside } from '../util/paths';
 
@@ -79,9 +80,7 @@ export function workingTreeReader(root: string): RuleReader {
     async read(rel) {
       try {
         const abs = resolveInside(root, rel);
-        const st = await lstat(abs);
-        if (!st.isFile() || st.size > MAX_RULE_BYTES) return undefined;
-        return await readFile(abs, 'utf8');
+        return await readRegularText(abs, { maxBytes: MAX_RULE_BYTES });
       } catch {
         return undefined;
       }

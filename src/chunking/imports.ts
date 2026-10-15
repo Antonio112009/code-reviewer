@@ -1155,7 +1155,8 @@ class ImportResolver {
       const post = pattern.slice(star + 1);
       if (key.startsWith(pre) && key.endsWith(post) && key.length >= pre.length + post.length) {
         const m = key.slice(pre.length, key.length - post.length);
-        targets.push(...list.map((t) => t.replace('*', m)));
+        // Node replaces every `*` of an exports target with the matched part.
+        targets.push(...list.map((t) => t.replaceAll('*', m)));
       }
     }
     if (!subpath) targets.push(...pkg.entries);

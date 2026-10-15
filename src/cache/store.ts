@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { mkdir, readdir, readFile, rename, rm, stat, unlink, utimes, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { readRegularFile } from '../util/files';
 import { globalConfigDir } from '../util/paths';
 
 /** Bumped when the meaning of cached entries changes: old entries then simply stop matching. */
@@ -129,9 +130,9 @@ export class ResultCache {
     if (!KEY_RE.test(key)) return undefined;
     const file = this.fileFor(kind, key);
     try {
-      const info = await stat(file);
-      if (!info.isFile() || info.size > MAX_ENTRY_BYTES) return undefined;
-      const entry = JSON.parse(await readFile(file, 'utf8')) as Partial<Envelope> | null;
+      const read = await readRegularFile(file, { maxBytes: MAX_ENTRY_BYTES });
+      if (!('data' in read)) return undefined;
+      const entry = JSON.parse(read.data.toString('utf8')) as Partial<Envelope> | null;
       if (!entry || entry.format !== CACHE_FORMAT || entry.kind !== kind || entry.key !== key)
         return undefined;
       if (typeof entry.mac !== 'string' || !/^[0-9a-f]{64}$/.test(entry.mac)) return undefined;

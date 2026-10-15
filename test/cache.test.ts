@@ -1,4 +1,14 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -154,6 +164,21 @@ describe('cache location', () => {
     );
     expect(picked).toEqual({ dir: good, source: 'os' });
     expect(skipped).toEqual(['config']);
+  });
+
+  it('keeps a cache in the shared temp dir private: no symlink, closed to other users', async () => {
+    if (process.platform === 'win32') return;
+    const open = path.join(freshDir('tmp-open'), 'cache');
+    mkdirSync(open, { mode: 0o755 });
+    chmodSync(open, 0o755);
+    expect(await pickCacheDir([{ dir: open, source: 'tmp' }])).toEqual({ dir: open, source: 'tmp' });
+    expect(statSync(open).mode & 0o777).toBe(0o700); // tightened, ours
+    const target = freshDir('tmp-target');
+    const link = path.join(freshDir('tmp-link'), 'cache');
+    symlinkSync(target, link);
+    expect(await pickCacheDir([{ dir: link, source: 'tmp' }])).toBeUndefined();
+    // the same symlink is fine where the user chose the directory
+    expect(await pickCacheDir([{ dir: link, source: 'config' }])).toEqual({ dir: link, source: 'config' });
   });
 
   it('signs with the environment key, else a private key file in the global directory', async () => {

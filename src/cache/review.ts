@@ -1,4 +1,3 @@
-import { readFile, stat } from 'node:fs/promises';
 import { z } from 'zod';
 import type { Config } from '../config/schema';
 import {
@@ -9,6 +8,7 @@ import {
   type StaticHit,
   VERDICTS,
 } from '../types';
+import { readRegularFile } from '../util/files';
 import type { Logger } from '../util/logger';
 import { resolveInside } from '../util/paths';
 import { type CacheLocation, cacheDirCandidates, pickCacheDir } from './location';
@@ -68,9 +68,12 @@ export async function hashReads(
   for (const rel of [...new Set(reads)].sort()) {
     try {
       const abs = resolveInside(root, rel);
-      const info = await stat(abs);
-      if (!info.isFile() || info.size > MAX_HASHED_FILE) return undefined;
-      out[rel] = sha256(await readFile(abs));
+      const r = await readRegularFile(abs, { maxBytes: MAX_HASHED_FILE, follow: true });
+      if ('skip' in r) {
+        if (r.skip !== 'missing') return undefined;
+        throw new Error('missing');
+      }
+      out[rel] = sha256(r.data);
     } catch {
       // A file that is gone now was read in an earlier state: nothing to compare against later.
       out[rel] = 'missing';

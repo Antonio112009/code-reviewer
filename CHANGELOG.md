@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- **Files are read through the descriptor that was checked.** Reading a file of the reviewed checkout (a
+  finding's lines, fingerprints, project rules, skills, manifests, the files of `code-reviewer files`) opened
+  it after a separate size and type check, so a file swapped in between (for a symlink out of the repository,
+  a FIFO or a larger file) could slip through. Now one descriptor is opened without following symlinks, checked
+  and read (`src/util/files.ts`); `init` appends to `.gitignore` the same way.
+- **SARIF text escapes backslashes**, so `\[text\](url)` in a finding can no longer form a link in viewers
+  such as GitHub code scanning.
+- **The cache in the shared temp dir is private**: it must be a real directory owned by the user and is closed
+  to others, so another local user cannot create it first and read the cached results.
+
+### Fixes
+
+- A package `exports` target with several `*` now has every one replaced, as Node does.
+
 ## 0.11.0 — 2026-10-15
 
 ### Bitbucket Cloud

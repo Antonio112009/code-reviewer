@@ -3,7 +3,12 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 import type { Category, Severity } from '../types';
+import { readRegularText } from '../util/files';
 import { resolveInside } from '../util/paths';
+
+/** Larger working-tree files are not compared with the reviewed revision. */
+const MAX_COMPARED_BYTES = 8 * 1024 * 1024;
+
 import { compareVersions, findExecutable, parseVersion } from './env';
 import { AnalyzerError, execTool, firstLine, parseJsonOutput } from './exec';
 import { changedLineNumbers } from './lines';
@@ -62,8 +67,9 @@ async function matchingFiles(ctx: AnalyzerContext): Promise<SourceFile[]> {
   const out: SourceFile[] = [];
   for (const f of ctx.files) {
     const abs = repoFile(root, f.path);
-    if (!abs || lstatSync(abs).isSymbolicLink()) continue;
-    const disk = await readFile(abs, 'utf8').catch(() => undefined);
+    if (!abs) continue;
+    // Not through a symlink, and from the descriptor that was checked.
+    const disk = await readRegularText(abs, { maxBytes: MAX_COMPARED_BYTES });
     if (disk === f.content) out.push(f);
   }
   if (out.length === 0) {

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import { readFileSync, statSync } from 'node:fs';
 import { SEVERITY_ORDER } from '../report/common';
 import type { Finding } from '../types';
+import { readRegularTextSync } from '../util/files';
 import { resolveInside } from '../util/paths';
 
 /*
@@ -109,9 +109,7 @@ export function reviewRootReader(root: string): LineReader {
   return (file) => {
     try {
       const abs = resolveInside(root, file);
-      const st = statSync(abs);
-      if (!st.isFile() || st.size > MAX_FILE_BYTES) return undefined;
-      return readFileSync(abs, 'utf8').split('\n');
+      return readRegularTextSync(abs, { maxBytes: MAX_FILE_BYTES })?.split('\n');
     } catch {
       return undefined;
     }

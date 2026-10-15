@@ -190,7 +190,8 @@ describe('SARIF report', () => {
           repo: { root: '/r', remote: 'https://user:ghp_secret@github.com/acme/shop' },
           findings: [
             finding({
-              title: 'Bad \u001B[31mred\u001B[0m ‮bidi [click](https://evil.example)',
+              title:
+                'Bad \u001B[31mred\u001B[0m ‮bidi [click](https://evil.example) \\[x\\](https://evil.example)',
               description: `<img src=x onerror=alert(1)> ${'x'.repeat(10_000)}`,
               file: 'src/a b#.ts',
             }),
@@ -206,7 +207,9 @@ describe('SARIF report', () => {
     expect(results[0].message.text).not.toMatch(/[\u001B‮]/);
     // plain text, not HTML; brackets escaped so no SARIF embedded link can form
     expect(
-      results[0].message.text.startsWith('Bad red bidi \\[click\\](https://evil.example)\n\n<img src=x'),
+      results[0].message.text.startsWith(
+        'Bad red bidi \\[click\\](https://evil.example) \\\\\\[x\\\\\\](https://evil.example)\n\n<img src=x',
+      ),
     ).toBe(true);
     expect(results[0].message.text.length).toBeLessThan(4_300);
     expect(results[0].message.text).toContain('…');

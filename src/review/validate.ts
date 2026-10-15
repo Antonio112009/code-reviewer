@@ -1,7 +1,10 @@
-import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { Finding, ReviewUnit, Severity } from '../types';
+import { readRegularTextSync } from '../util/files';
 import { resolveInside, toPosix } from '../util/paths';
+
+/** Larger files are not read to check a finding's lines. */
+const MAX_FILE_BYTES = 8 * 1024 * 1024;
 
 /** How far (lines) a diff-mode finding may sit from the changed hunks and still count as related. */
 const HUNK_TOLERANCE = 20;
@@ -30,7 +33,6 @@ export function validateFindings(
     let abs: string;
     try {
       abs = resolveInside(opts.root, reported.file);
-      if (!statSync(abs).isFile()) throw new Error('not a file');
     } catch {
       drop(reported, 'unknown-file');
       continue;
@@ -38,7 +40,13 @@ export function validateFindings(
     const f = { ...reported, file: toPosix(path.relative(opts.root, abs)) };
     let lines = fileLines.get(f.file);
     if (lines === undefined) {
-      lines = (units.get(f.file)?.content ?? readFileSync(abs, 'utf8')).split('\n');
+      // A reviewed file's content, else the file on disk: read once, as a regular file (no symlink swap).
+      const text = units.get(f.file)?.content ?? readRegularTextSync(abs, { maxBytes: MAX_FILE_BYTES });
+      if (text === undefined) {
+        drop(reported, 'unknown-file');
+        continue;
+      }
+      lines = text.split('\n');
       fileLines.set(f.file, lines);
     }
     const count = lines.length;
