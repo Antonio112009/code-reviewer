@@ -366,11 +366,19 @@ export const PublishSettingsSchema = z.object({
    * Server); without it, the organisation of a dev.azure.com remote.
    */
   azureApiUrl: ApiUrlSchema.optional(),
+  /** Bitbucket Data Center REST API (e.g. https://bitbucket.example.com/rest/api/1.0); there is no public one. */
+  bitbucketDcApiUrl: ApiUrlSchema.optional(),
 });
 export type PublishSettings = z.infer<typeof PublishSettingsSchema>;
 
 /** `publish` keys that decide where an access token is sent: rejected in project configs. */
-export const PUBLISH_URL_KEYS = ['githubApiUrl', 'gitlabApiUrl', 'giteaApiUrl', 'azureApiUrl'] as const;
+export const PUBLISH_URL_KEYS = [
+  'githubApiUrl',
+  'gitlabApiUrl',
+  'giteaApiUrl',
+  'azureApiUrl',
+  'bitbucketDcApiUrl',
+] as const;
 
 /** Reusing model answers for unchanged chunks and findings (`src/cache/`). */
 export const CacheSettingsSchema = z.object({

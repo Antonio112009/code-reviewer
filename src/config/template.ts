@@ -438,7 +438,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
       ],
       notes: {
         project: [
-          `API URLs (githubApiUrl, gitlabApiUrl, giteaApiUrl, azureApiUrl) receive your access token: set them in ${GLOBAL_CONFIG_HINT}.`,
+          `API URLs (githubApiUrl, gitlabApiUrl, giteaApiUrl, azureApiUrl, bitbucketDcApiUrl) receive your access token: set them in ${GLOBAL_CONFIG_HINT}.`,
         ],
       },
       keys: {
@@ -473,6 +473,11 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           doc: 'Azure DevOps collection URL (default: the organisation of a dev.azure.com remote). Your token is sent here.',
           scope: 'global',
           example: 'https://dev.azure.com/your-org',
+        },
+        bitbucketDcApiUrl: {
+          doc: 'Bitbucket Data Center REST API (no default). Your token is sent here.',
+          scope: 'global',
+          example: 'https://bitbucket.example.com/rest/api/1.0',
         },
       },
     },

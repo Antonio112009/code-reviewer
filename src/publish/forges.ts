@@ -1,4 +1,4 @@
-import type { PublishSettings } from '../config/schema';
+import type { PUBLISH_URL_KEYS } from '../config/schema';
 import type { CiProvider } from '../git/ci';
 import type { ForgeTool } from '../git/forge';
 
@@ -9,8 +9,15 @@ import type { ForgeTool } from '../git/forge';
  * imports nothing from the publishing code, so every other module can import it.
  */
 
-export type ForgeKind = 'github' | 'gitlab' | 'gitea' | 'bitbucket' | 'azure';
-export const FORGES: readonly ForgeKind[] = ['github', 'gitlab', 'gitea', 'bitbucket', 'azure'];
+export type ForgeKind = 'github' | 'gitlab' | 'gitea' | 'bitbucket' | 'bitbucket-dc' | 'azure';
+export const FORGES: readonly ForgeKind[] = [
+  'github',
+  'gitlab',
+  'gitea',
+  'bitbucket',
+  'bitbucket-dc',
+  'azure',
+];
 /**
  * The order CI markers are checked in: Gitea / Forgejo Actions set GitHub's variables too (`GITHUB_ACTIONS`,
  * `GITHUB_API_URL`), so their own marker has to win, or the token would follow GitHub's rules.
@@ -40,18 +47,22 @@ export interface ForgeSpec {
   tokenVars: readonly string[];
   /** What to set when no token is found. */
   missingToken: string;
-  /** The CI system that belongs to the forge, as `detectCiPullRequest` names it. */
-  ci: CiProvider;
+  /** The CI system that belongs to the forge, as `detectCiPullRequest` names it (none: no CI detection). */
+  ci?: CiProvider;
   /**
    * Variable that marks that CI ("true", or any value with `ciVarAnyValue`), the CI's own API URL variable
    * when the CI declares one, and the repository variables.
    */
-  ciVar: string;
+  ciVar?: string;
   ciVarAnyValue?: boolean;
   ciApiUrlVar?: string;
   ciRepoVars: readonly string[];
   /** Global-config key of a self-hosted API URL, for forges that can be self-hosted. */
-  apiUrlKey?: keyof Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl' | 'giteaApiUrl' | 'azureApiUrl'>;
+  apiUrlKey?: (typeof PUBLISH_URL_KEYS)[number];
+  /** An example API URL for the error message of a forge without a public API. */
+  apiUrlExample?: string;
+  /** The repository from the path of its web URL, when that path is not the repository name itself. */
+  repoFromWebPath?: (path: string) => string | undefined;
   /** The local CLI that knows the branch's open request (`findOpenPullRequest`), when one exists. */
   tool?: ForgeTool;
   /** What `--repo` must look like, and the words for the error message. */
@@ -147,6 +158,29 @@ export const FORGE_SPECS: Record<ForgeKind, ForgeSpec> = {
     // Whether a `suggestion` fence posted through the API is applicable is unconfirmed: the fix is shown as text.
     suggestionStyle: 'none',
   },
+  'bitbucket-dc': {
+    kind: 'bitbucket-dc',
+    label: 'Bitbucket Data Center',
+    requestNoun: 'pull request',
+    refSigil: '#',
+    tokenVars: ['BITBUCKET_DC_TOKEN'],
+    missingToken:
+      'Set BITBUCKET_DC_TOKEN to an HTTP access token (personal, project or repository) with repository write permission.',
+    // Bamboo and Jenkins expose no common pull request variables: --pr (and --repo, or the remote) name it.
+    apiUrlKey: 'bitbucketDcApiUrl',
+    apiUrlExample: 'its REST API, e.g. https://bitbucket.example.com/rest/api/1.0',
+    ciRepoVars: [],
+    repoPattern: /^~?[A-Za-z0-9_.-]{1,128}\/[A-Za-z0-9_.-]{1,128}$/,
+    repoHint: 'PROJECT/repo-slug (~user/repo-slug for a personal repository)',
+    webHostOfApi: sameHost,
+    repoFromWebPath: (path) => {
+      const m = /(?:^|\/)(projects|users)\/([^/]+)\/repos\/([^/]+)$/.exec(path);
+      if (!m) return undefined;
+      return m[1] === 'users' ? `~${m[2]}/${m[3]}` : `${m[2]}/${m[3]}`;
+    },
+    // Applicable suggestions exist in Data Center 8; through the API they are unconfirmed, so the fix is shown as text.
+    suggestionStyle: 'none',
+  },
   azure: {
     kind: 'azure',
     label: 'Azure DevOps',
@@ -167,6 +201,7 @@ export const FORGE_SPECS: Record<ForgeKind, ForgeSpec> = {
       return project && repo ? `${project}/${repo}` : undefined;
     },
     apiUrlKey: 'azureApiUrl',
+    apiUrlExample: "the organisation's collection URL, e.g. https://dev.azure.com/your-org",
     repoPattern: /^[^/\s][^/]{0,255}\/[^/\s][^/]{0,255}$/,
     repoHint: 'project/repository',
     webHostOfApi: sameHost,

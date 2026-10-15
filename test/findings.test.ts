@@ -173,6 +173,33 @@ describe('remote links', () => {
     );
     expect(parseRemote('https://forgejo.example.com/g/p')?.platform).toBe('gitea');
   });
+
+  it('tells Bitbucket Data Center remotes from Bitbucket Cloud', () => {
+    const dc = { platform: 'bitbucket-dc', webUrl: 'https://git.acme.io/projects/SHOP/repos/web' };
+    expect(parseRemote('https://git.acme.io/scm/shop/web.git')).toEqual(dc);
+    expect(parseRemote('https://jdoe@git.acme.io/scm/shop/web.git')).toEqual(dc);
+    expect(parseRemote('ssh://git@git.acme.io:7999/shop/web.git')).toEqual(dc);
+    expect(parseRemote('https://git.acme.io/bitbucket/scm/shop/web.git')?.webUrl).toBe(
+      'https://git.acme.io/bitbucket/projects/SHOP/repos/web',
+    );
+    expect(parseRemote('https://git.acme.io/scm/~jdoe/dots.git')?.webUrl).toBe(
+      'https://git.acme.io/users/jdoe/repos/dots',
+    );
+    expect(parseRemote('git@bitbucket.acme.io:shop/web.git')?.platform).toBe('bitbucket-dc');
+    expect(parseRemote('https://bitbucket.acme.io/projects/SHOP/repos/web/browse')?.webUrl).toBe(
+      'https://bitbucket.acme.io/projects/SHOP/repos/web',
+    );
+    expect(parseRemote('git@bitbucket.org:team/web.git')?.platform).toBe('bitbucket');
+    // A GitLab group called `scm` stays GitLab; a plain ssh remote elsewhere stays unknown.
+    expect(parseRemote('https://gitlab.acme.io/scm/group/app.git')?.platform).toBe('gitlab');
+    expect(parseRemote('git@git.acme.io:shop/web.git')?.platform).toBe('other');
+    expect(commitUrl(parseRemote('https://git.acme.io/scm/shop/web.git'), 'abc')).toBe(
+      'https://git.acme.io/projects/SHOP/repos/web/commits/abc',
+    );
+    expect(lineUrl(parseRemote('https://git.acme.io/scm/shop/web.git'), 'abc', 'src/a b.ts', 3, 5)).toBe(
+      'https://git.acme.io/projects/SHOP/repos/web/browse/src/a%20b.ts?at=abc#3-5',
+    );
+  });
 });
 
 describe('failure paths', () => {

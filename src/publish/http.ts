@@ -189,12 +189,14 @@ export class ApiClient {
 
   /**
    * GET of a list endpoint up to `maxPages`, following `Link: rel="next"` (GitHub, GitLab, Gitea), a
-   * `{ values, next }` body (Bitbucket) or one `{ count, value }` page (Azure DevOps) — same origin only.
+   * `{ values, next }` body (Bitbucket Cloud), a `{ values, isLastPage, nextPageStart }` body (Bitbucket Data
+   * Center) or one `{ count, value }` page (Azure DevOps) — same origin only.
    */
   async paginate<T>(path: string): Promise<T[]> {
     const out: T[] = [];
     const sizeParam = this.opts.pageSizeParam ?? 'per_page';
-    let next: string | undefined = `${path}${path.includes('?') ? '&' : '?'}${sizeParam}=${PAGE_SIZE}`;
+    const first = `${path}${path.includes('?') ? '&' : '?'}${sizeParam}=${PAGE_SIZE}`;
+    let next: string | undefined = first;
     for (let page = 0; next && page < (this.opts.maxPages ?? DEFAULT_MAX_PAGES); page++) {
       const res: ApiResponse<unknown> = await this.request<unknown>('GET', next);
       const data = res.data;
@@ -202,9 +204,18 @@ export class ApiClient {
         out.push(...(data as T[]));
         next = nextLink(res.headers.get('link'));
       } else if (data && typeof data === 'object' && Array.isArray((data as { values?: unknown }).values)) {
-        const d = data as { values: T[]; next?: unknown };
+        const d = data as { values: T[]; next?: unknown; isLastPage?: unknown; nextPageStart?: unknown };
         out.push(...d.values);
-        next = typeof d.next === 'string' ? d.next : undefined;
+        if (typeof d.isLastPage === 'boolean') {
+          // Bitbucket Data Center: the next page starts at `nextPageStart` of the same query.
+          const start = d.nextPageStart;
+          next =
+            !d.isLastPage && typeof start === 'number' && Number.isSafeInteger(start) && start > 0
+              ? `${first}&start=${start}`
+              : undefined;
+        } else {
+          next = typeof d.next === 'string' ? d.next : undefined;
+        }
       } else if (data && typeof data === 'object' && Array.isArray((data as { value?: unknown }).value)) {
         // Azure DevOps: one `{ count, value }` page.
         out.push(...(data as { value: T[] }).value);
