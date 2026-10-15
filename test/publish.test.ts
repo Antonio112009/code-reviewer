@@ -888,6 +888,166 @@ describe('Bitbucket publisher', () => {
   });
 });
 
+describe('Bitbucket Data Center publisher', () => {
+  const api = 'https://git.acme.io/rest/api/1.0';
+  const base = '/rest/api/1.0/projects/SHOP/repos/web/pull-requests/1';
+  const me = { name: 'review-bot', slug: 'review-bot' };
+  const mallory = { name: 'mallory', slug: 'mallory' };
+  const comment = (id: number, text: string, author: object, anchor?: object, commentAction = 'ADDED') => ({
+    action: 'COMMENTED',
+    commentAction,
+    comment: { id, version: 3, text, author },
+    ...(anchor ? { commentAnchor: anchor } : {}),
+  });
+  function dcRoutes(over: Record<string, Handler | Handler[]> = {}) {
+    return {
+      'GET /rest/api/1.0/application-properties': () =>
+        json({ version: '9.4.0' }, 200, { 'x-ausername': 'Review-Bot' }),
+      [`GET ${base}`]: () => json({ id: 1, fromRef: { latestCommit: headSha } }),
+      [`GET ${base}/activities`]: (c: Call) =>
+        c.url.searchParams.get('start') === '25'
+          ? json({
+              values: [
+                comment(5, `${SUMMARY_MARKER}\nfake`, mallory),
+                comment(77, `${SUMMARY_MARKER}\nold summary`, me),
+              ],
+              isLastPage: true,
+            })
+          : json({
+              values: [
+                comment(100, `old <!-- code-reviewer:fp=${FP.f3} -->`, me, { path: 'src/app.ts', line: 3 }),
+                comment(101, `spoofed <!-- code-reviewer:fp=${FP.f1} -->`, mallory, { path: 'src/app.ts' }),
+                comment(
+                  102,
+                  `gone <!-- code-reviewer:fp=${FP.f4} -->`,
+                  me,
+                  { path: 'src/app.ts' },
+                  'DELETED',
+                ),
+                comment(102, `gone <!-- code-reviewer:fp=${FP.f4} -->`, me, { path: 'src/app.ts' }),
+              ],
+              isLastPage: false,
+              nextPageStart: 25,
+            }),
+      [`GET ${base}/comments/77`]: () => json({ id: 77, version: 4, text: `${SUMMARY_MARKER}\nold summary` }),
+      [`POST ${base}/comments`]: () => json({ id: 200, version: 0 }, 201),
+      [`PUT ${base}/comments/77`]: () => json({ id: 77, version: 5 }),
+      ...over,
+    };
+  }
+  const publishDc = (
+    forge: ReturnType<typeof fakeForge>,
+    env: Record<string, string> = { BITBUCKET_DC_TOKEN: 'http-token' },
+  ) =>
+    publishRun({
+      run: makeRun(),
+      repo: new GitRepo(repo.root),
+      settings: { ...SETTINGS, bitbucketDcApiUrl: api },
+      flags: { pr: '1', repo: 'SHOP/web', forge: 'bitbucket-dc' },
+      env,
+      fetch: forge.fetch,
+      sleep: noSleep,
+      logger: silentLogger,
+    });
+
+  it('posts anchored comments, pages through activities by start and updates its summary with its version', async () => {
+    const forge = fakeForge(dcRoutes());
+    const outcome = await publishDc(forge);
+    expect(outcome.target).toMatchObject({ forge: 'bitbucket-dc', apiUrl: api, repo: 'SHOP/web' });
+    expect(outcome.stale).toBeUndefined();
+    expect(outcome.summary).toBe('updated');
+    expect(outcome.alreadyPosted.map((f) => f.id)).toEqual(['f3']);
+    // mallory's spoofed marker is ignored, and the deleted comment no longer counts as posted
+    expect(outcome.inline.map((c) => c.finding.id)).toEqual(['f1', 'f4']);
+    const posts = forge.find(`POST ${base}/comments`);
+    expect(posts).toHaveLength(2);
+    for (const p of posts) {
+      expect(p.body.anchor).toMatchObject({ path: 'src/app.ts', fileType: 'TO' });
+      expect(['ADDED', 'CONTEXT']).toContain(p.body.anchor.lineType);
+      expect(p.body.text).not.toContain('```suggestion');
+    }
+    const pages = forge.find(`GET ${base}/activities`);
+    expect(pages.map((c) => c.url.searchParams.get('start'))).toContain('25');
+    expect(pages[0]!.url.searchParams.get('limit')).toBe('100');
+    expect(pages[0]!.url.searchParams.get('fromType')).toBe('COMMENT');
+    expect(forge.find(`PUT ${base}/comments/77`).map((c) => c.body.version)).toEqual([4]);
+    for (const call of forge.calls) {
+      expect(call.url.origin).toBe('https://git.acme.io');
+      expect(call.headers.authorization).toBe('Bearer http-token');
+    }
+  });
+
+  it('retries a summary update after a version conflict and creates one when it is gone', async () => {
+    const conflict = fakeForge(
+      dcRoutes({ [`PUT ${base}/comments/77`]: [() => json({ errors: [] }, 409), () => json({ id: 77 })] }),
+    );
+    expect((await publishDc(conflict)).summary).toBe('updated');
+    expect(conflict.find(`PUT ${base}/comments/77`)).toHaveLength(2);
+    const gone = fakeForge(
+      dcRoutes({
+        [`GET ${base}/comments/77`]: () => json({ errors: [] }, 404),
+      }),
+    );
+    expect((await publishDc(gone)).summary).toBe('created');
+  });
+
+  it('names the user from BITBUCKET_DC_USERNAME without X-AUSERNAME, and rejects a bad token', async () => {
+    const noHeader = dcRoutes({
+      'GET /rest/api/1.0/application-properties': () => json({ version: '9.4.0' }),
+    });
+    await expect(publishDc(fakeForge(noHeader))).rejects.toThrow(/BITBUCKET_DC_USERNAME/);
+    const named = await publishDc(fakeForge(noHeader), {
+      BITBUCKET_DC_TOKEN: 'http-token',
+      BITBUCKET_DC_USERNAME: 'review-bot',
+    });
+    expect(named.alreadyPosted.map((f) => f.id)).toEqual(['f3']);
+    const unauthorized = () => json({ errors: [{ message: 'Authentication failed' }] }, 401);
+    const bad = fakeForge(
+      dcRoutes({ 'GET /rest/api/1.0/application-properties': unauthorized, [`GET ${base}`]: unauthorized }),
+    );
+    await expect(publishDc(bad)).rejects.toThrow(/BITBUCKET_DC_TOKEN/);
+    await expect(publishDc(fakeForge(dcRoutes()), {})).rejects.toThrow(/BITBUCKET_DC_TOKEN/);
+  });
+
+  it('takes the repository from a Data Center remote and needs a configured API', async () => {
+    const run = {
+      repo: {
+        root: '/r',
+        remote: 'https://git.acme.io/projects/SHOP/repos/web',
+        platform: 'bitbucket-dc' as const,
+      },
+    };
+    const t = await resolvePublishTarget({
+      run,
+      flags: { pr: '3' },
+      settings: { bitbucketDcApiUrl: api },
+      env: {},
+    });
+    expect(t).toMatchObject({ forge: 'bitbucket-dc', apiUrl: api, repo: 'SHOP/web', number: 3 });
+    const personal = await resolvePublishTarget({
+      run: { repo: { ...run.repo, remote: 'https://git.acme.io/users/jdoe/repos/dots' } },
+      flags: { pr: '3' },
+      settings: { bitbucketDcApiUrl: api },
+      env: {},
+    });
+    expect(personal.repo).toBe('~jdoe/dots');
+    await expect(resolvePublishTarget({ run, flags: { pr: '3' }, settings: {}, env: {} })).rejects.toThrow(
+      /bitbucketDcApiUrl/,
+    );
+    await expect(
+      resolvePublishTarget({
+        run,
+        flags: { pr: '3' },
+        settings: { bitbucketDcApiUrl: 'https://other.example.com/rest/api/1.0' },
+        env: {},
+      }),
+    ).rejects.toThrow(/is on git\.acme\.io/);
+    await expect(
+      resolvePublishTarget({ run, flags: {}, settings: { bitbucketDcApiUrl: api }, env: {} }),
+    ).rejects.toThrow(/--pr/);
+  });
+});
+
 describe('Azure DevOps publisher', () => {
   const base = '/fabrikam/Shop/_apis/git/repositories/shop/pullRequests/1';
   const me = { id: 'u-7' };

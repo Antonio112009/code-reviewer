@@ -1,4 +1,4 @@
-import type { PublishSettings } from '../config/schema';
+import type { PUBLISH_URL_KEYS, PublishSettings } from '../config/schema';
 import type { CiPullRequest } from '../git/ci';
 import type { ForgePullRequest } from '../git/forge';
 import type { Platform } from '../git/remote';
@@ -44,7 +44,7 @@ export interface ResolveTargetOptions {
   run: Pick<RunRecord, 'repo'>;
   flags: PublishFlags;
   /** Merged config: API URLs can only come from the global config (the loader rejects them elsewhere). */
-  settings: Pick<PublishSettings, 'githubApiUrl' | 'gitlabApiUrl' | 'giteaApiUrl' | 'azureApiUrl'>;
+  settings: Partial<Pick<PublishSettings, (typeof PUBLISH_URL_KEYS)[number]>>;
   env: NodeJS.ProcessEnv;
   /** The CI's pull/merge request (`detectCiPullRequest`). */
   ci?: CiPullRequest;
@@ -97,6 +97,7 @@ export function webHostOfApi(apiUrl: string, forge?: ForgeKind): string {
 
 /** Whether this process runs in the forge's own CI. */
 function inCiOf(spec: ForgeSpec, env: NodeJS.ProcessEnv): boolean {
+  if (!spec.ciVar) return false;
   const v = envValue(env, spec.ciVar);
   return spec.ciVarAnyValue ? v !== undefined : v === 'true';
 }
@@ -174,7 +175,7 @@ function resolveApiUrl(forge: ForgeKind, opts: ResolveTargetOptions, why: string
     return derived.apiUrl;
   }
   throw new PublishError(
-    `${spec.label} has no public API: pass --api-url ${spec.apiUrlKey ? `or set publish.${spec.apiUrlKey} ` : ''}(the organisation's collection URL, e.g. https://dev.azure.com/your-org).`,
+    `${spec.label} has no public API: pass --api-url ${spec.apiUrlKey ? `or set publish.${spec.apiUrlKey} ` : ''}(${spec.apiUrlExample ?? 'its API URL'}).`,
   );
 }
 
@@ -244,7 +245,7 @@ export async function resolvePublishTarget(opts: ResolveTargetOptions): Promise<
   if (flags.pr) {
     number = parseNumber(flags.pr, '--pr');
     why.push(`${spec.requestNoun} ${number}: --pr`);
-  } else if (inCi && opts.ci?.provider === spec.ci && opts.ci.number) {
+  } else if (inCi && opts.ci && spec.ci && opts.ci.provider === spec.ci && opts.ci.number) {
     number = parseNumber(opts.ci.number, `${opts.ci.label} pull request number`);
     why.push(`${spec.requestNoun} ${number}: ${opts.ci.label}`);
   }
@@ -295,7 +296,9 @@ export async function resolvePublishTarget(opts: ResolveTargetOptions): Promise<
           `The repository (${origin}) is on ${parsed.host}, but the API is ${apiUrl}. ${spec.apiUrlKey ? `Set publish.${spec.apiUrlKey} in the global config or pass --api-url` : 'Pass --api-url'}, or name the repository with --repo.`,
         );
       }
-      repo = checkRepo(forge, parsed.path, origin);
+      const named = spec.repoFromWebPath ? spec.repoFromWebPath(parsed.path) : parsed.path;
+      if (!named) continue;
+      repo = checkRepo(forge, named, origin);
       why.push(`repository ${repo}: ${origin}`);
       break;
     }

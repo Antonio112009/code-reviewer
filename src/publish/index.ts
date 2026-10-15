@@ -8,6 +8,7 @@ import type { Logger } from '../util/logger';
 import { packageVersion } from '../util/paths';
 import { azureAdapter, azureHeaders } from './azure';
 import { bitbucketAdapter, bitbucketHeaders } from './bitbucket';
+import { bitbucketDcAdapter, bitbucketDcHeaders } from './bitbucket-dc';
 import { giteaAdapter, giteaHeaders } from './gitea';
 import { githubAdapter, githubHeaders } from './github';
 import { gitlabAdapter, gitlabHeaders } from './gitlab';
@@ -105,7 +106,12 @@ const CLIENTS: Record<
   ForgeKind,
   {
     headers: (token: string, userAgent: string, env: NodeJS.ProcessEnv) => Record<string, string>;
-    adapter: (target: PublishTarget, client: ApiClient, logger: Logger) => ForgeAdapter;
+    adapter: (
+      target: PublishTarget,
+      client: ApiClient,
+      logger: Logger,
+      env: NodeJS.ProcessEnv,
+    ) => ForgeAdapter;
     pageSizeParam?: string;
   }
 > = {
@@ -113,11 +119,17 @@ const CLIENTS: Record<
   gitlab: { headers: gitlabHeaders, adapter: gitlabAdapter },
   gitea: { headers: giteaHeaders, adapter: giteaAdapter },
   bitbucket: { headers: bitbucketHeaders, adapter: bitbucketAdapter, pageSizeParam: 'pagelen' },
+  'bitbucket-dc': { headers: bitbucketDcHeaders, adapter: bitbucketDcAdapter, pageSizeParam: 'limit' },
   azure: { headers: azureHeaders, adapter: azureAdapter, pageSizeParam: '$top' },
 };
 
-function adapterFor(target: PublishTarget, client: ApiClient, logger: Logger): ForgeAdapter {
-  return CLIENTS[target.forge].adapter(target, client, logger);
+function adapterFor(
+  target: PublishTarget,
+  client: ApiClient,
+  logger: Logger,
+  env: NodeJS.ProcessEnv,
+): ForgeAdapter {
+  return CLIENTS[target.forge].adapter(target, client, logger, env);
 }
 
 /**
@@ -211,7 +223,7 @@ export async function publishRun(opts: PublishRunOptions): Promise<PublishOutcom
     timeoutMs: opts.timeoutMs,
     logger,
   });
-  const adapter = adapterFor(target, client, logger);
+  const adapter = adapterFor(target, client, logger, env);
   const state = await adapter.load();
   // Some forges report the head as a short hash: a prefix of the reviewed commit is the same commit.
   const stale = !t.headSha.toLowerCase().startsWith(state.headSha) || state.headSha.length < 7;

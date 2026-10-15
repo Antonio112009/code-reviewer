@@ -22,6 +22,17 @@
   Threads record no commit, so fixed findings stay in the summary and suggestions are shown as text. Report
   links work for these remotes; `docs/ci.md` has the pipeline.
 
+### Bitbucket Data Center
+
+- **Reviews can be posted to Bitbucket Data Center (and Server) pull requests** (`--forge bitbucket-dc`,
+  detected from an `/scm/KEY/slug` or port-7999 remote): inline comments on the new-side line, a summary
+  comment updated in place, de-duplication by fingerprint. `BITBUCKET_DC_TOKEN` is an HTTP access token
+  (bearer); the API is `publish.bitbucketDcApiUrl` in the global config or `--api-url`. Comments are ours when
+  their author is the `X-AUSERNAME` user (`BITBUCKET_DC_USERNAME` when a proxy drops the header). Jenkins and
+  Bamboo need `--pr`; `docs/ci.md` has both. Report links work for these remotes. Not yet tried against a live
+  instance.
+- A remote on any host other than bitbucket.org is no longer taken for Bitbucket Cloud.
+
 ### Forges
 
 - A rejected token on Gitea, Bitbucket or Azure DevOps now reports the token variable to check, instead of the

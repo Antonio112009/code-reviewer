@@ -547,7 +547,9 @@ there, and resolve the threads of findings that were fixed: the commented code c
 did not report the finding again (`publish.resolveFixed`; a thread someone reopened stays open). After a new
 push, the summary also lists what changed since the previous review: fixed, no longer reported, new, and how
 many are still open.
-`code-reviewer runs publish latest --dry-run` shows what would be posted.
+`code-reviewer runs publish latest --dry-run` shows what would be posted. Gitea / Forgejo / Codeberg,
+Bitbucket Cloud, Bitbucket Data Center and Azure DevOps work the same way, with fixed findings listed in the
+summary instead of resolved and suggestions shown as text (`--forge`, tokens and setup: [docs/ci.md](docs/ci.md)).
 
 ```bash
 export GITHUB_TOKEN=…            # or GH_TOKEN; GITLAB_TOKEN for GitLab (api scope)
@@ -589,7 +591,6 @@ Architecture, contracts and the safety model: [docs/ARCHITECTURE.md](docs/ARCHIT
 ## Roadmap
 
 - Structural checks (ast-grep) available to the model as a tool, and more checks in the skills.
-- Bitbucket Data Center.
 
 ## License
 

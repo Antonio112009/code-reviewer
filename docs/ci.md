@@ -232,6 +232,44 @@ pipelines:
   than resolved, and one-click suggestions are shown as text. The workspace's rate limit (1,000 requests per
   hour) is plenty: a publication is a handful of requests.
 
+## Bitbucket Data Center (Jenkins, Bamboo)
+
+```groovy
+// Jenkinsfile (multibranch pipeline with the Bitbucket Branch Source plugin)
+stage('Code review') {
+  when { changeRequest() }
+  environment {
+    BITBUCKET_DC_TOKEN = credentials('bitbucket-http-token')
+    ANTHROPIC_API_KEY  = credentials('anthropic-api-key')
+  }
+  steps {
+    sh 'git fetch --no-tags origin "+refs/heads/${CHANGE_TARGET}:refs/remotes/origin/${CHANGE_TARGET}"'
+    sh 'code-reviewer review --base "origin/${CHANGE_TARGET}" --plain --yes --format md,json --out reports --provider anthropic'
+    sh 'code-reviewer runs publish latest --forge bitbucket-dc --pr "${CHANGE_ID}"'
+  }
+}
+```
+
+```bash
+# Bamboo script task (plan branches for pull requests)
+code-reviewer review --base "origin/${bamboo_repository_pr_targetBranch}" --plain --yes --format md,json --out reports --provider anthropic
+code-reviewer runs publish latest --forge bitbucket-dc --pr "${bamboo_repository_pr_key}"
+```
+
+- Data Center has no public API: set `publish.bitbucketDcApiUrl` in the global config
+  (`https://bitbucket.example.com/rest/api/1.0`, with the context path if the server has one) or pass `--api-url`.
+- `BITBUCKET_DC_TOKEN` is an [HTTP access token](https://confluence.atlassian.com/bitbucketserver/http-access-tokens-939515499.html)
+  (personal, project or repository) with *Repository write* permission, sent as a bearer token. Comments are
+  told apart by their author: Data Center names the token's user in the `X-AUSERNAME` response header; if your
+  proxy strips it, set `BITBUCKET_DC_USERNAME` to that user (for a project or repository token, its bot user).
+- Jenkins and Bamboo expose no common pull request variables, so `--pr` is always needed (`CHANGE_ID` in
+  Jenkins, `bamboo_repository_pr_key` in Bamboo) and the base branch is passed with `--base`. The repository
+  comes from the remote (`https://host/scm/KEY/slug.git` or `ssh://git@host:7999/key/slug.git`) or from
+  `--repo KEY/slug` (`~user/slug` for a personal repository).
+- Inline comments are anchored on the new-side line (`ADDED` or `CONTEXT`); the summary is a pull request comment
+  updated in place. Fixed findings are listed in the summary rather than resolved, and one-click suggestions
+  are shown as text.
+
 ## Azure Pipelines
 
 ```yaml
@@ -308,7 +346,7 @@ code-reviewer runs publish latest --forge gitlab --repo group/project --pr 7 \
 ```
 
 The target is resolved in this order (`--verbose` prints each decision):
-1. flags: `--pr <number>`, `--repo <owner/name | group/project | project id>`, `--forge github|gitlab|gitea|bitbucket|azure`,
+1. flags: `--pr <number>`, `--repo <owner/name | group/project | project id>`, `--forge github|gitlab|gitea|bitbucket|bitbucket-dc|azure`,
    `--api-url <url>`;
 2. the CI: GitHub Actions (`GITHUB_REPOSITORY`, the pull request of the event, `GITHUB_API_URL`), GitLab CI
    (`CI_MERGE_REQUEST_PROJECT_ID`, `CI_MERGE_REQUEST_IID`, `CI_API_V4_URL`);
