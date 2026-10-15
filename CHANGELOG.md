@@ -2,29 +2,6 @@
 
 ## Unreleased
 
-### Azure DevOps
-
-- **Reviews can be posted to Azure DevOps pull requests** (`--forge azure`, detected from a `dev.azure.com`
-  / `visualstudio.com` remote or Azure Pipelines): inline threads on the new-side lines, a summary thread
-  updated in place, de-duplication by fingerprint. `AZURE_DEVOPS_TOKEN` (a personal access token) or
-  `SYSTEM_ACCESSTOKEN` mapped from `System.AccessToken`; the organisation's API from the remote, from
-  `SYSTEM_TEAMFOUNDATIONCOLLECTIONURI`, from `publish.azureApiUrl` or `--api-url` (Azure DevOps Server).
-  Threads record no commit, so fixed findings stay in the summary and suggestions are shown as text. Report
-  links work for these remotes; `docs/ci.md` has the pipeline.
-- A rejected token on Gitea, Bitbucket or Azure DevOps now reports the token variable to check, instead of the
-  pull request's raw 401.
-
-## Unreleased
-
-### Cost
-
-- **Anthropic's current models are priced in.** A run on the Anthropic API, Bedrock or Vertex now shows its
-  cost without a `pricing` entry: Fable 5.1, Opus 5.5 and 5, Sonnet 5.5, 5 and 4.6, Haiku 5.5 and 4.5, at the
-  official rates of 2026-10-14 (input, cache read, cache write, output). A `pricing` entry for the same key
-  still wins; Haiku 5.5's long-prompt rate is not modelled, so its cost is a lower bound.
-
-## Unreleased
-
 ### Bitbucket Cloud
 
 - **Reviews can be posted to Bitbucket Cloud pull requests** (`--forge bitbucket`, detected from a
@@ -34,6 +11,28 @@
   commit for a comment, so fixed findings are listed in the summary rather than resolved, and suggestions are
   shown as text. Report links work for these remotes; `docs/ci.md` has the Pipelines step. The API client
   now pages through `{ values, next }` bodies as well as `Link` headers.
+
+### Azure DevOps
+
+- **Reviews can be posted to Azure DevOps pull requests** (`--forge azure`, detected from a `dev.azure.com`
+  / `visualstudio.com` remote or Azure Pipelines): inline threads on the new-side lines, a summary thread
+  updated in place, de-duplication by fingerprint. `AZURE_DEVOPS_TOKEN` (a personal access token) or
+  `SYSTEM_ACCESSTOKEN` mapped from `System.AccessToken`; the organisation's API from the remote, from
+  `SYSTEM_TEAMFOUNDATIONCOLLECTIONURI`, from `publish.azureApiUrl` or `--api-url` (Azure DevOps Server).
+  Threads record no commit, so fixed findings stay in the summary and suggestions are shown as text. Report
+  links work for these remotes; `docs/ci.md` has the pipeline.
+
+### Forges
+
+- A rejected token on Gitea, Bitbucket or Azure DevOps now reports the token variable to check, instead of the
+  pull request's raw 401.
+
+### Cost
+
+- **Anthropic's current models are priced in.** A run on the Anthropic API, Bedrock or Vertex now shows its
+  cost without a `pricing` entry: Fable 5.1, Opus 5.5 and 5, Sonnet 5.5, 5 and 4.6, Haiku 5.5 and 4.5, at the
+  official rates of 2026-10-14 (input, cache read, cache write, output). A `pricing` entry for the same key
+  still wins; Haiku 5.5's long-prompt rate is not modelled, so its cost is a lower bound.
 
 ## 0.10.0 — 2026-10-14
 
