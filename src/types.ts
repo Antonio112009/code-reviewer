@@ -27,7 +27,7 @@ export type Category = (typeof CATEGORIES)[number];
 export const REASONING_LEVELS = ['none', 'low', 'medium', 'high'] as const;
 export type ReasoningLevel = (typeof REASONING_LEVELS)[number];
 
-export const ROLES = ['review', 'critique', 'summary'] as const;
+export const ROLES = ['review', 'critique', 'summary', 'sweep'] as const;
 export type Role = (typeof ROLES)[number];
 
 /** What the model submits via `submit_findings`. */

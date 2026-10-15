@@ -33,6 +33,12 @@
   instance.
 - A remote on any host other than bitbucket.org is no longer taken for Bitbucket Cloud.
 
+### Review
+
+- **The sweep can run on another model** (`roles.sweep`, `--sweep-provider`, `--sweep-model`): for example a
+  second vendor's model reads the whole change, for a more independent second look. Unset, it keeps the
+  review's route as before. Experimental: its effect on recall is not measured yet.
+
 ### Forges
 
 - A rejected token on Gitea, Bitbucket or Azure DevOps now reports the token variable to check, instead of the

@@ -403,6 +403,8 @@ const RolesSchema = z.object({
   review: RoleConfigSchema.optional(),
   critique: RoleConfigSchema.optional(),
   summary: RoleConfigSchema.optional(),
+  /** The whole-diff pass (`review.sweep`); unset: the review route. Another vendor makes it more independent. */
+  sweep: RoleConfigSchema.optional(),
 });
 
 const ConfigBodySchema = z.object({
@@ -625,6 +627,7 @@ export const PartialConfigSchema = z
         review: RoleConfigSchema.partial().strict().optional(),
         critique: RoleConfigSchema.partial().strict().optional(),
         summary: RoleConfigSchema.partial().strict().optional(),
+        sweep: RoleConfigSchema.partial().strict().optional(),
       })
       .strict()
       .optional(),
