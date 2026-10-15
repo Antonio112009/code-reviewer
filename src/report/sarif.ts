@@ -82,7 +82,8 @@ export function ruleIdOf(f: Finding): string {
 /**
  * Untrusted text as SARIF plain text: control characters removed, newlines normalised, clipped, and square
  * brackets escaped — SARIF messages treat `[text](uri)` as an embedded link (§3.11.6) and viewers such as
- * GitHub render it, so model text must not be able to form one.
+ * GitHub render it, so model text must not be able to form one. Backslashes are escaped too, or `\[` would
+ * become an escaped backslash followed by a bare bracket.
  */
 function plain(s: unknown, max: number): string {
   return clipText(
@@ -90,7 +91,7 @@ function plain(s: unknown, max: number): string {
       .replace(/\r\n?/g, '\n')
       .trim(),
     max,
-  ).replace(/[[\]]/g, '\\$&');
+  ).replace(/[\\[\]]/g, '\\$&');
 }
 
 function pascal(id: string): string {

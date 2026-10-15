@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { chmod, lstat, mkdir, unlink, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir, userInfo } from 'node:os';
 import path from 'node:path';
 import { PROJECT_DIR } from '../util/paths';
@@ -75,17 +75,33 @@ export function cacheDirCandidates(opts: CacheDirOptions = {}): CacheLocation[] 
   return out;
 }
 
-/** True when files can be created (and removed) in `dir`, which is created if needed. */
-export async function isWritableDir(dir: string): Promise<boolean> {
+/**
+ * True when files can be created (and removed) in `dir`, which is created if needed. A directory in the
+ * shared temp dir (`shared`) must also be ours alone: a real directory, not a symlink, owned by this user and
+ * closed to others — another local user could otherwise create it first and read the cached results.
+ */
+export async function isWritableDir(dir: string, opts: { shared?: boolean } = {}): Promise<boolean> {
   const probe = path.join(dir, `.probe-${process.pid}-${randomBytes(4).toString('hex')}`);
   try {
-    await mkdir(dir, { recursive: true });
-    await writeFile(probe, '');
+    await mkdir(dir, { recursive: true, mode: 0o700 });
+    if (opts.shared && !(await isPrivateDir(dir))) return false;
+    await writeFile(probe, '', { flag: 'wx', mode: 0o600 });
     await unlink(probe);
     return true;
   } catch {
     return false;
   }
+}
+
+/** A real directory owned by this user with no access for others (tightened when it is ours but open). */
+async function isPrivateDir(dir: string): Promise<boolean> {
+  const st = await lstat(dir);
+  if (!st.isDirectory() || st.isSymbolicLink()) return false;
+  const uid = process.getuid?.();
+  if (uid === undefined) return true; // Windows: the per-user temp dir is private already
+  if (st.uid !== uid) return false;
+  if ((st.mode & 0o077) !== 0) await chmod(dir, 0o700);
+  return true;
 }
 
 /**
@@ -97,7 +113,7 @@ export async function pickCacheDir(
   onSkip?: (location: CacheLocation) => void,
 ): Promise<CacheLocation | undefined> {
   for (const c of candidates) {
-    if (await isWritableDir(c.dir)) return c;
+    if (await isWritableDir(c.dir, { shared: c.source === 'tmp' })) return c;
     onSkip?.(c);
   }
   return undefined;

@@ -1,5 +1,5 @@
-import { existsSync } from 'node:fs';
-import { appendFile, lstat, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { constants, existsSync } from 'node:fs';
+import { appendFile, lstat, mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Readable, Writable } from 'node:stream';
 import * as p from '@clack/prompts';
@@ -25,6 +25,7 @@ import { techVersionsForChunk } from '../../review/planning';
 import { classifySkills, type RepoSkillRow, technologyGroup } from '../../skills/detector';
 import { loadSkills, type Skill } from '../../skills/loader';
 import { REASONING_LEVELS, type ReasoningLevel, type StackProfile } from '../../types';
+import { readRegularFile, readRegularText } from '../../util/files';
 import { detectLanguage } from '../../util/language';
 import { Logger } from '../../util/logger';
 import { globalConfigDir, PROJECT_DIR, resolveInside, toPosix } from '../../util/paths';
@@ -408,17 +409,21 @@ async function addToGitignore(root: string, entry: string, warnings: string[]): 
     warnings.push(`Not updating .gitignore: ${(err as Error).message}`);
     return false;
   }
-  const st = await lstat(file).catch(() => undefined);
-  if (st && !st.isFile()) {
+  // Read through one descriptor, never through a symlink; a file that is not regular is left alone.
+  const read = await readRegularFile(file, { maxBytes: MAX_MANIFEST_BYTES });
+  if ('skip' in read && read.skip !== 'missing') {
     warnings.push('Not updating .gitignore: it is not a regular file.');
     return false;
   }
-  const content = st ? await readFile(file, 'utf8') : '';
+  const content = 'data' in read ? read.data.toString('utf8') : '';
   const lines = content.split(/\r?\n/).map((l) => l.trim());
   const bare = entry.replace(/\/$/, '');
   if ([entry, bare, `/${entry}`, `/${bare}`].some((variant) => lines.includes(variant))) return false;
   const eol = content.includes('\r\n') ? '\r\n' : '\n';
-  await appendFile(file, `${content && !content.endsWith('\n') ? eol : ''}${entry}${eol}`);
+  // Appending does not follow a symlink either (O_NOFOLLOW), so a link put there meanwhile is refused.
+  await appendFile(file, `${content && !content.endsWith('\n') ? eol : ''}${entry}${eol}`, {
+    flag: constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT | (constants.O_NOFOLLOW ?? 0),
+  });
   return true;
 }
 
@@ -583,9 +588,7 @@ export async function detectProjectInfo(root: string): Promise<ProjectInfo> {
 async function readManifest(root: string, rel: string): Promise<string | undefined> {
   try {
     const abs = resolveInside(root, rel);
-    const st = await lstat(abs);
-    if (!st.isFile() || st.size > MAX_MANIFEST_BYTES) return undefined;
-    return await readFile(abs, 'utf8');
+    return await readRegularText(abs, { maxBytes: MAX_MANIFEST_BYTES });
   } catch {
     return undefined;
   }

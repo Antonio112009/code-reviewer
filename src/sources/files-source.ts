@@ -1,7 +1,8 @@
-import { lstat, readdir, readFile } from 'node:fs/promises';
+import { lstat, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { GitRepo } from '../git/repo';
 import type { ReviewUnit } from '../types';
+import { readRegularFile } from '../util/files';
 import { detectLanguage } from '../util/language';
 import { toPosix } from '../util/paths';
 import { type CollectedUnits, makeExcluder, type SkippedFile } from './diff-source';
@@ -64,7 +65,15 @@ export async function collectFileUnits(opts: {
       skipped.push({ path: rel, reason: `too large (${Math.round(size / 1024)} KiB)` });
       continue;
     }
-    const buf = await readFile(abs);
+    // Read through one descriptor: a file swapped since the lstat (for a symlink, say) is not followed.
+    const read = await readRegularFile(abs, { maxBytes: MAX_FILE_BYTES });
+    if ('skip' in read) {
+      if (read.skip === 'too-large') {
+        skipped.push({ path: rel, reason: `too large (${Math.round((read.size ?? 0) / 1024)} KiB)` });
+      }
+      continue;
+    }
+    const buf = read.data;
     if (buf.includes(0)) {
       skipped.push({ path: rel, reason: 'binary' });
       continue;

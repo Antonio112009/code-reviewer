@@ -1,5 +1,5 @@
 import { constants, type Dirent } from 'node:fs';
-import { lstat, open, readdir } from 'node:fs/promises';
+import { open, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { GitRepo } from '../../git/repo';
 import { resolveInside } from '../../util/paths';
@@ -644,6 +644,7 @@ async function readFromGit(
 }
 
 const NOFOLLOW = constants.O_NOFOLLOW ?? 0;
+const NONBLOCK = constants.O_NONBLOCK ?? 0;
 
 async function readOne(root: string, c: Candidate, limits: ScanLimits): Promise<string | undefined> {
   let abs: string;
@@ -652,12 +653,13 @@ async function readOne(root: string, c: Candidate, limits: ScanLimits): Promise<
   } catch {
     return undefined;
   }
-  const st = await lstat(abs).catch(() => undefined);
-  if (!st?.isFile() || st.size > limits.maxFileBytes) return undefined;
-  const want = Math.min(st.size, HEAD_BYTES[c.kind] ?? st.size);
-  const fh = await open(abs, constants.O_RDONLY | NOFOLLOW).catch(() => undefined);
+  // Open first, then check the descriptor: what is read is what was checked (no symlink, FIFO or swap).
+  const fh = await open(abs, constants.O_RDONLY | NOFOLLOW | NONBLOCK).catch(() => undefined);
   if (!fh) return undefined;
   try {
+    const st = await fh.stat();
+    if (!st.isFile() || st.size > limits.maxFileBytes) return undefined;
+    const want = Math.min(st.size, HEAD_BYTES[c.kind] ?? st.size);
     const buf = Buffer.alloc(want);
     let off = 0;
     while (off < want) {

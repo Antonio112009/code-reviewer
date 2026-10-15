@@ -1,11 +1,12 @@
 import type { Dirent } from 'node:fs';
-import { lstat, readdir, readFile, realpath, stat } from 'node:fs/promises';
+import { lstat, readdir, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 import YAML from 'yaml';
 import { z } from 'zod';
 import { MAX_CHECKS_PER_SKILL, type StructuralCheck, StructuralCheckSchema } from '../analyzers/ast-grep';
 import { estimateTokens } from '../chunking/tokens';
 import { isTechId, TECH_IDS } from '../context/stack/techs';
+import { readRegularFile } from '../util/files';
 import { unsafeGlobReason } from '../util/globs';
 import { globalConfigDir, PROJECT_DIR, packageRoot } from '../util/paths';
 import { compileRange } from '../util/versions';
@@ -318,9 +319,11 @@ function ancestors(folder: string): string[] {
 
 async function readSmallFile(file: string, follow: boolean, source: SkillSource): Promise<string> {
   const max = source === 'project' ? MAX_PROJECT_SKILL_BYTES : MAX_SKILL_BYTES;
-  const size = (await (follow ? stat : lstat)(file)).size;
-  if (size > max) throw new Error(`file is larger than ${max / 1024} KiB`);
-  return readFile(file, 'utf8');
+  // One descriptor for the checks and the read: a project skill swapped meanwhile cannot slip through.
+  const read = await readRegularFile(file, { maxBytes: max, follow });
+  if ('data' in read) return read.data.toString('utf8');
+  if (read.skip === 'too-large') throw new Error(`file is larger than ${max / 1024} KiB`);
+  throw new Error(read.skip === 'missing' ? 'file not found' : 'not a regular file');
 }
 
 async function loadGroups(
