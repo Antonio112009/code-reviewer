@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.0 — 2026-10-15
 
 ### Bitbucket Cloud
 
@@ -37,7 +37,8 @@
 
 - **The sweep can run on another model** (`roles.sweep`, `--sweep-provider`, `--sweep-model`): for example a
   second vendor's model reads the whole change, for a more independent second look. Unset, it keeps the
-  review's route as before. Experimental: its effect on recall is not measured yet.
+  review's route as before. Measured on AACR-Bench ctx30, a gpt-5.6-terra sweep added F1 +0.9 where the
+  Sonnet sweep adds +2.1, so the default stays on the review's model.
 - **OpenAI's own API goes through the Responses API.** GPT-5.6 and later refused the review's tools on chat
   completions ("Function tools with reasoning_effort are not supported"), so the `openai` provider failed with
   them. On `api.openai.com` it now uses the Responses API and sends the role's reasoning level by default
@@ -45,8 +46,17 @@
 
 ### Forges
 
-- A rejected token on Gitea, Bitbucket or Azure DevOps now reports the token variable to check, instead of the
-  pull request's raw 401.
+- A rejected token on Gitea, Bitbucket Cloud, Bitbucket Data Center or Azure DevOps now reports the token
+  variable to check, instead of the pull request's raw 401.
+- The Gitea adapter was checked against a live Gitea 1.24: inline comments, the summary updated in place,
+  de-duplication on a re-run and "no longer reported" after a fix commit.
+
+### Evaluation
+
+- Benchmarks now run on the Anthropic API (`--provider anthropic`): on AACR-Bench ctx30 it costs 2.6 times less
+  than Claude Code over ACP, with F1 1.8 points lower (not significant). The reviewer at high reasoning lost
+  precision on both paths, so medium stays the default. `BENCHMARKS.md` and `evals/aacr/README.md` have the
+  numbers, including the cross-vendor sweep.
 
 ### Cost
 
