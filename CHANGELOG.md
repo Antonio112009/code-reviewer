@@ -38,6 +38,10 @@
 - **The sweep can run on another model** (`roles.sweep`, `--sweep-provider`, `--sweep-model`): for example a
   second vendor's model reads the whole change, for a more independent second look. Unset, it keeps the
   review's route as before. Experimental: its effect on recall is not measured yet.
+- **OpenAI's own API goes through the Responses API.** GPT-5.6 and later refused the review's tools on chat
+  completions ("Function tools with reasoning_effort are not supported"), so the `openai` provider failed with
+  them. On `api.openai.com` it now uses the Responses API and sends the role's reasoning level by default
+  (`reasoningEffort: false` turns that off); other OpenAI-compatible servers keep chat completions.
 
 ### Forges
 

@@ -62,8 +62,9 @@ const OpenAiProviderSchema = z.strictObject({
   /** Environment variable holding the API key (default `OPENAI_API_KEY`); `none` for no authentication. */
   apiKeyEnv: z.string().regex(API_KEY_ENV_RE, 'must be an environment variable name or "none"').optional(),
   /**
-   * Send the role's reasoning level as `reasoning_effort` (reasoning models such as GPT-5 or o3). Off by default:
-   * models without reasoning, and some servers, reject the parameter.
+   * Send the role's reasoning level as `reasoning_effort` (reasoning models such as GPT-5 or o3). Off by default
+   * on other servers (models without reasoning, and some servers, reject the parameter); on by default for
+   * OpenAI's own API, which is called through the Responses API.
    */
   reasoningEffort: z.boolean().optional(),
   defaultModel: z.string().optional(),

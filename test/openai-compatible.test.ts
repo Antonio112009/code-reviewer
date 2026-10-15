@@ -10,7 +10,7 @@ import { matchListedModel, modelStatus } from '../src/models/catalog';
 import { clearModelListingCache, listModels } from '../src/models/discovery';
 import { costOf } from '../src/models/pricing';
 import { detectProviders } from '../src/providers/detect';
-import { OpenAiProvider } from '../src/providers/openai';
+import { isOpenAiApi, OpenAiProvider } from '../src/providers/openai';
 import { createProvider } from '../src/providers/registry';
 import type { AgentTask } from '../src/providers/types';
 import { Logger } from '../src/util/logger';
@@ -179,6 +179,16 @@ describe('OpenAI-compatible provider', () => {
       new OpenAiProvider('openai', { type: 'openai' }).run(task({ model: 'gpt-5' })),
     ).rejects.toThrow(/OPENAI_API_KEY is not set.*apiKeyEnv to "none"/);
     expect(requests).toEqual([]);
+  });
+
+  it("takes the Responses API for OpenAI's own API only", () => {
+    // GPT-5.6 and later refuse function tools with reasoning on chat completions; other servers keep chat completions
+    expect(isOpenAiApi('https://api.openai.com/v1')).toBe(true);
+    expect(isOpenAiApi('https://API.openai.com/v1/')).toBe(true);
+    expect(isOpenAiApi('https://openrouter.ai/api/v1')).toBe(false);
+    expect(isOpenAiApi('http://localhost:11434/v1')).toBe(false);
+    expect(isOpenAiApi('https://api.openai.com.evil.example/v1')).toBe(false);
+    expect(isOpenAiApi('not a url')).toBe(false);
   });
 
   it('is built by the registry from the default config', () => {
