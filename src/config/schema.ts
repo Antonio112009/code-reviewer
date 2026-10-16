@@ -101,6 +101,9 @@ export type MockProviderConfig = z.infer<typeof MockProviderSchema>;
  *   concrete consequence; all skills. The default: on real pull requests it costs half as much again as
  *   `essential` and finds almost four times as many of the defects human reviewers noted (AACR-Bench ctx30).
  */
+/** `review.chunking` (`--chunking`). */
+export const CHUNKING_MODES = ['smart', 'directory', 'file'] as const;
+
 export const REVIEW_DEPTHS = ['essential', 'full'] as const;
 export type ReviewDepth = (typeof REVIEW_DEPTHS)[number];
 
@@ -170,8 +173,12 @@ export const ReviewSettingsSchema = z.object({
   stallTimeoutMs: z.number().int().positive(),
   maxSteps: z.number().int().positive(),
   summary: z.boolean(),
-  /** `smart` groups related files (imports, tests, co-change); `directory` packs by folder only. */
-  chunking: z.enum(['smart', 'directory']),
+  /**
+   * `smart` groups related files (imports, tests, co-change); `directory` packs by folder only; `file` gives
+   * every file its own chunk (related files still come in as read-only context), so the result cache works per
+   * file: a later push re-reviews only the files that changed and the ones whose shown neighbours changed.
+   */
+  chunking: z.enum(CHUNKING_MODES),
   /** Share of a chunk's budget that may hold read-only excerpts of related files owned by other chunks. */
   contextShare: z.number().min(0).max(0.5),
   /**

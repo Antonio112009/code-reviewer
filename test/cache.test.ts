@@ -355,6 +355,31 @@ describe('runReview with the result cache', () => {
     expect(run2.findings.map((f) => f.title).sort()).toEqual(run1.findings.map((f) => f.title).sort());
   });
 
+  it('with one chunk per file, a later commit re-reviews only the files that changed', async () => {
+    const out = freshDir('out'); // runs saved outside the repository, so the next commit does not add them
+    const perFile = (c: Config) => {
+      c.review.chunking = 'file';
+      c.output.dir = out;
+    };
+    const first = new CountingProvider();
+    const run1 = await review(first, perFile);
+    expect(run1.chunks.map((c) => c.files)).toEqual([['src/a.ts'], ['src/b.ts']]);
+    expect(first.calls.findings).toBe(2);
+    repo.write({
+      'src/b.ts':
+        'export const b = 3;\nexport const y = b.foo.bar; // BUG(major): reads a missing property\n',
+    });
+    repo.commit('change b');
+    const second = new CountingProvider();
+    const run2 = await review(second, perFile);
+    expect(second.calls.findings).toBe(1);
+    expect(run2.cache).toMatchObject({ hits: 1, misses: 1 });
+    expect(run2.chunks.map((c) => [c.files[0], c.cached ?? 'reviewed'])).toEqual([
+      ['src/a.ts', 'all'],
+      ['src/b.ts', 'reviewed'],
+    ]);
+  });
+
   it('reviews again what changed, and a different model or --no-cache', async () => {
     await review(new CountingProvider());
     repo.write({

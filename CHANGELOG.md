@@ -9,6 +9,11 @@
   and route, so an unchanged change costs no model call at all; `run.sweep.cached` counts the parts reused.
 - **Usage by stage.** `run.stages` gives the tokens and known cost of the chunk reviews, the sweep, the critic
   and the notes check, so a run shows where its money went (`runs show --json`).
+- **One chunk per file** (`--chunking file`, `review.chunking: file`). Packing small files into one chunk
+  means a new commit to any of them re-reviews them all, since the chunk is what the cache keys on. In this mode
+  each file is its own chunk, still shown its related files as context, and a later push re-reviews only the
+  files that changed and those that show a changed file. The first review makes more calls, so `smart` stays
+  the default.
 
 ## 0.11.1 — 2026-10-15
 

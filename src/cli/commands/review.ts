@@ -4,6 +4,7 @@ import * as p from '@clack/prompts';
 import type { Command } from 'commander';
 import pc from 'picocolors';
 import {
+  CHUNKING_MODES,
   type Config,
   type PartialConfig,
   REPORT_FORMATS,
@@ -247,7 +248,7 @@ export function applyRunFlags(config: Config, f: ReviewFlags): void {
   if (f.remote) config.git.remote = f.remote;
   const onUnavailable = parseEnum(f.onUnavailable, ['ask', 'fallback', 'fail'] as const, '--on-unavailable');
   if (onUnavailable) config.models.onUnavailable = onUnavailable;
-  const chunking = parseEnum(f.chunking, ['smart', 'directory'] as const, '--chunking');
+  const chunking = parseEnum(f.chunking, CHUNKING_MODES, '--chunking');
   if (chunking) config.review.chunking = chunking;
   const expand = parseEnum(f.expand, EXPAND_LEVELS, '--expand');
   if (expand) config.review.expand = expand;
@@ -465,7 +466,7 @@ export function addRunLimitOptions(cmd: Command): Command {
     .optionsGroup('Advanced:')
     .option('--max-chunk-tokens <n>', 'token budget of code per chunk')
     .option('--timeout <seconds>', 'fixed timeout per LLM task (default: auto, scales with chunk size)')
-    .option('--chunking <mode>', 'smart (related files together) | directory')
+    .option('--chunking <mode>', 'smart (related files together) | directory | file (one file per chunk)')
     .option(
       '--passes <list>',
       'review passes per chunk: general | local,contracts (changed lines, then consumers)',

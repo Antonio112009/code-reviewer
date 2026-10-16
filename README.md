@@ -453,6 +453,11 @@ An answer is reused only while the chunk's code, the instructions and skills, th
 and **every file the model read** (through `read_file`, `grep` or the agent's own read tools) are the same.
 Early answers from a model that ran out of time are never cached, and `eval` never uses the cache.
 
+Small files of a change are packed into one chunk, so by default a new commit to any of them re-reviews them
+all. `--chunking file` (or `review.chunking: file`) gives every file its own chunk: a later push then re-reviews
+only the files that changed and those that show a changed file as context. The first review of a change makes
+more model calls this way, each with the shared instructions, so it suits pull requests that get many pushes.
+
 - Where: the platform's cache directory (`~/Library/Caches/code-reviewer`, `~/.cache/code-reviewer`,
   `%LOCALAPPDATA%\code-reviewer\Cache`), else the temp directory. Set `CODE_REVIEWER_CACHE_DIR`, or
   `cache.dir` in the global config (an absolute path, or `project` for `.code-reviewer/cache`). When no

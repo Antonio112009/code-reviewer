@@ -11,7 +11,7 @@ import {
   renderUnit,
 } from './render';
 
-export type ChunkingStrategy = 'smart' | 'directory';
+export type ChunkingStrategy = 'smart' | 'directory' | 'file';
 
 export interface ChunkingOptions extends Omit<RenderOptions, 'maxPartTokens'> {
   /** Token budget for the code a chunk reviews (its own files). */
@@ -21,6 +21,8 @@ export interface ChunkingOptions extends Omit<RenderOptions, 'maxPartTokens'> {
   /**
    * `smart` (default when a graph is given): related files (imports, test pairs, co-change) share a chunk,
    * packed affinity-aware. `directory`: files packed in directory order (the default without a graph).
+   * `file`: every file its own chunk (a file over the budget in several), so a chunk's identity — and its
+   * cache entry — depends on that file alone, plus the related files shown to it as context.
    */
   strategy?: ChunkingStrategy;
   /**
@@ -78,7 +80,9 @@ export function buildChunks(units: ReviewUnit[], opts: ChunkingOptions): Chunkin
   const groups =
     strategy === 'smart'
       ? smartGroups(files, rendered, edges, opts, index)
-      : directoryGroups(rendered, opts.budget);
+      : strategy === 'file'
+        ? fileGroups(rendered, opts.budget)
+        : directoryGroups(rendered, opts.budget);
 
   const chunks = groups.map((parts, i): Chunk => {
     const owned = [...new Set(parts.map((p) => p.path))];
@@ -124,6 +128,26 @@ function directoryGroups(rendered: Map<string, ChunkPart[]>, budget: number): Ch
     tokens += part.tokens;
   }
   if (current.length) groups.push(current);
+  return groups;
+}
+
+/** One chunk per file in path order; a file over the budget fills several, its parts in order. */
+function fileGroups(rendered: Map<string, ChunkPart[]>, budget: number): ChunkPart[][] {
+  const groups: ChunkPart[][] = [];
+  for (const file of [...rendered.keys()].sort(cmp)) {
+    let current: ChunkPart[] = [];
+    let tokens = 0;
+    for (const part of rendered.get(file)!) {
+      if (current.length && tokens + part.tokens > budget) {
+        groups.push(current);
+        current = [];
+        tokens = 0;
+      }
+      current.push(part);
+      tokens += part.tokens;
+    }
+    if (current.length) groups.push(current);
+  }
   return groups;
 }
 

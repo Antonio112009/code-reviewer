@@ -336,6 +336,39 @@ describe('buildChunks (smart)', () => {
     expect(bigParts.length).toBeGreaterThan(1);
   });
 
+  it('gives every file its own chunk with `file`, splitting only a file over the budget', async () => {
+    const units = [...sample(), tsUnit('src/big.ts', ['./api/users'], 900), tsUnit('src/tiny.ts', [], 1)];
+    const graph = await graphFor(units);
+    const budget = 1_500;
+    const { chunks } = buildChunks(units, { ...renderOpts, budget, graph, strategy: 'file' });
+    const smart = buildChunks(units, { ...renderOpts, budget, graph });
+    const key = (p: { path: string; part?: { index: number } }) => `${p.path}#${p.part?.index ?? 0}`;
+    // the same parts as smart packing, none dropped or duplicated
+    expect(reviewParts(chunks).map(key).sort()).toEqual(reviewParts(smart.chunks).map(key).sort());
+    for (const c of chunks) {
+      expect(c.files).toHaveLength(1);
+      const review = c.parts.filter((p) => p.role !== 'context').reduce((s, p) => s + p.tokens, 0);
+      expect(review).toBeLessThanOrEqual(budget);
+    }
+    const files = [...new Set(units.filter((u) => u.status !== 'deleted').map((u) => u.path))];
+    expect(new Set(chunks.flatMap((c) => c.files))).toEqual(new Set(files));
+    expect(chunks.filter((c) => c.files[0] === 'src/big.ts').length).toBeGreaterThan(1);
+    // related files still come in as read-only context
+    expect(chunks.some((c) => (c.contextFiles ?? []).length > 0)).toBe(true);
+    // a file's chunk does not change when an unrelated file does
+    const users = (cs: Chunk[]) => cs.find((c) => c.files[0] === 'src/tiny.ts')!;
+    const edited = units.map((u) =>
+      u.path === 'src/big.ts' ? tsUnit('src/big.ts', ['./api/users'], 901) : u,
+    );
+    const again = buildChunks(edited, {
+      ...renderOpts,
+      budget,
+      graph: await graphFor(edited),
+      strategy: 'file',
+    });
+    expect(users(again.chunks).parts).toEqual(users(chunks).parts);
+  });
+
   it('adds capped read-only context for import neighbours reviewed in other chunks', async () => {
     const units = [
       tsUnit('src/core/types.ts', [], 30),

@@ -564,7 +564,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
   });
 
   const graphP: Promise<FileGraph | undefined> =
-    config.review.chunking === 'smart' && units.length > 1
+    config.review.chunking !== 'directory' && units.length > 1
       ? (async () => {
           const allFiles =
             target.kind === 'diff'
@@ -680,7 +680,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         fullFileTokens: config.review.fullFileTokens,
         contextLines: config.review.contextLines,
         graph,
-        strategy: graph ? 'smart' : 'directory',
+        strategy: config.review.chunking === 'file' ? 'file' : graph ? 'smart' : 'directory',
         contextShare: config.review.contextShare,
         maxTotalTokens: Math.max(budget, promptRoom),
       });
