@@ -223,8 +223,8 @@ export const ReviewSettingsSchema = z.object({
   sweep: z.boolean(),
   /**
    * Send the sweep through the provider's batch interface (the Anthropic API's Message Batches: half the
-   * price) and start it next to the chunk reviews, so its minutes of latency hide behind them. A batch not
-   * answered within 20 minutes is cancelled and the sweep runs as a regular request. Other providers ignore it.
+   * price) and start it next to the chunk reviews, so its minutes of latency hide behind them. A batch that
+   * fails or is not answered within 20 minutes is cancelled and the sweep runs as a regular request. Other providers ignore it.
    */
   batch: z.boolean(),
   /**

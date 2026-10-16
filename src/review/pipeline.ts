@@ -1048,6 +1048,12 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     const r = router.route(role);
     return { provider: r.provider, model: r.model, reasoning: r.reasoning };
   };
+  // Sweep calls started early (`review.batch`), by part, until the sweep phase takes them. Those the run no
+  // longer waits for (it failed, or the sweep phase was skipped) are stopped, so their batches are cancelled
+  // instead of polled for minutes, and charged for what they used.
+  type Settled = { ok: RoutedResult } | { err: unknown };
+  const earlySweep = new Map<number, Promise<Settled>>();
+  const earlySweepStop = new AbortController();
 
   try {
     // Agents read code from a detached, sanitized worktree: they never see (or touch) the user's
@@ -1154,15 +1160,16 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             return { part, label, task, key };
           })
         : [];
-    type Settled = { ok: RoutedResult } | { err: unknown };
-    const earlySweep = new Map<number, Promise<Settled>>();
     if (config.review.batch && !req.signal?.aborted) {
+      const signal = req.signal
+        ? AbortSignal.any([req.signal, earlySweepStop.signal])
+        : earlySweepStop.signal;
       for (const [index, plan] of sweepPlan.entries()) {
         const entry = plan.key ? await getReview(cache!, plan.key, root) : undefined;
         if (entry?.kind === 'result') continue;
         earlySweep.set(
           index,
-          runRouted(sweepRole, plan.task, router, registry).then(
+          runRouted(sweepRole, { ...plan.task, signal }, router, registry).then(
             (ok) => ({ ok }),
             (err) => ({ err }),
           ),
@@ -1740,6 +1747,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
           const files = new Set(part.flatMap((c) => c.files));
           const spend: Spend[] = [];
           const early = earlySweep.get(index);
+          earlySweep.delete(index);
           const entry = key && !early ? await getReview(cache!, key, root) : undefined;
           if (entry?.kind === 'result') {
             record.cached = (record.cached ?? 0) + 1;
@@ -2074,6 +2082,10 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     run.error = errorMessage(err);
     throw err;
   } finally {
+    earlySweepStop.abort();
+    for (const settled of await Promise.all(earlySweep.values())) {
+      charge('sweep', 'ok' in settled ? settled.ok.spend : spendOf(settled.err));
+    }
     run.durationMs = Date.now() - startedAt;
     const cost = meter.summary();
     if (cost) run.cost = cost;

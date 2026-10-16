@@ -1,4 +1,5 @@
 import { setTimeout as delay } from 'node:timers/promises';
+import { getModelCapabilities } from '@ai-sdk/anthropic/internal';
 import { z } from 'zod';
 import { SUBMIT_TOOLS, toolsFor } from '../tools/definitions';
 import { SubmissionCollector } from '../tools/submission';
@@ -11,8 +12,9 @@ import { type AgentResult, type AgentTask, ProviderError } from './types';
  * cannot call back for a tool result, so the model's first answer is final: its `submit_*` call (or, failing
  * that, its text, which the pipeline repairs like any other reply).
  *
- * When the batch has not ended within the wait limit (or the task is aborted), it is cancelled and
- * `BatchTimeout` is thrown: the caller falls back to a regular request.
+ * When the batch is no longer waited for (it has not ended within the wait limit, the task is aborted, a
+ * status check failed), it is cancelled. A timeout throws `BatchTimeout`; the caller falls back to a regular
+ * request on any failure but an abort.
  */
 
 const API = 'https://api.anthropic.com/v1/messages/batches';
@@ -62,10 +64,40 @@ const BatchResultSchema = z.object({
   }),
 });
 
-/** The task's reasoning level as Messages API thinking settings (adaptive thinking; `none` = low effort). */
-function thinkingFor(task: AgentTask): Record<string, unknown> {
-  const effort = task.reasoning === 'none' ? 'low' : task.reasoning;
-  return { thinking: { type: 'adaptive' }, output_config: { effort } };
+/** Share of the output limit a thinking budget gets on a model without adaptive thinking (the AI SDK's). */
+const BUDGET_SHARE = { low: 0.1, medium: 0.3, high: 0.6 } as const;
+const MIN_BUDGET = 1024;
+
+/**
+ * The task's reasoning level as Messages API settings, chosen as the AI SDK chooses them for a regular request
+ * on the same model: adaptive thinking at that effort where the model has it, else a thinking budget; `none`
+ * turns thinking off, or to its lowest setting on a model that cannot turn it off. `max_tokens` too: the
+ * task's limit (else the model's) plus the budget, within the model's limit.
+ */
+function reasoningFor(task: AgentTask, modelId: string): Record<string, unknown> {
+  const caps = getModelCapabilities(modelId);
+  const cap = (n: number) => (caps.isKnownModel ? Math.min(n, caps.maxOutputTokens) : n);
+  const maxTokens = task.maxOutputTokens ?? caps.maxOutputTokens;
+  if (task.reasoning === 'none') {
+    const settings = caps.supportsBetweenToolsThinking
+      ? { thinking: { type: 'between_tools' } }
+      : caps.rejectsThinkingDisabled
+        ? { output_config: { effort: 'low' } }
+        : { thinking: { type: 'disabled' } };
+    return { max_tokens: cap(maxTokens), ...settings };
+  }
+  if (caps.supportsAdaptiveThinking) {
+    return {
+      max_tokens: cap(maxTokens),
+      thinking: { type: 'adaptive' },
+      output_config: { effort: task.reasoning },
+    };
+  }
+  const budget = Math.min(
+    caps.maxOutputTokens,
+    Math.max(MIN_BUDGET, Math.round(caps.maxOutputTokens * BUDGET_SHARE[task.reasoning])),
+  );
+  return { max_tokens: cap(maxTokens + budget), thinking: { type: 'enabled', budget_tokens: budget } };
 }
 
 /** The request body: our instructions as the system prompt, the prompt, and the submit tool only. */
@@ -78,12 +110,11 @@ export function batchParams(task: AgentTask, modelId: string): Record<string, un
   }));
   return {
     model: modelId,
-    max_tokens: task.maxOutputTokens ?? 32_000,
     system: task.instructions,
     messages: [{ role: 'user', content: task.prompt }],
     tools,
     tool_choice: { type: 'auto' },
-    ...thinkingFor(task),
+    ...reasoningFor(task, modelId),
   };
 }
 
@@ -95,12 +126,17 @@ export async function runBatchTask(task: AgentTask, opts: BatchOptions): Promise
     'anthropic-version': VERSION,
     'content-type': 'application/json',
   };
-  const call = async (method: string, url: string, body?: unknown): Promise<Response> => {
+  const call = async (
+    method: string,
+    url: string,
+    body?: unknown,
+    signal: AbortSignal | undefined = task.signal,
+  ): Promise<Response> => {
     const res = await doFetch(url, {
       method,
       headers,
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      ...(task.signal ? { signal: task.signal } : {}),
+      ...(signal ? { signal } : {}),
       redirect: 'error',
     });
     if (!res.ok) {
@@ -120,17 +156,25 @@ export async function runBatchTask(task: AgentTask, opts: BatchOptions): Promise
   );
   const started = Date.now();
   let status = created;
-  while (status.processing_status !== 'ended') {
-    if (task.signal?.aborted || Date.now() - started >= opts.maxWaitMs) {
-      await call('POST', `${API}/${status.id}/cancel`).catch(() => undefined);
-      if (task.signal?.aborted) throw task.signal.reason ?? new Error('aborted');
-      throw new BatchTimeout(
-        `the batch was not answered within ${Math.round(opts.maxWaitMs / 1000)}s`,
-        opts.providerId,
-      );
+  try {
+    while (status.processing_status !== 'ended') {
+      task.signal?.throwIfAborted();
+      if (Date.now() - started >= opts.maxWaitMs) {
+        throw new BatchTimeout(
+          `the batch was not answered within ${Math.round(opts.maxWaitMs / 1000)}s`,
+          opts.providerId,
+        );
+      }
+      await sleep(opts.pollMs ?? 10_000, task.signal);
+      status = BatchStatusSchema.parse(await (await call('GET', `${API}/${status.id}`)).json());
     }
-    await sleep(opts.pollMs ?? 10_000, task.signal);
-    status = BatchStatusSchema.parse(await (await call('GET', `${API}/${status.id}`)).json());
+  } catch (err) {
+    // Not waited for any more (timeout, abort, a failed status check): stop it being processed and billed.
+    // Not under the task's signal, which may be the reason we are here.
+    await call('POST', `${API}/${created.id}/cancel`, undefined, AbortSignal.timeout(10_000)).catch(
+      () => undefined,
+    );
+    throw err;
   }
   if (!status.results_url?.startsWith('https://api.anthropic.com/')) {
     throw new ProviderError('the batch ended without a results URL on the API host', opts.providerId);

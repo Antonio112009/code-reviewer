@@ -12,7 +12,8 @@ export const BATCH_MAX_WAIT_MS = 20 * 60_000;
  * The Anthropic API directly (Vercel AI SDK), with the key from `ANTHROPIC_API_KEY`. Unlike an agent such as
  * Claude Code, a task carries only our instructions, prompt and tools, and the API caches the growing prompt
  * of the tool loop (request-level `cache_control`). A task marked `batch` without read tools goes through the
- * Message Batches API at half the price, falling back to a regular request when the batch takes too long.
+ * Message Batches API at half the price, falling back to a regular request when the batch fails or takes too
+ * long.
  */
 export class AnthropicProvider implements Provider {
   readonly kind = 'api' as const;
@@ -55,8 +56,14 @@ export class AnthropicProvider implements Provider {
           ...this.batchHooks,
         });
       } catch (err) {
-        if (!(err instanceof BatchTimeout)) throw err;
-        warnings.push(`${task.label}: ${err.message}; answered by a regular request instead`);
+        if (task.signal?.aborted) throw err;
+        // Any other failure (a timeout, a batch-specific rejection such as thinking settings an older model
+        // does not take): the regular request still answers, and reports a real API problem as usual.
+        const why =
+          err instanceof BatchTimeout
+            ? err.message
+            : `the batch failed (${err instanceof Error ? err.message : String(err)})`;
+        warnings.push(`${task.label}: ${why}; answered by a regular request instead`);
       }
     }
     const result = await runAiSdkTask(task, {
