@@ -45,10 +45,15 @@ export CODE_REVIEWER_CLI=${CODE_REVIEWER_CLI:-$ROOT/dist/cli.js}
 export CODE_REVIEWER_ARGS="${CR_ARGS[*]}"
 [ -f "$CODE_REVIEWER_CLI" ] || { echo "$CODE_REVIEWER_CLI not found: npm run build" >&2; exit 1; }
 
-# Without an OpenAI-compatible judge endpoint (JUDGE_API_KEY), `claude -p` judges with the harness's prompt.
-if [ -z "${JUDGE_API_KEY:-}" ]; then
-  export JUDGE_BACKEND=claude-cli JUDGE_CLAUDE_MODEL=${JUDGE_CLAUDE_MODEL:-sonnet}
+# The judge: an OpenAI-compatible endpoint when JUDGE_API_KEY is set; else the Anthropic Messages API with
+# ANTHROPIC_API_KEY (metered API spend, Sonnet 5.5); `JUDGE_BACKEND=claude-cli` keeps the old `claude -p` judge.
+if [ -z "${JUDGE_API_KEY:-}" ] && [ -z "${JUDGE_BACKEND:-}" ]; then
+  [ -n "${ANTHROPIC_API_KEY:-}" ] || ANTHROPIC_API_KEY=$(security find-generic-password -a "$USER" -s ANTHROPIC_API_KEY -w 2>/dev/null || true)
+  [ -n "${ANTHROPIC_API_KEY:-}" ] || { echo "Set ANTHROPIC_API_KEY (or JUDGE_BACKEND=claude-cli) for the judge." >&2; exit 1; }
+  export ANTHROPIC_API_KEY JUDGE_BACKEND=anthropic-api JUDGE_ANTHROPIC_MODEL=${JUDGE_ANTHROPIC_MODEL:-claude-sonnet-5-5} \
+    JUDGE_ANTHROPIC_EFFORT=${JUDGE_ANTHROPIC_EFFORT-xhigh}
 fi
+[ "${JUDGE_BACKEND:-}" = claude-cli ] && export JUDGE_CLAUDE_MODEL=${JUDGE_CLAUDE_MODEL:-sonnet}
 # The harness's Claude Code reviewer: use the logged-in account unless a gateway token is configured.
 if [ "$REVIEWER" = claude ] && [ -z "${ANTHROPIC_AUTH_TOKEN:-}" ]; then
   export CLAUDE_USE_SUBSCRIPTION=true ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-sonnet}

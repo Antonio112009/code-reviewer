@@ -1,5 +1,5 @@
 diff --git a/evaluation/evaluate.py b/evaluation/evaluate.py
-index 373fa1c..0c34046 100644
+index 373fa1c..23f61cc 100644
 --- a/evaluation/evaluate.py
 +++ b/evaluation/evaluate.py
 @@ -21,6 +21,7 @@ note（语义比对文本）映射：
@@ -100,7 +100,7 @@ index 373fa1c..0c34046 100644
          cr_stats = compute_cr_statistics(reference, generated_count)
          stats["evaluated_instances"] += 1
          stats["expected_notes"] += cr_stats["expected_notes"]
-@@ -440,6 +487,10 @@ def print_summary(reviewer: str, result_data: Dict[str, Any]) -> None:
+@@ -440,6 +487,12 @@ def print_summary(reviewer: str, result_data: Dict[str, Any]) -> None:
  
  
  def judge_mode_description() -> str:
@@ -108,15 +108,17 @@ index 373fa1c..0c34046 100644
 +
 +    if judge.USE_CLAUDE_CLI:
 +        return f"claude CLI ({judge._CLAUDE_JUDGE_MODEL})"
++    if judge.USE_ANTHROPIC_API:
++        return f"Anthropic API ({judge._ANTHROPIC_JUDGE_MODEL})"
      if USE_MOCK_LLM:
          return "Mock（本地相似度）"
      return f"LLM（真实裁判模型）| 模型: {os.getenv(config.JUDGE_MODEL_VAR, '')}"
 \ No newline at end of file
 diff --git a/evaluation/judge.py b/evaluation/judge.py
-index ce519af..55a85a9 100644
+index ce519af..9ac4b2a 100644
 --- a/evaluation/judge.py
 +++ b/evaluation/judge.py
-@@ -46,6 +46,57 @@ def _get_llm_client():
+@@ -46,6 +46,116 @@ def _get_llm_client():
      return _llm_client
  
  
@@ -171,40 +173,105 @@ index ce519af..55a85a9 100644
 +    return {"is_similar": False, "reason": f"judge error: {last_error}", "judge_error": True}
 +
 +
++# JUDGE_BACKEND=anthropic-api: the same prompt and system message as claude-cli, through the Anthropic Messages API
++# with ANTHROPIC_API_KEY (metered API spend instead of a Claude Code subscription).
++USE_ANTHROPIC_API = os.getenv("JUDGE_BACKEND", "") == "anthropic-api"
++_ANTHROPIC_JUDGE_MODEL = os.getenv("JUDGE_ANTHROPIC_MODEL", "claude-sonnet-5-5")
++# USD per million tokens (input, output) for the judge's cost line; unknown models count as 0.
++_ANTHROPIC_PRICES = {"claude-sonnet-5-5": (3.0, 15.0), "claude-opus-5-5": (5.0, 25.0), "claude-haiku-5-5": (1.0, 5.0)}
++_anthropic_clients: Dict[Any, Any] = {}
++
++
++async def _anthropic_api_judge(prompt: str) -> Dict[str, Any]:
++    import asyncio
++
++    import httpx
++
++    loop = asyncio.get_running_loop()
++    semaphore = _claude_semaphores.get(loop)
++    if semaphore is None:
++        semaphore = _claude_semaphores[loop] = asyncio.Semaphore(int(os.getenv("JUDGE_CONCURRENCY", "8")))
++    client = _anthropic_clients.get(loop)
++    if client is None:
++        client = _anthropic_clients[loop] = httpx.AsyncClient(timeout=120)
++    body = {
++        "model": _ANTHROPIC_JUDGE_MODEL,
++        "max_tokens": 16,
++        "system": "You judge code review comments. Reply with exactly one word: yes or no.",
++        "messages": [{"role": "user", "content": prompt}],
++    }
++    headers = {
++        "x-api-key": os.environ.get("ANTHROPIC_API_KEY", ""),
++        "anthropic-version": "2023-06-01",
++        "content-type": "application/json",
++    }
++    last_error = ""
++    for attempt in range(4):
++        async with semaphore:
++            try:
++                res = await client.post("https://api.anthropic.com/v1/messages", json=body, headers=headers)
++                if res.status_code == 429 or res.status_code >= 500:
++                    raise RuntimeError(f"HTTP {res.status_code}: {res.text[:200]}")
++                res.raise_for_status()
++                data = res.json()
++                result_text = "".join(
++                    b.get("text", "") for b in data.get("content", []) if b.get("type") == "text"
++                ).strip().lower()
++                usage = data.get("usage") or {}
++                price_in, price_out = _ANTHROPIC_PRICES.get(_ANTHROPIC_JUDGE_MODEL, (0.0, 0.0))
++                cost = (usage.get("input_tokens", 0) * price_in + usage.get("output_tokens", 0) * price_out) / 1e6
++                global judge_cost_usd
++                judge_cost_usd += cost
++                return {"is_similar": result_text.startswith("yes"), "reason": result_text, "cost": cost}
++            except Exception as error:  # noqa: BLE001
++                last_error = str(error)[:300]
++        await asyncio.sleep(5 * (attempt + 1))
++    global judge_error_count
++    judge_error_count += 1
++    logging.error("anthropic judge failed: %s", last_error)
++    return {"is_similar": False, "reason": f"judge error: {last_error}", "judge_error": True}
++
++
  def _mock_semantic_match(reference_note: str, generated_note: str) -> bool:
      """本地近似语义匹配：综合序列相似度与词汇重叠度，不依赖外部 LLM。"""
      sequence_ratio = difflib.SequenceMatcher(
-@@ -67,7 +118,7 @@ async def match_semantic(reference_note: str, generated_note: str) -> Dict[str,
+@@ -67,7 +177,7 @@ async def match_semantic(reference_note: str, generated_note: str) -> Dict[str,
      global llm_request_count
      llm_request_count += 1
  
 -    if USE_MOCK_LLM:
-+    if USE_MOCK_LLM and not USE_CLAUDE_CLI:
++    if USE_MOCK_LLM and not USE_CLAUDE_CLI and not USE_ANTHROPIC_API:
          is_similar = _mock_semantic_match(reference_note, generated_note)
          return {"is_similar": is_similar, "reason": f"[mock] matched={is_similar}"}
  
-@@ -90,6 +141,9 @@ async def match_semantic(reference_note: str, generated_note: str) -> Dict[str,
+@@ -90,6 +200,11 @@ async def match_semantic(reference_note: str, generated_note: str) -> Dict[str,
          "Your answer:"
      )
  
 +    if USE_CLAUDE_CLI:
 +        return await _claude_cli_judge(prompt)
++    if USE_ANTHROPIC_API:
++        return await _anthropic_api_judge(prompt)
 +
      try:
          response = await _get_llm_client().chat.completions.create(
              model=os.getenv(config.JUDGE_MODEL_VAR, "multiline_judge_model"),
-@@ -261,6 +315,11 @@ def print_llm_request_statistics() -> None:
+@@ -261,6 +376,15 @@ def print_llm_request_statistics() -> None:
      print("\n" + "=" * 50)
      print("语义匹配请求统计")
      print("=" * 50)
 -    print(f"模式: {'Mock（本地相似度）' if USE_MOCK_LLM else 'LLM（真实裁判模型）'}")
 +    if USE_CLAUDE_CLI:
 +        print(f"模式: claude CLI ({_CLAUDE_JUDGE_MODEL})")
++    elif USE_ANTHROPIC_API:
++        print(f"模式: Anthropic API ({_ANTHROPIC_JUDGE_MODEL})")
 +    else:
 +        print(f"模式: {'Mock（本地相似度）' if USE_MOCK_LLM else 'LLM（真实裁判模型）'}")
      print(f"总请求数: {llm_request_count}")
 +    if USE_CLAUDE_CLI:
 +        print(f"claude judge: model={_CLAUDE_JUDGE_MODEL} errors={judge_error_count} cost=${judge_cost_usd:.2f}")
++    if USE_ANTHROPIC_API:
++        print(f"anthropic judge: model={_ANTHROPIC_JUDGE_MODEL} errors={judge_error_count} cost=${judge_cost_usd:.2f}")
      print("=" * 50 + "\n")
 diff --git a/evaluation/pipeline.py b/evaluation/pipeline.py
 index 785d861..4c3187a 100644
