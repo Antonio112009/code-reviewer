@@ -663,6 +663,36 @@ times as much, reports 75% more findings and loses 11 points of precision. The d
 but on hold82 it is not resolved, and the cost grows with the number of files. `smart` stays the default; `file`
 is an option for small pull requests and for repeated pushes.
 
+**Where the per-file gain comes from** (2026-10-16, all judged by the API judge, Sonnet 5.5 `xhigh`). First,
+whether a smaller chunk budget gives the same: `smart` packing at `--max-chunk-tokens 4000` (`sc4k-1`, build
+`27ecb89`, stopped at the budget after 26 PRs, 4.0 chunks per PR, as dear as `file` on the same PRs):
+
+| ctx30, 26 PRs | Findings | Precision | Recall | F1 |
+|---|---|---|---|---|
+| `smart`, 40k budget (`sm-1` re-judged twice) | 61.0 | 46.7% | 11.4% | 18.3% |
+| `smart`, 4k budget (`sc4k-1`) | 77.0 | 42.9% | 13.1% | 20.1% |
+| one chunk per file (`cf-1,2` re-judged) | 87.5 | 46.3% | 16.1% | 23.9% |
+
+Against `smart`: F1 +1.9 (95% CI −3.0..+5.9); against `file`: −3.8 (−8.9..+0.6). Less code per call is not the
+lever; a whole file per call is. Re-judged under the API judge, `file` against `smart` on all 30 PRs stays at
+F1 +4.8 (+1.7..+7.6).
+
+Second, by the size of the change (ctx30 `cf-1,2` / `sm-1` and hold82 `hf-1` / `hs-1`, 77 PRs, references matched):
+
+| Reviewed files | PRs | `smart` | `file` | Gain | Cost `smart` | Cost `file` |
+|---|---|---|---|---|---|---|
+| 1 | 5 | 4.0 | 4.5 | +0.5 | $0.87 | $0.92 |
+| 2–3 | 20 | 18.0 | 17.5 | −0.5 | $3.21 | $4.28 |
+| 4–6 | 20 | 7.0 | 11.5 | +4.5 | $4.80 | $7.58 |
+| 7–10 | 11 | 7.0 | 16.5 | +9.5 | $2.99 | $6.17 |
+| 11–20 | 17 | 20.5 | 29.5 | +9.0 | $6.73 | $16.82 |
+| 21+ | 4 | 8.0 | 7.0 | −1.0 | $3.46 | $10.05 |
+
+The gain sits in changes of 4 to 20 files and is cheapest on 4 to 10. `--chunking auto` (one chunk per file for
+`review.fileChunkRange`, default 4–10) would have scored, on the same runs: ctx30 F1 21.1% at $9.30 (`smart`
+17.1% at $7.15, `file` 21.9% at $12.81); hold82 15.3% at $18.72 (`smart` 13.9% at $14.91, `file` 16.0% at
+$33.01). The range was chosen on these runs, so these are optimistic; Martian is the independent check.
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).
