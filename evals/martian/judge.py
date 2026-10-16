@@ -2,7 +2,7 @@
 """Judges a run (or a published tool's candidates) against the golden comments with the benchmark's own prompt.
 
     judge.py <run-id> [--tier main|all] [--judge-model sonnet] [--effort low|medium|high] [--no-thinking]
-             [--concurrency 8]
+             [--concurrency 8] [--backend api|cli]
     judge.py --baseline <tool> [--judge-model sonnet] [--no-thinking]    e.g. --baseline claude-code
 
 `--judge-model claude-opus-4-5-20251101 --no-thinking` asks the leaderboard's judge model the way the
@@ -11,8 +11,12 @@ the leaderboard's temperature of 0, it is still stricter than the published scor
 candidates re-judged with `--baseline` lose 1.6 to 5.4 F1 points (BENCHMARKS.md, "Judge calibration"). Compare
 runs with re-judged baselines, not with the published table. Sonnet (the default) is cheaper and stricter.
 
+The judge is called through the Anthropic Messages API with ANTHROPIC_API_KEY (from the environment or the macOS
+Keychain), metered API spend; `--backend cli` uses `claude -p` (a Claude Code subscription) instead. Both send
+the same prompt, system message and settings, so cached verdicts serve either.
+
 The judge prompt and its system message are read verbatim from the pinned benchmark checkout
-(offline/code_review_benchmark/step3_judge_comments.py, MIT) and answered by `claude -p`; every (golden,
+(offline/code_review_benchmark/step3_judge_comments.py, MIT) and answered by the judge model; every (golden,
 candidate) pair of a pull request is judged, and the matching rule is the benchmark's: a golden comment is
 matched by the candidate the judge is most confident about, a candidate counts as matched when it is that best
 match for some golden comment, the rest are false positives. Verdicts are cached under
@@ -35,6 +39,9 @@ import os
 import re
 import subprocess
 import sys
+import time
+import urllib.error
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -71,10 +78,65 @@ def judge_prompts() -> tuple[str, str]:
 
 
 SYSTEM = ""  # set from the benchmark checkout in main()
+BACKEND = "api"  # set from --backend in main()
+# `claude -p` model aliases, as the API's model ids.
+API_MODELS = {"sonnet": "claude-sonnet-5-5", "opus": "claude-opus-5-5", "haiku": "claude-haiku-5-5"}
+# USD per million tokens (input, output), for the cost line.
+API_PRICES = {
+    "claude-sonnet-5-5": (2.0, 10.0),
+    "claude-opus-5-5": (4.0, 20.0),
+    "claude-haiku-5-5": (0.1, 0.5),
+    "claude-opus-4-5-20251101": (5.0, 25.0),
+}
+_api_key = ""
+
+
+def api_key() -> str:
+    global _api_key
+    if not _api_key:
+        _api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip() or subprocess.run(
+            ["security", "find-generic-password", "-a", os.environ.get("USER", ""), "-s", "ANTHROPIC_API_KEY", "-w"],
+            capture_output=True, text=True,
+        ).stdout.strip()
+        if not _api_key:
+            sys.exit("Set ANTHROPIC_API_KEY (or pass --backend cli) for the judge.")
+    return _api_key
+
+
+def ask_api(prompt: str, model: str, effort: str, thinking: bool) -> tuple[str, float]:
+    """One judge call through the Messages API: the reply text and its cost. Models before Claude 4.6 run
+    without thinking unless asked; on later models thinking cannot be turned off, so `--no-thinking` only
+    applies to the former (the leaderboard's Opus 4.5)."""
+    api_model = API_MODELS.get(model, model)
+    body: dict = {"model": api_model, "max_tokens": 4096, "system": SYSTEM,
+                  "messages": [{"role": "user", "content": prompt}]}
+    if effort:
+        body["output_config"] = {"effort": effort}
+    if thinking and api_model in ("claude-opus-4-5-20251101",):
+        body["thinking"] = {"type": "enabled", "budget_tokens": 2048}
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages", data=json.dumps(body).encode(),
+        headers={"x-api-key": api_key(), "anthropic-version": "2023-06-01", "content-type": "application/json"},
+    )
+    for attempt in range(5):
+        try:
+            with urllib.request.urlopen(req, timeout=180) as res:
+                data = json.load(res)
+            break
+        except urllib.error.HTTPError as err:
+            if err.code != 429 and err.code < 500:
+                raise ValueError(f"HTTP {err.code}: {err.read()[:200]!r}") from err
+            time.sleep(5 * (attempt + 1))
+    else:
+        raise ValueError("the judge API kept failing")
+    text = "".join(b.get("text", "") for b in data.get("content", []) if b.get("type") == "text")
+    usage = data.get("usage") or {}
+    price_in, price_out = API_PRICES.get(api_model, (0.0, 0.0))
+    return text, (usage.get("input_tokens", 0) * price_in + usage.get("output_tokens", 0) * price_out) / 1e6
 
 
 def ask(prompt: str, model: str, effort: str = "", thinking: bool = True) -> dict:
-    """One judge call through `claude -p`; the answer is the JSON object the prompt asks for."""
+    """One judge call (Messages API, or `claude -p`); the answer is the JSON object the prompt asks for."""
     variant = f"{'@' + effort if effort else ''}{'' if thinking else '@nothink'}@{SYSTEM}"
     key = hashlib.sha256(f"{model}{variant}\n{prompt}".encode()).hexdigest()
     cached = MARTIAN_DIR / "judge-cache" / f"{key}.json"
@@ -90,12 +152,16 @@ def ask(prompt: str, model: str, effort: str = "", thinking: bool = True) -> dic
     last = ""
     for attempt in range(3):
         try:
-            env = os.environ if thinking else {**os.environ, "MAX_THINKING_TOKENS": "0"}
-            proc = subprocess.run(command, input=prompt, capture_output=True, text=True, timeout=120, env=env)
-            data = json.loads(proc.stdout)
-            if data.get("is_error"):
-                raise ValueError(str(data.get("result"))[:200])
-            text = str(data.get("result", ""))
+            if BACKEND == "api":
+                text, cost = ask_api(prompt, model, effort, thinking)
+                data = {"total_cost_usd": cost}
+            else:
+                env = os.environ if thinking else {**os.environ, "MAX_THINKING_TOKENS": "0"}
+                proc = subprocess.run(command, input=prompt, capture_output=True, text=True, timeout=120, env=env)
+                data = json.loads(proc.stdout)
+                if data.get("is_error"):
+                    raise ValueError(str(data.get("result"))[:200])
+                text = str(data.get("result", ""))
             m = re.search(r"\{.*\}", text, re.S)
             verdict = json.loads(m.group(0)) if m else {}
             result = {
@@ -182,7 +248,10 @@ def main() -> None:
     concurrency = opt("--concurrency", 8)
     baseline = opt("--baseline", "")
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    global SYSTEM
+    global SYSTEM, BACKEND
+    BACKEND = opt("--backend", "api")
+    if BACKEND not in ("api", "cli"):
+        sys.exit("--backend must be api or cli")
     golden = golden_by_url()
     template, SYSTEM = judge_prompts()
     if baseline:

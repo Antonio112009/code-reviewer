@@ -19,7 +19,7 @@ import { buildChunks, scheduleOrder, splitChunk } from '../chunking/chunker';
 import { changedSymbols, expandChunks, revisionSource } from '../chunking/expand';
 import { buildFileGraph, type FileGraph } from '../chunking/graph';
 import { estimateTokens } from '../chunking/tokens';
-import type { Config, ReviewSettings } from '../config/schema';
+import type { ChunkingMode, Config, ReviewSettings } from '../config/schema';
 import {
   commitReader,
   loadProjectRules,
@@ -672,6 +672,20 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
   const promptRoom = contextWindow - outputReserve - overhead;
   const budget = Math.max(2_000, Math.min(config.review.maxChunkTokens, promptRoom));
 
+  // `auto`: one chunk per file for changes in `fileChunkRange` files (where it finds the most), else `smart`.
+  const reviewedFiles = new Set(units.filter((u) => u.status !== 'deleted').map((u) => u.path)).size;
+  const [fileMin, fileMax] = config.review.fileChunkRange;
+  const chunkingUsed: Exclude<ChunkingMode, 'auto'> =
+    config.review.chunking === 'auto'
+      ? reviewedFiles >= fileMin && reviewedFiles <= fileMax
+        ? 'file'
+        : 'smart'
+      : config.review.chunking;
+  if (config.review.chunking === 'auto') {
+    logger.debug(
+      `chunking: auto → ${chunkingUsed} (${reviewedFiles} reviewed files, range ${fileMin}–${fileMax})`,
+    );
+  }
   const { chunks, mentions, baseChunks } = await phase(
     'chunking',
     'Grouping related files into chunks',
@@ -681,7 +695,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         fullFileTokens: config.review.fullFileTokens,
         contextLines: config.review.contextLines,
         graph,
-        strategy: config.review.chunking === 'file' ? 'file' : graph ? 'smart' : 'directory',
+        strategy: chunkingUsed === 'file' ? 'file' : graph ? 'smart' : 'directory',
         contextShare: config.review.contextShare,
         maxTotalTokens: Math.max(budget, promptRoom),
       });
@@ -913,6 +927,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       secondOpinion: config.review.secondOpinion,
       deepen: config.review.deepen,
       sweep: config.review.sweep,
+      chunking: chunkingUsed,
       notes: config.review.notes,
       maxNotes: config.review.maxNotes,
       passes: [...config.review.passes],

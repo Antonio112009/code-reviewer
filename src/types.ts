@@ -600,6 +600,8 @@ export interface RunRecord {
     deepen?: boolean;
     /** `review.sweep`: a call over the whole change for what the chunks missed. */
     sweep?: boolean;
+    /** The chunking that was used (`auto` resolved to `file` or `smart`). */
+    chunking?: 'smart' | 'directory' | 'file';
     notes?: boolean;
     maxNotes?: number;
     passes?: string[];

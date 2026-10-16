@@ -102,7 +102,8 @@ export type MockProviderConfig = z.infer<typeof MockProviderSchema>;
  *   `essential` and finds almost four times as many of the defects human reviewers noted (AACR-Bench ctx30).
  */
 /** `review.chunking` (`--chunking`). */
-export const CHUNKING_MODES = ['smart', 'directory', 'file'] as const;
+export const CHUNKING_MODES = ['smart', 'directory', 'file', 'auto'] as const;
+export type ChunkingMode = (typeof CHUNKING_MODES)[number];
 
 export const REVIEW_DEPTHS = ['essential', 'full'] as const;
 export type ReviewDepth = (typeof REVIEW_DEPTHS)[number];
@@ -176,9 +177,18 @@ export const ReviewSettingsSchema = z.object({
   /**
    * `smart` groups related files (imports, tests, co-change); `directory` packs by folder only; `file` gives
    * every file its own chunk (related files still come in as read-only context), so the result cache works per
-   * file: a later push re-reviews only the files that changed and the ones whose shown neighbours changed.
+   * file: a later push re-reviews only the files that changed and the ones whose shown neighbours changed;
+   * `auto` uses `file` when the change has `fileChunkRange` files, else `smart`.
    */
   chunking: z.enum(CHUNKING_MODES),
+  /**
+   * `chunking: auto`: the change sizes (reviewed files, inclusive) that get one chunk per file. Measured on
+   * AACR-Bench (2026-10-16): per-file chunks find more on changes of 4 to 20 files, most cheaply on 4 to 10;
+   * on 1 to 3 files they find the same as `smart` for more money.
+   */
+  fileChunkRange: z
+    .tuple([z.number().int().positive(), z.number().int().positive()])
+    .refine(([lo, hi]) => lo <= hi, 'the first number must not exceed the second'),
   /** Share of a chunk's budget that may hold read-only excerpts of related files owned by other chunks. */
   contextShare: z.number().min(0).max(0.5),
   /**
@@ -528,6 +538,7 @@ export const DEFAULT_CONFIG: Config = {
     maxSteps: 25,
     summary: false,
     chunking: 'smart',
+    fileChunkRange: [4, 10],
     contextShare: 0.2,
     expand: 'map',
     passes: ['general'],

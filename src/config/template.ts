@@ -186,8 +186,12 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
         maxTimeoutMs: { doc: 'Upper bound for any task timeout (ms).' },
         stallTimeoutMs: { doc: 'Cancel a task when the agent sends no update for this long (ms).' },
         chunking: {
-          doc: 'smart groups related files (imports, tests, co-change); directory packs by folder; file gives each file its own chunk, so the cache works per file across pushes.',
+          doc: 'smart groups related files (imports, tests, co-change); directory packs by folder; file gives each file its own chunk, so the cache works per file across pushes; auto uses file for changes of fileChunkRange files, else smart.',
           example: D.review.chunking,
+        },
+        fileChunkRange: {
+          doc: 'chunking: auto — changes with this many reviewed files (inclusive) get one chunk per file; others use smart.',
+          example: D.review.fileChunkRange,
         },
         maxChunkTokens: { doc: 'Most tokens of code in one review task.', example: D.review.maxChunkTokens },
         maxChunks: { doc: 'Warn when a review needs more chunks than this (nothing is dropped).' },
