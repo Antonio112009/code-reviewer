@@ -1,12 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.12.0 — 2026-10-16
 
 ### Cost
 
 - **`--batch`** (`review.batch`, Anthropic API): the sweep goes out as a Message Batches request at half the
-  price, started next to the chunk reviews so its latency hides behind them; a batch that fails or is not
-  answered in 20 minutes is cancelled and the sweep runs as a regular request; Ctrl+C cancels it too. The sweep is about 30% of a run's cost
+  price, started next to the chunk reviews so its latency hides behind them. A batch that fails or is not
+  answered in 20 minutes is cancelled and the sweep runs as a regular request; Ctrl+C cancels it too. Its
+  thinking settings follow the model, as for a regular request. The sweep is about 30% of a run's cost
   (`run.stages` on Martian), so a run costs about 15% less. Batch usage is priced at half the token rates.
 - **The sweep is cached.** Reviewing the same change again (a re-run, a CI retry) reused the chunk reviews and the
   critic's verdicts but still called the model for the whole-diff sweep. Its answer is now cached by its prompt
