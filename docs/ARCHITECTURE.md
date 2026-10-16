@@ -235,6 +235,10 @@ not only by the final score. Measured on 2026-10-14 (hold82 and ctx30, main afte
 9–11% of what the reviewers report and the rest of the pipeline almost nothing; the reviewer reports about 3
 findings per chunk and makes 0.4 tool calls per chunk, so candidates are lost before the critic.
 
+`run.stages` splits the run's tokens and known cost by stage — `review` (the chunk reviews, `--deepen` included),
+`sweep`, `critique` (the findings) and `notes` (the maintainability notes) — failed attempts included; the
+stages add up to `run.usage`. A stage answered entirely from the cache has no entry.
+
 ### Sweep (`review.sweep`, `--sweep` / `--no-sweep`; on at full depth, off at essential)
 
 With `review.sweep`, after the chunk reviews `runReview` makes one more review call per part of the change:
@@ -244,7 +248,9 @@ broadly for its defects, telling nothing about the chunk reviews. A finding at t
 reported (`atReportedSpot`: same file, lines overlapping give or take two) is dropped as the same defect; the
 rest join the collected findings with `source.chunkIds = ["sweep"]` and go through validation, dedupe and the
 critic. A failed sweep leaves the chunk reviews standing. `run.sweep` records the calls, failures, findings and
-duplicates. Sweep answers are not cached. The sweep runs on the `sweep` role when `roles.sweep` names one
+duplicates. A sweep answer is cached by its whole prompt and route (no read tools, so nothing else can change
+it): the same change reviewed again — a re-run, a CI retry — reuses it, and `run.sweep.cached` counts those
+parts. Any change to the code makes a new prompt and a new call. The sweep runs on the `sweep` role when `roles.sweep` names one
 (`--sweep-provider` / `--sweep-model`; its model defaults to the review's on the same provider, else that
 provider's `defaultModel`, at medium reasoning), else on the review route; `run.routing.sweep` records it.
 

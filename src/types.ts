@@ -131,6 +131,9 @@ export interface Money {
   currency: string;
 }
 
+/** A stage of a run that calls models (`RunRecord.stages`). */
+export type RunStage = 'review' | 'sweep' | 'critique' | 'notes';
+
 export interface Usage {
   /** Input tokens not served from the prompt cache. */
   inputTokens: number;
@@ -620,7 +623,12 @@ export interface RunRecord {
    * findings they reported, and how many of those were at the spot of a chunk review's finding (`duplicates`,
    * dropped); the rest went to validation and the critic (`source.chunkIds` = ["sweep"]).
    */
-  sweep?: { parts: number; failed: number; findings: number; duplicates: number };
+  sweep?: { parts: number; failed: number; findings: number; duplicates: number; cached?: number };
+  /**
+   * Tokens and known cost of each stage's model calls (failed attempts included): the chunk reviews, the
+   * sweep, the critic on the findings and on the maintainability notes. Their sum is `usage` / `cost`.
+   */
+  stages?: Partial<Record<RunStage, { usage: Usage; cost?: Money }>>;
   /**
    * How many findings each stage let through, so a run says where candidates are lost: what the reviewers
    * reported (`reported`, the chunk reviews and the sweep, static findings apart), what validation and dedupe

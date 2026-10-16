@@ -332,6 +332,29 @@ describe('runReview with the result cache', () => {
     );
   });
 
+  it('answers the sweep of an unchanged change from the cache, and splits usage by stage', async () => {
+    const sweepOn = (c: Config) => {
+      c.review.sweep = true;
+    };
+    const first = new CountingProvider();
+    const run1 = await review(first, sweepOn);
+    expect(first.calls.findings).toBe(2); // the chunk review and the sweep
+    expect(run1.sweep).toMatchObject({ parts: 1, failed: 0 });
+    expect(run1.sweep?.cached).toBeUndefined();
+    expect(Object.keys(run1.stages ?? {}).sort()).toEqual(['critique', 'review', 'sweep']);
+    const stageSum = (key: 'inputTokens' | 'outputTokens') =>
+      Object.values(run1.stages ?? {}).reduce((n, s) => n + (s?.usage[key] ?? 0), 0);
+    expect(stageSum('inputTokens')).toBe(run1.usage.inputTokens);
+    expect(stageSum('outputTokens')).toBe(run1.usage.outputTokens);
+
+    const second = new CountingProvider();
+    const run2 = await review(second, sweepOn);
+    expect(second.calls).toEqual({ findings: 0, verdicts: 0 });
+    expect(run2.sweep).toMatchObject({ parts: 1, failed: 0, cached: 1, findings: run1.sweep!.findings });
+    expect(run2.stages ?? {}).toEqual({});
+    expect(run2.findings.map((f) => f.title).sort()).toEqual(run1.findings.map((f) => f.title).sort());
+  });
+
   it('reviews again what changed, and a different model or --no-cache', async () => {
     await review(new CountingProvider());
     repo.write({

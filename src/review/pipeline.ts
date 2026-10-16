@@ -66,6 +66,7 @@ import type {
   ExpandLevel,
   FailureKind,
   Finding,
+  Money,
   ReasoningLevel,
   RefsInfo,
   ReportedFinding,
@@ -75,6 +76,7 @@ import type {
   Role,
   RoleRouting,
   RunRecord,
+  RunStage,
   RunTarget,
   StaticHit,
 } from '../types';
@@ -1004,6 +1006,24 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     ...(costBudget ? { budget: costBudget } : {}),
   });
   const meter = new CostMeter(config.pricing);
+  /** Adds a stage's calls to the run's usage and cost, and to `run.stages`; returns their known cost. */
+  const charge = (stage: RunStage, spend: Spend[]): Money | undefined => {
+    const cost = meter.add(spend);
+    const usage = sumUsage(spend.map((s) => s.usage));
+    run.usage = sumUsage([run.usage, usage]);
+    if (spend.length) {
+      const prev = (run.stages ??= {})[stage];
+      const money =
+        prev?.cost && cost
+          ? { amount: prev.cost.amount + cost.amount, currency: cost.currency }
+          : (cost ?? prev?.cost);
+      run.stages[stage] = {
+        usage: prev ? sumUsage([prev.usage, usage]) : usage,
+        ...(money ? { cost: money } : {}),
+      };
+    }
+    return cost;
+  };
   const chunkRecords = new Map(run.chunks.map((c) => [c.id, c]));
   let cache: ResultCache | undefined;
   let cacheUse: CacheUse | undefined;
@@ -1542,8 +1562,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
 
             const spend = outcomes.flatMap((o) => o.spend);
             const usage = sumUsage(spend.map((s) => s.usage));
-            const cost = meter.add(spend);
-            run.usage = sumUsage([run.usage, usage]);
+            const cost = charge('review', spend);
             const done = outcomes.filter((o): o is DoneOutcome => o.kind === 'done');
             const failed = outcomes.filter((o): o is PartOutcome & { kind: 'failed' } => o.kind === 'failed');
             const toolCalls: Record<string, number> = {};
@@ -1631,7 +1650,12 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         const allFiles = units.filter((u) => u.status !== 'deleted').map((u) => u.path);
         const reportedSoFar = collected.filter((f) => f.origin === 'llm');
         const parts = sweepParts(chunks, Math.max(budget, promptRoom));
-        const record = { parts: parts.length, failed: 0, findings: 0, duplicates: 0 };
+        const record: NonNullable<RunRecord['sweep']> = {
+          parts: parts.length,
+          failed: 0,
+          findings: 0,
+          duplicates: 0,
+        };
         const instructions = sweepInstructions(mode, depth);
         const sweepRole: Role = routes.sweep ? 'sweep' : 'review';
         for (const [index, part] of parts.entries()) {
@@ -1664,6 +1688,40 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             signal: req.signal,
           };
           const spend: Spend[] = [];
+          // The same change on the same route was swept before (a re-run, a CI retry): reuse its answer.
+          const key = cache
+            ? reviewCacheKey({
+                route: currentRoute(sweepRole),
+                instructions: task.instructions,
+                prompt: { sweep: task.prompt },
+                readTools: false,
+                git: task.git,
+                maxOutputTokens: task.maxOutputTokens,
+              })
+            : undefined;
+          const entry = key ? await getReview(cache!, key, root) : undefined;
+          if (entry?.kind === 'result') {
+            record.cached = (record.cached ?? 0) + 1;
+            cacheUse!.saved.inputTokens += entry.usage?.inputTokens ?? 0;
+            cacheUse!.saved.outputTokens += entry.usage?.outputTokens ?? 0;
+            const found = entry.items.map((r) => {
+              const f = toFinding(r, {
+                root,
+                chunkId: SWEEP_SOURCE,
+                provider: entry.provider,
+                model: entry.model,
+                skills: [],
+                files: allFiles,
+              });
+              f.origin = 'llm';
+              return f;
+            });
+            const fresh = found.filter((f) => !atReportedSpot(f, reportedSoFar));
+            collected.push(...fresh);
+            record.findings += found.length;
+            record.duplicates += found.length - fresh.length;
+            continue;
+          }
           try {
             const result = await runRouted(sweepRole, task, router, registry);
             spend.push(...result.spend);
@@ -1706,6 +1764,17 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             collected.push(...fresh);
             record.findings += found.length;
             record.duplicates += found.length - fresh.length;
+            if (key && !result.salvaged) {
+              const used = sumUsage(spend.map((x) => x.usage));
+              await cache!.set('review', key, {
+                kind: 'result',
+                items: resolved.items,
+                provider: result.provider,
+                ...(result.model ? { model: result.model } : {}),
+                usage: { inputTokens: used.inputTokens, outputTokens: used.outputTokens },
+                reads: {},
+              } satisfies CachedReview);
+            }
             await store.saveArtifact(run.id, label, {
               chunk: { id: label, files: [...files], tokens: part.reduce((n, c) => n + c.tokens, 0) },
               provider: result.provider,
@@ -1724,8 +1793,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             record.failed++;
             warn(`${label} failed (${errorMessage(err).split('\n')[0]}); the chunk reviews stand`);
           } finally {
-            meter.add(spend);
-            run.usage = sumUsage([run.usage, ...spend.map((x) => x.usage)]);
+            charge('sweep', spend);
           }
         }
         run.sweep = record;
@@ -1836,8 +1904,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         }
         final = outcome.kept;
         rejected.push(...outcome.rejected);
-        meter.add(outcome.spend);
-        run.usage = sumUsage([run.usage, ...outcome.spend.map((s) => s.usage)]);
+        charge('critique', outcome.spend);
         for (const w of outcome.warnings) warn(w);
       });
     }
@@ -1864,8 +1931,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
         });
         notes = outcome.kept;
         rejected.push(...outcome.rejected);
-        meter.add(outcome.spend);
-        run.usage = sumUsage([run.usage, ...outcome.spend.map((s) => s.usage)]);
+        charge('notes', outcome.spend);
         for (const w of outcome.warnings) warn(w);
       });
     }
