@@ -94,6 +94,24 @@ One golden comment is 0.6 recall points. The judge's verdicts for every row are 
 - Earlier judgings: Sonnet with an earlier system message, main report 48.7% and with "worth a look" 58.2%;
   Opus 4.5 with extended thinking, Claude Code CLI 42.1% and run m-1 49.2% / 61.0%.
 
+**`--chunking auto` against `smart`** (2026-10-16, build `0704330`, `--full --provider anthropic`, judge
+`claude-opus-4-5-20251101` without thinking through the Messages API). `ma-smart` reviewed all 50 PRs with
+`smart` packing; `ma-auto` reviewed the 25 PRs with 4 to 10 reviewed files with `--chunking auto` (all 25 took one
+chunk per file); `ma-autofull` is `ma-smart` with those 25 replaced, which is what `auto` does. The range was
+chosen on AACR-Bench, so this is its out-of-sample check.
+
+| Core profile (158 golden comments) | TP | FP | Precision | Recall | F1 | Cost (50 PRs) |
+|---|---|---|---|---|---|---|
+| `smart`, main report | 52 | 16 | 76.5% | 32.9% | 46.0% | $18.23 |
+| `auto`, main report | 56 | 18 | 75.7% | 35.4% | 48.3% | $24.74 |
+| `smart`, main report + "worth a look" | 90 | 50 | 64.3% | 57.0% | 60.4% | |
+| `auto`, main report + "worth a look" | 98 | 69 | 58.7% | 62.0% | 60.3% | |
+
+Paired bootstrap over PRs (all categories): main report F1 +2.2 (95% −1.4..+6.5), recall +2.3 (−1.1..+6.1);
+full report F1 ±0.0 (−4.2..+4.4), recall +4.6 (+0.6..+9.6). On the 25 PRs it changes, one chunk per file costs
+$13.14 against $6.63. The direction matches AACR-Bench — more of the real defects for about a third more money —
+but here the extra findings cost precision in "worth a look", so the full report's F1 does not move.
+
 ## Caveats
 
 - The golden set is incomplete and unversioned (it grew from 137 to 173 comments in August 2026; every result

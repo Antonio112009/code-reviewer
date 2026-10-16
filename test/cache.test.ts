@@ -380,6 +380,22 @@ describe('runReview with the result cache', () => {
     ]);
   });
 
+  it('with chunking auto, uses one chunk per file only for changes in fileChunkRange files', async () => {
+    const inRange = await review(new CountingProvider(), (c) => {
+      c.review.chunking = 'auto';
+      c.review.fileChunkRange = [2, 5];
+    });
+    expect(inRange.options.chunking).toBe('file');
+    expect(inRange.chunks.map((c) => c.files)).toEqual([['src/a.ts'], ['src/b.ts']]);
+    const outside = await review(new CountingProvider(), (c) => {
+      c.review.chunking = 'auto';
+      c.review.fileChunkRange = [3, 5];
+      c.cache.enabled = false;
+    });
+    expect(outside.options.chunking).toBe('smart');
+    expect(outside.chunks).toHaveLength(1);
+  });
+
   it('reviews again what changed, and a different model or --no-cache', async () => {
     await review(new CountingProvider());
     repo.write({
