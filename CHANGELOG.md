@@ -14,6 +14,10 @@
   each file is its own chunk, still shown its related files as context, and a later push re-reviews only the
   files that changed and those that show a changed file. The first review makes more calls, so `smart` stays
   the default.
+- **`--chunking auto`** (`review.chunking: auto`) gives one chunk per file to changes of `review.fileChunkRange`
+  reviewed files (default 4 to 10) and packs the rest with `smart`, where per-file chunks found nothing more. On
+  Martian's 50 PRs: main report recall +2.5 points and F1 +2.3 for 1.36 times the cost; full report recall +5,
+  F1 unchanged. `smart` stays the default.
 
 ## 0.11.1 — 2026-10-15
 
