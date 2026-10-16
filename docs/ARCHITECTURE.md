@@ -163,6 +163,10 @@ The depth also affects:
    - Large files are split into windows around the changed hunks.
    - A file owned by one chunk can appear as read-only `context` in another, up to `review.contextShare`
      of the budget.
+   - `review.chunking: file` skips the packing: every file is its own chunk (a file over the budget several),
+     still with related files as context. A chunk's prompt — its cache key — then depends on that file and the
+     context it is shown, not on the other files of the change, so the result cache works per file across
+     pushes. `directory` packs by folder without the graph.
 4. **`render.ts`** — PR-style blocks: new code with new-file line numbers and `+` markers, plus a
    budgeted "removed code" block per hunk.
 5. **`expand.ts`** (`review.expand`, `--expand`; `map` by default) — related *unchanged* code. `map` gives

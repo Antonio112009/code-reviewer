@@ -614,6 +614,37 @@ against $3 / $15). 71% of its findings repeat a chunk finding at the same spot, 
 differ by about 2 F1 between runs of the same pipeline, so only the within-run gains count. The sweep stays on
 the review's model by default; `roles.sweep` remains for anyone who wants another.
 
+**One chunk per file** (2026-10-16; `--chunking file`, build `27ecb89` = 0.11.1 plus the mode, ctx30, `--full
+--provider anthropic`): runs `cf-1,2` against `sm-1`, the default `smart` packing on the same build, and the two
+earlier `smart` API runs `api-1,2` (build `a7a6fbf`):
+
+| ctx30 | Runs | Chunks / PR | Findings | Precision | Recall | F1 | Cost / run |
+|---|---|---|---|---|---|---|---|
+| `smart`, same build (`sm-1`) | 1 | 1.0 | 71.0 | 38.0% | 9.4% | 15.1% | $7.15 |
+| `smart`, earlier build (`api-1,2`) | 2 | 1.0 | 68.0 | 37.5% | 8.9% | 14.4% | $7.00 |
+| one chunk per file (`cf-1,2`) | 2 | 6.2 | 103.0 | 36.9% | 13.3% | 19.5% | $12.80 |
+
+Paired against `sm-1`: recall +3.8 points (95% CI +1.5..+6.2, 22 repositories), F1 +4.4 (+1.2..+7.5), P(file >
+smart) 1.00; against all three `smart` runs: recall +4.2 (+1.9..+6.5), F1 +4.9 (+1.7..+7.7). Both `file` runs
+matched exactly 38 references (13.3% recall); the three `smart` runs 25–27. Reviewing each file in its own call
+(with its related files as read-only context) reports half as many findings again at almost the same
+precision, for 1.8 times the cost: the largest gain measured on ctx30, and a better price per point than three
+merged `smart` runs (F1 +4.1 for 3 times the cost).
+
+On the held-out subset the gain is smaller and the price higher (2026-10-16, same build, runs `hf-1` and `hs-1`,
+stopped at the $60 budget after 51 and 69 of the 82 PRs; compared on the 47 PRs both reviewed):
+
+| hold82, 47 PRs | Chunks / PR | Findings | Precision | Recall | F1 | Cost |
+|---|---|---|---|---|---|---|
+| `smart` (`hs-1`) | 1.0 | 82.0 | 41.5% | 8.4% | 13.9% | $14.91 |
+| one chunk per file (`hf-1`) | 10.7 | 144.0 | 30.6% | 10.8% | 16.0% | $33.01 |
+
+Paired: recall +2.5 points (95% CI −0.1..+5.0, 11 repositories), F1 +2.1 (−0.8..+5.6), P(file > smart) 0.92. The
+held-out pull requests are larger (10.7 files reviewed per PR against 6.2 on ctx30): one call per file costs 2.2
+times as much, reports 75% more findings and loses 11 points of precision. The direction holds on both subsets,
+but on hold82 it is not resolved, and the cost grows with the number of files. `smart` stays the default; `file`
+is an option for small pull requests and for repeated pushes.
+
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
 28.9% and 11.6% (about 30 comments per PR).
