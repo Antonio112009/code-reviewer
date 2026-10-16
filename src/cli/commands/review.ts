@@ -73,6 +73,7 @@ export interface ReviewFlags {
   audit?: boolean;
   deepen?: boolean;
   sweep?: boolean;
+  batch?: boolean;
   /** `--intent` / `--no-intent`: the change's description and commit messages in the prompts (`review.intent`). */
   intent?: boolean;
   /** `--description-file <path>`: the pull request's title and description. */
@@ -266,6 +267,7 @@ export function applyRunFlags(config: Config, f: ReviewFlags): void {
   if (f.audit) config.review.audit = true;
   if (f.deepen) config.review.deepen = true;
   if (f.sweep !== undefined) config.review.sweep = f.sweep;
+  if (f.batch !== undefined) config.review.batch = f.batch;
   if (f.intent !== undefined) config.review.intent = f.intent;
   if (f.secondOpinion !== undefined) config.review.secondOpinion = f.secondOpinion;
   if (f.notes !== undefined) config.review.notes = f.notes;
@@ -481,6 +483,10 @@ export function addRunLimitOptions(cmd: Command): Command {
       'one more call reads the whole change at once for defects the chunk reviews missed; its findings also go to the critic (the full-depth default)',
     )
     .option('--no-sweep', 'chunk reviews only')
+    .option(
+      '--batch',
+      'Anthropic API: send the sweep as a batch request at half the price, next to the chunk reviews',
+    )
     .option(
       '--intent',
       "experimental: show the reviewer the change's description and commit messages, as what the code should do",

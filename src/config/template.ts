@@ -218,6 +218,10 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           doc: 'One more call reads the whole change at once, without tools, for the defects the chunk reviews missed; what it finds goes to the critic (40–50% more per review). On at full depth, off at essential.',
           example: D.review.sweep,
         },
+        batch: {
+          doc: 'Anthropic API only: send the sweep as a Message Batches request (half the price), started next to the chunk reviews; after 20 minutes without an answer it runs as a regular request.',
+          example: D.review.batch,
+        },
         intent: {
           doc: "Experimental: show the reviewer what the change is meant to do, in its author's words: the pull request's title and description (CI event, gh / glab, --description-file) and the commit messages (untrusted, clipped; never shown to the critic).",
           example: D.review.intent,

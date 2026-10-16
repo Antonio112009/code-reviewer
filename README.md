@@ -398,8 +398,9 @@ Useful flags:
   price ([when to use it](#a-second-pass-for-important-changes---deepen));
 - `--sweep` / `--no-sweep`: one more call reads the whole change at once for the defects the chunk reviews
   missed, 40–50% more per review; on at full depth ([what it finds](#more-of-the-real-bugs-the-sweep));
-  `--sweep-provider` / `--sweep-model` (or `roles.sweep`) run it on another model, e.g. another vendor's
-  (experimental, not measured yet);
+  `--sweep-provider` / `--sweep-model` (or `roles.sweep`) run it on another model (a second vendor's added no
+  more on AACR-Bench); `--batch` (Anthropic API) sends it as a Message Batches request at half its price,
+  started next to the chunk reviews;
 - `--intent` (experimental), `--description-file <path>`: the reviewer is told what the change is meant to do —
   the pull request's title and description (from the CI's event or `gh` / `glab`, or this file: first line =
   title) and the commit messages — and reports code that does not do what they say. The text is clipped and
