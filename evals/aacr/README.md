@@ -614,20 +614,22 @@ against $3 / $15). 71% of its findings repeat a chunk finding at the same spot, 
 differ by about 2 F1 between runs of the same pipeline, so only the within-run gains count. The sweep stays on
 the review's model by default; `roles.sweep` remains for anyone who wants another.
 
-**One chunk per file** (2026-10-16; `--chunking file`, build `27ecb89` = 0.11.1 plus the mode, run `cf-1` on
-ctx30, `--full --provider anthropic`), against the two `smart` API runs `api-1,2` (build `a7a6fbf`; the
-pipeline between the builds changed only outside the review prompts):
+**One chunk per file** (2026-10-16; `--chunking file`, build `27ecb89` = 0.11.1 plus the mode, ctx30, `--full
+--provider anthropic`): runs `cf-1,2` against `sm-1`, the default `smart` packing on the same build, and the two
+earlier `smart` API runs `api-1,2` (build `a7a6fbf`):
 
 | ctx30 | Runs | Chunks / PR | Findings | Precision | Recall | F1 | Cost / run |
 |---|---|---|---|---|---|---|---|
-| `smart` packing (`api-1,2`) | 2 | 1.0 | 68.0 | 37.5% | 8.9% | 14.4% | $7.00 |
-| one chunk per file (`cf-1`) | 1 | 6.2 | 109.0 | 34.9% | 13.3% | 19.2% | $12.81 |
+| `smart`, same build (`sm-1`) | 1 | 1.0 | 71.0 | 38.0% | 9.4% | 15.1% | $7.15 |
+| `smart`, earlier build (`api-1,2`) | 2 | 1.0 | 68.0 | 37.5% | 8.9% | 14.4% | $7.00 |
+| one chunk per file (`cf-1,2`) | 2 | 6.2 | 103.0 | 36.9% | 13.3% | 19.5% | $12.80 |
 
-Paired: recall +4.4 points (95% CI +1.2..+7.5, 22 repositories), F1 +4.8 (+0.1..+8.5), P(file > smart) 0.98.
-Reviewing each file in its own call (with its related files as context) reports 60% more findings at almost the
-same precision, for 1.8 times the cost: the largest single gain measured on ctx30, at a better price per point
-than three merged runs (F1 +4.1 for 3 times the cost). One run against two, and two builds: it needs a second
-`file` run, a `smart` run on the same build, and the held-out subset before it can become the default.
+Paired against `sm-1`: recall +3.8 points (95% CI +1.5..+6.2, 22 repositories), F1 +4.4 (+1.2..+7.5), P(file >
+smart) 1.00; against all three `smart` runs: recall +4.2 (+1.9..+6.5), F1 +4.9 (+1.7..+7.7). Both `file` runs
+matched exactly 38 references (13.3% recall); the three `smart` runs 25–27. Reviewing each file in its own call
+(with its related files as read-only context) reports half as many findings again at almost the same
+precision, for 1.8 times the cost: the largest gain measured on ctx30, and a better price per point than three
+merged `smart` runs (F1 +4.1 for 3 times the cost). The held-out subset has not been run yet.
 
 For reference, the published leaderboard (unnamed judge, 1,505 references) has OpenCodeReview with Opus 4.6 at
 33.9% precision, 20.0% recall and 25.1% F1 (about 4.5 comments per PR), and Claude Code with Opus 4.6 at 7.2%,
