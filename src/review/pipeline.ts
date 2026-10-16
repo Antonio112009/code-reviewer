@@ -1012,7 +1012,8 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     const usage = sumUsage(spend.map((s) => s.usage));
     run.usage = sumUsage([run.usage, usage]);
     if (spend.length) {
-      const prev = (run.stages ??= {})[stage];
+      run.stages ??= {};
+      const prev = run.stages[stage];
       const money =
         prev?.cost && cost
           ? { amount: prev.cost.amount + cost.amount, currency: cost.currency }
