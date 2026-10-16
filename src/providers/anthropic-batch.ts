@@ -11,8 +11,9 @@ import { type AgentResult, type AgentTask, ProviderError } from './types';
  * cannot call back for a tool result, so the model's first answer is final: its `submit_*` call (or, failing
  * that, its text, which the pipeline repairs like any other reply).
  *
- * When the batch has not ended within the wait limit (or the task is aborted), it is cancelled and
- * `BatchTimeout` is thrown: the caller falls back to a regular request.
+ * When the batch is no longer waited for (it has not ended within the wait limit, the task is aborted, a
+ * status check failed), it is cancelled. A timeout throws `BatchTimeout`; the caller falls back to a regular
+ * request on any failure but an abort.
  */
 
 const API = 'https://api.anthropic.com/v1/messages/batches';
@@ -95,12 +96,17 @@ export async function runBatchTask(task: AgentTask, opts: BatchOptions): Promise
     'anthropic-version': VERSION,
     'content-type': 'application/json',
   };
-  const call = async (method: string, url: string, body?: unknown): Promise<Response> => {
+  const call = async (
+    method: string,
+    url: string,
+    body?: unknown,
+    signal: AbortSignal | undefined = task.signal,
+  ): Promise<Response> => {
     const res = await doFetch(url, {
       method,
       headers,
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      ...(task.signal ? { signal: task.signal } : {}),
+      ...(signal ? { signal } : {}),
       redirect: 'error',
     });
     if (!res.ok) {
@@ -120,17 +126,25 @@ export async function runBatchTask(task: AgentTask, opts: BatchOptions): Promise
   );
   const started = Date.now();
   let status = created;
-  while (status.processing_status !== 'ended') {
-    if (task.signal?.aborted || Date.now() - started >= opts.maxWaitMs) {
-      await call('POST', `${API}/${status.id}/cancel`).catch(() => undefined);
-      if (task.signal?.aborted) throw task.signal.reason ?? new Error('aborted');
-      throw new BatchTimeout(
-        `the batch was not answered within ${Math.round(opts.maxWaitMs / 1000)}s`,
-        opts.providerId,
-      );
+  try {
+    while (status.processing_status !== 'ended') {
+      task.signal?.throwIfAborted();
+      if (Date.now() - started >= opts.maxWaitMs) {
+        throw new BatchTimeout(
+          `the batch was not answered within ${Math.round(opts.maxWaitMs / 1000)}s`,
+          opts.providerId,
+        );
+      }
+      await sleep(opts.pollMs ?? 10_000, task.signal);
+      status = BatchStatusSchema.parse(await (await call('GET', `${API}/${status.id}`)).json());
     }
-    await sleep(opts.pollMs ?? 10_000, task.signal);
-    status = BatchStatusSchema.parse(await (await call('GET', `${API}/${status.id}`)).json());
+  } catch (err) {
+    // Not waited for any more (timeout, abort, a failed status check): stop it being processed and billed.
+    // Not under the task's signal, which may be the reason we are here.
+    await call('POST', `${API}/${created.id}/cancel`, undefined, AbortSignal.timeout(10_000)).catch(
+      () => undefined,
+    );
+    throw err;
   }
   if (!status.results_url?.startsWith('https://api.anthropic.com/')) {
     throw new ProviderError('the batch ended without a results URL on the API host', opts.providerId);

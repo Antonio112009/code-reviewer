@@ -223,7 +223,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
           example: D.review.sweep,
         },
         batch: {
-          doc: 'Anthropic API only: send the sweep as a Message Batches request (half the price), started next to the chunk reviews; after 20 minutes without an answer it runs as a regular request.',
+          doc: 'Anthropic API only: send the sweep as a Message Batches request (half the price), started next to the chunk reviews; when it fails or has no answer after 20 minutes, it runs as a regular request.',
           example: D.review.batch,
         },
         intent: {

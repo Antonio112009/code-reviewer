@@ -1048,6 +1048,9 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     const r = router.route(role);
     return { provider: r.provider, model: r.model, reasoning: r.reasoning };
   };
+  // Stops sweep calls started early (`review.batch`) that the run no longer waits for (it failed, or the
+  // sweep phase was skipped), so their batches are cancelled instead of polled for minutes.
+  const earlySweepStop = new AbortController();
 
   try {
     // Agents read code from a detached, sanitized worktree: they never see (or touch) the user's
@@ -1157,12 +1160,15 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     type Settled = { ok: RoutedResult } | { err: unknown };
     const earlySweep = new Map<number, Promise<Settled>>();
     if (config.review.batch && !req.signal?.aborted) {
+      const signal = req.signal
+        ? AbortSignal.any([req.signal, earlySweepStop.signal])
+        : earlySweepStop.signal;
       for (const [index, plan] of sweepPlan.entries()) {
         const entry = plan.key ? await getReview(cache!, plan.key, root) : undefined;
         if (entry?.kind === 'result') continue;
         earlySweep.set(
           index,
-          runRouted(sweepRole, plan.task, router, registry).then(
+          runRouted(sweepRole, { ...plan.task, signal }, router, registry).then(
             (ok) => ({ ok }),
             (err) => ({ err }),
           ),
@@ -2074,6 +2080,7 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
     run.error = errorMessage(err);
     throw err;
   } finally {
+    earlySweepStop.abort();
     run.durationMs = Date.now() - startedAt;
     const cost = meter.summary();
     if (cost) run.cost = cost;
