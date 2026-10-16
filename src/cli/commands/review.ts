@@ -466,7 +466,10 @@ export function addRunLimitOptions(cmd: Command): Command {
     .optionsGroup('Advanced:')
     .option('--max-chunk-tokens <n>', 'token budget of code per chunk')
     .option('--timeout <seconds>', 'fixed timeout per LLM task (default: auto, scales with chunk size)')
-    .option('--chunking <mode>', 'smart (related files together) | directory | file (one file per chunk)')
+    .option(
+      '--chunking <mode>',
+      'smart (related files together) | directory | file (one file per chunk) | auto (file for mid-sized changes)',
+    )
     .option(
       '--passes <list>',
       'review passes per chunk: general | local,contracts (changed lines, then consumers)',
