@@ -141,6 +141,33 @@ describe('the Message Batches API path', () => {
     expect(api.calls.some((c) => c.url.endsWith('/b1/cancel'))).toBe(true);
   });
 
+  it('chooses thinking settings as the AI SDK does for the model', () => {
+    const params = (model: string, over: Partial<AgentTask>) => {
+      const { thinking, output_config, max_tokens } = batchParams(task(over), model);
+      return { thinking, output_config, max_tokens };
+    };
+    // Adaptive thinking at the task's effort, up to the task's output limit.
+    expect(params('claude-sonnet-5-5', { maxOutputTokens: 16_000 })).toEqual({
+      thinking: { type: 'adaptive' },
+      output_config: { effort: 'medium' },
+      max_tokens: 16_000,
+    });
+    // No adaptive thinking: a budget (30% of the model's 64k at medium) on top of the output limit.
+    expect(params('claude-haiku-4-5', { maxOutputTokens: 8_000 })).toEqual({
+      thinking: { type: 'enabled', budget_tokens: 19_200 },
+      output_config: undefined,
+      max_tokens: 27_200,
+    });
+    // `none`: thinking off where the model allows it, else its lowest setting.
+    expect(params('claude-sonnet-4-6', { reasoning: 'none' }).thinking).toEqual({ type: 'disabled' });
+    expect(params('claude-sonnet-5-5', { reasoning: 'none' }).thinking).toEqual({ type: 'between_tools' });
+    expect(params('claude-opus-5-5', { reasoning: 'none' })).toEqual({
+      thinking: undefined,
+      output_config: { effort: 'low' },
+      max_tokens: 128_000,
+    });
+  });
+
   it('refuses tasks with read tools, and prices batch tokens at half', () => {
     expect(() => batchParams(task({ readTools: true }), 'm')).toThrow(/read tools/);
     const usage = { inputTokens: 1_000_000, outputTokens: 0 };

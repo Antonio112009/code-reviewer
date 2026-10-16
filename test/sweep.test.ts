@@ -213,6 +213,33 @@ describe('sweep over the whole change (review.sweep)', () => {
   });
 });
 
+describe('sweep started early (review.batch)', () => {
+  it('starts next to the chunk reviews and is still charged when the run skips the sweep phase', async () => {
+    let sweepStarted = false;
+    const provider: Provider = {
+      id: 'mock',
+      kind: 'mock',
+      run: async (task) => {
+        if (task.label.startsWith('sweep-')) {
+          expect(task.batch).toBe(true);
+          sweepStarted = true;
+          return new MockProvider('mock').run(task);
+        }
+        // Started before the chunk reviews; their auth failure stops the run before the sweep phase.
+        expect(sweepStarted).toBe(true);
+        throw new Error('missing credentials');
+      },
+      dispose: async () => {},
+    };
+    const run = await review(provider, (c) => {
+      sweepOn(c);
+      c.review.batch = true;
+    }).catch((err: unknown) => (err as { run?: unknown }).run as Awaited<ReturnType<typeof review>>);
+    expect(run.sweep).toBeUndefined();
+    expect(run.stages?.sweep?.usage.inputTokens).toBeGreaterThan(0);
+  });
+});
+
 describe('sweep parts', () => {
   const chunk = (id: string, text: string, pass?: 'local' | 'contracts'): Chunk =>
     ({
