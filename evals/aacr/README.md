@@ -70,10 +70,27 @@ concern or suggestion". Our comment text is the finding's title, failure scenari
 
 - **Semantic precision** = matched findings / all findings; **recall** = matched references / all references;
   F1 of the two. The line-only variants skip the judge.
-- **The judge.** Without `JUDGE_API_KEY`, `claude -p --model sonnet` answers the harness's judge prompt
-  (`JUDGE_CLAUDE_MODEL` changes the model). With `JUDGE_BASE_URL`, `JUDGE_API_KEY` and `JUDGE_MODEL`, the
-  harness's own OpenAI-compatible judge is used. The leaderboard does not name its judge, so compare with it
-  only roughly; for a fair comparison run the baselines with the same judge.
+- **The judge.** By default Claude Sonnet 5.5 at effort `xhigh` answers the harness's judge prompt through the
+  Anthropic Messages API with `ANTHROPIC_API_KEY` (from the environment or the macOS Keychain); about $0.11 per
+  ctx30 run. `JUDGE_ANTHROPIC_MODEL` / `JUDGE_ANTHROPIC_EFFORT` change it, `JUDGE_BACKEND=claude-cli` brings back
+  the `claude -p --model sonnet` judge of the runs before 2026-10-16 (a Claude Code subscription), and with
+  `JUDGE_BASE_URL`, `JUDGE_API_KEY` and `JUDGE_MODEL` the harness's own OpenAI-compatible judge is used. The
+  leaderboard does not name its judge, so compare with it only roughly; for a fair comparison run the
+  baselines with the same judge.
+- **Judges differ more than most effects we measure.** The findings of one run (`sm-1`, 71 findings) judged
+  five ways on 2026-10-16:
+
+  | Judge | References matched | F1 |
+  |---|---|---|
+  | `claude -p --model sonnet` (until 2026-10-16) | 27 | 15.1% |
+  | Sonnet 5.5, API, effort `xhigh` (the default since), twice | 31, 30 | 17.4%, 16.8% |
+  | Sonnet 5.5, API, default effort (`high`) | 21 | 11.8% |
+  | Sonnet 5.5, API, effort `medium` | 19 | 10.6% |
+  | Sonnet 5, API, default effort | 29 | 16.2% |
+
+  `xhigh` is Claude Code's default effort and repeats within a reference; lower efforts answer "no" far more
+  often. Numbers judged before and after the switch are not comparable: re-judge the baseline (`--stage eval`
+  on a copy of its results directory) when a comparison spans it.
 - **Missing PRs.** 11 PRs (87 references) cannot be reviewed any more: their head commits were deleted from
   GitHub (ComfyUI #7952, #9560; node #56185; uv #11088; ClickHouse #85266, #74070; keycloak #41672, #37465,
   #35645, #36457, #37504). The harness reports them as missing and leaves them out of every metric, so a
@@ -124,8 +141,9 @@ holds / does not hold" in 97% of cases (κ 0.94).
 
 - `reviewers/code_reviewer.py` is registered as `--reviewer code-reviewer`, and `evaluate.py` reads its
   findings and token usage.
-- `judge.py`: the `claude-cli` judge backend (concurrent `claude -p` calls, retries, cost and error counts in
-  the summary; one semaphore per event loop, so `--eval-rounds` works). `evaluate.py` scores PRs
+- `judge.py`: the `anthropic-api` judge backend (the Messages API through `httpx`, `JUDGE_ANTHROPIC_MODEL`,
+  `JUDGE_ANTHROPIC_EFFORT`) and the `claude-cli` one (concurrent `claude -p` calls), both with retries, cost and
+  error counts in the summary and one semaphore per event loop, so `--eval-rounds` works. `evaluate.py` scores PRs
   concurrently; matching inside one PR stays sequential, as upstream.
 - `repo_utils.py`: partial clones (`--filter=blob:none`). Several repositories are multi-GB.
 - `reviewers/claude.py`: `CLAUDE_USE_SUBSCRIPTION=true` runs the Claude Code baseline on the logged-in

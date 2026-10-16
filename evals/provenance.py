@@ -6,7 +6,7 @@ the exact arguments and experiment switches, the judge, the benchmark checkout. 
     evals/provenance.py judge <run-dir> --benchmark <name>
 
 `review` writes <run-dir>/provenance.json from the environment of the run (CODE_REVIEWER_CLI, CODE_REVIEWER_ARGS,
-CR_EXP); `judge` appends a judging (JUDGE_BACKEND, JUDGE_CLAUDE_MODEL / JUDGE_MODEL, EVAL_ROUNDS). The build's commit
+CR_EXP); `judge` appends a judging (JUDGE_BACKEND, JUDGE_CLAUDE_MODEL / JUDGE_ANTHROPIC_MODEL / JUDGE_MODEL, EVAL_ROUNDS). The build's commit
 comes from BUILD.json next to dist/ (written by evals/pin-build.sh), else from the git checkout the CLI lives in
 (with a dirty flag). API keys and tokens are never read or written.
 """
@@ -53,7 +53,13 @@ def build_info(cli: str) -> dict:
 
 def judge_info() -> dict:
     backend = os.environ.get("JUDGE_BACKEND") or ("openai-compatible" if os.environ.get("JUDGE_API_KEY") else "")
-    model = os.environ.get("JUDGE_CLAUDE_MODEL") if backend == "claude-cli" else os.environ.get("JUDGE_MODEL")
+    model = (
+        os.environ.get("JUDGE_CLAUDE_MODEL")
+        if backend == "claude-cli"
+        else os.environ.get("JUDGE_ANTHROPIC_MODEL")
+        if backend == "anthropic-api"
+        else os.environ.get("JUDGE_MODEL")
+    )
     out = {"backend": backend, "model": model, "rounds": int(os.environ.get("EVAL_ROUNDS", "1") or 1)}
     if backend == "claude-cli":
         out["claude_cli"] = _run("claude", "--version")
