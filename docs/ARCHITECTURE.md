@@ -257,6 +257,11 @@ it): the same change reviewed again — a re-run, a CI retry — reuses it, and 
 parts. Any change to the code makes a new prompt and a new call. The sweep runs on the `sweep` role when `roles.sweep` names one
 (`--sweep-provider` / `--sweep-model`; its model defaults to the review's on the same provider, else that
 provider's `defaultModel`, at medium reasoning), else on the review route; `run.routing.sweep` records it.
+With `review.batch` (`--batch`) the sweep's tasks are built before the chunk reviews and started next to them
+with `AgentTask.batch`: the Anthropic provider sends such a task without read tools as one Message Batches
+request (`providers/anthropic-batch.ts`; the first answer is final, its `submit_findings` call or its text),
+polls it, and after 20 minutes cancels it and answers with a regular request. Batch usage carries
+`usage.batch`, priced at half the token rates; `run.sweep.batched` counts the parts. Other providers ignore it.
 
 Every benchmark number, with history and caveats, is in `BENCHMARKS.md` (logs: `evals/aacr/README.md`,
 `evals/martian/README.md`).

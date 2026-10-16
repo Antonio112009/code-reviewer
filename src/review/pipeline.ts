@@ -95,6 +95,7 @@ import {
   ModelRouter,
   NoPayloadError,
   RoutedProvider,
+  type RoutedResult,
   runRouted,
   type Spend,
   spendOf,
@@ -1106,6 +1107,69 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       };
     }
 
+    // The sweep's calls, built once: with `review.batch` they start now, next to the chunk reviews, so the
+    // batch's latency hides behind them; otherwise in phase 6b.
+    const sweepRole: Role = routes.sweep ? 'sweep' : 'review';
+    const sweepPlan =
+      config.review.sweep && chunks.length > 0
+        ? sweepParts(chunks, Math.max(budget, promptRoom)).map((part, index, all) => {
+            const label = `sweep-${index + 1}`;
+            const timeoutMs = taskTimeoutMs(
+              config.review,
+              part.reduce((n, c) => n + c.tokens, 0),
+            );
+            const task: AgentTask = {
+              kind: 'findings',
+              label,
+              instructions: sweepInstructions(mode, depth),
+              prompt: sweepPrompt({
+                target,
+                chunks: part,
+                part: { index, total: all.length },
+                ...(intentText ? { intent: intentText } : {}),
+              }),
+              reasoning: routes.sweep?.reasoning ?? 'medium',
+              readTools: false,
+              root,
+              git,
+              maxSteps: 3,
+              timeoutMs,
+              extendMs: Math.round(timeoutMs * config.review.activeExtension),
+              stallTimeoutMs: config.review.stallTimeoutMs,
+              maxOutputTokens: (routes.sweep ? config.roles.sweep : reviewRole)?.maxOutputTokens,
+              signal: req.signal,
+              ...(config.review.batch ? { batch: true } : {}),
+            };
+            // The same change on the same route was swept before (a re-run, a CI retry): reuse its answer.
+            const key = cache
+              ? reviewCacheKey({
+                  route: currentRoute(sweepRole),
+                  instructions: task.instructions,
+                  prompt: { sweep: task.prompt },
+                  readTools: false,
+                  git: task.git,
+                  maxOutputTokens: task.maxOutputTokens,
+                })
+              : undefined;
+            return { part, label, task, key };
+          })
+        : [];
+    type Settled = { ok: RoutedResult } | { err: unknown };
+    const earlySweep = new Map<number, Promise<Settled>>();
+    if (config.review.batch && !req.signal?.aborted) {
+      for (const [index, plan] of sweepPlan.entries()) {
+        const entry = plan.key ? await getReview(cache!, plan.key, root) : undefined;
+        if (entry?.kind === 'result') continue;
+        earlySweep.set(
+          index,
+          runRouted(sweepRole, plan.task, router, registry).then(
+            (ok) => ({ ok }),
+            (err) => ({ err }),
+          ),
+        );
+      }
+    }
+
     // 6. Review chunks (largest first) ----------------------------------------------------------------
     await phase('review', `Reviewing ${chunks.length} chunk(s)`, async () => {
       const limit = pLimit(config.review.concurrency);
@@ -1665,57 +1729,18 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
       await phase('sweep', 'Reading the whole change at once', async () => {
         const allFiles = units.filter((u) => u.status !== 'deleted').map((u) => u.path);
         const reportedSoFar = collected.filter((f) => f.origin === 'llm');
-        const parts = sweepParts(chunks, Math.max(budget, promptRoom));
         const record: NonNullable<RunRecord['sweep']> = {
-          parts: parts.length,
+          parts: sweepPlan.length,
           failed: 0,
           findings: 0,
           duplicates: 0,
         };
-        const instructions = sweepInstructions(mode, depth);
-        const sweepRole: Role = routes.sweep ? 'sweep' : 'review';
-        for (const [index, part] of parts.entries()) {
+        for (const [index, { part, label, task, key }] of sweepPlan.entries()) {
           if (req.signal?.aborted || router.fatal) break;
-          const label = `sweep-${index + 1}`;
           const files = new Set(part.flatMap((c) => c.files));
-          const timeoutMs = taskTimeoutMs(
-            config.review,
-            part.reduce((n, c) => n + c.tokens, 0),
-          );
-          const task: AgentTask = {
-            kind: 'findings',
-            label,
-            instructions,
-            prompt: sweepPrompt({
-              target,
-              chunks: part,
-              part: { index, total: parts.length },
-              ...(intentText ? { intent: intentText } : {}),
-            }),
-            reasoning: routes.sweep?.reasoning ?? 'medium',
-            readTools: false,
-            root,
-            git,
-            maxSteps: 3,
-            timeoutMs,
-            extendMs: Math.round(timeoutMs * config.review.activeExtension),
-            stallTimeoutMs: config.review.stallTimeoutMs,
-            maxOutputTokens: (routes.sweep ? config.roles.sweep : reviewRole)?.maxOutputTokens,
-            signal: req.signal,
-          };
           const spend: Spend[] = [];
-          // The same change on the same route was swept before (a re-run, a CI retry): reuse its answer.
-          const key = cache
-            ? reviewCacheKey({
-                route: currentRoute(sweepRole),
-                instructions: task.instructions,
-                prompt: { sweep: task.prompt },
-                readTools: false,
-                git: task.git,
-                maxOutputTokens: task.maxOutputTokens,
-              })
-            : undefined;
-          const entry = key ? await getReview(cache!, key, root) : undefined;
+          const early = earlySweep.get(index);
+          const entry = key && !early ? await getReview(cache!, key, root) : undefined;
           if (entry?.kind === 'result') {
             record.cached = (record.cached ?? 0) + 1;
             cacheUse!.saved.inputTokens += entry.usage?.inputTokens ?? 0;
@@ -1739,7 +1764,10 @@ export async function runReview(req: ReviewRequest): Promise<ReviewOutcome> {
             continue;
           }
           try {
-            const result = await runRouted(sweepRole, task, router, registry);
+            const settled = early ? await early : undefined;
+            if (settled && 'err' in settled) throw settled.err;
+            const result = settled ? settled.ok : await runRouted(sweepRole, task, router, registry);
+            if (result.usage?.batch) record.batched = (record.batched ?? 0) + 1;
             spend.push(...result.spend);
             let resolved = resolveFindings(result);
             let reply = result.text;

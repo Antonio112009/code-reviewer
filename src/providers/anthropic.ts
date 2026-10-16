@@ -2,12 +2,17 @@ import { type AnthropicProvider as AnthropicSdk, createAnthropic } from '@ai-sdk
 import type { LanguageModel } from 'ai';
 import type { AnthropicProviderConfig } from '../config/schema';
 import { runAiSdkTask } from './ai-sdk-agent';
+import { type BatchOptions, BatchTimeout, runBatchTask } from './anthropic-batch';
 import { type AgentResult, type AgentTask, type Provider, ProviderError } from './types';
+
+/** Longest wait for a batch answer before the task falls back to a regular request. */
+export const BATCH_MAX_WAIT_MS = 20 * 60_000;
 
 /**
  * The Anthropic API directly (Vercel AI SDK), with the key from `ANTHROPIC_API_KEY`. Unlike an agent such as
  * Claude Code, a task carries only our instructions, prompt and tools, and the API caches the growing prompt
- * of the tool loop (request-level `cache_control`).
+ * of the tool loop (request-level `cache_control`). A task marked `batch` without read tools goes through the
+ * Message Batches API at half the price, falling back to a regular request when the batch takes too long.
  */
 export class AnthropicProvider implements Provider {
   readonly kind = 'api' as const;
@@ -18,6 +23,8 @@ export class AnthropicProvider implements Provider {
     private readonly cfg: AnthropicProviderConfig,
     /** Test hook: the language model for a model id (default: the Anthropic API). */
     private readonly modelFor?: (modelId: string) => LanguageModel,
+    /** Test hook: batch transport overrides (fetch, sleep, waits). */
+    private readonly batchHooks?: Partial<BatchOptions>,
   ) {
     this.anthropic = createAnthropic({});
   }
@@ -36,13 +43,30 @@ export class AnthropicProvider implements Provider {
         this.id,
       );
     }
-    return runAiSdkTask(task, {
+    const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+    const warnings: string[] = [];
+    if (task.batch && !task.readTools && apiKey && (!this.modelFor || this.batchHooks)) {
+      try {
+        return await runBatchTask(task, {
+          providerId: this.id,
+          modelId,
+          apiKey,
+          maxWaitMs: BATCH_MAX_WAIT_MS,
+          ...this.batchHooks,
+        });
+      } catch (err) {
+        if (!(err instanceof BatchTimeout)) throw err;
+        warnings.push(`${task.label}: ${err.message}; answered by a regular request instead`);
+      }
+    }
+    const result = await runAiSdkTask(task, {
       providerId: this.id,
       label: 'Anthropic API',
       model: this.modelFor?.(modelId) ?? this.anthropic(modelId),
       modelId,
       caching: { kind: 'request', providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } } },
     });
+    return warnings.length ? { ...result, warnings: [...warnings, ...result.warnings] } : result;
   }
 
   async dispose(): Promise<void> {}

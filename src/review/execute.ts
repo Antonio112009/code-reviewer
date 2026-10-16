@@ -155,6 +155,8 @@ export function sumUsage(usages: Usage[]): Usage {
     } else costComplete = false;
   }
   if (cost && costComplete) total.reportedCost = cost;
+  // A batch discount applies to the whole only when every part was a batch request.
+  if (usages.length > 0 && usages.every((u) => u.batch)) total.batch = true;
   return total;
 }
 

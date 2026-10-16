@@ -222,6 +222,12 @@ export const ReviewSettingsSchema = z.object({
    */
   sweep: z.boolean(),
   /**
+   * Send the sweep through the provider's batch interface (the Anthropic API's Message Batches: half the
+   * price) and start it next to the chunk reviews, so its minutes of latency hide behind them. A batch not
+   * answered within 20 minutes is cancelled and the sweep runs as a regular request. Other providers ignore it.
+   */
+  batch: z.boolean(),
+  /**
    * Tell the reviewer what the change is meant to do, in its author's words: the pull request's title and
    * description (from the CI's event, `gh` / `glab`, or `--description-file`) and the commit messages, clipped
    * and marked untrusted. Code that does not do what they say is a defect; they are never evidence that code is
@@ -539,6 +545,7 @@ export const DEFAULT_CONFIG: Config = {
     audit: false,
     deepen: false,
     sweep: true,
+    batch: false,
     intent: false,
     secondOpinion: true,
     notes: true,

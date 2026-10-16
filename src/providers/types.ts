@@ -37,6 +37,11 @@ export interface AgentTask {
    * far (one short extra turn) instead of losing the work. Default: on.
    */
   salvage?: boolean;
+  /**
+   * Answer through a provider's batch interface when it has one (the Anthropic Message Batches API: half the
+   * price, minutes of latency). Only for tasks without read tools; others ignore it.
+   */
+  batch?: boolean;
 }
 
 export type AgentActivity = { kind: 'tool'; name: string } | { kind: 'message' };

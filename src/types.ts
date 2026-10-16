@@ -145,6 +145,8 @@ export interface Usage {
   cacheWriteTokens?: number;
   /** Model requests: agent prompts, or API calls of a tool loop (Copilot bills requests, not tokens). */
   requests?: number;
+  /** Answered through a batch interface, billed at half the token rates (Anthropic Message Batches). */
+  batch?: boolean;
   /**
    * The provider reported no token counts, so they were estimated from the prompt and the reply text: a
    * lower bound, since tool results and hidden reasoning are not counted.
@@ -625,7 +627,15 @@ export interface RunRecord {
    * findings they reported, and how many of those were at the spot of a chunk review's finding (`duplicates`,
    * dropped); the rest went to validation and the critic (`source.chunkIds` = ["sweep"]).
    */
-  sweep?: { parts: number; failed: number; findings: number; duplicates: number; cached?: number };
+  sweep?: {
+    parts: number;
+    failed: number;
+    findings: number;
+    duplicates: number;
+    cached?: number;
+    /** Parts answered through a batch interface (`review.batch`). */
+    batched?: number;
+  };
   /**
    * Tokens and known cost of each stage's model calls (failed attempts included): the chunk reviews, the
    * sweep, the critic on the findings and on the maintainability notes. Their sum is `usage` / `cost`.
