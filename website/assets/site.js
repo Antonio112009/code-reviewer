@@ -202,9 +202,25 @@ function setupCopy() {
     const btn = e.target.closest('[data-copy]');
     if (!btn) return;
     const label = btn.querySelector('.copy-label');
-    const text = btn.dataset.copy || btn.closest('.code-block')?.querySelector('pre')?.innerText || '';
+    const pre = btn.closest('.code-block')?.querySelector('pre');
+    // from a <pre> of shell lines: the commands only, without prompts, comments and blank lines
+    const fromPre = () => {
+      const raw = pre?.innerText ?? '';
+      if (!pre?.querySelector('.tok-p')) return raw;
+      return raw
+        .split('\n')
+        .map((l) =>
+          l
+            .replace(/^\$ /, '')
+            .replace(/\s+# .*$/, '')
+            .trimEnd(),
+        )
+        .filter((l) => l && !l.startsWith('#'))
+        .join('\n');
+    };
+    const text = btn.dataset.copy || fromPre();
     try {
-      await navigator.clipboard.writeText(text.replace(/^\$ /gm, ''));
+      await navigator.clipboard.writeText(text);
       btn.classList.add('done');
       if (label) label.textContent = 'Copied';
     } catch {
