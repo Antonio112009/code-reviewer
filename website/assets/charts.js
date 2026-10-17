@@ -209,3 +209,43 @@ export function tableView(host, head, body, oursRows = []) {
     .join('')}</tbody></table></div>`;
   host.after(details);
 }
+
+// Sequential blue ramp (light → dark) for recall cells; text switches to white on the dark steps.
+const RAMP = [
+  '#cde2fb',
+  '#b7d3f6',
+  '#9ec5f4',
+  '#86b6ef',
+  '#6da7ec',
+  '#5598e7',
+  '#3987e5',
+  '#2a78d6',
+  '#256abf',
+  '#1c5cab',
+  '#184f95',
+];
+
+/**
+ * A table of recall per reviewer (rows) and bucket (columns), each cell shaded by its value.
+ * columns: [{ id, label, of }]; rows: [{ label, kind, values: { [id]: percent } }].
+ */
+export function heatTable(host, columns, rows, opts = {}) {
+  const cell = (v) => {
+    if (v === null || v === undefined) return '<td class="heat-empty">—</td>';
+    const step = Math.min(RAMP.length - 1, Math.round((v / 100) * (RAMP.length - 1)));
+    const dark = step >= 6;
+    return `<td style="background:${RAMP[step]};color:${dark ? '#fff' : 'var(--ink)'}">${v}%</td>`;
+  };
+  host.innerHTML = `<div class="table-scroll"><table class="heat" aria-label="${escapeHtml(opts.title ?? '')}">
+    <thead><tr><th scope="col">${escapeHtml(opts.corner ?? '')}</th>${columns
+      .map((c) => `<th scope="col">${escapeHtml(c.label)}<small>${c.of} bugs</small></th>`)
+      .join('')}</tr></thead>
+    <tbody>${rows
+      .map(
+        (r) =>
+          `<tr class="${r.kind === 'ours' ? 'ours' : ''}"><th scope="row"><i style="background:${COLORS[r.kind]}"></i>${escapeHtml(r.label)}</th>${columns
+            .map((c) => cell(r.values[c.id]))
+            .join('')}</tr>`,
+      )
+      .join('')}</tbody></table></div>`;
+}

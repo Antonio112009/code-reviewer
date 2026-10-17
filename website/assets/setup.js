@@ -118,7 +118,7 @@ const DEPTHS = [
   {
     id: 'essential',
     label: 'Essential',
-    hint: 'Only what can hurt production: security, data loss, crashes, leaks, overload. About a finding per three pull requests, a third cheaper.',
+    hint: 'Only what can hurt production, very precisely, but it finds few bugs (8% on the benchmark). About half the price: a gate next to full.',
   },
   {
     id: 'full',
@@ -129,7 +129,7 @@ const DEPTHS = [
   {
     id: 'deepen',
     label: 'Full + second pass',
-    hint: 'Every chunk reviewed twice, independently. For payments, auth, migrations. About twice the price.',
+    hint: 'Every chunk reviewed twice, independently: the most bugs found (72%). For payments, auth, migrations. 1.5–2× the price.',
   },
 ];
 

@@ -1,6 +1,6 @@
 // Benchmarks page: F1 bars, precision against recall, the pipeline against the plain model, and the audits.
-import { audit, COLORS, depths, martian, martianPosted } from './bench-data.js';
-import { barChart, scatterChart, tableView } from './charts.js';
+import { audit, breakdown, COLORS, depths, martian, martianDepths, martianPosted } from './bench-data.js';
+import { barChart, heatTable, scatterChart, tableView } from './charts.js';
 
 const pct = (v) => `${v}%`;
 
@@ -36,12 +36,12 @@ function f1() {
 function scatter() {
   const host = document.querySelector('[data-chart="pr"]');
   const place = {
-    Augment: 'above',
-    'Qodo Extended': 'right',
-    'Code Reviewer': 'below',
-    'Code Reviewer 0.7.0': 'right',
+    Augment: 'right',
+    'Qodo Extended': 'above',
+    'Code Reviewer': 'left',
+    '--deepen': 'above',
     'Qodo v2': 'below',
-    'One call': 'left',
+    'One call': 'below',
     'Claude Code CLI': 'right',
     'Code Reviewer, posted': 'right',
   };
@@ -57,8 +57,8 @@ function scatter() {
     always: m.short === 'Augment' || m.short === 'Qodo Extended',
   }));
   scatterChart(host, points, {
-    x: [35, 75],
-    y: [35, 75],
+    x: [30, 80],
+    y: [35, 85],
     title: 'Precision against recall on Martian Code Review Bench',
   });
 }
@@ -126,8 +126,34 @@ function depthTable() {
     .join('');
 }
 
+function categories() {
+  const rows = (dim) => breakdown.rows.map((r) => ({ label: r.label, kind: r.kind, values: r[dim] }));
+  heatTable(document.querySelector('[data-chart="category"]'), breakdown.categories, rows('category'), {
+    title: 'Recall by bug category',
+    corner: 'Recall by category',
+  });
+  heatTable(
+    document.querySelector('[data-chart="severity"]'),
+    breakdown.severities.map((s) => ({ ...s, label: s.id })),
+    rows('severity'),
+    { title: 'Recall by severity', corner: 'Recall by severity' },
+  );
+}
+
+function martianDepthTable() {
+  const body = document.querySelector('[data-martian-depths]');
+  body.innerHTML = martianDepths
+    .map(
+      (d) =>
+        `<tr${d.label.startsWith('full') ? ' class="ours"' : ''}><td><code>${d.label}</code></td><td>${d.perPr.toFixed(1)}</td><td>${d.precision.toFixed(1)}%</td><td>${d.recall.toFixed(1)}%</td><td>${d.critical}</td><td>${d.f1.toFixed(1)}</td><td>$${d.cost.toFixed(2)}</td></tr>`,
+    )
+    .join('');
+}
+
 f1();
 scatter();
+categories();
+martianDepthTable();
 plainVsPipeline();
 audits();
 depthTable();

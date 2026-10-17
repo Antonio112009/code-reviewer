@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Code Reviewer benchmarks: Martian Code Review Bench, AACR-Bench and blind audits</title>
-  <meta name="description" content="How well Code Reviewer finds real bugs: F1 60.5 on Martian’s Code Review Bench under one judge for every tool, 71% precision on posted comments, blind audits of its findings, AACR-Bench results, and the caveats.">
+  <meta name="description" content="How well Code Reviewer finds real bugs: F1 59.1 on Martian’s Code Review Bench, within 1.5 points of the top two under one judge, 78% precision on posted comments, recall by bug category, blind audits, AACR-Bench and the caveats.">
   <meta name="theme-color" content="#f8f7f4">
   <link rel="canonical" href="https://antonio112009.github.io/code-reviewer/benchmarks.html">
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Code Reviewer benchmarks: Martian Code Review Bench, AACR-Bench and blind audits">
-  <meta property="og:description" content="How well Code Reviewer finds real bugs: F1 60.5 on Martian’s Code Review Bench under one judge for every tool, 71% precision on posted comments, blind audits of its findings, AACR-Bench results, and the caveats.">
+  <meta property="og:description" content="How well Code Reviewer finds real bugs: F1 59.1 on Martian’s Code Review Bench, within 1.5 points of the top two under one judge, 78% precision on posted comments, recall by bug category, blind audits, AACR-Bench and the caveats.">
   <meta property="og:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
   <meta property="og:url" content="https://antonio112009.github.io/code-reviewer/benchmarks.html">
   <meta name="twitter:card" content="summary_large_image">
@@ -60,6 +60,8 @@
           the judge.</p>
         <ul class="toc" aria-label="On this page">
           <li><a href="#martian">Real bugs</a></li>
+          <li><a href="#categories">By category</a></li>
+          <li><a href="#depths">Depths</a></li>
           <li><a href="#plain">Against the model alone</a></li>
           <li><a href="#audits">Blind audits</a></li>
           <li><a href="#aacr">Reviewers’ comments</a></li>
@@ -81,6 +83,8 @@
             re-scored from the comments they posted on the benchmark. Our judging turned out stricter than the leaderboard’s,
             so these numbers are lower than the published ones for everybody, and they should be compared only with each
             other.</p>
+          <p>Code Reviewer’s rows are release <b>0.12.0</b> with its defaults, reviewing through the Anthropic API with Claude
+            Sonnet 5.5, measured on 2026-10-17.</p>
         </div>
         <div class="bench-grid">
           <figure class="card card-pad chart-card wide">
@@ -100,19 +104,78 @@
         </div>
         <div class="callouts">
           <div class="card card-pad">
-            <h3>Level with the top two</h3>
-            <p class="muted">The full report, with the whole-diff sweep that is on by default since 0.9, scores 60.5. Under the
-              same judge Qodo Extended, first on the leaderboard, scores 60.5 and Augment, third, 60.6.</p>
+            <h3>Within 1.5 F1 of the top two</h3>
+            <p class="muted">The full report scores 59.1 (58.2 and 60.0 in two runs). Under the same judge Qodo Extended, first
+              on the leaderboard, scores 60.5 and Augment, third, 60.6: less than two runs of one tool can differ by.</p>
           </div>
           <div class="card card-pad">
             <h3>The most precise comments</h3>
-            <p class="muted">What Code Reviewer posts on a pull request is its main report: 71% of it matches a known bug, the
+            <p class="muted">What Code Reviewer posts on a pull request is its main report: 78% of it matches a known bug, the
               highest precision in this comparison. Less certain findings go to a “worth a look” list in the report.</p>
           </div>
           <div class="card card-pad">
-            <h3>A second judge agrees</h3>
-            <p class="muted">Judged again by Claude Opus 5.5, no row moved by more than 1.3 F1 points and the order held.</p>
+            <h3>Checked twice</h3>
+            <p class="muted">A second judge, Claude Opus 5.5, moved no row by more than 1.3 F1 points. Judging through the API
+              and through Claude Code agreed within 1.2.</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="categories">
+      <div class="wrap">
+        <p class="eyebrow">By category</p>
+        <h2 class="section-title">Where it finds bugs, and where it does not.</h2>
+        <div class="prose">
+          <p>The same 158 bugs, split by the kind of bug and by how severe the benchmark rates it. Some categories hold only a
+            handful, so one bug moves them by 10 to 25 points; the counts are in the headers.</p>
+        </div>
+        <figure class="card card-pad chart-card" style="margin-top: 24px">
+          <div class="chart" data-chart="category"></div>
+        </figure>
+        <figure class="card card-pad chart-card" style="margin-top: 16px">
+          <div class="chart" data-chart="severity"></div>
+        </figure>
+        <div class="strong-weak">
+          <article class="sw-good">
+            <h3>Strong</h3>
+            <p>Concurrency, 79%: level with Qodo Extended, the best of the published tools. Critical and high bugs, 67% and 69%:
+              as many as Qodo Extended and Augment find.</p>
+          </article>
+          <article class="sw-bad">
+            <h3>Weak</h3>
+            <p>Security, 41%, and data integrity, 36%. The same model asked once finds 73% and 79% of them. This is where the next
+              recall work goes.</p>
+          </article>
+          <article class="sw-deep">
+            <h3>Closed by --deepen</h3>
+            <p>A second, independent pass lifts security to 64%, logic bugs to 76%, critical bugs to 83% and high ones to 89%, the
+              most of any reviewer here, for lower precision.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="depths">
+      <div class="wrap">
+        <p class="eyebrow">Depths</p>
+        <h2 class="section-title">What each depth finds on real bugs.</h2>
+        <div class="prose">
+          <p>The same 50 pull requests at each depth of 0.12.0. <code>--essential</code> is a strict filter: almost everything it
+            says is a real bug, but it says little, and misses most serious ones. It suits a cheap CI gate next to a full review,
+            not instead of one. <code>--deepen</code> finds the most, and is worth its price where a missed defect is
+            expensive.</p>
+        </div>
+        <div class="card card-pad" style="margin-top: 24px">
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th scope="col">Depth</th><th scope="col">Findings / PR</th><th scope="col">Precision</th><th scope="col">Recall</th><th scope="col">Critical bugs found</th><th scope="col">F1</th><th scope="col">Cost / PR</th></tr></thead>
+              <tbody data-martian-depths></tbody>
+            </table>
+          </div>
+          <p class="fine">Full report (main + “worth a look”). <code>--deepen</code> and <code>--essential</code> are single runs. Costs at
+            Anthropic API prices; the <code>--deepen</code> run shared the prompt cache with the default runs, so a run on its own costs
+            somewhat more.</p>
         </div>
       </div>
     </section>
@@ -128,11 +191,11 @@
                 exactly that, with Claude Sonnet at the same reasoning effort, in one call, without chunks, tools, skills or a
                 critic.</p>
               <p>The single call finds more of the known bugs, 72%. It also writes six comments per pull request, and only 39%
-                of them point at a real one. Code Reviewer’s full report is far more precise and finds fewer bugs. 0.7.0
-                scored 8.2 F1 points above the single call (95% interval +0.7 to +15.4), and the sweep added more. What the
-                pipeline buys is precision: comments a reviewer can act on.</p>
-              <p>It is not free. The single call costs about $0.08 per pull request, Code Reviewer $0.40 to $0.61 with
-                Claude Sonnet.</p>
+                of them point at a real one. Code Reviewer’s full report is far more precise and finds fewer bugs: 0.12.0 scores
+                59.1 against 50.5 (0.7.0 was 8.2 points above, 95% interval +0.7 to +15.4). What the pipeline buys is
+                precision: comments a reviewer can act on.</p>
+              <p>It is not free. The single call costs about $0.08 per pull request, Code Reviewer about $0.36 on the Anthropic
+                API with Claude Sonnet.</p>
             </div>
           </div>
           <figure class="card card-pad chart-card">
@@ -177,7 +240,7 @@
     <section class="section" id="aacr">
       <div class="wrap">
         <p class="eyebrow">Reviewers’ comments</p>
-        <h2 class="section-title">AACR-Bench, and what each depth costs.</h2>
+        <h2 class="section-title">AACR-Bench: what reviewers wrote.</h2>
         <div class="prose">
           <p><a href="https://github.com/alibaba/aacr-bench">AACR-Bench</a> scores how many of the comments reviewers left on a
             pull request a tool also makes. 79% of those comments were written by LLM reviewers and 40% are about
@@ -213,12 +276,18 @@
                 Severity is not scored.</li>
               <li><b>Different inputs.</b> The published tools reviewed pull requests with their titles and descriptions, and
                 their comments went through an extraction step. Code Reviewer saw only the diff and the checkout.</li>
-              <li><b>A different judge path.</b> We call the judge through <code>claude -p</code>, not Martian’s gateway. It
-                scores stricter; our numbers are not adjusted for that.</li>
+              <li><b>A different judge path.</b> We call the judge through the Anthropic API, not Martian’s gateway. It scores
+                stricter; our numbers are not adjusted for that.</li>
+              <li><b>A different review path.</b> 0.12.0 reviewed through the Anthropic API. Through Claude Code the same
+                pipeline finds a little more for a little less precision and costs more (0.8.0: F1 60.5, $0.61 per PR).</li>
               <li><b>Noise.</b> Two runs of the same configuration differ by up to 3.7 F1 points on Martian.</li>
             </ul>
             <p>Commands to reproduce every run, raw judge verdicts and audit files are in the repository:
               <a href="https://github.com/antonio112009/code-reviewer/blob/main/BENCHMARKS.md#reproducing">reproducing the benchmarks</a>.</p>
+            <p id="cite">Benchmarks used: <a href="https://github.com/withmartian/code-review-benchmark">Code Review Bench</a>
+              (Zverianskii, Zhang, Clyne, Garcia, Barez and Upadhyay, 2026, MIT) and
+              <a href="https://arxiv.org/abs/2601.19494">AACR-Bench</a> (Zhang et al., 2026).
+              <a href="https://github.com/antonio112009/code-reviewer/blob/main/BENCHMARKS.md#citing-the-benchmarks">BibTeX</a>.</p>
           </div>
         </div>
       </div>
