@@ -650,12 +650,17 @@ function main() {
     }
     if (mode === 'command') onEvent(e);
   });
-  if (location.hash === '#command') {
+  const openCommand = () => {
+    if (location.hash !== '#command') return;
     mode = 'command';
-    step = 1;
-    visited.add(1);
-  }
+    visited.clear();
+    visited.add(0);
+    goto(1);
+    root.scrollIntoView({ block: 'start' });
+  };
+  window.addEventListener('hashchange', openCommand);
   renderAll(root);
+  openCommand();
 }
 
 main();

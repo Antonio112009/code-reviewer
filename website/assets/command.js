@@ -342,12 +342,21 @@ const state = {
   batch: false,
 };
 
-const ph = (key) => {
+/**
+ * The command is a list of tokens: plain flags, a value the user typed (`user`), or a placeholder (`ph`) when the
+ * field is empty. HTML and the copied text are both rendered from it, so nothing is parsed back out of HTML.
+ */
+const value = (key) => {
   const v = state[key].trim();
-  return v
-    ? `<span class="tok-s">${escapeHtml(v)}</span>`
-    : `<span class="ph">&lt;${INPUTS[key].placeholder}&gt;</span>`;
+  return v ? { user: v } : { ph: INPUTS[key].placeholder };
 };
+const tokenText = (t) => (typeof t === 'string' ? t : (t.user ?? `<${t.ph}>`));
+const tokenHtml = (t) =>
+  typeof t === 'string'
+    ? escapeHtml(t)
+    : t.user !== undefined
+      ? `<span class="tok-s">${escapeHtml(t.user)}</span>`
+      : `<span class="ph">&lt;${escapeHtml(t.ph)}&gt;</span>`;
 const prOk = () => ['branch', 'base', 'two'].includes(state.what);
 const what = () => WHAT.find((w) => w.id === state.what);
 const provider = () => PROVIDERS.find((p) => p.id === state.provider);
@@ -358,21 +367,21 @@ function command() {
   const why = [];
   let mult = DEPTH.find((d) => d.id === state.depth).mult;
   if (w.id === 'files') {
-    parts.push(ph('path'));
+    parts.push(value('path'));
     why.push([
       'files <PATH>',
       'Whole files, not a diff. A folder is reviewed file by file, each with its related files as context.',
     ]);
   }
   if (w.inputs?.includes('base')) {
-    parts.push(`--base ${ph('base')}`);
+    parts.push('--base', value('base'));
     why.push([
       '--base',
       'The branch the work started from. A bare name means the freshly fetched remote branch.',
     ]);
   }
   if (w.inputs?.includes('head')) {
-    parts.push(`--head ${ph('head')}`);
+    parts.push('--head', value('head'));
     why.push(['--head', 'The branch with the work. Defaults to HEAD, unpushed commits included.']);
   }
   if (w.flag) {
@@ -407,7 +416,7 @@ function command() {
     ]);
     const model = state.model.trim() || (p.id === 'openai' ? p.models[0] : '');
     if (model) {
-      parts.push(`--model ${escapeHtml(model)}`);
+      parts.push('--model', { user: model });
       why.push([
         `--model ${model}`,
         'The model for the review role; --critique-model changes the verifier separately.',
@@ -440,7 +449,7 @@ function command() {
       if (!list.length) continue;
       flag = `--format ${list.join(',')} --out reports`;
     }
-    if (o.control === 'money') flag = `--max-cost ${Number(state.cap) || 0}`;
+    if (o.control === 'money') flag = `--max-cost ${Number(state.cap) > 0 ? Number(state.cap) : 5}`;
     parts.push(flag);
     why.push([flag, o.hint]);
     if (o.id === 'sweep') mult *= 0.7;
@@ -451,7 +460,7 @@ function command() {
     mult === 0
       ? 'nothing: no model is called'
       : `≈ $${(FULL_COST[0] * mult).toFixed(2)}–${(FULL_COST[1] * mult).toFixed(2)} per pull request with Claude Sonnet, going by the 50 benchmark pull requests; yours will differ with size`;
-  return { line: parts.join(' '), why, cost };
+  return { line: parts.map(tokenHtml).join(' '), plain: parts.map(tokenText).join(' '), why, cost };
 }
 
 const tile = (name, it, checked, extra = '') =>
@@ -547,7 +556,7 @@ export const commandSteps = [
 ];
 
 export function renderCommandOut() {
-  const { line, why, cost } = command();
+  const { line, plain, why, cost } = command();
   const w = what();
   const after = [];
   if (!state.on.has('dry')) after.push(['code-reviewer runs open latest', 'the HTML report of this run']);
@@ -555,11 +564,6 @@ export function renderCommandOut() {
     after.push(['code-reviewer runs publish latest --dry-run', 'what would be posted, before posting']);
   if (w.id === 'branch' || w.id === 'base')
     after.push(['code-reviewer review --explain-refs', 'why these two refs']);
-  const plain = line
-    .replace(/<[^>]+>/g, '')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
   return `
     <div class="setup-out-head"><div><h3>Your command</h3></div><span class="muted">Updates as you choose.</span></div>
     <div class="cmd-line">
