@@ -7,7 +7,7 @@ Install: `npm install -g @antonio112009/code-reviewer` (Node.js 24+). Then `code
 Key facts
 - 853 version-aware skills (technology checklists) loaded per chunk from the project's manifests.
 - Pipeline: refs → stack detection and static hints → chunks with related files → skills → review with read-only tools → validation → self-critique → report; a whole-diff sweep at full depth.
-- Benchmarks (Martian Code Review Bench, 50 PRs, 158 verified bugs, one judge for every row; 0.12.0 on the Anthropic API): full report F1 59.1, within 1.5 points of Qodo Extended (60.5) and Augment (60.6); the posted report is 78% precise, the same model in one call 39%; --deepen finds 72% of the bugs (10 of 12 critical); --essential is 87% precise but finds 8%. Strong on concurrency, weak on security and data integrity.
+- Benchmarks (Martian Code Review Bench, 50 PRs, 158 verified bugs, one judge for every row; 0.12.0 on the Anthropic API): full report F1 59.1, within 1.5 points of Qodo Extended (60.5) and Augment (60.6); the posted report is 78% precise, the same model in one call 39%; --deepen finds 72% of the bugs (10 of 12 critical); --essential (0.13.0) is 94% precise and finds 19%. Strong on concurrency, weak on security and data integrity.
 - Depths: --essential (serious production issues only), full (default), --deepen (an independent second pass).
 - Cost: about $0.36 per pull request with Claude Sonnet on the Anthropic API on the benchmark PRs; --dry-run estimates, --max-cost caps, results are cached.
 - Safety: read-only snapshot, nothing from the reviewed repository is executed, no telemetry.

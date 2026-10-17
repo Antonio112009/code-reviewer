@@ -268,16 +268,16 @@ export const audit = [
   },
 ];
 
-/** Depths on Martian's real bugs, 0.12.0 on the Anthropic API (BENCHMARKS.md, Like for like). */
+/** Depths on Martian's real bugs on the Anthropic API: full and --deepen 0.12.0, --essential 0.13.0 (BENCHMARKS.md). */
 export const martianDepths = [
   {
     label: '--essential',
-    precision: 86.7,
-    recall: 8.2,
-    f1: 15.0,
-    perPr: 0.3,
-    cost: 0.17,
-    critical: '1 of 12',
+    precision: 93.8,
+    recall: 19.0,
+    f1: 31.6,
+    perPr: 0.5,
+    cost: 0.18,
+    critical: '3 of 12',
   },
   {
     label: 'full (default)',

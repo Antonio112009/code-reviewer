@@ -438,19 +438,19 @@
         <h2 class="section-title">Three depths. Which one, and why.</h2>
         <p class="section-lede">Reading the code is what costs, not the number of findings. So the cheaper depth saves less than it
           leaves out, and the deeper one finds what a single pass structurally cannot. Measured on the 158 real bugs of Martian’s
-          benchmark with 0.12.0.</p>
+          benchmark with 0.12.0 (<code>--essential</code> with 0.13.0).</p>
         <div class="depth-grid">
           <article class="depth-card card reveal">
             <header><code class="flag">--essential</code><span class="depth-when">For a CI gate, or when cost matters more than coverage</span></header>
             <h3>Only what can hurt production</h3>
-            <p>Security, data loss, crashes, leaks, overload, races and expensive queries. Everything reported as critical or
-              major, with a fix.</p>
+            <p>Security, features broken on their normal path, data loss, crashes, leaks, overload, races and expensive queries.
+              Every finding comes with a fix, and the critic drops what is real but low-impact.</p>
             <div class="meters">
-              <div class="meter"><span class="meter-label">Finds</span><span class="meter-track"><i style="--v:11%"></i></span><span class="meter-value">8% of the bugs, 87% precise</span></div>
-              <div class="meter"><span class="meter-label">Costs</span><span class="meter-track"><i style="--v:35%"></i></span><span class="meter-value">≈ $0.17 per pull request</span></div>
+              <div class="meter"><span class="meter-label">Finds</span><span class="meter-track"><i style="--v:26%"></i></span><span class="meter-value">19% of the bugs, 94% precise</span></div>
+              <div class="meter"><span class="meter-label">Costs</span><span class="meter-track"><i style="--v:37%"></i></span><span class="meter-value">≈ $0.18 per pull request</span></div>
             </div>
-            <p class="depth-note">A filter, not a smaller review: one finding per three pull requests, nearly always right, but it
-              found 1 of 12 critical bugs. Use it as a gate next to <code>full</code>, not instead of it.</p>
+            <p class="depth-note">A filter, not a smaller review: one finding per two pull requests, nearly always right, and 3
+              of 12 critical bugs found. Use it as a gate next to <code>full</code>, not instead of it.</p>
           </article>
           <article class="depth-card depth-card-default card reveal">
             <header><code class="flag">full</code><span class="badge badge-blue">default</span><span class="depth-when">For everyday pull requests</span></header>
