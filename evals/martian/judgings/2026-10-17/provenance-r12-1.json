@@ -1,0 +1,21 @@
+{
+ "run_id": "r12-1",
+ "reviewer": "code-reviewer",
+ "created_at": "2026-10-17T21:18:56Z",
+ "benchmark": "martian",
+ "benchmark_commit": "e616e849755441da38f18bf3adba2c9583b03803",
+ "code_reviewer": {
+  "cli": "/Users/anton/.cache/code-reviewer-builds/v0.12.0/dist/cli.js",
+  "version": "0.12.0",
+  "build": {
+   "commit": "f7a658688541d3300c68010f5fbce9e3ae9decce",
+   "describe": "v0.12.0",
+   "version": "0.12.0",
+   "built_at": "2026-10-17T21:18:33Z"
+  }
+ },
+ "args": "--full --provider anthropic",
+ "descriptions": null,
+ "experiment_env": {},
+ "judgings": []
+}

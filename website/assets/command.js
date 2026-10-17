@@ -56,30 +56,30 @@ const INPUTS = {
   path: { label: 'File or folder', placeholder: 'PATH', example: 'src/payments' },
 };
 
-// Cost figures: Martian's 50 pull requests with Claude Sonnet, $0.40–0.61 each at full depth (BENCHMARKS.md).
-const FULL_COST = [0.4, 0.61];
+// Cost figures: Martian's 50 pull requests, 0.12.0 with Claude Sonnet on the Anthropic API (BENCHMARKS.md).
+const FULL_COST = [0.3, 0.4];
 const DEPTH = [
   {
     id: 'essential',
     label: 'Essential',
     hint: 'Only what can hurt production. Critical and major findings, each with a fix.',
-    cost: '≈ 35% cheaper than full',
-    mult: 0.65,
+    cost: '≈ half of full; finds far less (8% of known bugs)',
+    mult: 0.5,
   },
   {
     id: 'full',
     label: 'Full',
     tag: 'default',
     hint: 'Every real defect, the whole-diff sweep and up to five checked maintainability notes.',
-    cost: '≈ $0.40–0.60 per pull request with Claude Sonnet',
+    cost: '≈ $0.30–0.40 per pull request with Claude Sonnet on the API',
     mult: 1,
   },
   {
     id: 'deepen',
     label: 'Full + second pass',
     hint: 'Every chunk reviewed twice, independently; agreement is evidence for the critic.',
-    cost: '≈ 2× full',
-    mult: 2,
+    cost: '≈ 1.5–2× full; finds the most (72% of known bugs)',
+    mult: 1.7,
   },
 ];
 

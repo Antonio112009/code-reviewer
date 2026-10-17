@@ -46,6 +46,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 MARTIAN_DIR = Path(os.environ.get("MARTIAN_DIR", os.path.expanduser("~/.cache/code-reviewer-martian")))
+# The verdict cache; MARTIAN_JUDGE_CACHE points a calibration run at an empty one (the key has no backend in it).
+JUDGE_CACHE = Path(os.environ.get("MARTIAN_JUDGE_CACHE", MARTIAN_DIR / "judge-cache"))
 BENCH = MARTIAN_DIR / "bench" / "offline"
 PUBLISHED_JUDGE_DIR = "anthropic_claude-opus-4-5-20251101"
 TOOL = "code-reviewer"
@@ -139,7 +141,7 @@ def ask(prompt: str, model: str, effort: str = "", thinking: bool = True) -> dic
     """One judge call (Messages API, or `claude -p`); the answer is the JSON object the prompt asks for."""
     variant = f"{'@' + effort if effort else ''}{'' if thinking else '@nothink'}@{SYSTEM}"
     key = hashlib.sha256(f"{model}{variant}\n{prompt}".encode()).hexdigest()
-    cached = MARTIAN_DIR / "judge-cache" / f"{key}.json"
+    cached = JUDGE_CACHE / f"{key}.json"
     if cached.exists():
         with open(cached, encoding="utf-8") as f:
             return json.load(f)

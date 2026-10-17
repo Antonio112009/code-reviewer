@@ -1,5 +1,6 @@
-// Benchmark numbers shown on the site. Source: BENCHMARKS.md (Martian rows judged by Claude Opus 4.5 for every
-// reviewer, "Like for like"; audits and AACR-Bench as listed there). Update both together.
+// Benchmark numbers shown on the site. Source: BENCHMARKS.md. Martian rows are judged by Claude Opus 4.5 for every
+// reviewer ("Like for like"); Code Reviewer's rows are 0.12.0 on the Anthropic API (2026-10-17). The breakdown comes
+// from evals/martian/judgings/2026-10-17/breakdown.json. Update both together.
 
 export const COLORS = {
   ours: '#2a78d6',
@@ -34,27 +35,28 @@ export const martian = [
     perPr: 3.0,
   },
   {
-    label: 'Code Reviewer, full report',
+    label: 'Code Reviewer 0.12, full report',
     short: 'Code Reviewer',
     kind: 'ours',
-    p: 57.4,
-    r: 63.9,
-    f1: 60.5,
-    perPr: 3.4,
-    cost: 0.61,
-    note: '0.8.0 with the sweep, the default since 0.9',
-  },
-  {
-    label: 'Code Reviewer 0.7.0, full report',
-    short: 'Code Reviewer 0.7.0',
-    kind: 'ours',
-    p: 64.0,
-    r: 54.1,
-    f1: 58.7,
-    perPr: 2.6,
-    cost: 0.4,
+    p: 61.4,
+    r: 57.0,
+    f1: 59.1,
+    perPr: 2.9,
+    cost: 0.36,
+    note: 'defaults, Anthropic API, two runs (58.2 and 60.0)',
   },
   { label: 'Qodo v2 (#4)', short: 'Qodo v2', kind: 'other', p: 51.4, r: 57.0, f1: 54.1, perPr: 3.5 },
+  {
+    label: 'Code Reviewer 0.12 --deepen',
+    short: '--deepen',
+    kind: 'ours',
+    p: 41.3,
+    r: 72.2,
+    f1: 52.5,
+    perPr: 5.8,
+    cost: 0.48,
+    note: 'an independent second pass; the most bugs found of any reviewer',
+  },
   {
     label: 'Claude Sonnet, whole diff in one call',
     short: 'One call',
@@ -78,14 +80,180 @@ export const martian = [
 
 /** The posted part of the report (main report, no "worth a look"). */
 export const martianPosted = {
-  label: 'Code Reviewer, posted comments only',
+  label: 'Code Reviewer 0.12, posted comments only',
   short: 'Code Reviewer, posted',
   kind: 'ours',
-  p: 70.8,
-  r: 43.7,
-  f1: 54.0,
-  perPr: 1.8,
+  p: 78.0,
+  r: 34.8,
+  f1: 48.1,
+  perPr: 1.4,
   note: 'the main report, without “worth a look”',
+};
+
+/** Recall in percent by bug category and severity, Martian core profile. */
+export const breakdown = {
+  categories: [
+    {
+      id: 'bug',
+      label: 'Logic bugs',
+      of: 94,
+    },
+    {
+      id: 'concurrency',
+      label: 'Concurrency',
+      of: 14,
+    },
+    {
+      id: 'api',
+      label: 'API contracts',
+      of: 13,
+    },
+    {
+      id: 'security',
+      label: 'Security',
+      of: 11,
+    },
+    {
+      id: 'doc_defect',
+      label: 'Docs that lie',
+      of: 9,
+    },
+    {
+      id: 'data',
+      label: 'Data integrity',
+      of: 7,
+    },
+    {
+      id: 'perf',
+      label: 'Performance',
+      of: 6,
+    },
+    {
+      id: 'test_gap',
+      label: 'Test gaps',
+      of: 4,
+    },
+  ],
+  severities: [
+    {
+      id: 'Critical',
+      of: 12,
+    },
+    {
+      id: 'High',
+      of: 54,
+    },
+    {
+      id: 'Medium',
+      of: 59,
+    },
+    {
+      id: 'Low',
+      of: 33,
+    },
+  ],
+  rows: [
+    {
+      label: 'Code Reviewer',
+      kind: 'ours',
+      category: {
+        bug: 59,
+        concurrency: 79,
+        api: 69,
+        security: 41,
+        doc_defect: 39,
+        data: 36,
+        perf: 58,
+        test_gap: 25,
+      },
+      severity: {
+        Critical: 67,
+        High: 69,
+        Medium: 58,
+        Low: 30,
+      },
+    },
+    {
+      label: 'Code Reviewer, deepen',
+      kind: 'ours',
+      category: {
+        bug: 76,
+        concurrency: 86,
+        api: 69,
+        security: 64,
+        doc_defect: 56,
+        data: 57,
+        perf: 67,
+        test_gap: 50,
+      },
+      severity: {
+        Critical: 83,
+        High: 89,
+        Medium: 69,
+        Low: 45,
+      },
+    },
+    {
+      label: 'Qodo Extended',
+      kind: 'other',
+      category: {
+        bug: 60,
+        concurrency: 79,
+        api: 69,
+        security: 45,
+        doc_defect: 44,
+        data: 71,
+        perf: 67,
+        test_gap: 0,
+      },
+      severity: {
+        Critical: 67,
+        High: 69,
+        Medium: 61,
+        Low: 39,
+      },
+    },
+    {
+      label: 'Augment',
+      kind: 'other',
+      category: {
+        bug: 64,
+        concurrency: 71,
+        api: 85,
+        security: 36,
+        doc_defect: 56,
+        data: 43,
+        perf: 67,
+        test_gap: 75,
+      },
+      severity: {
+        Critical: 67,
+        High: 70,
+        Medium: 68,
+        Low: 42,
+      },
+    },
+    {
+      label: 'Sonnet, one call',
+      kind: 'plain',
+      category: {
+        bug: 76,
+        concurrency: 86,
+        api: 77,
+        security: 73,
+        doc_defect: 33,
+        data: 79,
+        perf: 58,
+        test_gap: 0,
+      },
+      severity: {
+        Critical: 83,
+        High: 80,
+        Medium: 76,
+        Low: 45,
+      },
+    },
+  ],
 };
 
 /** Blind audits: share of findings an auditor judged real (BENCHMARKS.md, Blind audits). */
@@ -97,6 +265,37 @@ export const audit = [
     label: 'Posted findings that matched no known bug',
     value: 100,
     detail: '20 of 20 sampled on Martian were real',
+  },
+];
+
+/** Depths on Martian's real bugs, 0.12.0 on the Anthropic API (BENCHMARKS.md, Like for like). */
+export const martianDepths = [
+  {
+    label: '--essential',
+    precision: 86.7,
+    recall: 8.2,
+    f1: 15.0,
+    perPr: 0.3,
+    cost: 0.17,
+    critical: '1 of 12',
+  },
+  {
+    label: 'full (default)',
+    precision: 61.4,
+    recall: 57.0,
+    f1: 59.1,
+    perPr: 2.9,
+    cost: 0.36,
+    critical: '8 of 12',
+  },
+  {
+    label: '--deepen',
+    precision: 41.3,
+    recall: 72.2,
+    f1: 52.5,
+    perPr: 5.8,
+    cost: 0.48,
+    critical: '10 of 12',
   },
 ];
 

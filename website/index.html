@@ -48,7 +48,7 @@
         "name": "How is this different from asking Claude or ChatGPT to review a diff?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Same model, different standard of evidence. Asked in one call, Claude Sonnet finds more of the known bugs on Martian’s benchmark, but only 39% of its comments point at one. Code Reviewer splits the change into chunks with their related files, loads version-specific checklists, requires a failure path for every serious finding and has a second model verify each one. 71% of what it posts matches a verified bug, and a blind audit of the rest found real defects the benchmark had missed."
+          "text": "Same model, different standard of evidence. Asked in one call, Claude Sonnet finds more of the known bugs on Martian’s benchmark, but only 39% of its comments point at one. Code Reviewer splits the change into chunks with their related files, loads version-specific checklists, requires a failure path for every serious finding and has a second model verify each one. 78% of what it posts matches a verified bug, and a blind audit of the rest found real defects the benchmark had missed."
         }
       },
       {
@@ -104,7 +104,7 @@
         "name": "How much does a review cost?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "You pay only for the model calls. On the 50 benchmark pull requests a full review with Claude Sonnet cost $0.40 to $0.61 each; --essential is about a third cheaper and --deepen about twice the price. --dry-run shows the plan and an estimate before any call, --max-cost caps a run, every run records its cost per stage, and the cache makes re-reviews of the same code free."
+          "text": "You pay only for the model calls. On the 50 benchmark pull requests a full review with Claude Sonnet cost about $0.36 each on the Anthropic API; --essential about half that, --deepen more. --dry-run shows the plan and an estimate before any call, --max-cost caps a run, every run records its cost per stage, and the cache makes re-reviews of the same code free."
         }
       },
       {
@@ -172,7 +172,7 @@
     <section class="hero">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <a class="pill" href="benchmarks.html"><span class="badge badge-blue">Benchmarks</span> Level with the top tools on Martian’s Code Review Bench <span aria-hidden="true">→</span></a>
+          <a class="pill" href="benchmarks.html"><span class="badge badge-blue">Benchmarks</span> 78% of posted comments are real bugs on Martian’s Code Review Bench <span aria-hidden="true">→</span></a>
           <h1>Code review that <em>checks its own work.</em></h1>
           <p class="lede">Code Reviewer is an open-source command-line tool. It reviews your branch with the model you already
             use, writes down exactly how each bug would break, and has a second model re-read the code before anything
@@ -293,22 +293,22 @@
 
         <div class="claims">
           <article class="claim card reveal">
-            <p class="claim-n">60.5</p>
-            <h3>Level with the best</h3>
-            <p>F1 on Martian’s Code Review Bench, under one judge. Qodo Extended, first on the leaderboard, scores 60.5 the
-              same way; Augment, third, 60.6. Nothing else we measured comes closer.</p>
+            <p class="claim-n">59.1</p>
+            <h3>Within 1.5 of the best</h3>
+            <p>F1 of 0.12.0 on Martian’s Code Review Bench, under one judge. Qodo Extended, first on the leaderboard, scores 60.5
+              the same way; Augment, third, 60.6. Two runs of one tool differ by more than that.</p>
           </article>
           <article class="claim card reveal">
-            <p class="claim-n">71%</p>
+            <p class="claim-n">78%</p>
             <h3>The most precise comments</h3>
-            <p>of what Code Reviewer posts on a pull request matches a verified bug, the highest of any posted report in the
-              comparison. The same model asked for bugs in a single call: 39%.</p>
+            <p>of what Code Reviewer posts on a pull request matches a verified bug, the highest of any row in the comparison.
+              The same model asked for bugs in a single call: 39%.</p>
           </article>
           <article class="claim card reveal">
             <p class="claim-n">20 / 20</p>
             <h3>“False positives” that weren’t</h3>
-            <p>Every posted finding the benchmark counted as wrong turned out, on a blind read of the code, to be a real
-              defect its list had missed. Two were fixed upstream later.</p>
+            <p>sampled posted findings the benchmark counted as wrong turned out, on a blind read of the code, to be real
+              defects its list had missed. Two were fixed upstream later.</p>
           </article>
         </div>
 
@@ -325,10 +325,8 @@
             <ul>
               <li><b>One judge for every row.</b> We re-scored the published tools from the comments they actually posted.
                 Our judge is stricter than the leaderboard’s own, so we never mix the two scales.</li>
-              <li><b>Two runs, two judges.</b> Every Code Reviewer row is an average of two runs. Judged again by Claude Opus
-                5.5, no row moved more than 1.3 points and the order held.</li>
-              <li><b>Audited by hand.</b> Blind auditors read the code behind about 250 findings. After the critic, 95–97% of the
-                main report was real.</li>
+              <li><b>Two runs, two judges.</b> Every default Code Reviewer row is an average of two runs. A second judge, Claude Opus 5.5, re-scored the earlier rows: none moved more than 1.3 points and the order held.</li>
+              <li><b>Audited blind.</b> Model auditors read the code behind about 250 findings without seeing their scores. After the critic, 95–97% of the main report was real.</li>
               <li><b>Reproducible.</b> Every number names its build, command and judge; the raw verdicts are in the repo.</li>
             </ul>
             <a class="btn btn-outline" href="benchmarks.html">All results, method and caveats</a>
@@ -352,7 +350,7 @@
           <li><b>It knows your stack by version.</b><span>853 checklists, loaded per chunk from your manifests. React 19 rules for React 19, not “JavaScript”.</span></li>
           <li><b>It reads the whole change, twice.</b><span>Chunks with their related files first, then one pass over the entire diff for what fell between them.</span></li>
           <li><b>Your model, your account, your machine.</b><span>Claude, Codex, Gemini, Copilot, Bedrock, any OpenAI-compatible server or a local one. Nothing from the repository is ever executed.</span></li>
-          <li><b>Measured in public.</b><span>Level with the top of the leaderboard under one judge, and every number’s build, command and raw verdicts are in the repository.</span></li>
+          <li><b>Measured in public.</b><span>Within 1.5 F1 of the top of the leaderboard under one judge, the most precise posted comments, and every number’s build, command and raw verdicts are in the repository.</span></li>
         </ol>
       </div>
     </section>
@@ -439,8 +437,8 @@
         <p class="eyebrow">Depth</p>
         <h2 class="section-title">Three depths. Which one, and why.</h2>
         <p class="section-lede">Reading the code is what costs, not the number of findings. So the cheaper depth saves less than it
-          leaves out, and the deeper one finds what a single pass structurally cannot. Measured on 30 real pull requests, two
-          runs each.</p>
+          leaves out, and the deeper one finds what a single pass structurally cannot. Measured on the 158 real bugs of Martian’s
+          benchmark with 0.12.0.</p>
         <div class="depth-grid">
           <article class="depth-card card reveal">
             <header><code class="flag">--essential</code><span class="depth-when">For a CI gate, or when cost matters more than coverage</span></header>
@@ -448,10 +446,11 @@
             <p>Security, data loss, crashes, leaks, overload, races and expensive queries. Everything reported as critical or
               major, with a fix.</p>
             <div class="meters">
-              <div class="meter"><span class="meter-label">Finds</span><span class="meter-track"><i style="--v:14%"></i></span><span class="meter-value">2.1% of reviewer comments</span></div>
-              <div class="meter"><span class="meter-label">Costs</span><span class="meter-track"><i style="--v:29%"></i></span><span class="meter-value">≈ 0.65× full</span></div>
+              <div class="meter"><span class="meter-label">Finds</span><span class="meter-track"><i style="--v:11%"></i></span><span class="meter-value">8% of the bugs, 87% precise</span></div>
+              <div class="meter"><span class="meter-label">Costs</span><span class="meter-track"><i style="--v:35%"></i></span><span class="meter-value">≈ $0.17 per pull request</span></div>
             </div>
-            <p class="depth-note">About one finding per three pull requests, and every one of them is also in <code>full</code>.</p>
+            <p class="depth-note">A filter, not a smaller review: one finding per three pull requests, nearly always right, but it
+              found 1 of 12 critical bugs. Use it as a gate next to <code>full</code>, not instead of it.</p>
           </article>
           <article class="depth-card depth-card-default card reveal">
             <header><code class="flag">full</code><span class="badge badge-blue">default</span><span class="depth-when">For everyday pull requests</span></header>
@@ -459,11 +458,11 @@
             <p>Edge cases and accessibility too, a sweep over the whole diff for what the chunks missed, and up to five
               maintainability notes checked to be true. Uncertain findings go to a “worth a look” list that is never posted.</p>
             <div class="meters">
-              <div class="meter"><span class="meter-label">Finds</span><span class="meter-track"><i style="--v:51%"></i></span><span class="meter-value">7.7% of reviewer comments</span></div>
-              <div class="meter"><span class="meter-label">Costs</span><span class="meter-track"><i style="--v:43%"></i></span><span class="meter-value">$0.40–0.60 per pull request</span></div>
+              <div class="meter"><span class="meter-label">Finds</span><span class="meter-track"><i style="--v:79%"></i></span><span class="meter-value">57% of the bugs, 61% precise</span></div>
+              <div class="meter"><span class="meter-label">Costs</span><span class="meter-track"><i style="--v:75%"></i></span><span class="meter-value">≈ $0.36 per pull request</span></div>
             </div>
-            <p class="depth-note">Almost four times as many of the comments human reviewers leave as <code>essential</code>, for
-              half as much again. The posted part is 71% precise on real bugs.</p>
+            <p class="depth-note">F1 59.1, within 1.5 points of the best tools. The posted part is 78% precise; 8 of 12 critical
+              bugs found.</p>
           </article>
           <article class="depth-card card reveal">
             <header><code class="flag">--deepen</code><span class="depth-when">For payments, auth, migrations, release branches</span></header>
@@ -471,15 +470,14 @@
             <p>Every chunk is reviewed again by a pass that knows nothing about the first, reasoning harder. What both report
               is marked, and the critic is told: agreement is evidence.</p>
             <div class="meters">
-              <div class="meter"><span class="meter-label">Finds</span><span class="meter-track"><i style="--v:100%"></i></span><span class="meter-value">15.0% of reviewer comments</span></div>
-              <div class="meter"><span class="meter-label">Costs</span><span class="meter-track"><i style="--v:100%"></i></span><span class="meter-value">≈ 2.3× full</span></div>
+              <div class="meter"><span class="meter-label">Finds</span><span class="meter-track"><i style="--v:100%"></i></span><span class="meter-value">72% of the bugs, 41% precise</span></div>
+              <div class="meter"><span class="meter-label">Costs</span><span class="meter-track"><i style="--v:100%"></i></span><span class="meter-value">≈ $0.48+ per pull request</span></div>
             </div>
-            <p class="depth-note">One pass misses about a quarter of the real defects two passes find. After a review, the summary
-              suggests it with its estimated cost, and the cache pays the first pass again.</p>
+            <p class="depth-note">The most bugs of any reviewer measured: 10 of 12 critical, 89% of high. After a review, the
+              summary suggests it with its estimated cost, and the first pass comes from the cache.</p>
           </article>
         </div>
-        <p class="fine depth-foot">AACR-Bench ctx30: essential 9.5 findings and $5.1 per 30 pull requests, full 47.5 and $7.6, deepen 150.5 and
-          $17.7. Code-defect recall 4.4%, 12.2% and 17.4%. <a href="benchmarks.html#aacr">The table →</a></p>
+        <p class="fine depth-foot">Martian Code Review Bench, 50 pull requests, 0.12.0 on the Anthropic API; full report. <a href="benchmarks.html#depths">The table →</a></p>
       </div>
     </section>
 
@@ -559,7 +557,7 @@
           </div>
           <a class="btn btn-outline" href="https://github.com/antonio112009/code-reviewer/issues">Ask another on GitHub</a>
         </div>
-        <div class="faq-grid"><details><summary>How is this different from asking Claude or ChatGPT to review a diff?</summary><p>Same model, different standard of evidence. Asked in one call, Claude Sonnet finds more of the known bugs on Martian’s benchmark, but only 39% of its comments point at one. Code Reviewer splits the change into chunks with their related files, loads version-specific checklists, requires a failure path for every serious finding and has a second model verify each one. 71% of what it posts matches a verified bug, and a blind audit of the rest found real defects the benchmark had missed.</p></details><details><summary>Does it replace human review?</summary><p>No. It does the part humans are worst at: reading every line of a large change with the same attention, remembering the version-specific pitfalls of twenty stacks, and following a call three files away. It leaves the design and the judgement calls to the reviewer, and it tries hard not to waste their time with noise.</p></details><details><summary>How long does a review take, and will it slow down my pull requests?</summary><p>One to three minutes for a typical pull request, mostly model time; chunks are reviewed in parallel. In CI it runs alongside your tests. A re-run after a fix pays and waits only for the chunks that changed, because answers for unchanged code come from the cache.</p></details><details><summary>What happens with false positives?</summary><p>Every finding must name the input or state that breaks the code. A second model, the critic, then re-reads the code and rejects what it cannot confirm; what it is unsure about is listed as “worth a look” in the report and never posted. In blind audits 95–97% of the main report was real. When something slips through, the confidence and the critic’s reason are on the comment, so it is quick to dismiss.</p></details><details><summary>Which models and providers does it work with?</summary><p>Claude Code, Codex, GitHub Copilot and Gemini CLIs through their logins; the Anthropic API, AWS Bedrock, OpenAI, OpenRouter, and any OpenAI-compatible server such as Ollama, vLLM, LM Studio or LiteLLM. The review and the verification can use different models and reasoning levels, and if a model is unavailable it offers an alternative.</p></details><details><summary>Which languages and frameworks does it know?</summary><p>Any language the model reads. The 853 skills cover JavaScript and TypeScript with React, Next.js, Vue, Angular, Svelte and Node frameworks; Python with Django, FastAPI and Flask; Go, Java and Kotlin with Spring, C#, Rust, Ruby, PHP, Swift, Dart, Scala, C and C++, shell and SQL; PostgreSQL, MySQL, SQLite, SQL Server, MongoDB, Redis and Elasticsearch; Docker, Kubernetes, Terraform and CI configs. Browse them in the catalog.</p></details><details><summary>Does my code leave my machine? Do you collect anything?</summary><p>Code goes only to the model provider you choose, and never to us: there is no telemetry and no account. The one network call of our own is a daily check for a new version, and CODE_REVIEWER_NO_UPDATE_CHECK=1 turns it off. With Ollama or another local server nothing leaves the machine at all. Agents work on an isolated, read-only snapshot, and nothing from the reviewed repository is executed.</p></details><details><summary>How much does a review cost?</summary><p>You pay only for the model calls. On the 50 benchmark pull requests a full review with Claude Sonnet cost $0.40 to $0.61 each; --essential is about a third cheaper and --deepen about twice the price. --dry-run shows the plan and an estimate before any call, --max-cost caps a run, every run records its cost per stage, and the cache makes re-reviews of the same code free.</p></details><details><summary>Can it review a whole repository, not just a change?</summary><p>Yes: code-reviewer files src/payments reviews the complete files or folders you name, each with its related files as context. It is the way to audit legacy code or a module you inherited; the regular review command is for what changed.</p></details><details><summary>How do I keep it away from generated files, or point it at what matters?</summary><p>review.exclude in .code-reviewer/config.yaml takes globs such as **/*.generated.ts; project.focus names the areas to care about. Rules you already keep in CLAUDE.md, AGENTS.md, .cursorrules or REVIEW.md are read too, and a skill of your own is a Markdown file with a few bullets.</p></details><details><summary>Where can it post comments?</summary><p>GitHub, GitLab, Gitea, Forgejo and Codeberg, Bitbucket Cloud and Data Center, and Azure DevOps: inline comments plus one summary comment that later runs update, with fixed threads resolved. There is a GitHub Action, a GitLab CI template and recipes for the others.</p></details><details><summary>Is it free?</summary><p>The tool is open source under the MIT licence. The only cost is what your model provider charges for the calls, and a local model makes that zero.</p></details></div>
+        <div class="faq-grid"><details><summary>How is this different from asking Claude or ChatGPT to review a diff?</summary><p>Same model, different standard of evidence. Asked in one call, Claude Sonnet finds more of the known bugs on Martian’s benchmark, but only 39% of its comments point at one. Code Reviewer splits the change into chunks with their related files, loads version-specific checklists, requires a failure path for every serious finding and has a second model verify each one. 78% of what it posts matches a verified bug, and a blind audit of the rest found real defects the benchmark had missed.</p></details><details><summary>Does it replace human review?</summary><p>No. It does the part humans are worst at: reading every line of a large change with the same attention, remembering the version-specific pitfalls of twenty stacks, and following a call three files away. It leaves the design and the judgement calls to the reviewer, and it tries hard not to waste their time with noise.</p></details><details><summary>How long does a review take, and will it slow down my pull requests?</summary><p>One to three minutes for a typical pull request, mostly model time; chunks are reviewed in parallel. In CI it runs alongside your tests. A re-run after a fix pays and waits only for the chunks that changed, because answers for unchanged code come from the cache.</p></details><details><summary>What happens with false positives?</summary><p>Every finding must name the input or state that breaks the code. A second model, the critic, then re-reads the code and rejects what it cannot confirm; what it is unsure about is listed as “worth a look” in the report and never posted. In blind audits 95–97% of the main report was real. When something slips through, the confidence and the critic’s reason are on the comment, so it is quick to dismiss.</p></details><details><summary>Which models and providers does it work with?</summary><p>Claude Code, Codex, GitHub Copilot and Gemini CLIs through their logins; the Anthropic API, AWS Bedrock, OpenAI, OpenRouter, and any OpenAI-compatible server such as Ollama, vLLM, LM Studio or LiteLLM. The review and the verification can use different models and reasoning levels, and if a model is unavailable it offers an alternative.</p></details><details><summary>Which languages and frameworks does it know?</summary><p>Any language the model reads. The 853 skills cover JavaScript and TypeScript with React, Next.js, Vue, Angular, Svelte and Node frameworks; Python with Django, FastAPI and Flask; Go, Java and Kotlin with Spring, C#, Rust, Ruby, PHP, Swift, Dart, Scala, C and C++, shell and SQL; PostgreSQL, MySQL, SQLite, SQL Server, MongoDB, Redis and Elasticsearch; Docker, Kubernetes, Terraform and CI configs. Browse them in the catalog.</p></details><details><summary>Does my code leave my machine? Do you collect anything?</summary><p>Code goes only to the model provider you choose, and never to us: there is no telemetry and no account. The one network call of our own is a daily check for a new version, and CODE_REVIEWER_NO_UPDATE_CHECK=1 turns it off. With Ollama or another local server nothing leaves the machine at all. Agents work on an isolated, read-only snapshot, and nothing from the reviewed repository is executed.</p></details><details><summary>How much does a review cost?</summary><p>You pay only for the model calls. On the 50 benchmark pull requests a full review with Claude Sonnet cost about $0.36 each on the Anthropic API; --essential about half that, --deepen more. --dry-run shows the plan and an estimate before any call, --max-cost caps a run, every run records its cost per stage, and the cache makes re-reviews of the same code free.</p></details><details><summary>Can it review a whole repository, not just a change?</summary><p>Yes: code-reviewer files src/payments reviews the complete files or folders you name, each with its related files as context. It is the way to audit legacy code or a module you inherited; the regular review command is for what changed.</p></details><details><summary>How do I keep it away from generated files, or point it at what matters?</summary><p>review.exclude in .code-reviewer/config.yaml takes globs such as **/*.generated.ts; project.focus names the areas to care about. Rules you already keep in CLAUDE.md, AGENTS.md, .cursorrules or REVIEW.md are read too, and a skill of your own is a Markdown file with a few bullets.</p></details><details><summary>Where can it post comments?</summary><p>GitHub, GitLab, Gitea, Forgejo and Codeberg, Bitbucket Cloud and Data Center, and Azure DevOps: inline comments plus one summary comment that later runs update, with fixed threads resolved. There is a GitHub Action, a GitLab CI template and recipes for the others.</p></details><details><summary>Is it free?</summary><p>The tool is open source under the MIT licence. The only cost is what your model provider charges for the calls, and a local model makes that zero.</p></details></div>
       </div>
     </section>
 
