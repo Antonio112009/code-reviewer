@@ -1,0 +1,31 @@
+# Code Reviewer
+
+> Open-source LLM code review for the command line and CI. It reviews a branch, the staged changes or whole files with the model you already use (Claude Code, Codex, Copilot, Gemini, the Anthropic API, AWS Bedrock, OpenAI-compatible APIs, local models through Ollama), requires a failure path for every serious finding, has a second model verify each one, and posts the result to GitHub, GitLab, Gitea/Forgejo, Bitbucket or Azure DevOps pull requests.
+
+Install: `npm install -g @antonio112009/code-reviewer` (Node.js 24+). Then `code-reviewer init` and `code-reviewer review`.
+
+Key facts
+- 853 version-aware skills (technology checklists) loaded per chunk from the project's manifests.
+- Pipeline: refs → stack detection and static hints → chunks with related files → skills → review with read-only tools → validation → self-critique → report; a whole-diff sweep at full depth.
+- Benchmarks (Martian Code Review Bench, 50 PRs, 158 verified bugs, one judge for every row): F1 60.5 with the sweep, level with Qodo Extended (60.5) and Augment (60.6); the posted report is 71% precise, the same model in one call 39%.
+- Depths: --essential (serious production issues only), full (default), --deepen (an independent second pass).
+- Cost: about $0.40–0.61 per pull request with Claude Sonnet on the benchmark PRs; --dry-run estimates, --max-cost caps, results are cached.
+- Safety: read-only snapshot, nothing from the reviewed repository is executed, no telemetry.
+
+## Pages
+- [Overview](https://antonio112009.github.io/code-reviewer/): what it is, why, setup builder, FAQ
+- [How it works](https://antonio112009.github.io/code-reviewer/how-it-works.html): the eight stages, the finding schema, depths, cost
+- [Skills catalog](https://antonio112009.github.io/code-reviewer/skills.html): every checklist, what it tells the model and when it loads
+- [Benchmarks](https://antonio112009.github.io/code-reviewer/benchmarks.html): Martian, AACR-Bench, blind audits, caveats
+- [Demo](https://antonio112009.github.io/code-reviewer/demo.html): a scripted run on one pull request
+- [CI setup](https://antonio112009.github.io/code-reviewer/ci.html): GitHub Actions, GitLab CI, Bitbucket, Azure, Gitea/Forgejo
+
+## Source and docs
+- [Repository](https://github.com/antonio112009/code-reviewer)
+- [README](https://github.com/antonio112009/code-reviewer/blob/main/README.md)
+- [BENCHMARKS.md](https://github.com/antonio112009/code-reviewer/blob/main/BENCHMARKS.md): every number with its build, command and judge
+- [docs/ARCHITECTURE.md](https://github.com/antonio112009/code-reviewer/blob/main/docs/ARCHITECTURE.md)
+- [docs/skills.md](https://github.com/antonio112009/code-reviewer/blob/main/docs/skills.md): writing a skill
+- [docs/ci.md](https://github.com/antonio112009/code-reviewer/blob/main/docs/ci.md)
+- [npm package](https://www.npmjs.com/package/@antonio112009/code-reviewer)
+- License: MIT

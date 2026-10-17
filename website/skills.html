@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>853 code review skills by technology and version: the Code Reviewer catalog</title>
+  <meta name="description" content="Browse every checklist Code Reviewer can load during a review, from React effects to PostgreSQL locks and Kubernetes manifests: what each tells the model, which lines activate it, and its sources.">
+  <meta name="theme-color" content="#f8f7f4">
+  <link rel="canonical" href="https://antonio112009.github.io/code-reviewer/skills.html">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="853 code review skills by technology and version: the Code Reviewer catalog">
+  <meta property="og:description" content="Browse every checklist Code Reviewer can load during a review, from React effects to PostgreSQL locks and Kubernetes manifests: what each tells the model, which lines activate it, and its sources.">
+  <meta property="og:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta property="og:url" content="https://antonio112009.github.io/code-reviewer/skills.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:site_name" content="Code Reviewer">
+  <meta name="twitter:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Code Reviewer", "item": "https://antonio112009.github.io/code-reviewer/"}, {"@type": "ListItem", "position": 2, "name": "Skills", "item": "https://antonio112009.github.io/code-reviewer/skills.html"}]}
+  </script>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="./"><img src="assets/logo.svg" width="30" height="30" alt="">Code Reviewer</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="./">Overview</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="skills.html" aria-current="page">Skills</a>
+        <a href="benchmarks.html">Benchmarks</a>
+        <a href="demo.html">Demo</a>
+        <a href="ci.html">CI setup</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-ghost btn-sm hide-sm" href="https://www.npmjs.com/package/@antonio112009/code-reviewer"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/npm.svg" alt="">npm</a>
+        <a class="btn btn-outline btn-sm" href="https://github.com/antonio112009/code-reviewer"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+        <button class="btn btn-ghost btn-sm menu-button" type="button" aria-expanded="false" aria-label="Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="./">Code Reviewer</a><span aria-hidden="true">/</span><span aria-current="page">Skills</span></nav>
+        <p class="eyebrow">Skills catalog</p>
+        <h1>Every checklist the reviewer can load.</h1>
+        <p>853 skills across 20 technology groups, taken straight from the repository. Search by library, function or CWE id,
+          then open a skill to see exactly what the model is told and which lines make Code Reviewer load it.</p>
+        <ul class="toc" aria-label="How skills are picked">
+          <li><a href="how-it-works.html#skills">How skills are picked</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/docs/skills.md">Write your own</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/tree/main/skills">Browse on GitHub</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section-last" style="padding-top: 8px">
+      <div class="wrap">
+        <div class="catalog" data-catalog>
+          <aside class="catalog-side">
+            <h2>Technology</h2>
+            <ul class="group-list" data-groups aria-label="Technology"></ul>
+          </aside>
+          <div>
+            <div class="catalog-tools">
+              <label class="search">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <span class="sr-only">Search skills</span>
+                <input type="search" placeholder="Search: useEffect, select_for_update, CWE-89, helm…" autocomplete="off" spellcheck="false">
+              </label>
+              <div class="segmented">
+                <button type="button" data-tier="" aria-pressed="true">All</button>
+                <button type="button" data-tier="essential" aria-pressed="false">Essential</button>
+                <button type="button" data-tier="full" aria-pressed="false">Full only</button>
+              </div>
+            </div>
+            <div class="subgroups" data-subgroups hidden></div>
+            <p class="result-count" data-count aria-live="polite">Loading the catalog…</p>
+            <div data-results></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>
+        <a class="brand" href="./"><img src="assets/logo.svg" width="26" height="26" alt="">Code Reviewer</a>
+        <p>Open-source LLM code review. MIT licensed, in active development: issues and feedback are welcome.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="how-it-works.html">How it works</a></li>
+          <li><a href="skills.html">Skills catalog</a></li>
+          <li><a href="benchmarks.html">Benchmarks</a></li>
+          <li><a href="demo.html">Demo</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/@antonio112009/code-reviewer">npm</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/CHANGELOG.md">Changelog</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Docs</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer#readme">README</a></li>
+          <li><a href="ci.html">CI setup</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/docs/skills.md">Writing skills</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="assets/site.js"></script>
+  <script type="module" src="assets/skills.js"></script>
+</body>
+</html>

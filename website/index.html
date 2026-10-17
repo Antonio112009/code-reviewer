@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Code Reviewer: open-source LLM code review that checks its own work</title>
+  <meta name="description" content="An open-source CLI that reviews your branch with Claude, Codex, Gemini, Copilot or a local model. Each finding names the input that breaks the code, and a second model re-reads the code before anything is posted.">
+  <meta name="theme-color" content="#f8f7f4">
+  <link rel="canonical" href="https://antonio112009.github.io/code-reviewer/">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Code Reviewer: open-source LLM code review that checks its own work">
+  <meta property="og:description" content="Open source. Runs on the model you already use. Every finding names the input that breaks the code, and a second model re-reads the code before anything reaches your pull request.">
+  <meta property="og:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta property="og:url" content="https://antonio112009.github.io/code-reviewer/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:site_name" content="Code Reviewer">
+  <meta name="twitter:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta name="author" content="antonio112009">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Code Reviewer",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS, Linux, Windows",
+    "description": "Open-source LLM code review for the command line and CI: version-aware skills, static hints and a self-critique pass for fewer false positives. Works with Claude Code, Codex, Copilot, Gemini, the Anthropic API, AWS Bedrock and OpenAI-compatible APIs.",
+    "url": "https://antonio112009.github.io/code-reviewer/",
+    "downloadUrl": "https://www.npmjs.com/package/@antonio112009/code-reviewer",
+    "softwareVersion": "0.12.0",
+    "license": "https://opensource.org/licenses/MIT",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Person", "name": "antonio112009", "url": "https://github.com/antonio112009" },
+    "sameAs": ["https://github.com/antonio112009/code-reviewer", "https://www.npmjs.com/package/@antonio112009/code-reviewer"]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How is this different from asking Claude or ChatGPT to review a diff?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Same model, different standard of evidence. Asked in one call, Claude Sonnet finds more of the known bugs on Martian’s benchmark, but only 39% of its comments point at one. Code Reviewer splits the change into chunks with their related files, loads version-specific checklists, requires a failure path for every serious finding and has a second model verify each one. 71% of what it posts matches a verified bug, and a blind audit of the rest found real defects the benchmark had missed."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does it replace human review?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. It does the part humans are worst at: reading every line of a large change with the same attention, remembering the version-specific pitfalls of twenty stacks, and following a call three files away. It leaves the design and the judgement calls to the reviewer, and it tries hard not to waste their time with noise."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How long does a review take, and will it slow down my pull requests?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "One to three minutes for a typical pull request, mostly model time; chunks are reviewed in parallel. In CI it runs alongside your tests. A re-run after a fix pays and waits only for the chunks that changed, because answers for unchanged code come from the cache."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What happens with false positives?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Every finding must name the input or state that breaks the code. A second model, the critic, then re-reads the code and rejects what it cannot confirm; what it is unsure about is listed as “worth a look” in the report and never posted. In blind audits 95–97% of the main report was real. When something slips through, the confidence and the critic’s reason are on the comment, so it is quick to dismiss."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which models and providers does it work with?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Claude Code, Codex, GitHub Copilot and Gemini CLIs through their logins; the Anthropic API, AWS Bedrock, OpenAI, OpenRouter, and any OpenAI-compatible server such as Ollama, vLLM, LM Studio or LiteLLM. The review and the verification can use different models and reasoning levels, and if a model is unavailable it offers an alternative."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which languages and frameworks does it know?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Any language the model reads. The 853 skills cover JavaScript and TypeScript with React, Next.js, Vue, Angular, Svelte and Node frameworks; Python with Django, FastAPI and Flask; Go, Java and Kotlin with Spring, C#, Rust, Ruby, PHP, Swift, Dart, Scala, C and C++, shell and SQL; PostgreSQL, MySQL, SQLite, SQL Server, MongoDB, Redis and Elasticsearch; Docker, Kubernetes, Terraform and CI configs. Browse them in the catalog."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does my code leave my machine? Do you collect anything?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Code goes only to the model provider you choose, and never to us: there is no telemetry and no account. The one network call of our own is a daily check for a new version, and CODE_REVIEWER_NO_UPDATE_CHECK=1 turns it off. With Ollama or another local server nothing leaves the machine at all. Agents work on an isolated, read-only snapshot, and nothing from the reviewed repository is executed."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How much does a review cost?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You pay only for the model calls. On the 50 benchmark pull requests a full review with Claude Sonnet cost $0.40 to $0.61 each; --essential is about a third cheaper and --deepen about twice the price. --dry-run shows the plan and an estimate before any call, --max-cost caps a run, every run records its cost per stage, and the cache makes re-reviews of the same code free."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can it review a whole repository, not just a change?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes: code-reviewer files src/payments reviews the complete files or folders you name, each with its related files as context. It is the way to audit legacy code or a module you inherited; the regular review command is for what changed."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I keep it away from generated files, or point it at what matters?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "review.exclude in .code-reviewer/config.yaml takes globs such as **/*.generated.ts; project.focus names the areas to care about. Rules you already keep in CLAUDE.md, AGENTS.md, .cursorrules or REVIEW.md are read too, and a skill of your own is a Markdown file with a few bullets."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Where can it post comments?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "GitHub, GitLab, Gitea, Forgejo and Codeberg, Bitbucket Cloud and Data Center, and Azure DevOps: inline comments plus one summary comment that later runs update, with fixed threads resolved. There is a GitHub Action, a GitLab CI template and recipes for the others."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is it free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The tool is open source under the MIT licence. The only cost is what your model provider charges for the calls, and a local model makes that zero."
+        }
+      }
+    ]
+  }
+  </script>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="./"><img src="assets/logo.svg" width="30" height="30" alt="">Code Reviewer</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="./" aria-current="page">Overview</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="skills.html">Skills</a>
+        <a href="benchmarks.html">Benchmarks</a>
+        <a href="demo.html">Demo</a>
+        <a href="ci.html">CI setup</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-ghost btn-sm hide-sm" href="https://www.npmjs.com/package/@antonio112009/code-reviewer"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/npm.svg" alt="">npm</a>
+        <a class="btn btn-outline btn-sm" href="https://github.com/antonio112009/code-reviewer"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+        <button class="btn btn-ghost btn-sm menu-button" type="button" aria-expanded="false" aria-label="Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ======================= hero ======================= -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <a class="pill" href="benchmarks.html"><span class="badge badge-blue">Benchmarks</span> Level with the top tools on Martian’s Code Review Bench <span aria-hidden="true">→</span></a>
+          <h1>Code review that <em>checks its own work.</em></h1>
+          <p class="lede">Code Reviewer is an open-source command-line tool. It reviews your branch with the model you already
+            use, writes down exactly how each bug would break, and has a second model re-read the code before anything
+            is posted to your pull request.</p>
+          <div class="install">
+            <code><span class="prompt" aria-hidden="true">$</span>npm install -g @antonio112009/code-reviewer</code>
+            <button class="copy" type="button" data-copy="npm install -g @antonio112009/code-reviewer"><span class="copy-label">Copy</span></button>
+          </div>
+          <div class="cta-row">
+            <a class="btn btn-primary btn-lg" href="#start">Get started</a>
+            <a class="btn btn-outline btn-lg" href="demo.html">Watch a demo</a>
+          </div>
+          <p class="fine">MIT licensed · Node.js 24+ · you pay only for the model calls</p>
+        </div>
+
+        <!-- a review, step by step -->
+        <div class="replay card" data-replay>
+          <div class="replay-tabs" role="tablist" aria-label="A review, step by step">
+            <button type="button" role="tab" aria-selected="true" aria-controls="step-plan" id="tab-plan"><span>1</span>Plan</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="step-review" id="tab-review" tabindex="-1"><span>2</span>Review</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="step-verify" id="tab-verify" tabindex="-1"><span>3</span>Verify</button>
+            <button type="button" role="tab" aria-selected="false" aria-controls="step-report" id="tab-report" tabindex="-1"><span>4</span>Report</button>
+          </div>
+          <div class="replay-progress" aria-hidden="true"><i></i></div>
+
+          <div class="replay-panel" role="tabpanel" id="step-plan" aria-labelledby="tab-plan">
+            <p class="replay-caption">Code Reviewer finds the base branch, detects the stack from your manifests, runs the static
+              analyzers and picks the checklists that fit this change. No model has been called yet.</p>
+<pre class="term"><span class="tok-p">$</span> code-reviewer review --base main
+<span class="tok-f">◆</span> main … HEAD (feature/partial-refunds)  (1 commit)
+  stack     Express · PostgreSQL · Node.js · TypeScript
+  analyzers Secrets <span class="tok-ok">✓</span> · Pattern rules <span class="tok-ok">✓</span> · ast-grep <span class="tok-ok">✓</span>
+  plan      1 file → 1 chunk
+  models    review claude:sonnet (medium)
+            critique claude:sonnet (high)
+  skills    practice/general-bugs · security/core
+            javascript/core/async-promises</pre>
+          </div>
+
+          <div class="replay-panel" role="tabpanel" id="step-review" aria-labelledby="tab-review" hidden>
+            <p class="replay-caption">The reviewer reads the chunk and follows the code with read-only tools. It reports
+              through a strict schema: lines, severity, and the path from input to failure.</p>
+            <div class="mini-diff">
+              <div class="mini-diff-head">src/payments/refunds.ts</div>
+<pre><span class="ln"> 5</span>   const order = await db.orders.findById(orderId);
+<span class="ln del"> 6</span><span class="del">-  if (amount &gt; order.total) {</span>
+<span class="ln add hit"> 6</span><span class="add hit">+  if (amount &gt; order.total - order.refunded) {</span>
+<span class="ln"> 7</span>     throw new RefundError('amount exceeds order total');
+<span class="ln"> 9</span>   await payments.refund(order.chargeId, amount);
+<span class="ln add hit">10</span><span class="add hit">+  order.refunded += amount;</span>
+<span class="ln add hit">11</span><span class="add hit">+  await db.orders.save(order);</span></pre>
+            </div>
+            <ol class="tool-calls">
+              <li><code>find_references refund</code><span>1 caller: <b>src/routes/refunds.ts:10</b></span></li>
+              <li><code>read_file src/routes/refunds.ts</code><span>amount is validated by <b>RefundSchema</b></span></li>
+              <li><code>submit_findings</code><span>2 findings</span></li>
+            </ol>
+          </div>
+
+          <div class="replay-panel" role="tabpanel" id="step-verify" aria-labelledby="tab-verify" hidden>
+            <p class="replay-caption">A second model, the critic, gets each finding and reads the code itself. It confirms,
+              rejects or downgrades, and may correct an overstated title.</p>
+            <div class="verdict-list">
+              <article class="verdict-item">
+                <div class="verdict-top"><span class="badge badge-red">major</span><span class="badge">concurrency</span><span class="vline">refunds.ts:6–11</span></div>
+                <h3>Concurrent refunds can exceed the order total</h3>
+                <p class="verdict-why"><span class="badge badge-green">confirmed · 0.80 → 0.90</span> Nothing serialises the check on line 6 and the save on
+                  line 11, and <code>payments.refund</code> is an external call that cannot be rolled back.</p>
+              </article>
+              <article class="verdict-item rejected">
+                <div class="verdict-top"><span class="badge">minor</span><span class="badge">bug</span><span class="vline">refunds.ts:4</span></div>
+                <h3>A negative amount is not rejected</h3>
+                <p class="verdict-why"><span class="badge">rejected</span> <code>RefundSchema</code> in src/routes/refunds.ts:5 requires a positive amount
+                  before <code>refund()</code> is called.</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="replay-panel" role="tabpanel" id="step-report" aria-labelledby="tab-report" hidden>
+            <p class="replay-caption">What survives goes to the terminal, to Markdown, JSON, HTML or SARIF reports, and with
+              <code>--post</code> to the pull request as an inline comment.</p>
+            <div class="pr-comment">
+              <div class="pr-comment-head"><img src="assets/logo.svg" width="22" height="22" alt=""><b>code-reviewer</b><span>commented on line 6</span></div>
+              <div class="pr-comment-body">
+                <p><b>MAJOR</b> · concurrency · <b>Concurrent refunds can exceed the order total</b></p>
+                <p>Two refund requests for the same order can both read <code>refunded = 0</code> and both pass the check, so the
+                  customer is refunded up to twice the order total.</p>
+                <p><b>Failure path:</b> two POST /refunds for one order → both load the order → both pass line 6 →
+                  <code>payments.refund</code> runs twice</p>
+                <p><b>Suggestion:</b> reserve the amount in one conditional <code>UPDATE … WHERE refunded + $1 &lt;= total</code>
+                  before calling the payment provider.</p>
+                <p class="pr-meta">confidence 0.90 · critic: confirmed</p>
+              </div>
+            </div>
+          </div>
+          <p class="replay-note">A shortened example run. Output formats are the real ones.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= providers ======================= -->
+    <section class="logos-band" aria-labelledby="runs-on">
+      <p id="runs-on" class="logos-title">Runs on the model you already pay for</p>
+      <div class="marquee">
+        <ul class="marquee-track"><li class="logo-big" style="--c:#D97757"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/claude.svg)"></i>Claude Code</li><li class="logo-big" style="--c:#10A37F"><span class="logo-mono">AI</span>OpenAI Codex</li><li class="logo-big" style="--c:#24292F"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/githubcopilot.svg)"></i>GitHub Copilot</li><li class="logo-big" style="--c:#4285F4"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/googlegemini.svg)"></i>Gemini CLI</li><li class="logo-big" style="--c:#191919"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/anthropic.svg)"></i>Anthropic API</li><li class="logo-big" style="--c:#FF9900"><span class="logo-mono">aws</span>Amazon Bedrock</li><li class="logo-big" style="--c:#6467F2"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/openrouter.svg)"></i>OpenRouter</li><li class="logo-big" style="--c:#000000"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/ollama.svg)"></i>Ollama</li><li class="logo-big" style="--c:#2563EB"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/vllm.svg)"></i>vLLM</li><li class="logo-big" style="--c:#7C3AED"><span class="logo-mono">LM</span>LM Studio</li><li class="logo-big" style="--c:#10A37F"><span class="logo-mono">AI</span>OpenAI API</li></ul>
+        <ul class="marquee-track" aria-hidden="true"><li class="logo-big" style="--c:#D97757"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/claude.svg)"></i>Claude Code</li><li class="logo-big" style="--c:#10A37F"><span class="logo-mono">AI</span>OpenAI Codex</li><li class="logo-big" style="--c:#24292F"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/githubcopilot.svg)"></i>GitHub Copilot</li><li class="logo-big" style="--c:#4285F4"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/googlegemini.svg)"></i>Gemini CLI</li><li class="logo-big" style="--c:#191919"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/anthropic.svg)"></i>Anthropic API</li><li class="logo-big" style="--c:#FF9900"><span class="logo-mono">aws</span>Amazon Bedrock</li><li class="logo-big" style="--c:#6467F2"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/openrouter.svg)"></i>OpenRouter</li><li class="logo-big" style="--c:#000000"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/ollama.svg)"></i>Ollama</li><li class="logo-big" style="--c:#2563EB"><i class="logo-mask" style="--src:url(https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/vllm.svg)"></i>vLLM</li><li class="logo-big" style="--c:#7C3AED"><span class="logo-mono">LM</span>LM Studio</li><li class="logo-big" style="--c:#10A37F"><span class="logo-mono">AI</span>OpenAI API</li></ul>
+      </div>
+    </section>
+
+    <!-- ======================= benchmarks ======================= -->
+    <section class="section band-tint">
+      <div class="wrap">
+        <p class="eyebrow">Benchmarks</p>
+        <h2 class="section-title">We measured it the hard way.</h2>
+        <p class="section-lede">Most review tools publish their own numbers. We took the public leaderboard’s own test, 50 pull
+          requests from Sentry, Grafana, Cal.com, Discourse and Keycloak with 158 verified bugs, scored the top tools and ours
+          with one and the same judge, and then audited by hand what the judge called wrong.</p>
+
+        <div class="claims">
+          <article class="claim card reveal">
+            <p class="claim-n">60.5</p>
+            <h3>Level with the best</h3>
+            <p>F1 on Martian’s Code Review Bench, under one judge. Qodo Extended, first on the leaderboard, scores 60.5 the
+              same way; Augment, third, 60.6. Nothing else we measured comes closer.</p>
+          </article>
+          <article class="claim card reveal">
+            <p class="claim-n">71%</p>
+            <h3>The most precise comments</h3>
+            <p>of what Code Reviewer posts on a pull request matches a verified bug, the highest of any posted report in the
+              comparison. The same model asked for bugs in a single call: 39%.</p>
+          </article>
+          <article class="claim card reveal">
+            <p class="claim-n">20 / 20</p>
+            <h3>“False positives” that weren’t</h3>
+            <p>Every posted finding the benchmark counted as wrong turned out, on a blind read of the code, to be a real
+              defect its list had missed. Two were fixed upstream later.</p>
+          </article>
+        </div>
+
+        <div class="bench-teaser reveal">
+          <figure class="card card-pad chart-card">
+            <figcaption>
+              <h3>F1 on Martian’s Code Review Bench</h3>
+              <p class="muted">Same judge for every row (Claude Opus 4.5). Higher is better.</p>
+            </figcaption>
+            <div class="chart" data-chart="f1"></div>
+          </figure>
+          <div class="bench-why card card-pad">
+            <h3>Why we trust these numbers</h3>
+            <ul>
+              <li><b>One judge for every row.</b> We re-scored the published tools from the comments they actually posted.
+                Our judge is stricter than the leaderboard’s own, so we never mix the two scales.</li>
+              <li><b>Two runs, two judges.</b> Every Code Reviewer row is an average of two runs. Judged again by Claude Opus
+                5.5, no row moved more than 1.3 points and the order held.</li>
+              <li><b>Audited by hand.</b> Blind auditors read the code behind about 250 findings. After the critic, 95–97% of the
+                main report was real.</li>
+              <li><b>Reproducible.</b> Every number names its build, command and judge; the raw verdicts are in the repo.</li>
+            </ul>
+            <a class="btn btn-outline" href="benchmarks.html">All results, method and caveats</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= why ======================= -->
+    <section class="section band-dark" id="why">
+      <div class="wrap why">
+        <div class="why-head">
+          <p class="eyebrow">Why Code Reviewer</p>
+          <h2 class="section-title">Not a smarter model. The same models, held to a higher standard of evidence.</h2>
+          <p class="section-lede">Every tool in the comparison above calls the same handful of frontier models. The difference is what
+            you make them prove before a comment reaches a human.</p>
+        </div>
+        <ol class="why-list">
+          <li><b>Every finding has to say how it fails.</b><span>Input, state, code path, consequence. A critical or major finding without a failure path is downgraded before anyone sees it.</span></li>
+          <li><b>A second model has to agree.</b><span>The critic re-reads the code with its own tools and throws out what it cannot confirm. 95–97% of what survives is a real defect.</span></li>
+          <li><b>It knows your stack by version.</b><span>853 checklists, loaded per chunk from your manifests. React 19 rules for React 19, not “JavaScript”.</span></li>
+          <li><b>It reads the whole change, twice.</b><span>Chunks with their related files first, then one pass over the entire diff for what fell between them.</span></li>
+          <li><b>Your model, your account, your machine.</b><span>Claude, Codex, Gemini, Copilot, Bedrock, any OpenAI-compatible server or a local one. Nothing from the repository is ever executed.</span></li>
+          <li><b>Measured in public.</b><span>Level with the top of the leaderboard under one judge, and every number’s build, command and raw verdicts are in the repository.</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ======================= problems ======================= -->
+    <section class="section">
+      <div class="wrap">
+        <p class="eyebrow">Why it exists</p>
+        <h2 class="section-title">Three ways LLM code review goes wrong, and what we do about each.</h2>
+        <div class="problems">
+          <article class="problem card reveal">
+            <p class="problem-n"><span class="problem-icon pi-red"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20L12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>01</p>
+            <h3>Comments about code that is fine</h3>
+            <p>A finding has to name the input or state that breaks the code, step by step. Then a second model, the critic,
+              opens the code again and throws out what it cannot confirm. In a blind audit, 95–97% of the findings that reached
+              the main report were real defects.</p>
+            <a href="how-it-works.html#critic">How the critic decides →</a>
+          </article>
+          <article class="problem card reveal">
+            <p class="problem-n"><span class="problem-icon pi-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v3H4V6Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 11h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7Z" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>02</p>
+            <h3>The bug sits in a file the reviewer never opened</h3>
+            <p>Before the model starts, Code Reviewer maps where the changed functions are called and where the functions they
+              call are defined. During the review the model can follow those leads with <code>read_file</code>,
+              <code>grep</code>, <code>find_references</code> and <code>git_blame</code>.</p>
+            <a href="how-it-works.html#context">What the reviewer sees →</a>
+          </article>
+          <article class="problem card reveal">
+            <p class="problem-n"><span class="problem-icon pi-amber"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 10h10M4 15h16M4 20h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>03</p>
+            <h3>Big pull requests get skimmed</h3>
+            <p>The change is split into chunks of related files and every chunk gets its own review. One more call then reads the
+              whole diff at once, looking for what fell between chunks. If any part could not be reviewed, the report says so
+              instead of staying quiet.</p>
+            <a href="how-it-works.html#chunks">How chunks are built →</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= skills ======================= -->
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Skills</p>
+            <h2 class="section-title">853 checklists, picked for the code in front of the model.</h2>
+            <p class="section-lede">A skill is a short Markdown file: where bugs hide for one topic of one technology, with
+              sources. Code Reviewer reads the versions in your manifests and loads only the skills that match the changed
+              lines, so a React 19 change gets the React 19 rules and a Django migration gets the migration rules.
+              Click one to read it.</p>
+          </div>
+          <a class="btn btn-outline" href="skills.html">Browse all skills</a>
+        </div>
+        <ul class="skill-grid">
+          <li><button class="skill-card reveal" type="button" data-skill="javascript/react/effects"><span class="skill-tech">React</span><b>Effects and stale closures</b><span>Missing cleanup, fetch races, unstable dependencies, logic that belongs in an event handler.</span><i>8 items</i></button></li>
+          <li><button class="skill-card reveal" type="button" data-skill="javascript/nextjs/caching-v15"><span class="skill-tech">Next.js 15–16</span><b>Caching, previous model</b><span>Pages frozen at build time, GET handlers that became dynamic, layouts reused across navigations.</span><i>5 items</i></button></li>
+          <li><button class="skill-card reveal" type="button" data-skill="python/django/transactions-locking"><span class="skill-tech">Django</span><b>Transactions and row locking</b><span>Side effects before commit, locks outside transactions, swallowed IntegrityError, lost updates.</span><i>7 items</i></button></li>
+          <li><button class="skill-card reveal" type="button" data-skill="go/concurrency/goroutine-leaks"><span class="skill-tech">Go</span><b>Goroutine leaks</b><span>Goroutines stuck on abandoned channels, loops with no exit signal, I/O without deadlines.</span><i>5 items</i></button></li>
+          <li><button class="skill-card reveal" type="button" data-skill="databases/postgresql/core"><span class="skill-tech">PostgreSQL</span><b>PostgreSQL</b><span>Pool settings, aborted transactions that are never retried, upserts, JSONB nulls, session state in pools.</span><i>9 items</i></button></li>
+          <li><button class="skill-card reveal" type="button" data-skill="java/spring/transactions"><span class="skill-tech">Spring</span><b>Declarative transactions</b><span>Checked exceptions that commit, rollback-only surprises, REQUIRES_NEW deadlocks on the pool.</span><i>7 items</i></button></li>
+          <li><button class="skill-card reveal" type="button" data-skill="infra/kubernetes/core"><span class="skill-tech">Kubernetes</span><b>Kubernetes and Helm</b><span>Heap larger than the memory limit, cascading probes, unsafe shutdown, RBAC and network policy gaps.</span><i>11 items</i></button></li>
+          <li><button class="skill-card reveal" type="button" data-skill="databases/migrations"><span class="skill-tech">Any database</span><b>Database migrations</b><span>Contract before expand, renames generated as drop and add, NOT NULL without a default.</span><i>10 items</i></button></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ======================= setup ======================= -->
+    <section class="section" id="start">
+      <div class="wrap">
+        <p class="eyebrow">Get started</p>
+        <h2 class="section-title">A few questions. Then exactly what to run.</h2>
+        <p class="section-lede">Starting from scratch gets the install, credentials and first review in order. Already installed gets
+          the one command for the case in front of you, with every flag and its cost explained.</p>
+        <div class="setup setup-vertical" data-setup>
+          <ol class="stepper" data-stepper></ol>
+          <div class="setup-panel card" data-step-panel></div>
+          <div class="setup-out card" data-setup-out aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= depth ======================= -->
+    <section class="section band-tint" id="depth">
+      <div class="wrap">
+        <p class="eyebrow">Depth</p>
+        <h2 class="section-title">Three depths. Which one, and why.</h2>
+        <p class="section-lede">Reading the code is what costs, not the number of findings. So the cheaper depth saves less than it
+          leaves out, and the deeper one finds what a single pass structurally cannot. Measured on 30 real pull requests, two
+          runs each.</p>
+        <div class="depth-grid">
+          <article class="depth-card card reveal">
+            <header><code class="flag">--essential</code><span class="depth-when">For a CI gate, or when cost matters more than coverage</span></header>
+            <h3>Only what can hurt production</h3>
+            <p>Security, data loss, crashes, leaks, overload, races and expensive queries. Everything reported as critical or
+              major, with a fix.</p>
+            <div class="meters">
+              <div class="meter"><span class="meter-label">Finds</span><span class="meter-track"><i style="--v:14%"></i></span><span class="meter-value">2.1% of reviewer comments</span></div>
+              <div class="meter"><span class="meter-label">Costs</span><span class="meter-track"><i style="--v:29%"></i></span><span class="meter-value">≈ 0.65× full</span></div>
+            </div>
+            <p class="depth-note">About one finding per three pull requests, and every one of them is also in <code>full</code>.</p>
+          </article>
+          <article class="depth-card depth-card-default card reveal">
+            <header><code class="flag">full</code><span class="badge badge-blue">default</span><span class="depth-when">For everyday pull requests</span></header>
+            <h3>Every real defect</h3>
+            <p>Edge cases and accessibility too, a sweep over the whole diff for what the chunks missed, and up to five
+              maintainability notes checked to be true. Uncertain findings go to a “worth a look” list that is never posted.</p>
+            <div class="meters">
+              <div class="meter"><span class="meter-label">Finds</span><span class="meter-track"><i style="--v:51%"></i></span><span class="meter-value">7.7% of reviewer comments</span></div>
+              <div class="meter"><span class="meter-label">Costs</span><span class="meter-track"><i style="--v:43%"></i></span><span class="meter-value">$0.40–0.60 per pull request</span></div>
+            </div>
+            <p class="depth-note">Almost four times as many of the comments human reviewers leave as <code>essential</code>, for
+              half as much again. The posted part is 71% precise on real bugs.</p>
+          </article>
+          <article class="depth-card card reveal">
+            <header><code class="flag">--deepen</code><span class="depth-when">For payments, auth, migrations, release branches</span></header>
+            <h3>A second, independent pass</h3>
+            <p>Every chunk is reviewed again by a pass that knows nothing about the first, reasoning harder. What both report
+              is marked, and the critic is told: agreement is evidence.</p>
+            <div class="meters">
+              <div class="meter"><span class="meter-label">Finds</span><span class="meter-track"><i style="--v:100%"></i></span><span class="meter-value">15.0% of reviewer comments</span></div>
+              <div class="meter"><span class="meter-label">Costs</span><span class="meter-track"><i style="--v:100%"></i></span><span class="meter-value">≈ 2.3× full</span></div>
+            </div>
+            <p class="depth-note">One pass misses about a quarter of the real defects two passes find. After a review, the summary
+              suggests it with its estimated cost, and the cache pays the first pass again.</p>
+          </article>
+        </div>
+        <p class="fine depth-foot">AACR-Bench ctx30: essential 9.5 findings and $5.1 per 30 pull requests, full 47.5 and $7.6, deepen 150.5 and
+          $17.7. Code-defect recall 4.4%, 12.2% and 17.4%. <a href="benchmarks.html#aacr">The table →</a></p>
+      </div>
+    </section>
+
+    <!-- ======================= where ======================= -->
+    <section class="section" id="where">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Where it runs</p>
+            <h2 class="section-title">The same review, from your terminal to every pull request.</h2>
+            <p class="section-lede">Before a commit, as a gate in CI, and as comments on the pull request that later runs update in
+              place. Reports as Markdown, JSON, HTML, SARIF and GitLab Code Quality.</p>
+          </div>
+          <a class="btn btn-primary" href="ci.html">Set up CI, step by step</a>
+        </div>
+        <div class="where-grid">
+          <article class="card card-pad reveal">
+            <h3>In your terminal</h3>
+            <p>A branch against its base, the staged changes before a commit, or a pre-commit hook that blocks major findings.
+              With a local model the hook costs nothing per commit.</p>
+            <a href="./#command">Build the command →</a>
+          </article>
+          <article class="card card-pad reveal">
+            <h3>In CI</h3>
+            <p>A GitHub Action, a GitLab CI template and recipes for Bitbucket Pipelines, Azure Pipelines and Gitea / Forgejo
+              Actions. <code>--fail-on major</code> turns the job into a gate.</p>
+            <a href="ci.html">CI setup for each platform →</a>
+          </article>
+          <article class="card card-pad reveal">
+            <h3>On the pull request</h3>
+            <p>Inline comments with the failure path and a one-click suggestion, one summary comment updated in place, fixed
+              threads resolved. SARIF to GitHub code scanning, Code Quality to the GitLab widget.</p>
+            <a href="demo.html">See what lands on a PR →</a>
+          </article>
+        </div>
+        <ul class="logo-row logo-row-forges" aria-label="Supported forges">
+          <li class="logo-tile"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/github.svg" alt="">GitHub</li>
+          <li class="logo-tile"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/gitlab.svg" alt="">GitLab</li>
+          <li class="logo-tile"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/bitbucket.svg" alt="">Bitbucket Cloud and Data Center</li>
+          <li class="logo-tile"><span class="logo-mono">AZ</span>Azure DevOps</li>
+          <li class="logo-tile"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/gitea.svg" alt="">Gitea</li>
+          <li class="logo-tile"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/forgejo.svg" alt="">Forgejo</li>
+          <li class="logo-tile"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/codeberg.svg" alt="">Codeberg</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ======================= safety ======================= -->
+    <section class="section">
+      <div class="wrap">
+        <div class="safety card">
+          <div>
+            <p class="eyebrow">Safe on untrusted code</p>
+            <h2 class="section-title">It reads the code. It never runs it.</h2>
+          </div>
+          <ul class="safety-list">
+            <li><b>Read-only snapshot.</b> Agents work on an isolated copy of the commit, with read-only tools.</li>
+            <li><b>Nothing from the repo executes.</b> Linters that load repository configs are opt-in, and programs are never
+              resolved from the reviewed checkout.</li>
+            <li><b>The repo can’t pick your model.</b> A project config may not choose programs or models, and repository text
+              in prompts is clipped.</li>
+            <li><b>Local if you need it.</b> With Ollama or any local server, the code never leaves the machine.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  
+
+    <!-- ======================= faq ======================= -->
+    <section class="section section-last faq-section" id="faq">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">FAQ</p>
+            <h2 class="section-title">The questions people ask before they install.</h2>
+          </div>
+          <a class="btn btn-outline" href="https://github.com/antonio112009/code-reviewer/issues">Ask another on GitHub</a>
+        </div>
+        <div class="faq-grid"><details><summary>How is this different from asking Claude or ChatGPT to review a diff?</summary><p>Same model, different standard of evidence. Asked in one call, Claude Sonnet finds more of the known bugs on Martian’s benchmark, but only 39% of its comments point at one. Code Reviewer splits the change into chunks with their related files, loads version-specific checklists, requires a failure path for every serious finding and has a second model verify each one. 71% of what it posts matches a verified bug, and a blind audit of the rest found real defects the benchmark had missed.</p></details><details><summary>Does it replace human review?</summary><p>No. It does the part humans are worst at: reading every line of a large change with the same attention, remembering the version-specific pitfalls of twenty stacks, and following a call three files away. It leaves the design and the judgement calls to the reviewer, and it tries hard not to waste their time with noise.</p></details><details><summary>How long does a review take, and will it slow down my pull requests?</summary><p>One to three minutes for a typical pull request, mostly model time; chunks are reviewed in parallel. In CI it runs alongside your tests. A re-run after a fix pays and waits only for the chunks that changed, because answers for unchanged code come from the cache.</p></details><details><summary>What happens with false positives?</summary><p>Every finding must name the input or state that breaks the code. A second model, the critic, then re-reads the code and rejects what it cannot confirm; what it is unsure about is listed as “worth a look” in the report and never posted. In blind audits 95–97% of the main report was real. When something slips through, the confidence and the critic’s reason are on the comment, so it is quick to dismiss.</p></details><details><summary>Which models and providers does it work with?</summary><p>Claude Code, Codex, GitHub Copilot and Gemini CLIs through their logins; the Anthropic API, AWS Bedrock, OpenAI, OpenRouter, and any OpenAI-compatible server such as Ollama, vLLM, LM Studio or LiteLLM. The review and the verification can use different models and reasoning levels, and if a model is unavailable it offers an alternative.</p></details><details><summary>Which languages and frameworks does it know?</summary><p>Any language the model reads. The 853 skills cover JavaScript and TypeScript with React, Next.js, Vue, Angular, Svelte and Node frameworks; Python with Django, FastAPI and Flask; Go, Java and Kotlin with Spring, C#, Rust, Ruby, PHP, Swift, Dart, Scala, C and C++, shell and SQL; PostgreSQL, MySQL, SQLite, SQL Server, MongoDB, Redis and Elasticsearch; Docker, Kubernetes, Terraform and CI configs. Browse them in the catalog.</p></details><details><summary>Does my code leave my machine? Do you collect anything?</summary><p>Code goes only to the model provider you choose, and never to us: there is no telemetry and no account. The one network call of our own is a daily check for a new version, and CODE_REVIEWER_NO_UPDATE_CHECK=1 turns it off. With Ollama or another local server nothing leaves the machine at all. Agents work on an isolated, read-only snapshot, and nothing from the reviewed repository is executed.</p></details><details><summary>How much does a review cost?</summary><p>You pay only for the model calls. On the 50 benchmark pull requests a full review with Claude Sonnet cost $0.40 to $0.61 each; --essential is about a third cheaper and --deepen about twice the price. --dry-run shows the plan and an estimate before any call, --max-cost caps a run, every run records its cost per stage, and the cache makes re-reviews of the same code free.</p></details><details><summary>Can it review a whole repository, not just a change?</summary><p>Yes: code-reviewer files src/payments reviews the complete files or folders you name, each with its related files as context. It is the way to audit legacy code or a module you inherited; the regular review command is for what changed.</p></details><details><summary>How do I keep it away from generated files, or point it at what matters?</summary><p>review.exclude in .code-reviewer/config.yaml takes globs such as **/*.generated.ts; project.focus names the areas to care about. Rules you already keep in CLAUDE.md, AGENTS.md, .cursorrules or REVIEW.md are read too, and a skill of your own is a Markdown file with a few bullets.</p></details><details><summary>Where can it post comments?</summary><p>GitHub, GitLab, Gitea, Forgejo and Codeberg, Bitbucket Cloud and Data Center, and Azure DevOps: inline comments plus one summary comment that later runs update, with fixed threads resolved. There is a GitHub Action, a GitLab CI template and recipes for the others.</p></details><details><summary>Is it free?</summary><p>The tool is open source under the MIT licence. The only cost is what your model provider charges for the calls, and a local model makes that zero.</p></details></div>
+      </div>
+    </section>
+
+    <!-- ======================= cta ======================= -->
+    <section class="cta-band">
+      <div class="wrap cta-inner">
+        <div>
+          <h2>Install it in a minute. Review your next branch with it.</h2>
+          <p>Open source, MIT. Runs on the model you already pay for, or on a local one.</p>
+        </div>
+        <div class="cta-actions">
+          <div class="install install-dark">
+            <code><span class="prompt" aria-hidden="true">$</span>npm install -g @antonio112009/code-reviewer</code>
+            <button class="copy" type="button" data-copy="npm install -g @antonio112009/code-reviewer"><span class="copy-label">Copy</span></button>
+          </div>
+          <div class="cta-row">
+            <a class="btn btn-light" href="https://github.com/antonio112009/code-reviewer">Star on GitHub</a>
+            <a class="btn btn-ghost-light" href="demo.html">Watch the demo</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>
+        <a class="brand" href="./"><img src="assets/logo.svg" width="26" height="26" alt="">Code Reviewer</a>
+        <p>Open-source LLM code review. MIT licensed, in active development: issues and feedback are welcome.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="how-it-works.html">How it works</a></li>
+          <li><a href="skills.html">Skills catalog</a></li>
+          <li><a href="benchmarks.html">Benchmarks</a></li>
+          <li><a href="demo.html">Demo</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/@antonio112009/code-reviewer">npm</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/CHANGELOG.md">Changelog</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Docs</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer#readme">README</a></li>
+          <li><a href="ci.html">CI setup</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/docs/skills.md">Writing skills</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="assets/site.js"></script>
+  <script type="module" src="assets/home.js"></script>
+  <script type="module" src="assets/setup.js"></script>
+</body>
+</html>

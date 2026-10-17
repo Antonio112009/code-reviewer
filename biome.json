@@ -6,6 +6,7 @@
       "!dist",
       "!node_modules",
       "!coverage",
+      "!website/data",
       "!.code-reviewer",
       "!evals/martian/judgings",
       "!evals/martian/audits"
@@ -28,5 +29,11 @@
       "suspicious": { "noControlCharactersInRegex": "off" }
     }
   },
+  "overrides": [
+    {
+      "includes": ["website/**"],
+      "linter": { "rules": { "style": { "noDescendingSpecificity": "off" } } }
+    }
+  ],
   "assist": { "actions": { "source": { "organizeImports": "on" } } }
 }

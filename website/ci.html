@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Code review in CI: GitHub Actions, GitLab CI, Bitbucket, Azure Pipelines, Gitea</title>
+  <meta name="description" content="Set up Code Reviewer to review every pull request: the workflow for GitHub Actions, the GitLab CI template, recipes for Bitbucket Pipelines, Azure Pipelines and Gitea / Forgejo, the secrets, and what the posting token can do.">
+  <meta name="theme-color" content="#f8f7f4">
+  <link rel="canonical" href="https://antonio112009.github.io/code-reviewer/">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Code review in CI: GitHub Actions, GitLab CI, Bitbucket, Azure Pipelines, Gitea">
+  <meta property="og:description" content="Set up Code Reviewer to review every pull request: the workflow for GitHub Actions, the GitLab CI template, recipes for Bitbucket Pipelines, Azure Pipelines and Gitea / Forgejo, the secrets, and what the posting token can do.">
+  <meta property="og:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta property="og:url" content="https://antonio112009.github.io/code-reviewer/ci.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:site_name" content="Code Reviewer">
+  <meta name="twitter:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Code Reviewer", "item": "https://antonio112009.github.io/code-reviewer/"}, {"@type": "ListItem", "position": 2, "name": "CI setup", "item": "https://antonio112009.github.io/code-reviewer/ci.html"}]}
+  </script>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="./"><img src="assets/logo.svg" width="30" height="30" alt="">Code Reviewer</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="./">Overview</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="skills.html">Skills</a>
+        <a href="benchmarks.html">Benchmarks</a>
+        <a href="demo.html">Demo</a>
+        <a href="ci.html" aria-current="page">CI setup</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-ghost btn-sm hide-sm" href="https://www.npmjs.com/package/@antonio112009/code-reviewer"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/npm.svg" alt="">npm</a>
+        <a class="btn btn-outline btn-sm" href="https://github.com/antonio112009/code-reviewer"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+        <button class="btn btn-ghost btn-sm menu-button" type="button" aria-expanded="false" aria-label="Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="./">Code Reviewer</a><span aria-hidden="true">/</span><span aria-current="page">CI setup</span></nav>
+        <p class="eyebrow">CI setup</p>
+        <h1>Review every pull request, on the platform you already use.</h1>
+        <p>One job per pull request: it reviews the change, comments inline with a summary that later runs update in place, and
+          leaves the reports as artifacts. Pick your platform; the provider and the tokens are the only things that change.</p>
+        <ul class="toc" aria-label="On this page">
+          <li><a href="#platforms">Platforms</a></li>
+          <li><a href="#providers">Providers in CI</a></li>
+          <li><a href="#tokens">Tokens and safety</a></li>
+          <li><a href="#anywhere">Posting from anywhere</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="platforms" style="padding-top: 24px">
+      <div class="wrap">
+        <div class="platforms" data-tabs>
+          <div class="platform-tabs" role="tablist" aria-label="Platform">
+            <button type="button" role="tab" id="tab-github" aria-controls="platform-github" aria-selected="true"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/github.svg" alt="">GitHub Actions</button>
+            <button type="button" role="tab" id="tab-gitlab" aria-controls="platform-gitlab" aria-selected="false" tabindex="-1"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/gitlab.svg" alt="">GitLab CI</button>
+            <button type="button" role="tab" id="tab-bitbucket" aria-controls="platform-bitbucket" aria-selected="false" tabindex="-1"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/bitbucket.svg" alt="">Bitbucket</button>
+            <button type="button" role="tab" id="tab-azure" aria-controls="platform-azure" aria-selected="false" tabindex="-1"><span class="logo-mono">AZ</span>Azure DevOps</button>
+            <button type="button" role="tab" id="tab-gitea" aria-controls="platform-gitea" aria-selected="false" tabindex="-1"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/gitea.svg" alt="">Gitea / Forgejo</button>
+          </div>
+          <div class="platform-panel" role="tabpanel" id="platform-github" aria-labelledby="tab-github">
+          <div class="ci-panel">
+            <div><h2>GitHub Actions</h2><p class="section-lede">The official action installs the release, reviews the pull request head, posts inline comments and a summary, uploads SARIF to code scanning and keeps the reports as an artifact.</p><ol class="ci-steps"><li><b>Add the workflow.</b> Check out the pull request head with full history; the action does the rest.</li><li><b>Add a secret.</b> <code>ANTHROPIC_API_KEY</code> for the Anthropic API, or <code>npm install -g @anthropic-ai/claude-code</code> plus the key for Claude Code, or <code>aws-actions/configure-aws-credentials</code> with an OIDC role and <code>provider: bedrock</code>. Only the review step receives it.</li><li><b>Open a pull request.</b> Comments appear inline; later runs update the summary in place and resolve fixed threads. Inputs: <code>provider</code>, <code>model</code>, <code>depth</code>, <code>fail-on</code>, <code>post</code>, <code>sarif</code>, <code>args</code>, <code>version</code>.</li></ol></div>
+            <div class="code-block"><div class="bar">.github/workflows/code-review.yml</div><button class="copy" type="button" data-copy=""><span class="copy-label">Copy</span></button><pre># .github/workflows/code-review.yml
+<span class="tok-k">name</span>: Code review
+<span class="tok-k">on</span>: pull_request
+<span class="tok-k">permissions</span>:
+  <span class="tok-k">contents</span>: read          # check out the code
+  <span class="tok-k">pull-requests</span>: write    # inline comments and the summary comment
+  <span class="tok-k">security-events</span>: write  # SARIF to code scanning
+<span class="tok-k">jobs</span>:
+  <span class="tok-k">review</span>:
+    <span class="tok-k">runs-on</span>: ubuntu-latest
+    <span class="tok-k">timeout-minutes</span>: 30
+    <span class="tok-k">steps</span>:
+      - <span class="tok-k">uses</span>: actions/checkout@v7
+        <span class="tok-k">with</span>:
+          <span class="tok-k">ref</span>: ${{ github.event.pull_request.head.sha }}   # the pull request head, not the merge commit
+          <span class="tok-k">fetch-depth</span>: 0                                   # history for the merge-base
+      - <span class="tok-k">uses</span>: antonio112009/code-reviewer@main             # pin a release tag or commit sha
+        <span class="tok-k">env</span>:
+          <span class="tok-k">ANTHROPIC_API_KEY</span>: ${{ secrets.ANTHROPIC_API_KEY }}
+        <span class="tok-k">with</span>:
+          <span class="tok-k">provider</span>: anthropic
+          <span class="tok-k">depth</span>: full
+          <span class="tok-k">fail-on</span>: major        # optional: fail the job on major findings or unreviewed code</pre></div>
+          </div>
+        </div><div class="platform-panel" role="tabpanel" id="platform-gitlab" aria-labelledby="tab-gitlab" hidden>
+          <div class="ci-panel">
+            <div><h2>GitLab CI</h2><p class="section-lede">A template runs on merge request pipelines, posts inline discussions and a summary, and publishes a Code Quality report that GitLab shows in the merge request widget and diff.</p><ol class="ci-steps"><li><b>Include the template.</b> It runs only on <code>merge_request_event</code> pipelines with full git depth; merged results pipelines are handled.</li><li><b>Two masked variables.</b> <code>GITLAB_TOKEN</code>: a project or group access token with the <code>api</code> scope and the Reporter role, not protected (merge request pipelines are rarely on protected branches). Plus the provider’s key, for example <code>ANTHROPIC_API_KEY</code>.</li><li><b>Variables you can override.</b> <code>CODE_REVIEWER_PROVIDER</code>, <code>_MODEL</code>, <code>_DEPTH</code>, <code>_FAIL_ON</code>, <code>_ARGS</code>, <code>_VERSION</code>, <code>_EXTRA_PACKAGES</code> (for Claude Code: <code>@anthropic-ai/claude-code</code>). Self-managed instances need nothing else.</li></ol></div>
+            <div class="code-block"><div class="bar">.gitlab-ci.yml</div><button class="copy" type="button" data-copy=""><span class="copy-label">Copy</span></button><pre># .gitlab-ci.yml
+<span class="tok-k">include</span>:
+  - <span class="tok-k">remote</span>: https://raw.githubusercontent.com/antonio112009/code-reviewer/main/ci/gitlab/code-reviewer.gitlab-ci.yml
+
+<span class="tok-k">code-reviewer</span>:
+  <span class="tok-k">variables</span>:
+    <span class="tok-k">CODE_REVIEWER_PROVIDER</span>: anthropic
+    <span class="tok-k">CODE_REVIEWER_FAIL_ON</span>: major     # optional</pre></div>
+          </div>
+        </div><div class="platform-panel" role="tabpanel" id="platform-bitbucket" aria-labelledby="tab-bitbucket" hidden>
+          <div class="ci-panel">
+            <div><h2>Bitbucket Pipelines</h2><p class="section-lede">Bitbucket Cloud pull requests: inline comments on the new-side line and a summary comment updated in place. Data Center works the same from Jenkins or Bamboo.</p><ol class="ci-steps"><li><b>Add the pipeline.</b> A full clone is needed for the merge-base; the base branch comes from <code>BITBUCKET_PR_DESTINATION_BRANCH</code>.</li><li><b>Secured variables.</b> <code>BITBUCKET_TOKEN</code>, an API token with pull request write, with <code>BITBUCKET_EMAIL</code>; or a repository access token alone. Plus the provider’s key.</li><li><b>Data Center.</b> <code>BITBUCKET_DC_TOKEN</code> (an HTTP access token) and <code>--forge bitbucket-dc --api-url https://bitbucket.example.com</code> from any CI.</li></ol></div>
+            <div class="code-block"><div class="bar">bitbucket-pipelines.yml</div><button class="copy" type="button" data-copy=""><span class="copy-label">Copy</span></button><pre># bitbucket-pipelines.yml
+<span class="tok-k">image</span>: node:24
+<span class="tok-k">pipelines</span>:
+  <span class="tok-k">pull-requests</span>:
+    '**':
+      - <span class="tok-k">step</span>:
+          <span class="tok-k">name</span>: Code review
+          <span class="tok-k">clone</span>: { depth: full }
+          <span class="tok-k">script</span>:
+            - npm install -g @antonio112009/code-reviewer
+            - code-reviewer review --plain --yes --format md,json --out reports --provider anthropic
+            - code-reviewer runs publish latest</pre></div>
+          </div>
+        </div><div class="platform-panel" role="tabpanel" id="platform-azure" aria-labelledby="tab-azure" hidden>
+          <div class="ci-panel">
+            <div><h2>Azure Pipelines</h2><p class="section-lede">Azure DevOps pull requests: threads on the pull request’s own lines and one summary thread updated in place.</p><ol class="ci-steps"><li><b>Name the source commit.</b> A pull request build checks out the merge commit, so <code>--head $(System.PullRequest.SourceCommitId)</code> anchors comments on the right lines.</li><li><b>Map the token.</b> <code>System.AccessToken</code> must be passed into the posting step explicitly, and the build service identity needs “Contribute to pull requests”.</li><li><b>Elsewhere.</b> Set <code>AZURE_DEVOPS_TOKEN</code> to a personal access token with Code read &amp; write and Pull Request Threads; Azure DevOps Server takes <code>--api-url</code>.</li></ol></div>
+            <div class="code-block"><div class="bar">azure-pipelines.yml</div><button class="copy" type="button" data-copy=""><span class="copy-label">Copy</span></button><pre># azure-pipelines.yml
+<span class="tok-k">trigger</span>: none
+<span class="tok-k">pr</span>: [main]
+<span class="tok-k">pool</span>: { vmImage: ubuntu-latest }
+<span class="tok-k">steps</span>:
+  - <span class="tok-k">checkout</span>: self
+    <span class="tok-k">fetchDepth</span>: 0
+  - <span class="tok-k">task</span>: NodeTool@0
+    <span class="tok-k">inputs</span>: { versionSpec: '24.x' }
+  - <span class="tok-k">script</span>: npm install -g @antonio112009/code-reviewer
+  - <span class="tok-k">script</span>: code-reviewer review --plain --yes --format md,json --out reports --provider anthropic --head $(System.PullRequest.SourceCommitId)
+    <span class="tok-k">env</span>: { ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY) }
+  - <span class="tok-k">script</span>: code-reviewer runs publish latest
+    <span class="tok-k">env</span>: { SYSTEM_ACCESSTOKEN: $(System.AccessToken) }</pre></div>
+          </div>
+        </div><div class="platform-panel" role="tabpanel" id="platform-gitea" aria-labelledby="tab-gitea" hidden>
+          <div class="ci-panel">
+            <div><h2>Gitea / Forgejo Actions</h2><p class="section-lede">Gitea Actions, Forgejo Actions and Codeberg run GitHub-style workflows; only the token and the posting step differ.</p><ol class="ci-steps"><li><b>Add the workflow.</b> The runner sets the GitHub variables; code-reviewer reads the pull request from them and posts to the instance’s own API.</li><li><b>A token.</b> <code>GITEA_TOKEN</code> or <code>FORGEJO_TOKEN</code> with write access to the repository’s issues and pull requests.</li><li><b>Outside Actions.</b> <code>publish.giteaApiUrl</code> in the global config or <code>--api-url</code>; without either, Codeberg’s API is used.</li></ol></div>
+            <div class="code-block"><div class="bar">.gitea/workflows/code-review.yml</div><button class="copy" type="button" data-copy=""><span class="copy-label">Copy</span></button><pre># .gitea/workflows/code-review.yml  (Forgejo: .forgejo/workflows/)
+<span class="tok-k">on</span>: pull_request
+<span class="tok-k">jobs</span>:
+  <span class="tok-k">review</span>:
+    <span class="tok-k">runs-on</span>: ubuntu-latest
+    <span class="tok-k">steps</span>:
+      - <span class="tok-k">uses</span>: actions/checkout@v4
+        <span class="tok-k">with</span>: { fetch-depth: 0 }
+      - <span class="tok-k">uses</span>: actions/setup-node@v4
+        <span class="tok-k">with</span>: { node-version: 24 }
+      - <span class="tok-k">run</span>: npm install -g @antonio112009/code-reviewer
+      - <span class="tok-k">run</span>: code-reviewer review --head ${{ github.event.pull_request.head.sha }} --plain --yes --format md,json --out reports --provider anthropic
+        <span class="tok-k">env</span>: { ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }} }
+      - <span class="tok-k">run</span>: code-reviewer runs publish latest
+        <span class="tok-k">env</span>: { GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }} }</pre></div>
+          </div>
+        </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="providers">
+      <div class="wrap">
+        <p class="eyebrow">Providers in CI</p>
+        <h2 class="section-title">Which model credentials to give the job.</h2>
+        <div class="ci-cards">
+          <article class="card card-pad"><h3>Anthropic API</h3><p>The simplest and the cheapest: one secret, <code>ANTHROPIC_API_KEY</code>, and <code>provider: anthropic</code>. No agent in between, prompt caching, and <code>--batch</code> sends the whole-diff sweep at half price.</p></article>
+          <article class="card card-pad"><h3>AWS Bedrock through OIDC</h3><p>No stored keys. An IAM role that trusts your CI’s OIDC provider for this repository and allows <code>bedrock:InvokeModel</code>; in GitHub <code>aws-actions/configure-aws-credentials</code> with <code>permissions: id-token: write</code>, in GitLab an <code>id_tokens</code> entry. Then <code>provider: bedrock</code> and an inference profile id.</p></article>
+          <article class="card card-pad"><h3>Claude Code with an API key</h3><p>Install the CLI in the job (<code>npm install -g @anthropic-ai/claude-code</code>), expose <code>ANTHROPIC_API_KEY</code>, and use <code>provider: claude</code>. The agent runs read-only on an isolated snapshot, whatever the repository contains.</p></article>
+          <article class="card card-pad"><h3>OpenAI-compatible</h3><p><code>OPENAI_API_KEY</code> or <code>OPENROUTER_API_KEY</code> with <code>--model</code>; any OpenAI-compatible server through a provider of type <code>openai</code> in the global config.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="tokens">
+      <div class="wrap anatomy">
+        <div>
+          <p class="eyebrow">Tokens and safety</p>
+          <h2 class="section-title">What the posting token can and cannot do.</h2>
+        </div>
+        <div class="prose">
+          <ul>
+            <li><b>Never logged.</b> Tokens come from <code>GITHUB_TOKEN</code> / <code>GH_TOKEN</code>, <code>GITLAB_TOKEN</code>, <code>GITEA_TOKEN</code>, <code>BITBUCKET_TOKEN</code>, <code>AZURE_DEVOPS_TOKEN</code> and appear in no output.</li>
+            <li><b>Sent to one host.</b> Only to the forge’s API, to the API URL the CI declares, or to the one in the <em>global</em> config or <code>--api-url</code>. A project config, which comes from the checkout under review, may not set these URLs.</li>
+            <li><b>No surprises from the remote.</b> The repository’s remote only names the repository, and only when its host matches the chosen API: a GitHub Enterprise remote without a configured API URL is an error, never a post to github.com.</li>
+            <li><b>https only</b> (plain http for localhost), no redirects to another host, a timeout on every request, 429 and 5xx retried three times honouring <code>Retry-After</code>.</li>
+            <li><b>Only its own comments.</b> De-duplication and in-place updates count the account’s own comments, so it never edits a human’s.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-last" id="anywhere">
+      <div class="wrap anatomy">
+        <div>
+          <p class="eyebrow">Posting from anywhere</p>
+          <h2 class="section-title">Review in one place, post from another.</h2>
+          <p class="section-lede">Every run is saved. <code>runs publish</code> posts a saved run to its pull request from any machine with a token,
+            and <code>--dry-run</code> shows what would be posted first.</p>
+        </div>
+        <div class="code-block">
+          <div class="bar">any shell</div>
+<pre><span class="tok-p">$ </span>code-reviewer review --base main --format md,json --out reports
+<span class="tok-p">$ </span>code-reviewer runs publish latest --dry-run     <span class="tok-c"># what would be posted</span>
+<span class="tok-p">$ </span>GITHUB_TOKEN=… code-reviewer runs publish latest
+<span class="tok-p">$ </span>code-reviewer runs publish latest --forge gitlab --repo group/project --pr 42</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>
+        <a class="brand" href="./"><img src="assets/logo.svg" width="26" height="26" alt="">Code Reviewer</a>
+        <p>Open-source LLM code review. MIT licensed, in active development: issues and feedback are welcome.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="how-it-works.html">How it works</a></li>
+          <li><a href="skills.html">Skills catalog</a></li>
+          <li><a href="benchmarks.html">Benchmarks</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/@antonio112009/code-reviewer">npm</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/CHANGELOG.md">Changelog</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Docs</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer#readme">README</a></li>
+          <li><a href="ci.html">CI setup</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/docs/skills.md">Writing skills</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="assets/site.js"></script>
+  <script type="module" src="assets/ci.js"></script>
+</body>
+</html>

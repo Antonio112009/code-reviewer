@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo: an LLM code review from the diff to the pull request comment</title>
+  <meta name="description" content="A scripted Code Reviewer run on one pull request: the plan, the review with read-only tools, the critic rejecting a false alarm, and the inline comment and summary that land on the pull request.">
+  <meta name="theme-color" content="#f8f7f4">
+  <link rel="canonical" href="https://antonio112009.github.io/code-reviewer/demo.html">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Demo: an LLM code review from the diff to the pull request comment">
+  <meta property="og:description" content="A scripted Code Reviewer run on one pull request: the plan, the review with read-only tools, the critic rejecting a false alarm, and the inline comment and summary that land on the pull request.">
+  <meta property="og:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta property="og:url" content="https://antonio112009.github.io/code-reviewer/demo.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:site_name" content="Code Reviewer">
+  <meta name="twitter:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Code Reviewer", "item": "https://antonio112009.github.io/code-reviewer/"}, {"@type": "ListItem", "position": 2, "name": "Demo", "item": "https://antonio112009.github.io/code-reviewer/demo.html"}]}
+  </script>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="./"><img src="assets/logo.svg" width="30" height="30" alt="">Code Reviewer</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="./">Overview</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="skills.html">Skills</a>
+        <a href="benchmarks.html">Benchmarks</a>
+        <a href="demo.html" aria-current="page">Demo</a>
+        <a href="ci.html">CI setup</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-ghost btn-sm hide-sm" href="https://www.npmjs.com/package/@antonio112009/code-reviewer"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/npm.svg" alt="">npm</a>
+        <a class="btn btn-outline btn-sm" href="https://github.com/antonio112009/code-reviewer"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+        <button class="btn btn-ghost btn-sm menu-button" type="button" aria-expanded="false" aria-label="Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero demo-hero">
+      <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="./">Code Reviewer</a><span aria-hidden="true">/</span><span aria-current="page">Demo</span></nav>
+        <p class="eyebrow">Demo</p>
+        <h1>One pull request, start to finish.</h1>
+        <p>A branch adds partial refunds to a small Express service. Watch Code Reviewer plan the run, read the code, find
+          the race, let the critic throw out a false alarm, and post the result. The run is scripted and shortened; the
+          output formats are the real ones.</p>
+      </div>
+    </section>
+
+    <section class="section demo-section">
+      <div class="wrap">
+        <div class="ide">
+          <div class="ide-bar">
+            <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="ide-repo"><b>acme/shop</b> · pull request #214 · <code>feature/partial-refunds</code> → <code>main</code></span>
+            <span class="ide-actions">
+              <span class="status" data-status>ready</span>
+              <button class="btn btn-outline btn-sm" type="button" data-skip hidden>Skip to the end</button>
+              <button class="btn btn-primary btn-sm" type="button" data-play>Play</button>
+            </span>
+          </div>
+          <ol class="timeline" data-steps>
+            <li><span class="timeline-n">1</span><span class="timeline-text"><b>Plan</b><small>base branch, stack, hints, chunks, skills</small></span><span class="timeline-time" data-duration></span></li>
+            <li><span class="timeline-n">2</span><span class="timeline-text"><b>Review</b><small>the model reads the chunk with read-only tools</small></span><span class="timeline-time" data-duration></span></li>
+            <li><span class="timeline-n">3</span><span class="timeline-text"><b>Verify</b><small>the critic re-reads the code for each finding</small></span><span class="timeline-time" data-duration></span></li>
+            <li><span class="timeline-n">4</span><span class="timeline-text"><b>Report</b><small>terminal, reports, the pull request</small></span><span class="timeline-time" data-duration></span></li>
+          </ol>
+          <div class="ide-body">
+            <div class="ide-files">
+              <div class="file-tabs" role="tablist" aria-label="Changed files">
+                <button type="button" role="tab" aria-selected="true" data-file-tab>src/payments/refunds.ts <span class="file-stat">+3 −1</span></button>
+                <button type="button" role="tab" aria-selected="false" data-file-tab>src/routes/refunds.ts <span class="file-stat muted">context</span></button>
+              </div>
+              <div class="file-pane" data-file-pane><pre><span class="row "><span class="ln">1</span><span class="tx"><span class="tok-k">import</span> { db } <span class="tok-k">from</span> <span class="tok-s">'../db.js'</span>;</span></span>
+<span class="row "><span class="ln">2</span><span class="tx"><span class="tok-k">import</span> { payments } <span class="tok-k">from</span> <span class="tok-s">'./client.js'</span>;</span></span>
+<span class="row "><span class="ln">3</span><span class="tx"></span></span>
+<span class="row "><span class="ln">4</span><span class="tx"><span class="tok-k">export async function</span> <span class="tok-f">refund</span>(orderId: <span class="tok-k">string</span>, amount: <span class="tok-k">number</span>) {</span></span>
+<div class="inline-note" data-note="candidate" hidden>
+  <div class="inline-note-head"><span class="badge">minor</span><span class="badge">bug</span><span class="inline-note-loc">line 4</span></div>
+  <b>A negative <code>amount</code> is not rejected</b>
+  <p class="inline-note-state" data-note-state></p>
+</div>
+<span class="row "><span class="ln">5</span><span class="tx">  <span class="tok-k">const</span> order = <span class="tok-k">await</span> db.orders.<span class="tok-f">findById</span>(orderId);</span></span>
+<span class="row del"><span class="ln"></span><span class="tx">  <span class="tok-k">if</span> (amount &gt; order.total) {</span></span>
+<span class="row add" data-flag><span class="ln">6</span><span class="tx">  <span class="tok-k">if</span> (amount &gt; order.total - order.refunded) {</span></span>
+<span class="row "><span class="ln">7</span><span class="tx">    <span class="tok-k">throw new</span> <span class="tok-f">RefundError</span>(<span class="tok-s">'amount exceeds order total'</span>);</span></span>
+<span class="row "><span class="ln">8</span><span class="tx">  }</span></span>
+<span class="row "><span class="ln">9</span><span class="tx">  <span class="tok-k">await</span> payments.<span class="tok-f">refund</span>(order.chargeId, amount);</span></span>
+<span class="row add" data-flag><span class="ln">10</span><span class="tx">  order.refunded += amount;</span></span>
+<span class="row add" data-flag><span class="ln">11</span><span class="tx">  <span class="tok-k">await</span> db.orders.<span class="tok-f">save</span>(order);</span></span>
+<div class="inline-note" data-note="finding" hidden>
+  <div class="inline-note-head"><span class="badge badge-red">major</span><span class="badge">concurrency</span><span class="inline-note-loc">lines 6–11</span></div>
+  <b>Concurrent refunds can exceed the order total</b>
+  <p>Two refund requests for the same order can both read <code>refunded = 0</code> and both pass the check; <code>payments.refund</code> is an external call that cannot be rolled back.</p>
+  <p class="inline-note-state" data-note-state></p>
+</div>
+<span class="row "><span class="ln">12</span><span class="tx">}</span></span>
+<span class="row "><span class="ln">13</span><span class="tx"></span></span>
+<span class="row "><span class="ln">14</span><span class="tx"><span class="tok-k">export class</span> RefundError <span class="tok-k">extends</span> Error {}</span></span></pre></div>
+              <div class="file-pane" data-file-pane hidden><pre><span class="row "><span class="ln">1</span><span class="tx"><span class="tok-k">import</span> { Router } <span class="tok-k">from</span> <span class="tok-s">'express'</span>;</span></span>
+<span class="row "><span class="ln">2</span><span class="tx"><span class="tok-k">import</span> { z } <span class="tok-k">from</span> <span class="tok-s">'zod'</span>;</span></span>
+<span class="row "><span class="ln">3</span><span class="tx"><span class="tok-k">import</span> { refund } <span class="tok-k">from</span> <span class="tok-s">'../payments/refunds.js'</span>;</span></span>
+<span class="row "><span class="ln">4</span><span class="tx"></span></span>
+<span class="row " data-ref><span class="ln">5</span><span class="tx"><span class="tok-k">const</span> RefundSchema = z.<span class="tok-f">object</span>({ orderId: z.<span class="tok-f">string</span>().<span class="tok-f">uuid</span>(), amount: z.<span class="tok-f">number</span>().<span class="tok-f">positive</span>() });</span></span>
+<div class="inline-note inline-note-info" data-note="ref" hidden>
+  <div class="inline-note-head"><span class="badge badge-blue">read by the reviewer</span></div>
+  <p>The route validates <code>amount</code> with <code>z.number().positive()</code> before <code>refund()</code> runs. The critic will use this.</p>
+</div>
+<span class="row "><span class="ln">6</span><span class="tx"></span></span>
+<span class="row "><span class="ln">7</span><span class="tx"><span class="tok-k">export const</span> router = <span class="tok-f">Router</span>();</span></span>
+<span class="row "><span class="ln">8</span><span class="tx">router.<span class="tok-f">post</span>(<span class="tok-s">'/refunds'</span>, <span class="tok-k">async</span> (req, res) =&gt; {</span></span>
+<span class="row "><span class="ln">9</span><span class="tx">  <span class="tok-k">const</span> { orderId, amount } = RefundSchema.<span class="tok-f">parse</span>(req.body);</span></span>
+<span class="row "><span class="ln">10</span><span class="tx">  <span class="tok-k">await</span> <span class="tok-f">refund</span>(orderId, amount);</span></span>
+<span class="row "><span class="ln">11</span><span class="tx">  res.<span class="tok-f">status</span>(204).<span class="tok-f">end</span>();</span></span>
+<span class="row "><span class="ln">12</span><span class="tx">});</span></span></pre></div>
+            </div>
+            <div class="ide-term">
+              <div class="term-bar"><span class="term-dot"></span>terminal</div>
+              <pre data-term aria-live="off"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-after" data-after>
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Result</p>
+              <h2 class="section-title">What lands on the pull request.</h2>
+            </div>
+            <p class="muted">One inline comment and one summary. The next run updates both in place and resolves fixed threads.</p>
+          </div>
+          <div class="gh">
+            <div class="gh-file">
+              <div class="gh-file-head"><span class="gh-path">src/payments/refunds.ts</span><span class="gh-stat"><i class="gh-plus">+3</i> <i class="gh-minus">−1</i></span></div>
+              <table class="gh-diff"><tbody>
+                <tr class="gh-hunk"><td colspan="3">@@ -4,7 +4,9 @@ export async function refund(orderId: string, amount: number) {</td></tr>
+                <tr class="gh-ctx"><td class="gh-num">5</td><td class="gh-num">5</td><td class="gh-code"><span class="gh-mark"> </span>  <span class="tok-k">const</span> order = <span class="tok-k">await</span> db.orders.<span class="tok-f">findById</span>(orderId);</td></tr><tr class="gh-del"><td class="gh-num">6</td><td class="gh-num"></td><td class="gh-code"><span class="gh-mark">−</span>  <span class="tok-k">if</span> (amount &gt; order.total) {</td></tr><tr class="gh-add"><td class="gh-num"></td><td class="gh-num">6</td><td class="gh-code"><span class="gh-mark">+</span>  <span class="tok-k">if</span> (amount &gt; order.total - order.refunded) {</td></tr>
+                <tr class="gh-thread"><td colspan="3">
+                  <div class="gh-comment">
+                    <div class="gh-comment-head"><img src="assets/logo.svg" width="24" height="24" alt=""><b>code-reviewer</b><span class="gh-bot">bot</span><span class="muted">commented just now</span></div>
+                    <div class="gh-comment-body">
+                      <p><b>MAJOR</b> · concurrency · <b>Concurrent refunds can exceed the order total</b></p>
+                      <p>Two refund requests for the same order can both read <code>refunded = 0</code> and both pass the check, so the
+                        customer is refunded up to twice the order total.</p>
+                      <p><b>Failure path:</b> two POST /refunds for one order → both load the order → both pass line 6 →
+                        <code>payments.refund</code> runs twice</p>
+                      <p><b>Suggestion:</b> reserve the amount in one conditional update before calling the payment provider, and refund
+                        only if a row was updated.</p>
+                      <div class="gh-suggestion"><div class="gh-suggestion-head">Suggested change</div><pre><span class="gh-sug-del">-  if (amount &gt; order.total - order.refunded) {</span><span class="gh-sug-add">+  const reserved = await db.orders.reserveRefund(orderId, amount); // UPDATE … WHERE refunded + $1 &lt;= total</span><span class="gh-sug-add">+  if (!reserved) {</span></pre><div class="gh-suggestion-foot"><span class="btn btn-outline btn-sm">Commit suggestion</span></div></div>
+                      <p class="gh-meta">confidence 0.90 · critic: confirmed · code-reviewer</p>
+                    </div>
+                    <div class="gh-comment-foot"><span class="btn btn-outline btn-sm">Resolve conversation</span><span class="muted">Reply…</span></div>
+                  </div>
+                </td></tr>
+                <tr class="gh-ctx"><td class="gh-num">7</td><td class="gh-num">7</td><td class="gh-code"><span class="gh-mark"> </span>    <span class="tok-k">throw new</span> <span class="tok-f">RefundError</span>(<span class="tok-s">'amount exceeds order total'</span>);</td></tr><tr class="gh-ctx"><td class="gh-num">8</td><td class="gh-num">8</td><td class="gh-code"><span class="gh-mark"> </span>  }</td></tr><tr class="gh-ctx"><td class="gh-num">9</td><td class="gh-num">9</td><td class="gh-code"><span class="gh-mark"> </span>  <span class="tok-k">await</span> payments.<span class="tok-f">refund</span>(order.chargeId, amount);</td></tr><tr class="gh-add"><td class="gh-num"></td><td class="gh-num">10</td><td class="gh-code"><span class="gh-mark">+</span>  order.refunded += amount;</td></tr><tr class="gh-add"><td class="gh-num"></td><td class="gh-num">11</td><td class="gh-code"><span class="gh-mark">+</span>  <span class="tok-k">await</span> db.orders.<span class="tok-f">save</span>(order);</td></tr><tr class="gh-ctx"><td class="gh-num">10</td><td class="gh-num">12</td><td class="gh-code"><span class="gh-mark"> </span>}</td></tr>
+              </tbody></table>
+            </div>
+            <div class="gh-comment gh-summary">
+              <div class="gh-comment-head"><img src="assets/logo.svg" width="24" height="24" alt=""><b>code-reviewer</b><span class="gh-bot">bot</span><span class="muted">commented just now</span></div>
+              <div class="gh-comment-body">
+                <p><b>Code review</b> · <code>main…feature/partial-refunds</code> · 1 file in 1 chunk, reviewed in full</p>
+                <p><b>0</b> critical · <b>1</b> major · <b>0</b> minor · <b>0</b> info — depth full</p>
+                <ul><li><b>MAJOR</b> <code>src/payments/refunds.ts:6</code> — Concurrent refunds can exceed the order total (inline)</li></ul>
+                <p>1 finding dropped by the critic. Run <code>20261017-181204-7c1e</code> · Code Reviewer 0.12.0 · $0.31.</p>
+                <p class="gh-meta">Updated in place on the next run.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-last" id="start-yourself">
+      <div class="wrap start">
+        <div>
+          <p class="eyebrow">Your turn</p>
+          <h2 class="section-title">The same run on your branch.</h2>
+          <p class="section-lede">Needs Node.js 24 or newer, git, and a provider: a logged-in Claude Code, Codex, Copilot or Gemini CLI,
+            an <code>ANTHROPIC_API_KEY</code>, AWS credentials, or an OpenAI-compatible endpoint. The <a href="./#start">setup
+            builder</a> writes the exact commands for your case.</p>
+        </div>
+        <div class="code-block">
+          <div class="bar"><span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>~/your-project</div>
+          <button class="copy" type="button" data-copy="npm install -g @antonio112009/code-reviewer
+code-reviewer init
+code-reviewer review --dry-run
+code-reviewer review"><span class="copy-label">Copy</span></button>
+<pre><span class="tok-p">$ </span>npm install -g @antonio112009/code-reviewer
+<span class="tok-p">$ </span>code-reviewer init               <span class="tok-c"># finds your stack and providers</span>
+<span class="tok-p">$ </span>code-reviewer review --dry-run   <span class="tok-c"># the plan and a token estimate, no model calls</span>
+<span class="tok-p">$ </span>code-reviewer review             <span class="tok-c"># your branch against its base</span></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>
+        <a class="brand" href="./"><img src="assets/logo.svg" width="26" height="26" alt="">Code Reviewer</a>
+        <p>Open-source LLM code review. MIT licensed, in active development: issues and feedback are welcome.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="how-it-works.html">How it works</a></li>
+          <li><a href="skills.html">Skills catalog</a></li>
+          <li><a href="benchmarks.html">Benchmarks</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/@antonio112009/code-reviewer">npm</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/CHANGELOG.md">Changelog</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Docs</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer#readme">README</a></li>
+          <li><a href="ci.html">CI setup</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/docs/skills.md">Writing skills</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="assets/site.js"></script>
+  <script type="module" src="assets/demo.js"></script>
+</body>
+</html>
