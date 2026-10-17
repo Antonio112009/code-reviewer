@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Code Reviewer benchmarks: Martian Code Review Bench, AACR-Bench and blind audits</title>
+  <meta name="description" content="How well Code Reviewer finds real bugs: F1 60.5 on Martian’s Code Review Bench under one judge for every tool, 71% precision on posted comments, blind audits of its findings, AACR-Bench results, and the caveats.">
+  <meta name="theme-color" content="#f8f7f4">
+  <link rel="canonical" href="https://antonio112009.github.io/code-reviewer/benchmarks.html">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Code Reviewer benchmarks: Martian Code Review Bench, AACR-Bench and blind audits">
+  <meta property="og:description" content="How well Code Reviewer finds real bugs: F1 60.5 on Martian’s Code Review Bench under one judge for every tool, 71% precision on posted comments, blind audits of its findings, AACR-Bench results, and the caveats.">
+  <meta property="og:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta property="og:url" content="https://antonio112009.github.io/code-reviewer/benchmarks.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:site_name" content="Code Reviewer">
+  <meta name="twitter:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Code Reviewer", "item": "https://antonio112009.github.io/code-reviewer/"}, {"@type": "ListItem", "position": 2, "name": "Benchmarks", "item": "https://antonio112009.github.io/code-reviewer/benchmarks.html"}]}
+  </script>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="./"><img src="assets/logo.svg" width="30" height="30" alt="">Code Reviewer</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="./">Overview</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="skills.html">Skills</a>
+        <a href="benchmarks.html" aria-current="page">Benchmarks</a>
+        <a href="demo.html">Demo</a>
+        <a href="ci.html">CI setup</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-ghost btn-sm hide-sm" href="https://www.npmjs.com/package/@antonio112009/code-reviewer"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/npm.svg" alt="">npm</a>
+        <a class="btn btn-outline btn-sm" href="https://github.com/antonio112009/code-reviewer"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+        <button class="btn btn-ghost btn-sm menu-button" type="button" aria-expanded="false" aria-label="Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="./">Code Reviewer</a><span aria-hidden="true">/</span><span aria-current="page">Benchmarks</span></nav>
+        <p class="eyebrow">Benchmarks</p>
+        <h1>How well it finds bugs, measured three ways.</h1>
+        <p>Against bugs that were verified in real pull requests, against what human and LLM reviewers wrote on the same
+          changes, and by auditing our own findings blind. Every number here comes from
+          <a href="https://github.com/antonio112009/code-reviewer/blob/main/BENCHMARKS.md">BENCHMARKS.md</a>, where each one names the build that produced it, the exact command and
+          the judge.</p>
+        <ul class="toc" aria-label="On this page">
+          <li><a href="#martian">Real bugs</a></li>
+          <li><a href="#plain">Against the model alone</a></li>
+          <li><a href="#audits">Blind audits</a></li>
+          <li><a href="#aacr">Reviewers’ comments</a></li>
+          <li><a href="#caveats">Caveats</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="martian">
+      <div class="wrap">
+        <p class="eyebrow">Real bugs</p>
+        <h2 class="section-title">Martian’s Code Review Bench</h2>
+        <div class="prose">
+          <p><a href="https://codereview.withmartian.com">Martian’s benchmark</a> has 50 pull requests from Sentry, Grafana,
+            Cal.com, Discourse and Keycloak with 158 verified bugs. A judge model reads each review comment and decides
+            whether it describes one of those bugs. Precision is the share of comments that do, recall the share of bugs
+            found, and F1 combines the two.</p>
+          <p>We judged every row below the same way, with Claude Opus 4.5, including four of the published tools, which we
+            re-scored from the comments they posted on the benchmark. Our judging turned out stricter than the leaderboard’s,
+            so these numbers are lower than the published ones for everybody, and they should be compared only with each
+            other.</p>
+        </div>
+        <div class="bench-grid">
+          <figure class="card card-pad chart-card wide">
+            <figcaption>
+              <h3>F1, one judge for every row</h3>
+              <p class="muted">Higher is better. Code Reviewer and the single-call baseline are averages of two runs.</p>
+            </figcaption>
+            <div class="chart" data-chart="f1"></div>
+          </figure>
+          <figure class="card card-pad chart-card wide">
+            <figcaption>
+              <h3>Precision against recall</h3>
+              <p class="muted">Up is fewer wrong comments, right is more bugs found. Hover a point for its numbers.</p>
+            </figcaption>
+            <div class="chart" data-chart="pr"></div>
+          </figure>
+        </div>
+        <div class="callouts">
+          <div class="card card-pad">
+            <h3>Level with the top two</h3>
+            <p class="muted">The full report, with the whole-diff sweep that is on by default since 0.9, scores 60.5. Under the
+              same judge Qodo Extended, first on the leaderboard, scores 60.5 and Augment, third, 60.6.</p>
+          </div>
+          <div class="card card-pad">
+            <h3>The most precise comments</h3>
+            <p class="muted">What Code Reviewer posts on a pull request is its main report: 71% of it matches a known bug, the
+              highest precision in this comparison. Less certain findings go to a “worth a look” list in the report.</p>
+          </div>
+          <div class="card card-pad">
+            <h3>A second judge agrees</h3>
+            <p class="muted">Judged again by Claude Opus 5.5, no row moved by more than 1.3 F1 points and the order held.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="plain">
+      <div class="wrap">
+        <div class="anatomy">
+          <div>
+            <p class="eyebrow">Against the model alone</p>
+            <h2 class="section-title">What the pipeline adds.</h2>
+            <div class="prose">
+              <p>The obvious question: is all this better than giving the same model the diff and asking for bugs? We tried
+                exactly that, with Claude Sonnet at the same reasoning effort, in one call, without chunks, tools, skills or a
+                critic.</p>
+              <p>The single call finds more of the known bugs, 72%. It also writes six comments per pull request, and only 39%
+                of them point at a real one. Code Reviewer’s full report is far more precise and finds fewer bugs. 0.7.0
+                scored 8.2 F1 points above the single call (95% interval +0.7 to +15.4), and the sweep added more. What the
+                pipeline buys is precision: comments a reviewer can act on.</p>
+              <p>It is not free. The single call costs about $0.08 per pull request, Code Reviewer $0.40 to $0.61 with
+                Claude Sonnet.</p>
+            </div>
+          </div>
+          <figure class="card card-pad chart-card">
+            <figcaption>
+              <h3>Same model, with and without the pipeline</h3>
+              <p class="muted">Martian Code Review Bench, percent.</p>
+            </figcaption>
+            <div class="chart" data-chart="plain"></div>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="audits">
+      <div class="wrap">
+        <div class="anatomy">
+          <figure class="card card-pad chart-card">
+            <figcaption>
+              <h3>Findings judged real by blind auditors</h3>
+              <p class="muted">Auditors read the code without seeing severity, confidence or benchmark matches.</p>
+            </figcaption>
+            <div class="chart" data-chart="audit"></div>
+          </figure>
+          <div>
+            <p class="eyebrow">Blind audits</p>
+            <h2 class="section-title">Checking the findings themselves.</h2>
+            <div class="prose">
+              <p>Benchmarks only know the bugs on their list. So we also take samples of findings and have auditors label each
+                one real, debatable or wrong, without seeing how it was scored. Two auditors given the same 66 items agreed in
+                97% of cases.</p>
+              <p>Before the critic, 61% of the reviewer’s findings were real. After it, 95–97% of the main report was. On
+                Martian, every one of 20 sampled main-report findings that matched no known bug was a real defect: the list is
+                incomplete, so real precision is higher than the benchmark can show, for every tool.</p>
+              <p>The auditors are models too, so their mistakes may correlate. The protocol and every verdict are in the
+                repository.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="aacr">
+      <div class="wrap">
+        <p class="eyebrow">Reviewers’ comments</p>
+        <h2 class="section-title">AACR-Bench, and what each depth costs.</h2>
+        <div class="prose">
+          <p><a href="https://github.com/alibaba/aacr-bench">AACR-Bench</a> scores how many of the comments reviewers left on a
+            pull request a tool also makes. 79% of those comments were written by LLM reviewers and 40% are about
+            maintainability, so it rewards volume and breadth more than finding bugs, and absolute numbers are low for
+            everyone. It is still useful for comparing our own settings with each other.</p>
+        </div>
+        <div class="card card-pad" style="margin-top: 24px">
+          <h3 style="font-size: 18px">30 pull requests of 22 repositories, two runs each</h3>
+          <p class="muted" style="margin: 4px 0 14px">Precision here counts real defects that reviewers did not write down as
+            misses.</p>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th scope="col">Depth</th><th scope="col">Findings</th><th scope="col">Match a reviewer comment</th><th scope="col">Comments found</th><th scope="col">Code defects found</th><th scope="col">Cost per run</th></tr></thead>
+              <tbody data-depths></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-last" id="caveats">
+      <div class="wrap">
+        <div class="anatomy">
+          <div>
+            <p class="eyebrow">Caveats</p>
+            <h2 class="section-title">What these numbers don’t tell you.</h2>
+          </div>
+          <div class="prose">
+            <ul>
+              <li><b>Public data.</b> Both benchmarks use well-known public repositories, and their answers are public too. No
+                model or tool on this page can rule out having seen them in training.</li>
+              <li><b>Incomplete answers.</b> Martian’s list misses real bugs, so correct findings outside it count as wrong.
+                Severity is not scored.</li>
+              <li><b>Different inputs.</b> The published tools reviewed pull requests with their titles and descriptions, and
+                their comments went through an extraction step. Code Reviewer saw only the diff and the checkout.</li>
+              <li><b>A different judge path.</b> We call the judge through <code>claude -p</code>, not Martian’s gateway. It
+                scores stricter; our numbers are not adjusted for that.</li>
+              <li><b>Noise.</b> Two runs of the same configuration differ by up to 3.7 F1 points on Martian.</li>
+            </ul>
+            <p>Commands to reproduce every run, raw judge verdicts and audit files are in the repository:
+              <a href="https://github.com/antonio112009/code-reviewer/blob/main/BENCHMARKS.md#reproducing">reproducing the benchmarks</a>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>
+        <a class="brand" href="./"><img src="assets/logo.svg" width="26" height="26" alt="">Code Reviewer</a>
+        <p>Open-source LLM code review. MIT licensed, in active development: issues and feedback are welcome.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="how-it-works.html">How it works</a></li>
+          <li><a href="skills.html">Skills catalog</a></li>
+          <li><a href="benchmarks.html">Benchmarks</a></li>
+          <li><a href="demo.html">Demo</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/@antonio112009/code-reviewer">npm</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/CHANGELOG.md">Changelog</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Docs</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer#readme">README</a></li>
+          <li><a href="ci.html">CI setup</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/docs/skills.md">Writing skills</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="assets/site.js"></script>
+  <script type="module" src="assets/bench.js"></script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="title">
+  <title id="title">Code Reviewer</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101532"/>
+      <stop offset="1" stop-color="#2A1150"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.6" cy="0.48" r="0.42">
+      <stop offset="0" stop-color="#7C3AED" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22D3EE"/>
+      <stop offset="0.5" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#F472B6"/>
+    </linearGradient>
+    <linearGradient id="lit" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E0F2FE"/>
+      <stop offset="1" stop-color="#C4B5FD"/>
+    </linearGradient>
+    <linearGradient id="bug" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FB7185"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <clipPath id="lens">
+      <circle cx="300" cy="256" r="104"/>
+    </clipPath>
+  </defs>
+
+  <!-- tile -->
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="116" fill="url(#glow)"/>
+
+  <!-- code lines (dim, outside the lens) -->
+  <g fill="#94A3B8" fill-opacity="0.28">
+    <rect x="96" y="146" width="236" height="24" rx="12"/>
+    <rect x="96" y="200" width="170" height="24" rx="12"/>
+    <rect x="128" y="254" width="262" height="24" rx="12"/>
+    <rect x="128" y="308" width="140" height="24" rx="12"/>
+    <rect x="96" y="362" width="206" height="24" rx="12"/>
+  </g>
+
+  <!-- the same lines, lit inside the lens; one of them is the defect -->
+  <g clip-path="url(#lens)">
+    <circle cx="300" cy="256" r="104" fill="#0B1024" fill-opacity="0.55"/>
+    <rect x="96" y="146" width="236" height="24" rx="12" fill="url(#lit)"/>
+    <rect x="96" y="200" width="170" height="24" rx="12" fill="url(#lit)"/>
+    <rect x="128" y="254" width="262" height="24" rx="12" fill="url(#bug)"/>
+    <rect x="128" y="308" width="140" height="24" rx="12" fill="url(#lit)"/>
+    <rect x="96" y="362" width="206" height="24" rx="12" fill="url(#lit)"/>
+  </g>
+
+  <!-- lens ring -->
+  <circle cx="300" cy="256" r="116" fill="none" stroke="url(#ring)" stroke-width="20"/>
+
+  <!-- spark -->
+  <path d="M404 118 L412 142 L436 150 L412 158 L404 182 L396 158 L372 150 L396 142 Z" fill="#FDE68A"/>
+  <circle cx="440" cy="196" r="7" fill="#FDE68A" fill-opacity="0.8"/>
+</svg>

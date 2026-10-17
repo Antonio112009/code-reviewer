@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How Code Reviewer works: chunks, skills, read-only tools and a self-critique pass</title>
+  <meta name="description" content="The eight stages of an LLM code review run in Code Reviewer: base-branch detection, stack and static hints, chunks with related files, version-aware skills, review with read-only tools, validation, the critic, and the reports.">
+  <meta name="theme-color" content="#f8f7f4">
+  <link rel="canonical" href="https://antonio112009.github.io/code-reviewer/how-it-works.html">
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="How Code Reviewer works: chunks, skills, read-only tools and a self-critique pass">
+  <meta property="og:description" content="The eight stages of an LLM code review run in Code Reviewer: base-branch detection, stack and static hints, chunks with related files, version-aware skills, review with read-only tools, validation, the critic, and the reports.">
+  <meta property="og:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta property="og:url" content="https://antonio112009.github.io/code-reviewer/how-it-works.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="og:site_name" content="Code Reviewer">
+  <meta name="twitter:image" content="https://antonio112009.github.io/code-reviewer/assets/og.png">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Code Reviewer", "item": "https://antonio112009.github.io/code-reviewer/"}, {"@type": "ListItem", "position": 2, "name": "How it works", "item": "https://antonio112009.github.io/code-reviewer/how-it-works.html"}]}
+  </script>
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/pages.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="./"><img src="assets/logo.svg" width="30" height="30" alt="">Code Reviewer</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="./">Overview</a>
+        <a href="how-it-works.html" aria-current="page">How it works</a>
+        <a href="skills.html">Skills</a>
+        <a href="benchmarks.html">Benchmarks</a>
+        <a href="demo.html">Demo</a>
+        <a href="ci.html">CI setup</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-ghost btn-sm hide-sm" href="https://www.npmjs.com/package/@antonio112009/code-reviewer"><img src="https://cdn.jsdelivr.net/npm/simple-icons@16.33.0/icons/npm.svg" alt="">npm</a>
+        <a class="btn btn-outline btn-sm" href="https://github.com/antonio112009/code-reviewer"><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+        <button class="btn btn-ghost btn-sm menu-button" type="button" aria-expanded="false" aria-label="Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero">
+      <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="./">Code Reviewer</a><span aria-hidden="true">/</span><span aria-current="page">How it works</span></nav>
+        <p class="eyebrow">How it works</p>
+        <h1>From a diff to comments you can trust.</h1>
+        <p>A review is eight steps. Only two of them ask a model to find anything. The rest decide what the model sees,
+          check what it says, and make sure no part of the change is skipped without you knowing.</p>
+        <ul class="toc" aria-label="On this page">
+          <li><a href="#refs">Refs</a></li>
+          <li><a href="#stack">Stack and hints</a></li>
+          <li><a href="#chunks">Chunks</a></li>
+          <li><a href="#skills">Skills</a></li>
+          <li><a href="#review">Review</a></li>
+          <li><a href="#validate">Validation</a></li>
+          <li><a href="#critic">Critic</a></li>
+          <li><a href="#report">Report</a></li>
+          <li><a href="#finding">Anatomy of a finding</a></li>
+          <li><a href="#cost">Cost</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top: 24px">
+      <div class="wrap">
+        <ol class="stages">
+          <li class="stage reveal" id="refs">
+            <span class="stage-n">01</span>
+            <div>
+              <h2>Pick what to compare</h2>
+              <p>Code Reviewer works out the base branch the way a pull request would: from the CI event, an open pull or
+                merge request, or your branch rules such as <code>feature/** → develop → main</code>. It fetches the base
+                fresh and reviews what your branch changed since it left it, not what landed on the base in the meantime.</p>
+            </div>
+            <aside class="code-block">
+              <div class="bar">refs</div>
+<pre><span class="tok-p">$ </span>code-reviewer review --base main --dry-run
+Refs  base from flag
+      · base main: --base main
+      · head HEAD (feature/partial-refunds):
+        local branch, including unpushed commits
+<span class="tok-f">◆</span> main … HEAD (feature/partial-refunds)  (1 commit)</pre>
+            </aside>
+          </li>
+
+          <li class="stage reveal" id="stack">
+            <span class="stage-n">02</span>
+            <div>
+              <h2>Detect the stack, run the static pass</h2>
+              <p>Technologies and their versions come from your manifests: <code>package.json</code>,
+                <code>pyproject.toml</code>, <code>go.mod</code>, <code>pom.xml</code> and the rest. Then the fast checks
+                run: secret scanning, about 130 bug-pattern rules, safe external linters and the ast-grep checks that ship
+                with the skills.</p>
+              <p>Their hits do not go straight into the report. They become hints on exact lines, and the model has to
+                confirm or reject each one. Leaked secrets and known-vulnerable dependencies are the exception: the critic
+                may lower their severity but cannot drop them.</p>
+            </div>
+            <aside class="code-block">
+              <div class="bar">stack and analyzers</div>
+<pre>  stack     Express · PostgreSQL · Node.js · TypeScript
+  analyzers Secrets (secretlint) <span class="tok-ok">✓</span> · Pattern rules <span class="tok-ok">✓</span>
+            Added suppressions <span class="tok-ok">✓</span> · ast-grep <span class="tok-ok">✓</span></pre>
+            </aside>
+          </li>
+
+          <li class="stage reveal" id="chunks">
+            <span class="stage-n">03</span>
+            <div>
+              <h2>Group the change into chunks</h2>
+              <p>Files that belong together, a module with its tests and its imports, go into one chunk sized to fit the
+                model’s context window. Shared files are attached as read-only context instead of being dropped. Every
+                chunk is reviewed; if one fails, for example on a timeout, the report and the pull request summary say
+                which part of the change was not reviewed.</p>
+              <p id="context">Each chunk also gets an impact map: where unchanged code uses what changed, and where the
+                functions the new code calls are defined, as <code>file:line</code>. With <code>--expand refs</code> or
+                <code>deep</code>, excerpts of that code are included too.</p>
+            </div>
+            <aside class="code-block">
+              <div class="bar">--dry-run</div>
+<pre>Chunks (1, budget 40,000 tokens each)
+  c001  368 tok  timeout 2m 12s  0 hints
+        files   src/payments/refunds.ts
+        skills  practice/general-bugs (always-on)
+                security/core (always-on)
+                javascript/core/async-promises
+                  (content:/\bawait\b/)</pre>
+            </aside>
+          </li>
+
+          <li class="stage reveal" id="skills">
+            <span class="stage-n">04</span>
+            <div>
+              <h2>Load the skills that apply</h2>
+              <p>A skill is a short checklist for one topic of one technology. A skill is loaded for a chunk only when its
+                technology group matches (the stack, the language, the files, and the version where it matters) and one of
+                its patterns matches a line the change adds. <code>practice/general-bugs</code> and
+                <code>security/core</code> are always on.</p>
+              <p>Skills share a token budget per chunk, 6,000 at full depth and 3,500 at essential. The best-scoring ones go
+                in whole; the rest are named by their one-line description, so the model knows they exist.</p>
+              <p><a href="skills.html">Browse all 853 skills →</a></p>
+            </div>
+            <aside>
+              <ul class="skill-grid" style="grid-template-columns: 1fr; margin: 0">
+                <li><button class="skill-card" type="button" data-skill="javascript/core/async-promises"><span class="skill-tech">loaded for the refund example</span><b>javascript/core/async-promises</b><span>Matched <code>await</code> on an added line. Click to read what the model is told.</span></button></li>
+              </ul>
+            </aside>
+          </li>
+
+          <li class="stage reveal" id="review">
+            <span class="stage-n">05</span>
+            <div>
+              <h2>Review each chunk, then the whole diff</h2>
+              <p>The reviewer gets the chunk, its hints and skills, and read-only tools on an isolated snapshot of the
+                commit. It reports through one tool call, <code>submit_findings</code>, with a fixed schema. Critical and
+                major findings must include the path from input to failure.</p>
+              <p>At full depth one more call, the sweep, reads the entire diff at once without tools and lists what it finds.
+                On Martian’s benchmark it found bugs the chunk reviews never reported, raising recall by 7.6 to 9.5 points
+                in each of three paired runs. Findings it shares with a chunk review are dropped as duplicates.</p>
+            </div>
+            <aside class="code-block">
+              <div class="bar">tools the reviewer can call</div>
+<pre><span class="tok-f">read_file</span>        a file of the snapshot, by line range
+<span class="tok-f">grep</span>             a regex over the checkout
+<span class="tok-f">find_symbol</span>      where a name is declared
+<span class="tok-f">find_references</span>  where it is used
+<span class="tok-f">list_dir</span>         a directory listing
+<span class="tok-f">git_log</span>          recent history of a path
+<span class="tok-f">git_blame</span>        who changed a line, and why</pre>
+            </aside>
+          </li>
+
+          <li class="stage reveal" id="validate">
+            <span class="stage-n">06</span>
+            <div>
+              <h2>Validate and de-duplicate</h2>
+              <p>Every finding must point at a real file and real lines near the change. Findings that don’t are dropped
+                with the reason recorded in the run. Findings about the same defect from different chunks or passes are
+                merged. A critical or major finding that gives no failure path is lowered before the critic sees it.</p>
+            </div>
+            <aside></aside>
+          </li>
+
+          <li class="stage reveal" id="critic">
+            <span class="stage-n">07</span>
+            <div>
+              <h2>Let the critic decide</h2>
+              <p>A second model call verifies each finding with access to the code. It returns a verdict, its own confidence
+                and a reason that refers to the code. It can lower the severity and correct a title that overstates a real
+                defect, and it checks whether a proposed replacement is safe to offer as a one-click suggestion.</p>
+              <p>At full depth, findings the critic is unsure about get a second opinion from another verifier.</p>
+            </div>
+            <aside>
+              <div class="table-scroll card">
+                <table class="data-table verdict-table">
+                  <thead><tr><th scope="col">Verdict</th><th scope="col" style="text-align:left">What happens</th></tr></thead>
+                  <tbody>
+                    <tr><td><span class="badge badge-green">confirmed</span></td><td style="text-align:left;white-space:normal">Kept. Confidence 0.6 or more goes to the main report and the pull request.</td></tr>
+                    <tr><td><span class="badge badge-amber">uncertain</span></td><td style="text-align:left;white-space:normal">Re-checked at full depth. Below 0.6, listed under “worth a look” in the reports only.</td></tr>
+                    <tr><td><span class="badge">rejected</span></td><td style="text-align:left;white-space:normal">Removed. Kept in the run record with the critic’s reason.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </aside>
+          </li>
+
+          <li class="stage reveal" id="report">
+            <span class="stage-n">08</span>
+            <div>
+              <h2>Report and post</h2>
+              <p>You get a live dashboard in the terminal, then reports in Markdown, JSON, HTML, SARIF and GitLab Code Quality
+                format, with the author of each line from <code>git blame</code> and links to the forge. Every run is saved:
+                <code>runs open latest</code> opens the HTML report.</p>
+              <p>With <code>--post</code> the findings go to the pull request as inline comments, plus one summary comment
+                that is updated in place. The next run does not repeat comments already there, and it resolves the threads of
+                findings that were fixed.</p>
+            </div>
+            <aside class="code-block">
+              <div class="bar">terminal</div>
+<pre><span class="tok-bad">!</span> 1 major
+
+  <span class="tok-bad">MAJOR</span>  src/payments/refunds.ts:6
+         Concurrent refunds can exceed the order total
+         conf 0.90 · critic <span class="tok-ok">✓</span></pre>
+            </aside>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section" id="finding">
+      <div class="wrap">
+        <p class="eyebrow">Anatomy of a finding</p>
+        <h2 class="section-title">What the reviewer has to write down.</h2>
+        <p class="section-lede">Findings come back through a tool call with a strict schema, never as free text. That is what
+          lets every later step check them.</p>
+        <div class="anatomy">
+          <dl class="field-list">
+            <div><dt>file, lines</dt><dd>Where the defect is, in the new version of the file. Checked against the diff.</dd></div>
+            <div><dt>severity</dt><dd>critical, major, minor or info. The critic may lower it.</dd></div>
+            <div><dt>category</dt><dd>bug, security, concurrency, error-handling, performance, resource-leak, api-misuse,
+              data-loss, or maintainability for notes.</dd></div>
+            <div><dt>description</dt><dd>Why it is a bug: the concrete inputs or state that lead to wrong behaviour.</dd></div>
+            <div><dt>failurePath</dt><dd>The steps from input to failure. Required for critical and major.</dd></div>
+            <div><dt>suggestion</dt><dd>How to fix it. Optionally a replacement for the exact lines, which becomes a one-click
+              suggestion if the critic approves it.</dd></div>
+            <div><dt>confidence</dt><dd>The probability that a senior engineer would agree it is a real defect.</dd></div>
+            <div><dt>hint, checklist</dt><dd>The static hint it confirms and the skill item that covers it, if any.</dd></div>
+          </dl>
+          <div class="code-block">
+            <div class="bar">submit_findings</div>
+<pre>{
+  <span class="tok-k">"file"</span>: <span class="tok-s">"src/payments/refunds.ts"</span>,
+  <span class="tok-k">"startLine"</span>: <span class="tok-n">6</span>, <span class="tok-k">"endLine"</span>: <span class="tok-n">11</span>,
+  <span class="tok-k">"severity"</span>: <span class="tok-s">"major"</span>,
+  <span class="tok-k">"category"</span>: <span class="tok-s">"concurrency"</span>,
+  <span class="tok-k">"title"</span>: <span class="tok-s">"Concurrent refunds can exceed the
+            order total"</span>,
+  <span class="tok-k">"failurePath"</span>: <span class="tok-s">"two POST /refunds for one order
+    → both load the order → both pass line 6
+    → payments.refund runs twice"</span>,
+  <span class="tok-k">"suggestion"</span>: <span class="tok-s">"Reserve the amount with one
+    conditional UPDATE before refunding"</span>,
+  <span class="tok-k">"confidence"</span>: <span class="tok-n">0.8</span>
+}</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="depth">
+      <div class="wrap">
+        <p class="eyebrow">Depth</p>
+        <h2 class="section-title">Essential or full, and when to go deeper.</h2>
+        <div class="card" style="margin-top: 32px">
+          <div class="table-scroll">
+            <table class="data-table compare-table">
+              <thead><tr><th scope="col"></th><th scope="col"><code>--essential</code></th><th scope="col"><code>full</code> (default)</th></tr></thead>
+              <tbody>
+                <tr><td>Looks for</td><td>Security, data loss, crashes and hangs, leaks and OOM, overload, races, costly performance</td><td>Every real defect, including edge cases, accessibility and best practices with a concrete consequence</td></tr>
+                <tr><td>Severities</td><td>Critical and major</td><td>All</td></tr>
+                <tr><td>Skills per chunk</td><td>Essential ones, 3,500 tokens</td><td>All, 6,000 tokens</td></tr>
+                <tr><td>Critic</td><td>Also drops real but low-impact findings; keeps confidence ≥ 0.7</td><td>Drops claims that are wrong about the code; keeps confidence ≥ 0.3</td></tr>
+                <tr><td>Second opinion</td><td>Off</td><td>On for findings the critic was unsure about</td></tr>
+                <tr><td>Whole-diff sweep</td><td>Off (<code>--sweep</code>)</td><td>On (<code>--no-sweep</code>)</td></tr>
+                <tr><td>Maintainability notes</td><td>Off (<code>--notes</code>)</td><td>Up to 5, in their own section and the PR summary</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="section-lede" style="font-size: 16.5px"><code>--deepen</code> adds an independent second review pass over every
+          chunk at high reasoning, for about twice the price. In a blind audit one pass missed about a quarter of the real defects
+          a second pass found, and findings both passes reported were real three times in four. After a review, the summary
+          suggests <code>--deepen</code> with its estimated cost.</p>
+      </div>
+    </section>
+
+    <section class="section section-last" id="cost">
+      <div class="wrap">
+        <div class="anatomy">
+          <div>
+            <p class="eyebrow">Cost</p>
+            <h2 class="section-title">You see the price before and after.</h2>
+            <div class="prose">
+              <ul>
+                <li><b><code>--dry-run</code></b> shows the plan and a token estimate without calling a model.</li>
+                <li><b><code>--max-cost 2</code></b> stops starting model calls once $2 is spent.</li>
+                <li><b>Answers are cached.</b> Re-reviewing the same code costs nothing; after a fix only the changed chunks
+                  are reviewed again.</li>
+                <li><b><code>--batch</code></b> on the Anthropic API sends the sweep as a batch request at half price.</li>
+                <li><b>Per-stage usage.</b> Every run records the tokens and cost of the reviews, the sweep, the critic and the
+                  notes.</li>
+              </ul>
+              <p>On Martian’s pull requests a full review with Claude Sonnet costs about $0.40 to $0.61 each.</p>
+            </div>
+          </div>
+          <div class="code-block">
+            <div class="bar">.code-reviewer/config.yaml</div>
+<pre><span class="tok-k">roles</span>:
+  <span class="tok-k">review</span>:   { <span class="tok-k">provider</span>: claude, <span class="tok-k">model</span>: sonnet, <span class="tok-k">reasoning</span>: medium }
+  <span class="tok-k">critique</span>: { <span class="tok-k">provider</span>: claude, <span class="tok-k">model</span>: sonnet, <span class="tok-k">reasoning</span>: high }
+<span class="tok-k">review</span>:
+  <span class="tok-k">depth</span>: full
+  <span class="tok-k">minConfidence</span>: <span class="tok-n">0.3</span>
+  <span class="tok-k">maxCost</span>: <span class="tok-n">2</span>
+  <span class="tok-k">exclude</span>: [<span class="tok-s">"**/*.generated.ts"</span>]</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>
+        <a class="brand" href="./"><img src="assets/logo.svg" width="26" height="26" alt="">Code Reviewer</a>
+        <p>Open-source LLM code review. MIT licensed, in active development: issues and feedback are welcome.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <ul>
+          <li><a href="how-it-works.html">How it works</a></li>
+          <li><a href="skills.html">Skills catalog</a></li>
+          <li><a href="benchmarks.html">Benchmarks</a></li>
+          <li><a href="demo.html">Demo</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/@antonio112009/code-reviewer">npm</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/CHANGELOG.md">Changelog</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Docs</h4>
+        <ul>
+          <li><a href="https://github.com/antonio112009/code-reviewer#readme">README</a></li>
+          <li><a href="ci.html">CI setup</a></li>
+          <li><a href="https://github.com/antonio112009/code-reviewer/blob/main/docs/skills.md">Writing skills</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="assets/site.js"></script>
+</body>
+</html>

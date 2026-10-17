@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://antonio112009.github.io/code-reviewer/sitemap.xml
