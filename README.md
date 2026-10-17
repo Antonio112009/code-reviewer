@@ -103,7 +103,8 @@ code-reviewer review --base main --head feature/login --dry-run
   `--offline` compares local refs without fetching.
 - `--head` defaults to `HEAD`, unpushed commits included. `--explain-refs` prints how both were resolved.
 - The default depth, `full`, reports every real defect. `--essential` keeps to what can seriously hurt
-  production (security, data loss, crashes, leaks, overload, costly performance) for about a third less.
+  production (security, features broken on their normal path, data loss, crashes, leaks, overload, costly
+  performance) for about a third less.
 - With Claude Code, Sonnet reviews and Sonnet checks each finding (`--model` / `--critique-model` to change;
   an Opus critic measured the same quality for 40% more). `--max-cost 5` stops starting model calls once $5 is spent.
 
@@ -119,7 +120,8 @@ code-reviewer review --base main --head feature/login --dry-run
   files are added as read-only context, so nothing is silently dropped.
 - **Two depths.**
   - `full`, the default: every real defect, including edge cases and accessibility.
-  - `essential`: only what can seriously hurt production — security, data loss, crashes, memory leaks / OOM,
+  - `essential`: only what can seriously hurt production — security, features broken on their normal path,
+    data loss, crashes, memory leaks / OOM,
     overload, costly performance — using fewer tokens.
 - **Your models, per stage.** A fast model for the review and a stronger one for verification, each
   with its own reasoning effort. If a model becomes unavailable, it offers an alternative (Claude ↔
@@ -265,8 +267,8 @@ number of findings, so `essential` saves less than it leaves out.
 
 | | `essential` (`--essential`) | `full` (default) |
 |---|---|---|
-| Looks for | security, data loss, crashes/hangs, leaks & OOM, overload (unbounded concurrency, missing timeouts, retry storms, N+1), races, costly performance | every real defect, also edge cases, accessibility, best practices with a concrete consequence |
-| Severities | critical, major | all |
+| Looks for | security, features broken on their normal path, data loss, crashes/hangs, leaks & OOM, overload (unbounded concurrency, missing timeouts, retry storms, N+1), races, costly performance | every real defect, also edge cases, accessibility, best practices with a concrete consequence |
+| Severities | critical, major, minor (no info) | all |
 | Skills | essential ones, 3.5k tokens per chunk | all, 6k tokens per chunk |
 | Fix required | yes, for every finding | when possible |
 | Self-critique | also drops real but low-impact findings; keeps confidence ≥ 0.7 | drops only claims that are wrong about the code; low impact lowers the severity, and a true observation with no realistic way to fail becomes "worth a look"; keeps confidence ≥ 0.3 |

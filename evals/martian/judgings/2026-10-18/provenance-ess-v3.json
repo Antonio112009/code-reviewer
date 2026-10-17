@@ -1,0 +1,21 @@
+{
+ "run_id": "ess-v3",
+ "reviewer": "code-reviewer",
+ "created_at": "2026-10-17T23:23:18Z",
+ "benchmark": "martian",
+ "benchmark_commit": "e616e849755441da38f18bf3adba2c9583b03803",
+ "code_reviewer": {
+  "cli": "/Users/anton/.cache/code-reviewer-builds/ess-v3/dist/cli.js",
+  "version": "0.12.0",
+  "build": {
+   "commit": "a5584fa9b114690f5ab026d62d78d568d052c37f",
+   "describe": "v0.12.0-12-ga5584fa",
+   "version": "0.12.0",
+   "built_at": "2026-10-17T23:18:04Z"
+  }
+ },
+ "args": "--essential --provider anthropic",
+ "descriptions": null,
+ "experiment_env": {},
+ "judgings": []
+}

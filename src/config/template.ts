@@ -149,7 +149,7 @@ const SECTIONS: ReadonlyArray<readonly [SectionKey, SectionDoc]> = [
       doc: ['How the review runs. Only findings with confidence >= minConfidence are reported.'],
       keys: {
         depth: {
-          doc: 'full = every real defect (the default); essential = serious production issues only (security, data loss, crashes, leaks/OOM, overload, costly performance; about a third cheaper, a fifth of the findings). Also sets the defaults of minSeverity, minConfidence, advisoryConfidence, skillTokenBudget, maxSteps, contextShare, secondOpinion and notes.',
+          doc: 'full = every real defect (the default); essential = serious production issues only (security, features broken on their normal path, data loss, crashes, leaks/OOM, overload, costly performance; about a third cheaper, a fifth of the findings). Also sets the defaults of minSeverity, minConfidence, advisoryConfidence, skillTokenBudget, maxSteps, contextShare, secondOpinion and notes.',
           example: D.review.depth,
         },
         minSeverity: {
