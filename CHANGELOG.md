@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.13.0 — 2026-10-18
 
 ### Quality
 
@@ -11,6 +11,13 @@
   essential's `minSeverity` is `minor` (info stays out; the critic still rejects real but low-impact findings).
   Martian, Opus 4.5 judge: recall 8.2 → 19.0%, precision 86.7 → 93.8%, F1 15.0 → 31.6, 3 of 12 critical, at the
   same cost ([2026-10-18](evals/martian/judgings/2026-10-18/README.md)).
+
+### Docs
+
+- **Project website** on GitHub Pages (`website/`): what it is, how it works, the skills catalog, benchmarks,
+  a demo run and CI setup.
+- **Benchmarks:** 0.12.0 measured on Martian through the Anthropic API (full report F1 59.1, posted report 78%
+  precise, `--deepen` 72% of the bugs), recall by bug category, and the API judge checked against `claude -p`.
 
 ## 0.12.0 — 2026-10-16
 
