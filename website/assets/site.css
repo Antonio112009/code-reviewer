@@ -745,3 +745,22 @@ p {
     transition: none;
   }
 }
+
+/* the narrowest phones (320 px): icon-only GitHub button, tighter header */
+@media (max-width: 380px) {
+  .site-header .wrap {
+    gap: 10px;
+  }
+  .brand {
+    font-size: 15.5px;
+    gap: 8px;
+  }
+  .header-actions {
+    gap: 4px;
+  }
+  .header-actions .btn-outline {
+    font-size: 0;
+    gap: 0;
+    padding: 0 10px;
+  }
+}
