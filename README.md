@@ -139,22 +139,28 @@ leaderboard, with Code Reviewer placed by F1:
 | 2 | Cubic v2 | 61.5% | 65.8% | 63.6% |
 | 3 | Augment | 59.5% | 65.2% | 62.2% |
 |  | **code-reviewer 0.8.0 + `--sweep`** †, main report + "worth a look" | 57.4% | 63.9% | **60.5%** |
+|  | **code-reviewer 0.12.0** † API, main report + "worth a look" (defaults) | 61.4% | 57.0% | **59.1%** |
 |  | **code-reviewer 0.7.0** †, main report + "worth a look" | 64.0% | 54.1% | **58.7%** |
 | 4 | Qodo v2 | 55.4% | 62.0% | 58.5% |
 |  | **code-reviewer 0.8.0** †, everything listed (defaults) | 56.0% | 56.3% | **56.2%** |
 | 5 | Macroscope | 61.1% | 48.7% | 54.2% |
 | 6 | GitLab Duo Code Review | 53.5% | 52.5% | 53.0% |
+|  | **code-reviewer 0.12.0 `--deepen`** † API, main report + "worth a look" | 41.3% | 72.2% | **52.5%** |
 | 7 | Devin | 69.1% | 41.1% | 51.6% |
 | 8 | Cursor Bugbot | 56.9% | 46.8% | 51.4% |
 | 9 | Greptile v4 | 50.9% | 51.3% | 51.1% |
 |  | **code-reviewer 0.8.0** †, main report (what it posts on a PR) | 71.2% | 39.9% | **51.1%** |
 |  | the same model, Claude Sonnet, given the diff in one call † | 39.0% | 71.5% | 50.5% |
+|  | **code-reviewer 0.12.0** † API, main report (what it posts on a PR) | 78.0% | 34.8% | **48.1%** |
 
-† Measured by us and scored by the same judge model, Claude Opus 4.5, through `claude -p`. That judging is
+† Measured by us and scored by the same judge model, Claude Opus 4.5 (`claude -p`, or the Anthropic API for the
+API rows: the two agree). API rows reviewed through the Anthropic API, the others through Claude Code. That judging is
 stricter than the leaderboard's own: the four tools scored both ways lost 1.6 to 5.4 F1 points (Qodo Extended
 65.8 → 60.5, Augment 62.2 → 60.6, Qodo v2 58.5 → 54.1, Claude Code CLI 47.2 → 41.8). These rows are not
 adjusted, so their real place is, if anything, higher. Under one judge for every row, code-reviewer 0.8.0 with `--sweep` scores 60.5,
-level with Qodo Extended (60.5) and Augment (60.6). The full table, 21 tools:
+level with Qodo Extended (60.5) and Augment (60.6); 0.12.0 on the Anthropic API scores 59.1, within 1.5 points, for
+$0.36 a pull request, and its `--deepen` finds the most bugs of any reviewer (72.2%). Recall by bug category and
+severity: [BENCHMARKS.md](BENCHMARKS.md#where-it-finds-bugs-and-where-it-does-not). The full table, 21 tools:
 [BENCHMARKS.md](BENCHMARKS.md#leaderboard-real-bugs).
 
 <picture>
@@ -162,7 +168,7 @@ level with Qodo Extended (60.5) and Augment (60.6). The full table, 21 tools:
   <img alt="Precision against recall on Martian's Code Review Bench, judged by Claude Opus 4.5. code-reviewer 0.8.0 with its defaults: main report 71% precision and 40% recall, with worth-a-look findings 58% and 54%. code-reviewer 0.8.0 with the opt-in --sweep: main report 71% and 44%, with worth-a-look findings 57% and 64%. The same model given the diff in one call: 39% and 72%. Twenty published review tools as published, four of them re-judged the same way: Qodo Extended (#1 on the leaderboard) 61% and 60%, Augment (#3) 58% and 63%, Qodo v2 (#4) 51% and 57%, Claude Code CLI (#12) 42% and 42%" src="docs/img/martian-positioning-light.svg" width="760">
 </picture>
 
-Code Reviewer's main report, the part it posts on pull requests, is the most precise here: 71–73% of its
+Code Reviewer's main report, the part it posts on pull requests, is the most precise here: 71–78% of its
 findings are known bugs, and a blind audit found the rest to be real defects too, ones the benchmark's list
 misses. The same model given the diff in one call finds more of the bugs, 72%, but only 39% of its six
 findings per pull request match one: what the pipeline adds is precision. A second judge, Claude Opus 5.5,

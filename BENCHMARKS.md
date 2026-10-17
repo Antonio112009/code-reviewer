@@ -4,7 +4,8 @@ What Code Reviewer finds, measured against real bugs, against what human and LLM
 pull requests, and by blind audits of its own findings. It starts with the leaderboard of review tools on real
 bugs and where Code Reviewer stands on it. Every number on this page names the build that
 produced it (a commit of this repository), the exact command and the judge that scored it: see
-[How each number was produced](#how-each-number-was-produced).
+[How each number was produced](#how-each-number-was-produced). The latest release measured is **0.12.0, on the
+Anthropic API** (2026-10-17); earlier rows ran through Claude Code and are kept for comparison.
 
 ## Leaderboard: real bugs
 
@@ -18,11 +19,13 @@ Code Reviewer's measurements placed by F1:
 | 2 | Cubic v2 | 61.5% | 65.8% | 63.6% |
 | 3 | Augment | 59.5% | 65.2% | 62.2% |
 |  | **code-reviewer 0.8.0 + `--sweep`** †, main report + "worth a look" | 57.4% | 63.9% | **60.5%** |
+|  | **code-reviewer 0.12.0** † API, main report + "worth a look" (defaults) | 61.4% | 57.0% | **59.1%** |
 |  | **code-reviewer 0.7.0** †, main report + "worth a look" | 64.0% | 54.1% | **58.7%** |
 | 4 | Qodo v2 | 55.4% | 62.0% | 58.5% |
 |  | **code-reviewer 0.8.0** †, everything listed (defaults) | 56.0% | 56.3% | **56.2%** |
 | 5 | Macroscope | 61.1% | 48.7% | 54.2% |
 | 6 | GitLab Duo Code Review | 53.5% | 52.5% | 53.0% |
+|  | **code-reviewer 0.12.0 `--deepen`** † API, main report + "worth a look" | 41.3% | 72.2% | **52.5%** |
 | 7 | Devin | 69.1% | 41.1% | 51.6% |
 | 8 | Cursor Bugbot | 56.9% | 46.8% | 51.4% |
 | 9 | Greptile v4 | 50.9% | 51.3% | 51.1% |
@@ -30,6 +33,7 @@ Code Reviewer's measurements placed by F1:
 |  | the same model, Claude Sonnet, given the diff in one call † | 39.0% | 71.5% | 50.5% |
 | 10 | Gemini | 45.3% | 55.1% | 49.7% |
 | 11 | GitHub Copilot | 38.5% | 66.5% | 48.7% |
+|  | **code-reviewer 0.12.0** † API, main report (what it posts on a PR) | 78.0% | 34.8% | **48.1%** |
 | 12 | Claude Code (CLI) | 46.3% | 48.1% | 47.2% |
 | 13 | Sourcery | 41.0% | 55.1% | 47.0% |
 | 14 | Kodus | 59.2% | 38.6% | 46.7% |
@@ -41,7 +45,10 @@ Code Reviewer's measurements placed by F1:
 | 20 | KG | 54.3% | 15.8% | 24.5% |
 | 21 | Graphite | 100.0% | 7.6% | 14.1% |
 
-† Measured by us and scored by the same judge model, Claude Opus 4.5, through `claude -p`. That judging is
+† Measured by us and scored by the same judge model, Claude Opus 4.5 (through `claude -p` until 2026-10-14, through
+the Anthropic API since; the two agree, see [Judge calibration](#judge-calibration)). Rows marked **API** reviewed
+through the Anthropic API (`--provider anthropic`); the others through Claude Code, which on the same build finds a
+little more for a little less precision. That judging is
 stricter than the leaderboard's own: the four tools scored both ways lost 1.6 to 5.4 F1 points (Qodo Extended
 65.8 → 60.5, Augment 62.2 → 60.6, Qodo v2 58.5 → 54.1, Claude Code CLI 47.2 → 41.8). These rows are not
 adjusted, so their real place is, if anything, higher. Under one judge for every row, code-reviewer 0.8.0 with `--sweep` scores 60.5,
@@ -65,6 +72,11 @@ verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/marti
 | Reviewer | Findings / PR | Precision | Recall | F1 | Cost / PR | Verdicts |
 |---|---|---|---|---|---|---|
 | Augment (#3 on the leaderboard), re-judged | 3.6 | 58.1% | 63.3% | **60.6%** | — | [json](evals/martian/judgings/2026-10-01/augment.json) |
+| **code-reviewer 0.12.0**, API, main report + "worth a look" (defaults) | 2.9 | 61.4% | 57.0% | 59.1% | $0.36 ‡ | [run 1](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-run1-all.json), [run 2](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-run2-all.json) |
+| **code-reviewer 0.12.0 `--deepen`**, API, main report + "worth a look" | 5.8 | 41.3% | **72.2%** | 52.5% | $0.48 ‡ | [run](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-deepen-all.json) |
+| **code-reviewer 0.12.0 `--deepen`**, API, main report | 2.3 | 59.6% | 43.0% | 50.0% | $0.48 ‡ | [run](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-deepen-main.json) |
+| **code-reviewer 0.12.0**, API, main report (what it posts) | 1.4 | **78.0%** | 34.8% | 48.1% | $0.36 ‡ | [run 1](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-run1-main.json), [run 2](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-run2-main.json) |
+| **code-reviewer 0.12.0 `--essential`**, API | 0.3 | 86.7% | 8.2% | 15.0% | $0.17 ‡ | [run](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-essential-all.json) |
 | Qodo Extended (#1), re-judged | 3.0 | 61.4% | 59.5% | 60.5% | — | [json](evals/martian/judgings/2026-10-01/qodo-extended.json) |
 | **code-reviewer 0.8.0 + `--sweep`** (opt-in), main report + "worth a look" | 3.4 | 57.4% | 63.9% | 60.5% | $0.61 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-sweep-run1-all.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-sweep-run2-all.json) |
 | **code-reviewer 0.7.0**, main report + "worth a look" | 2.6 | 64.0% | 54.1% | 58.7% | $0.40 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run1-all.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run2-all.json) |
@@ -73,7 +85,17 @@ verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/marti
 | **code-reviewer 0.7.0**, main report | 1.6 | **73.3%** | 37.3% | 49.5% | $0.40 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run1-main.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run2-main.json) |
 | Claude Code CLI (#12), re-judged | 3.5 | 41.8% | 41.8% | 41.8% | — | [json](evals/martian/judgings/2026-10-01/claude-code-cli.json) |
 
-- **Within two F1 points of the leaderboard's best.** Code Reviewer's full report, main findings and
+- **0.12.0 on the Anthropic API: within 1.5 F1 points of the two best tools.** Its full report scores 59.1
+  (58.2 and 60.0 in its two runs) against 60.5 for Qodo Extended and 60.6 for Augment, less than the 3.7 points two
+  runs of the same configuration can differ by. Its main report, what it posts on a pull request, is the most
+  precise row in the comparison: 78.0% of it matches a known bug (34.8% of the bugs).
+- **`--deepen` finds the most bugs of any reviewer measured**: 72.2% of them, 10 of 12 critical and 48 of 54
+  high, for 41% precision. The posted part alone scores F1 50.0 against 48.1 for the defaults: recall +8 points
+  at precision −18. For changes where a missed defect is expensive, that is the trade.
+- **`--essential` is a filter, not a smaller review**: 86.7% of its few findings (0.3 per pull request) are
+  known bugs, but it finds 8% of them, 1 of the 12 critical ones. It is a cheap CI gate on top of a full review,
+  not a substitute for one.
+- **Within two F1 points of the leaderboard's best (0.7.0 through Claude Code).** Code Reviewer's full report, main findings and
   "worth a look", scores 58.7 against 60.5 for Qodo Extended and 60.6 for Augment, the leaderboard's first
   and third tools. The paired difference to Qodo Extended, −1.8 points, is within the noise (95% interval
   −10.0..+5.9). Code Reviewer is the more precise of the three and finds fewer of the bugs.
@@ -86,9 +108,52 @@ verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/marti
   the most known bugs on this page, 72%, but only 39% of its six findings per pull request match one. The
   pipeline's full report scores 8 F1 points higher (95% interval +0.7..+15.4), at five times the price.
 
-Rows for Code Reviewer and the plain model are averages of two runs. The published tools were re-judged from
+‡ Cost per pull request at the Anthropic API's prices. The two default runs ran at the same time on the same
+pull requests and shared the API's prompt cache: whichever sent a prompt first paid for the cache write, the other
+read it at a tenth of the price ($0.18 and $0.36 per pull request). $0.36, the run that paid the writes, is what
+a review run on its own costs; `--deepen` and `--essential` overlapped with them too and are understated the same
+way. Through Claude Code the same pipeline cost $0.61 (0.8.0, its own accounting).
+
+Rows for Code Reviewer and the plain model are averages of two runs, the 0.12.0 `--deepen` and `--essential`
+rows are single runs. The published tools were re-judged from
 the review comments they posted, as the benchmark checked them in; why, and their published scores, are
 under [Judge calibration](#judge-calibration).
+
+## Where it finds bugs, and where it does not
+
+Recall on Martian's core profile split by the golden comments' category and severity, for the rows above (same
+judge; [evals/martian/breakdown.py](evals/martian/breakdown.py), data in
+[breakdown.json](evals/martian/judgings/2026-10-17/breakdown.json)). Counts in brackets: some categories hold a
+handful of bugs, so one bug moves them by 10 to 25 points.
+
+| Reviewer | Logic bugs (94) | Concurrency (14) | API contracts (13) | Security (11) | Docs that lie (9) | Data integrity (7) | Performance (6) | Test gaps (4) |
+|---|---|---|---|---|---|---|---|---|
+| **code-reviewer 0.12.0**, full report | 59% | 79% | 69% | 41% | 39% | 36% | 58% | 25% |
+| **code-reviewer 0.12.0 `--deepen`**, full report | 76% | 86% | 69% | 64% | 56% | 57% | 67% | 50% |
+| **code-reviewer 0.12.0**, posted | 37% | 46% | 42% | 18% | 28% | 21% | 25% | 25% |
+| Qodo Extended (#1) | 60% | 79% | 69% | 45% | 44% | 71% | 67% | 0% |
+| Augment (#3) | 64% | 71% | 85% | 36% | 56% | 43% | 67% | 75% |
+| Qodo v2 (#4) | 56% | 71% | 77% | 55% | 22% | 43% | 67% | 50% |
+| Sonnet, one call | 76% | 86% | 77% | 73% | 33% | 79% | 58% | 0% |
+| Claude Code CLI (#12) | 47% | 50% | 46% | 9% | 11% | 43% | 50% | 25% |
+
+| Reviewer | Critical (12) | High (54) | Medium (59) | Low (33) |
+|---|---|---|---|---|
+| **code-reviewer 0.12.0**, full report | 67% | 69% | 58% | 30% |
+| **code-reviewer 0.12.0 `--deepen`**, full report | 83% | 89% | 69% | 45% |
+| **code-reviewer 0.12.0**, posted | 46% | 41% | 38% | 15% |
+| Qodo Extended (#1) | 67% | 69% | 61% | 39% |
+| Augment (#3) | 67% | 70% | 68% | 42% |
+| Qodo v2 (#4) | 75% | 65% | 58% | 36% |
+| Sonnet, one call | 83% | 80% | 76% | 45% |
+| Claude Code CLI (#12) | 42% | 44% | 46% | 30% |
+
+- **Strong:** concurrency (79%, level with Qodo Extended, the best of the published tools) and the critical and
+  high bugs, where the full report finds as many as Qodo Extended and Augment (67% and 69–70%).
+- **Weak:** security (41%) and data integrity (36%), where the same model in one call finds 73% and 79% and Qodo
+  Extended 45% and 71%. They are where the next recall work goes.
+- **`--deepen`** closes most of those gaps (security 64%, logic bugs 76%, critical 83%, high 89%) at the price in
+  precision shown above.
 
 ## Three kinds of ground truth
 
@@ -198,6 +263,19 @@ not adjusted. Neither extended thinking nor the system message explains the diff
 candidates scored 42.1 with extended thinking and an earlier system message, and 41.8 without. What
 `claude -p` cannot reproduce is the call itself: the leaderboard asks the model through Martian's gateway,
 at temperature 0.
+
+**The API against `claude -p` (2026-10-17).** Since #100 the judge calls Opus 4.5 through the Anthropic Messages
+API. Its verdict cache is keyed by model, settings and texts, not by backend, so earlier verdicts are reused. To
+check that the two backends judge alike, Augment and Qodo Extended were re-judged through the API from an empty
+cache ([evals/martian/judgings/2026-10-17](evals/martian/judgings/2026-10-17/README.md)):
+
+| Published tool | `claude -p` P / R / F1 | API P / R / F1 | Matched golden comments in common |
+|---|---|---|---|
+| Augment (#3) | 58.1 / 63.3 / 60.6 | 57.1 / 63.3 / 60.1 | 104 of 105 |
+| Qodo Extended (#1) | 61.4 / 59.5 / 60.5 | 62.7 / 60.8 / 61.7 | 96 of 97 |
+
+The difference, −0.5 and +1.2 F1, is inside the judge's own noise, so rows judged through either backend are
+compared directly, and the 0.12.0 rows are set against the 2026-10-01 verdicts of the published tools.
 
 ### A second judge: Claude Opus 5.5
 
@@ -316,6 +394,7 @@ identical).
 | `intent-6ed48e1` | [`6ed48e1`](https://github.com/Antonio112009/code-reviewer/commit/6ed48e1) | 0.8.0 | `review.intent` (the pull request's description and commit messages in the prompt), run with and without `--no-intent`; merged off by default in #78 |
 | `main-b8c86e1` | [`b8c86e1`](https://github.com/Antonio112009/code-reviewer/commit/b8c86e1) | 0.8.0 | main after #78 |
 | `walk-e0fa3b5` | `b8c86e1` + [`evals/experiments/checklist-walk.patch`](evals/experiments/checklist-walk.patch) | 0.8.0 | experiment, never merged: an item-by-item checklist pass at the end of the review task |
+| `v0.12.0` | [`f7a6586`](https://github.com/Antonio112009/code-reviewer/commit/f7a6586) = `v0.12.0` | 0.12.0 | **0.12.0**: sweep on at full depth, maintainability notes, second opinion; `--batch` and `--chunking auto` opt-in |
 
 The version string lags behind: a commit between releases prints the previous release's version. Name builds
 by commit; [`evals/pin-build.sh <commit>`](evals/pin-build.sh) builds one into its own directory and records it.
@@ -328,7 +407,9 @@ model `sonnet` (`claude-sonnet-5-5`) at medium reasoning; the critic is the same
 in builds before 0.6.0, unless `--critique-model sonnet`). In 0.7.0, full depth means: keep findings from
 confidence 0.3, list those below 0.6 and `info` findings as "worth a look", every severity, 6,000 tokens of
 skills per chunk, 25 tool steps, a second opinion on borderline findings. Since 0.8.0: maintainability
-notes on (at most 5); `--deepen` off. Since 0.9.0: the sweep on (`--sweep` in the runs that measured it).
+notes on (at most 5); `--deepen` off. Since 0.9.0: the sweep on (`--sweep` in the runs that measured it). Rows
+marked API (from 2026-10-14) pass `--provider anthropic`: the pipeline calls the Messages API directly, with
+`claude-sonnet-5-5` for the reviewer, the sweep and the critic at the same reasoning levels.
 
 ### Commands
 
@@ -357,7 +438,12 @@ CODE_REVIEWER_CLI=<build>/dist/cli.js evals/martian/run.sh m-1 --concurrency 3 \
   --judge-model claude-opus-4-5-20251101 --no-thinking                               # default arguments: --full
 evals/martian/judge.py m-1 --tier all --judge-model claude-opus-4-5-20251101 --no-thinking   # + "worth a look"
 evals/martian/judge.py --baseline <tool> --judge-model claude-opus-4-5-20251101 --no-thinking
+evals/martian/breakdown.py "<label>=<run>:claude-opus-4-5-20251101-nothink:all,…" …   # recall by category, severity, repo
 ```
+
+The 0.12.0 rows: `CODE_REVIEWER_CLI=~/.cache/code-reviewer-builds/v0.12.0/dist/cli.js evals/martian/run.sh r12-1
+--stage review --concurrency 2 -- --full --provider anthropic` (likewise `r12-2`; `r12-deep` with
+`--full --deepen`, `r12-ess` with `--essential`), then `judge.py` at both tiers, with `ANTHROPIC_API_KEY` set.
 
 reviews each pull request in a detached worktree at its head with the same command as above
 (`--base <base.sha> --head <head.sha>`, so again `merge-base..head`), never seeing later history. `--tier main`
@@ -383,7 +469,7 @@ thresholds. Each finding's title and description is a candidate for the Martian 
 | Benchmark | Question the judge answers | Model | Matching |
 |---|---|---|---|
 | AACR-Bench | the harness's prompt: do the two comments "express the same concern or suggestion"? | `claude -p --model sonnet` = `claude-sonnet-5-5` | same file, lines overlapping or within 1; each generated comment matches at most one reference |
-| Martian | the benchmark's own prompt and system message (`step3_judge_comments.py`): does the candidate identify "the SAME underlying issue"? | `claude-opus-4-5-20251101` (the leaderboard's judge model) through `claude -p`, without extended thinking; Sonnet for cheap iteration | text only; for each golden comment the most confident matching candidate; unmatched candidates are false positives |
+| Martian | the benchmark's own prompt and system message (`step3_judge_comments.py`): does the candidate identify "the SAME underlying issue"? | `claude-opus-4-5-20251101` (the leaderboard's judge model) without extended thinking, through `claude -p` until 2026-10-14 and the Anthropic API since (they agree, see the calibration); Sonnet for cheap iteration | text only; for each golden comment the most confident matching candidate; unmatched candidates are false positives |
 
 Judge noise on AACR is 0.3–0.5 F1 points (five judgings of the same findings); on Martian, judgings of the same
 findings with and without extended thinking differ by 0.3–1.0 points. The reviewer's run-to-run variation,
@@ -444,6 +530,14 @@ Martian, 50 pull requests, all judged by `claude-opus-4-5-20251101` without exte
 
 | Date | Runs | Build | Command | Findings / PR | P | R | F1 (core) | Cost / PR |
 |---|---|---|---|---|---|---|---|---|
+| 10-17 | r12-1, r12-2 | `v0.12.0` | `--full --provider anthropic` (the defaults), judged `--tier all` through the API | 2.9 | 61.4% | 57.0% | 59.1% (58.2, 60.0) | $0.36 ‡ |
+| 10-17 | r12-1, r12-2 | `v0.12.0` | same runs, judged `--tier main` | 1.4 | 78.0% | 34.8% | 48.1% (45.8, 50.4) | $0.36 ‡ |
+| 10-17 | r12-deep | `v0.12.0` | `--full --deepen --provider anthropic`, judged `--tier all` | 5.8 | 41.3% | 72.2% | 52.5% | $0.48 ‡ |
+| 10-17 | r12-deep | `v0.12.0` | same run, judged `--tier main` | 2.3 | 59.6% | 43.0% | 50.0% | $0.48 ‡ |
+| 10-17 | r12-ess | `v0.12.0` | `--essential --provider anthropic` (both tiers are the same: essential lists no "worth a look") | 0.3 | 86.7% | 8.2% | 15.0% | $0.17 ‡ |
+| 10-17 | baseline-augment, baseline-qodo-extended-v2 | published comments | `judge.py --baseline … --backend api` from an empty cache (calibration) | 3.6, 3.0 | 57.1%, 62.7% | 63.3%, 60.8% | 60.1%, 61.7% | — |
+| 10-16 | ma-smart | `0704330` (0.11.1 + `--chunking auto`) | `--full --provider anthropic --chunking smart`, judged `--tier all` | 2.8 | 64.3% | 57.0% | 60.4% | $0.36 |
+| 10-16 | ma-smart | same | same run, judged `--tier main` | 1.3 | 76.5% | 32.9% | 46.0% | $0.36 |
 | 10-14 | ef-high-1 | `81a9bd2` | `--full --reasoning high` (the reviewer and the sweep at high effort), judged `--tier all` | 6.3 | 39.4% | 72.8% | 51.1% | $1.37 † |
 | 10-14 | ef-high-1 | `81a9bd2` | same run, judged `--tier main` | 2.8 | 52.1% | 43.9% | 47.6% | $1.37 † |
 | 10-14 | ef-med-1 | `81a9bd2` | `evals/martian/run.sh` (`--full`, the defaults of 0.10.0: sweep and notes on), judged `--tier all` | 3.9 | 53.2% | 61.8% | 57.2% | $1.30 † |
@@ -505,8 +599,11 @@ and resolves differences of about 3 F1 points on AACR-Bench and 5 on Martian; si
   understated for every tool) and unversioned (results record its hash). Severity is not scored. The published
   tools reviewed GitHub pull requests with their titles and descriptions and their comments went through an LLM
   extraction step; Code Reviewer's findings are judged as they are, and it sees only the diff and the checkout.
-  The judge runs through `claude -p` rather than Martian's gateway and is stricter than the published scores
-  (see the calibration above); Code Reviewer's numbers are not adjusted for it.
+  The judge runs through `claude -p` or the Anthropic API rather than Martian's gateway and is stricter than the
+  published scores (see the calibration above); Code Reviewer's numbers are not adjusted for it.
+- **Cost of runs measured together.** Runs that review the same pull requests at the same time share the API's
+  prompt cache, so one pays for cache writes and the others read cheaply; such rows give the cost of the run
+  that paid the writes (‡).
 - **AACR-Bench.** Its references are mostly LLM-written and 40% about maintainability, so its score rewards
   volume and scope more than finding bugs, and ctx30 flatters every configuration compared with the held-out
   pull requests.
@@ -514,7 +611,37 @@ and resolves differences of about 3 F1 points on AACR-Bench and 5 on Martian; si
   is the same model at the same effort, so the difference is what the pipeline adds, not what the model knows.
 - **Audits** are done by models, with high agreement between two of them; they are not human labels.
 
+## Citing the benchmarks
+
+Both benchmarks ask to be cited when used to evaluate a product.
+
+```bibtex
+@misc{code_review_benchmark,
+  title   = {Code Review Bench},
+  author  = {Aleksandr Zverianskii and Ashley Zhang and Jacob Clyne and Antía Garcia and Fazl Barez and Shriyash Upadhyay},
+  url     = {https://github.com/withmartian/code-review-benchmark},
+  year    = {2026},
+  license = {MIT}
+}
+
+@misc{zhang2026aacrbenchevaluatingautomaticcode,
+  title         = {AACR-Bench: Evaluating Automatic Code Review with Holistic Repository-Level Context},
+  author        = {Lei Zhang and Yongda Yu and Minghui Yu and Xinxin Guo and Zhengqi Zhuang and Guoping Rong and Dong Shao and Haifeng Shen and Hongyu Kuang and Zhengfeng Li and Boge Wang and Guoan Zhang and Bangyu Xiang and Xiaobin Xu},
+  year          = {2026},
+  eprint        = {2601.19494},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.SE},
+  url           = {https://arxiv.org/abs/2601.19494}
+}
+```
+
 ## History
+
+- **2026-10-17** — 0.12.0 measured on Martian through the Anthropic API: the full report scores F1 59.1, within
+  1.5 points of Qodo Extended and Augment; the posted main report is the most precise row (78.0%); `--deepen`
+  finds the most bugs of any reviewer measured (72.2%, 10 of 12 critical) at 41% precision; `--essential` finds
+  8% at 87% precision. Recall by category added (`breakdown.py`): strong on concurrency, weak on security and data
+  integrity. The judge through the API was checked against `claude -p` on two published tools (−0.5, +1.2 F1).
 
 - **2026-10-15** — the reviewer at high effort on the API path: F1 12.2 against 14.4 at medium (−2.2,
   P 0.05), the same pattern as on Martian; the gap to Claude Code is not the thinking effort.

@@ -1,0 +1,1177 @@
+{
+ "categories": [
+  [
+   "bug",
+   "Logic bugs"
+  ],
+  [
+   "concurrency",
+   "Concurrency"
+  ],
+  [
+   "api",
+   "API contracts"
+  ],
+  [
+   "security",
+   "Security"
+  ],
+  [
+   "doc_defect",
+   "Docs that lie"
+  ],
+  [
+   "data",
+   "Data integrity"
+  ],
+  [
+   "perf",
+   "Performance"
+  ],
+  [
+   "test_gap",
+   "Test gaps"
+  ]
+ ],
+ "severities": [
+  "Critical",
+  "High",
+  "Medium",
+  "Low"
+ ],
+ "reviewers": [
+  {
+   "label": "CR 0.12 full",
+   "runs": 2,
+   "precision": 61.4,
+   "recall": 57.0,
+   "f1": 59.1,
+   "f1_runs": [
+    58.2,
+    60.0
+   ],
+   "findings_per_pr": 2.9,
+   "cost_per_pr": 0.27,
+   "category": {
+    "bug": {
+     "found": 55.0,
+     "of": 94,
+     "recall": 0.5851063829787234
+    },
+    "concurrency": {
+     "found": 11.0,
+     "of": 14,
+     "recall": 0.7857142857142857
+    },
+    "api": {
+     "found": 9.0,
+     "of": 13,
+     "recall": 0.6923076923076923
+    },
+    "security": {
+     "found": 4.5,
+     "of": 11,
+     "recall": 0.4090909090909091
+    },
+    "doc_defect": {
+     "found": 3.5,
+     "of": 9,
+     "recall": 0.3888888888888889
+    },
+    "data": {
+     "found": 2.5,
+     "of": 7,
+     "recall": 0.35714285714285715
+    },
+    "perf": {
+     "found": 3.5,
+     "of": 6,
+     "recall": 0.5833333333333334
+    },
+    "test_gap": {
+     "found": 1.0,
+     "of": 4,
+     "recall": 0.25
+    }
+   },
+   "severity": {
+    "Critical": {
+     "found": 8.0,
+     "of": 12,
+     "recall": 0.6666666666666666
+    },
+    "High": {
+     "found": 37.5,
+     "of": 54,
+     "recall": 0.6944444444444444
+    },
+    "Medium": {
+     "found": 34.5,
+     "of": 59,
+     "recall": 0.5847457627118644
+    },
+    "Low": {
+     "found": 10.0,
+     "of": 33,
+     "recall": 0.30303030303030304
+    }
+   },
+   "repository": {
+    "cal.com": {
+     "found": 26.5,
+     "of": 37,
+     "recall": 0.7162162162162162
+    },
+    "discourse-graphite": {
+     "found": 17.0,
+     "of": 38,
+     "recall": 0.4473684210526316
+    },
+    "grafana": {
+     "found": 15.5,
+     "of": 25,
+     "recall": 0.62
+    },
+    "keycloak": {
+     "found": 11.5,
+     "of": 24,
+     "recall": 0.4791666666666667
+    },
+    "keycloak-greptile": {
+     "found": 1.0,
+     "of": 1,
+     "recall": 1.0
+    },
+    "sentry": {
+     "found": 9.0,
+     "of": 16,
+     "recall": 0.5625
+    },
+    "sentry-greptile": {
+     "found": 9.5,
+     "of": 17,
+     "recall": 0.5588235294117647
+    }
+   }
+  },
+  {
+   "label": "CR 0.12 posted",
+   "runs": 2,
+   "precision": 78.0,
+   "recall": 34.8,
+   "f1": 48.1,
+   "f1_runs": [
+    45.8,
+    50.4
+   ],
+   "findings_per_pr": 1.4,
+   "cost_per_pr": 0.27,
+   "category": {
+    "bug": {
+     "found": 34.5,
+     "of": 94,
+     "recall": 0.3670212765957447
+    },
+    "concurrency": {
+     "found": 6.5,
+     "of": 14,
+     "recall": 0.4642857142857143
+    },
+    "api": {
+     "found": 5.5,
+     "of": 13,
+     "recall": 0.4230769230769231
+    },
+    "security": {
+     "found": 2.0,
+     "of": 11,
+     "recall": 0.18181818181818182
+    },
+    "doc_defect": {
+     "found": 2.5,
+     "of": 9,
+     "recall": 0.2777777777777778
+    },
+    "data": {
+     "found": 1.5,
+     "of": 7,
+     "recall": 0.21428571428571427
+    },
+    "perf": {
+     "found": 1.5,
+     "of": 6,
+     "recall": 0.25
+    },
+    "test_gap": {
+     "found": 1.0,
+     "of": 4,
+     "recall": 0.25
+    }
+   },
+   "severity": {
+    "Critical": {
+     "found": 5.5,
+     "of": 12,
+     "recall": 0.4583333333333333
+    },
+    "High": {
+     "found": 22.0,
+     "of": 54,
+     "recall": 0.4074074074074074
+    },
+    "Medium": {
+     "found": 22.5,
+     "of": 59,
+     "recall": 0.3813559322033898
+    },
+    "Low": {
+     "found": 5.0,
+     "of": 33,
+     "recall": 0.15151515151515152
+    }
+   },
+   "repository": {
+    "cal.com": {
+     "found": 16.0,
+     "of": 37,
+     "recall": 0.43243243243243246
+    },
+    "discourse-graphite": {
+     "found": 10.0,
+     "of": 38,
+     "recall": 0.2631578947368421
+    },
+    "grafana": {
+     "found": 8.5,
+     "of": 25,
+     "recall": 0.34
+    },
+    "keycloak": {
+     "found": 7.5,
+     "of": 24,
+     "recall": 0.3125
+    },
+    "keycloak-greptile": {
+     "found": 1.0,
+     "of": 1,
+     "recall": 1.0
+    },
+    "sentry": {
+     "found": 6.5,
+     "of": 16,
+     "recall": 0.40625
+    },
+    "sentry-greptile": {
+     "found": 5.5,
+     "of": 17,
+     "recall": 0.3235294117647059
+    }
+   }
+  },
+  {
+   "label": "CR 0.12 deepen full",
+   "runs": 1,
+   "precision": 41.3,
+   "recall": 72.2,
+   "f1": 52.5,
+   "f1_runs": [
+    52.5
+   ],
+   "findings_per_pr": 5.8,
+   "cost_per_pr": 0.48,
+   "category": {
+    "bug": {
+     "found": 71.0,
+     "of": 94,
+     "recall": 0.7553191489361702
+    },
+    "concurrency": {
+     "found": 12.0,
+     "of": 14,
+     "recall": 0.8571428571428571
+    },
+    "api": {
+     "found": 9.0,
+     "of": 13,
+     "recall": 0.6923076923076923
+    },
+    "security": {
+     "found": 7.0,
+     "of": 11,
+     "recall": 0.6363636363636364
+    },
+    "doc_defect": {
+     "found": 5.0,
+     "of": 9,
+     "recall": 0.5555555555555556
+    },
+    "data": {
+     "found": 4.0,
+     "of": 7,
+     "recall": 0.5714285714285714
+    },
+    "perf": {
+     "found": 4.0,
+     "of": 6,
+     "recall": 0.6666666666666666
+    },
+    "test_gap": {
+     "found": 2.0,
+     "of": 4,
+     "recall": 0.5
+    }
+   },
+   "severity": {
+    "Critical": {
+     "found": 10.0,
+     "of": 12,
+     "recall": 0.8333333333333334
+    },
+    "High": {
+     "found": 48.0,
+     "of": 54,
+     "recall": 0.8888888888888888
+    },
+    "Medium": {
+     "found": 41.0,
+     "of": 59,
+     "recall": 0.6949152542372882
+    },
+    "Low": {
+     "found": 15.0,
+     "of": 33,
+     "recall": 0.45454545454545453
+    }
+   },
+   "repository": {
+    "cal.com": {
+     "found": 32.0,
+     "of": 37,
+     "recall": 0.8648648648648649
+    },
+    "discourse-graphite": {
+     "found": 26.0,
+     "of": 38,
+     "recall": 0.6842105263157895
+    },
+    "grafana": {
+     "found": 19.0,
+     "of": 25,
+     "recall": 0.76
+    },
+    "keycloak": {
+     "found": 14.0,
+     "of": 24,
+     "recall": 0.5833333333333334
+    },
+    "keycloak-greptile": {
+     "found": 1.0,
+     "of": 1,
+     "recall": 1.0
+    },
+    "sentry": {
+     "found": 10.0,
+     "of": 16,
+     "recall": 0.625
+    },
+    "sentry-greptile": {
+     "found": 12.0,
+     "of": 17,
+     "recall": 0.7058823529411765
+    }
+   }
+  },
+  {
+   "label": "CR 0.12 deepen posted",
+   "runs": 1,
+   "precision": 59.6,
+   "recall": 43.0,
+   "f1": 50.0,
+   "f1_runs": [
+    50.0
+   ],
+   "findings_per_pr": 2.3,
+   "cost_per_pr": 0.48,
+   "category": {
+    "bug": {
+     "found": 47.0,
+     "of": 94,
+     "recall": 0.5
+    },
+    "concurrency": {
+     "found": 5.0,
+     "of": 14,
+     "recall": 0.35714285714285715
+    },
+    "api": {
+     "found": 6.0,
+     "of": 13,
+     "recall": 0.46153846153846156
+    },
+    "security": {
+     "found": 2.0,
+     "of": 11,
+     "recall": 0.18181818181818182
+    },
+    "doc_defect": {
+     "found": 4.0,
+     "of": 9,
+     "recall": 0.4444444444444444
+    },
+    "data": {
+     "found": 1.0,
+     "of": 7,
+     "recall": 0.14285714285714285
+    },
+    "perf": {
+     "found": 1.0,
+     "of": 6,
+     "recall": 0.16666666666666666
+    },
+    "test_gap": {
+     "found": 2.0,
+     "of": 4,
+     "recall": 0.5
+    }
+   },
+   "severity": {
+    "Critical": {
+     "found": 6.0,
+     "of": 12,
+     "recall": 0.5
+    },
+    "High": {
+     "found": 29.0,
+     "of": 54,
+     "recall": 0.5370370370370371
+    },
+    "Medium": {
+     "found": 24.0,
+     "of": 59,
+     "recall": 0.4067796610169492
+    },
+    "Low": {
+     "found": 9.0,
+     "of": 33,
+     "recall": 0.2727272727272727
+    }
+   },
+   "repository": {
+    "cal.com": {
+     "found": 19.0,
+     "of": 37,
+     "recall": 0.5135135135135135
+    },
+    "discourse-graphite": {
+     "found": 15.0,
+     "of": 38,
+     "recall": 0.39473684210526316
+    },
+    "grafana": {
+     "found": 10.0,
+     "of": 25,
+     "recall": 0.4
+    },
+    "keycloak": {
+     "found": 8.0,
+     "of": 24,
+     "recall": 0.3333333333333333
+    },
+    "keycloak-greptile": {
+     "found": 1.0,
+     "of": 1,
+     "recall": 1.0
+    },
+    "sentry": {
+     "found": 6.0,
+     "of": 16,
+     "recall": 0.375
+    },
+    "sentry-greptile": {
+     "found": 9.0,
+     "of": 17,
+     "recall": 0.5294117647058824
+    }
+   }
+  },
+  {
+   "label": "CR 0.12 essential",
+   "runs": 1,
+   "precision": 86.7,
+   "recall": 8.2,
+   "f1": 15.0,
+   "f1_runs": [
+    15.0
+   ],
+   "findings_per_pr": 0.3,
+   "cost_per_pr": 0.17,
+   "category": {
+    "bug": {
+     "found": 8.0,
+     "of": 94,
+     "recall": 0.0851063829787234
+    },
+    "concurrency": {
+     "found": 0.0,
+     "of": 14,
+     "recall": 0.0
+    },
+    "api": {
+     "found": 3.0,
+     "of": 13,
+     "recall": 0.23076923076923078
+    },
+    "security": {
+     "found": 0.0,
+     "of": 11,
+     "recall": 0.0
+    },
+    "doc_defect": {
+     "found": 0.0,
+     "of": 9,
+     "recall": 0.0
+    },
+    "data": {
+     "found": 0.0,
+     "of": 7,
+     "recall": 0.0
+    },
+    "perf": {
+     "found": 2.0,
+     "of": 6,
+     "recall": 0.3333333333333333
+    },
+    "test_gap": {
+     "found": 0.0,
+     "of": 4,
+     "recall": 0.0
+    }
+   },
+   "severity": {
+    "Critical": {
+     "found": 1.0,
+     "of": 12,
+     "recall": 0.08333333333333333
+    },
+    "High": {
+     "found": 7.0,
+     "of": 54,
+     "recall": 0.12962962962962962
+    },
+    "Medium": {
+     "found": 3.0,
+     "of": 59,
+     "recall": 0.05084745762711865
+    },
+    "Low": {
+     "found": 2.0,
+     "of": 33,
+     "recall": 0.06060606060606061
+    }
+   },
+   "repository": {
+    "cal.com": {
+     "found": 1.0,
+     "of": 37,
+     "recall": 0.02702702702702703
+    },
+    "discourse-graphite": {
+     "found": 2.0,
+     "of": 38,
+     "recall": 0.05263157894736842
+    },
+    "grafana": {
+     "found": 3.0,
+     "of": 25,
+     "recall": 0.12
+    },
+    "keycloak": {
+     "found": 2.0,
+     "of": 24,
+     "recall": 0.08333333333333333
+    },
+    "keycloak-greptile": {
+     "found": 1.0,
+     "of": 1,
+     "recall": 1.0
+    },
+    "sentry": {
+     "found": 1.0,
+     "of": 16,
+     "recall": 0.0625
+    },
+    "sentry-greptile": {
+     "found": 3.0,
+     "of": 17,
+     "recall": 0.17647058823529413
+    }
+   }
+  },
+  {
+   "label": "Qodo Extended",
+   "runs": 1,
+   "precision": 61.4,
+   "recall": 59.5,
+   "f1": 60.5,
+   "f1_runs": [
+    60.5
+   ],
+   "findings_per_pr": 3.0,
+   "cost_per_pr": null,
+   "category": {
+    "bug": {
+     "found": 56.0,
+     "of": 94,
+     "recall": 0.5957446808510638
+    },
+    "concurrency": {
+     "found": 11.0,
+     "of": 14,
+     "recall": 0.7857142857142857
+    },
+    "api": {
+     "found": 9.0,
+     "of": 13,
+     "recall": 0.6923076923076923
+    },
+    "security": {
+     "found": 5.0,
+     "of": 11,
+     "recall": 0.45454545454545453
+    },
+    "doc_defect": {
+     "found": 4.0,
+     "of": 9,
+     "recall": 0.4444444444444444
+    },
+    "data": {
+     "found": 5.0,
+     "of": 7,
+     "recall": 0.7142857142857143
+    },
+    "perf": {
+     "found": 4.0,
+     "of": 6,
+     "recall": 0.6666666666666666
+    },
+    "test_gap": {
+     "found": 0.0,
+     "of": 4,
+     "recall": 0.0
+    }
+   },
+   "severity": {
+    "Critical": {
+     "found": 8.0,
+     "of": 12,
+     "recall": 0.6666666666666666
+    },
+    "High": {
+     "found": 37.0,
+     "of": 54,
+     "recall": 0.6851851851851852
+    },
+    "Medium": {
+     "found": 36.0,
+     "of": 59,
+     "recall": 0.6101694915254238
+    },
+    "Low": {
+     "found": 13.0,
+     "of": 33,
+     "recall": 0.3939393939393939
+    }
+   },
+   "repository": {
+    "cal.com": {
+     "found": 22.0,
+     "of": 37,
+     "recall": 0.5945945945945946
+    },
+    "discourse-graphite": {
+     "found": 21.0,
+     "of": 38,
+     "recall": 0.5526315789473685
+    },
+    "grafana": {
+     "found": 16.0,
+     "of": 25,
+     "recall": 0.64
+    },
+    "keycloak": {
+     "found": 15.0,
+     "of": 24,
+     "recall": 0.625
+    },
+    "keycloak-greptile": {
+     "found": 1.0,
+     "of": 1,
+     "recall": 1.0
+    },
+    "sentry": {
+     "found": 8.0,
+     "of": 16,
+     "recall": 0.5
+    },
+    "sentry-greptile": {
+     "found": 11.0,
+     "of": 17,
+     "recall": 0.6470588235294118
+    }
+   }
+  },
+  {
+   "label": "Augment",
+   "runs": 1,
+   "precision": 58.1,
+   "recall": 63.3,
+   "f1": 60.6,
+   "f1_runs": [
+    60.6
+   ],
+   "findings_per_pr": 3.6,
+   "cost_per_pr": null,
+   "category": {
+    "bug": {
+     "found": 60.0,
+     "of": 94,
+     "recall": 0.6382978723404256
+    },
+    "concurrency": {
+     "found": 10.0,
+     "of": 14,
+     "recall": 0.7142857142857143
+    },
+    "api": {
+     "found": 11.0,
+     "of": 13,
+     "recall": 0.8461538461538461
+    },
+    "security": {
+     "found": 4.0,
+     "of": 11,
+     "recall": 0.36363636363636365
+    },
+    "doc_defect": {
+     "found": 5.0,
+     "of": 9,
+     "recall": 0.5555555555555556
+    },
+    "data": {
+     "found": 3.0,
+     "of": 7,
+     "recall": 0.42857142857142855
+    },
+    "perf": {
+     "found": 4.0,
+     "of": 6,
+     "recall": 0.6666666666666666
+    },
+    "test_gap": {
+     "found": 3.0,
+     "of": 4,
+     "recall": 0.75
+    }
+   },
+   "severity": {
+    "Critical": {
+     "found": 8.0,
+     "of": 12,
+     "recall": 0.6666666666666666
+    },
+    "High": {
+     "found": 38.0,
+     "of": 54,
+     "recall": 0.7037037037037037
+    },
+    "Medium": {
+     "found": 40.0,
+     "of": 59,
+     "recall": 0.6779661016949152
+    },
+    "Low": {
+     "found": 14.0,
+     "of": 33,
+     "recall": 0.42424242424242425
+    }
+   },
+   "repository": {
+    "cal.com": {
+     "found": 26.0,
+     "of": 37,
+     "recall": 0.7027027027027027
+    },
+    "discourse-graphite": {
+     "found": 23.0,
+     "of": 38,
+     "recall": 0.6052631578947368
+    },
+    "grafana": {
+     "found": 17.0,
+     "of": 25,
+     "recall": 0.68
+    },
+    "keycloak": {
+     "found": 12.0,
+     "of": 24,
+     "recall": 0.5
+    },
+    "keycloak-greptile": {
+     "found": 1.0,
+     "of": 1,
+     "recall": 1.0
+    },
+    "sentry": {
+     "found": 11.0,
+     "of": 16,
+     "recall": 0.6875
+    },
+    "sentry-greptile": {
+     "found": 10.0,
+     "of": 17,
+     "recall": 0.5882352941176471
+    }
+   }
+  },
+  {
+   "label": "Qodo v2",
+   "runs": 1,
+   "precision": 51.4,
+   "recall": 57.0,
+   "f1": 54.1,
+   "f1_runs": [
+    54.1
+   ],
+   "findings_per_pr": 3.5,
+   "cost_per_pr": null,
+   "category": {
+    "bug": {
+     "found": 53.0,
+     "of": 94,
+     "recall": 0.5638297872340425
+    },
+    "concurrency": {
+     "found": 10.0,
+     "of": 14,
+     "recall": 0.7142857142857143
+    },
+    "api": {
+     "found": 10.0,
+     "of": 13,
+     "recall": 0.7692307692307693
+    },
+    "security": {
+     "found": 6.0,
+     "of": 11,
+     "recall": 0.5454545454545454
+    },
+    "doc_defect": {
+     "found": 2.0,
+     "of": 9,
+     "recall": 0.2222222222222222
+    },
+    "data": {
+     "found": 3.0,
+     "of": 7,
+     "recall": 0.42857142857142855
+    },
+    "perf": {
+     "found": 4.0,
+     "of": 6,
+     "recall": 0.6666666666666666
+    },
+    "test_gap": {
+     "found": 2.0,
+     "of": 4,
+     "recall": 0.5
+    }
+   },
+   "severity": {
+    "Critical": {
+     "found": 9.0,
+     "of": 12,
+     "recall": 0.75
+    },
+    "High": {
+     "found": 35.0,
+     "of": 54,
+     "recall": 0.6481481481481481
+    },
+    "Medium": {
+     "found": 34.0,
+     "of": 59,
+     "recall": 0.576271186440678
+    },
+    "Low": {
+     "found": 12.0,
+     "of": 33,
+     "recall": 0.36363636363636365
+    }
+   },
+   "repository": {
+    "cal.com": {
+     "found": 24.0,
+     "of": 37,
+     "recall": 0.6486486486486487
+    },
+    "discourse-graphite": {
+     "found": 19.0,
+     "of": 38,
+     "recall": 0.5
+    },
+    "grafana": {
+     "found": 15.0,
+     "of": 25,
+     "recall": 0.6
+    },
+    "keycloak": {
+     "found": 12.0,
+     "of": 24,
+     "recall": 0.5
+    },
+    "keycloak-greptile": {
+     "found": 1.0,
+     "of": 1,
+     "recall": 1.0
+    },
+    "sentry": {
+     "found": 9.0,
+     "of": 16,
+     "recall": 0.5625
+    },
+    "sentry-greptile": {
+     "found": 10.0,
+     "of": 17,
+     "recall": 0.5882352941176471
+    }
+   }
+  },
+  {
+   "label": "One call",
+   "runs": 2,
+   "precision": 39.1,
+   "recall": 71.5,
+   "f1": 50.5,
+   "f1_runs": [
+    48.7,
+    52.4
+   ],
+   "findings_per_pr": 5.9,
+   "cost_per_pr": 0.08,
+   "category": {
+    "bug": {
+     "found": 71.0,
+     "of": 94,
+     "recall": 0.7553191489361702
+    },
+    "concurrency": {
+     "found": 12.0,
+     "of": 14,
+     "recall": 0.8571428571428571
+    },
+    "api": {
+     "found": 10.0,
+     "of": 13,
+     "recall": 0.7692307692307693
+    },
+    "security": {
+     "found": 8.0,
+     "of": 11,
+     "recall": 0.7272727272727273
+    },
+    "doc_defect": {
+     "found": 3.0,
+     "of": 9,
+     "recall": 0.3333333333333333
+    },
+    "data": {
+     "found": 5.5,
+     "of": 7,
+     "recall": 0.7857142857142857
+    },
+    "perf": {
+     "found": 3.5,
+     "of": 6,
+     "recall": 0.5833333333333334
+    },
+    "test_gap": {
+     "found": 0.0,
+     "of": 4,
+     "recall": 0.0
+    }
+   },
+   "severity": {
+    "Critical": {
+     "found": 10.0,
+     "of": 12,
+     "recall": 0.8333333333333334
+    },
+    "High": {
+     "found": 43.0,
+     "of": 54,
+     "recall": 0.7962962962962963
+    },
+    "Medium": {
+     "found": 45.0,
+     "of": 59,
+     "recall": 0.7627118644067796
+    },
+    "Low": {
+     "found": 15.0,
+     "of": 33,
+     "recall": 0.45454545454545453
+    }
+   },
+   "repository": {
+    "cal.com": {
+     "found": 29.5,
+     "of": 37,
+     "recall": 0.7972972972972973
+    },
+    "discourse-graphite": {
+     "found": 31.5,
+     "of": 38,
+     "recall": 0.8289473684210527
+    },
+    "grafana": {
+     "found": 17.5,
+     "of": 25,
+     "recall": 0.7
+    },
+    "keycloak": {
+     "found": 14.5,
+     "of": 24,
+     "recall": 0.6041666666666666
+    },
+    "keycloak-greptile": {
+     "found": 1.0,
+     "of": 1,
+     "recall": 1.0
+    },
+    "sentry": {
+     "found": 8.0,
+     "of": 16,
+     "recall": 0.5
+    },
+    "sentry-greptile": {
+     "found": 11.0,
+     "of": 17,
+     "recall": 0.6470588235294118
+    }
+   }
+  },
+  {
+   "label": "Claude Code CLI",
+   "runs": 1,
+   "precision": 41.8,
+   "recall": 41.8,
+   "f1": 41.8,
+   "f1_runs": [
+    41.8
+   ],
+   "findings_per_pr": 3.5,
+   "cost_per_pr": null,
+   "category": {
+    "bug": {
+     "found": 44.0,
+     "of": 94,
+     "recall": 0.46808510638297873
+    },
+    "concurrency": {
+     "found": 7.0,
+     "of": 14,
+     "recall": 0.5
+    },
+    "api": {
+     "found": 6.0,
+     "of": 13,
+     "recall": 0.46153846153846156
+    },
+    "security": {
+     "found": 1.0,
+     "of": 11,
+     "recall": 0.09090909090909091
+    },
+    "doc_defect": {
+     "found": 1.0,
+     "of": 9,
+     "recall": 0.1111111111111111
+    },
+    "data": {
+     "found": 3.0,
+     "of": 7,
+     "recall": 0.42857142857142855
+    },
+    "perf": {
+     "found": 3.0,
+     "of": 6,
+     "recall": 0.5
+    },
+    "test_gap": {
+     "found": 1.0,
+     "of": 4,
+     "recall": 0.25
+    }
+   },
+   "severity": {
+    "Critical": {
+     "found": 5.0,
+     "of": 12,
+     "recall": 0.4166666666666667
+    },
+    "High": {
+     "found": 24.0,
+     "of": 54,
+     "recall": 0.4444444444444444
+    },
+    "Medium": {
+     "found": 27.0,
+     "of": 59,
+     "recall": 0.4576271186440678
+    },
+    "Low": {
+     "found": 10.0,
+     "of": 33,
+     "recall": 0.30303030303030304
+    }
+   },
+   "repository": {
+    "cal.com": {
+     "found": 15.0,
+     "of": 37,
+     "recall": 0.40540540540540543
+    },
+    "discourse-graphite": {
+     "found": 17.0,
+     "of": 38,
+     "recall": 0.4473684210526316
+    },
+    "grafana": {
+     "found": 13.0,
+     "of": 25,
+     "recall": 0.52
+    },
+    "keycloak": {
+     "found": 5.0,
+     "of": 24,
+     "recall": 0.20833333333333334
+    },
+    "keycloak-greptile": {
+     "found": 1.0,
+     "of": 1,
+     "recall": 1.0
+    },
+    "sentry": {
+     "found": 9.0,
+     "of": 16,
+     "recall": 0.5625
+    },
+    "sentry-greptile": {
+     "found": 6.0,
+     "of": 17,
+     "recall": 0.35294117647058826
+    }
+   }
+  }
+ ]
+}

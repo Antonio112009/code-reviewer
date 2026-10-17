@@ -27,7 +27,12 @@ evals/martian/report.py m-1 m-2 baseline-claude-code
 # the leaderboard's judge model, for numbers to publish (about $0.012 a judge call)
 evals/martian/judge.py m-1 --tier all --judge-model claude-opus-4-5-20251101 --no-thinking
 evals/martian/report.py m-1:claude-opus-4-5-20251101-nothink:all
+evals/martian/breakdown.py "mine=m-1:claude-opus-4-5-20251101-nothink:all,m-2:…:all" "augment=baseline-augment:…:main"
 ```
+
+`breakdown.py` splits recall by the golden comments' category, severity and repository, averaging P/R/F1 over a
+reviewer's runs (`--json` writes the table). `MARTIAN_JUDGE_CACHE=<dir>` points `judge.py` at another verdict
+cache, for a calibration from scratch: the cache key holds the judge model and settings, not the backend.
 
 - `$MARTIAN_DIR` (default `~/.cache/code-reviewer-martian`) holds the benchmark's `offline/` directory at a
   pinned commit, the clones, the results and the judge cache.
