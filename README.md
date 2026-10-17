@@ -266,7 +266,7 @@ number of findings, so `essential` saves less than it leaves out.
 | | `essential` (`--essential`) | `full` (default) |
 |---|---|---|
 | Looks for | security, data loss, crashes/hangs, leaks & OOM, overload (unbounded concurrency, missing timeouts, retry storms, N+1), races, costly performance | every real defect, also edge cases, accessibility, best practices with a concrete consequence |
-| Severities | critical, major | all |
+| Severities | critical, major, minor (no info) | all |
 | Skills | essential ones, 3.5k tokens per chunk | all, 6k tokens per chunk |
 | Fix required | yes, for every finding | when possible |
 | Self-critique | also drops real but low-impact findings; keeps confidence ≥ 0.7 | drops only claims that are wrong about the code; low impact lowers the severity, and a true observation with no realistic way to fail becomes "worth a look"; keeps confidence ≥ 0.3 |

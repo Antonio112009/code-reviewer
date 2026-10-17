@@ -136,7 +136,7 @@ describe('depth prompts', () => {
     const essential = reviewInstructions({ mode: 'diff', depth: 'essential', skills: [] });
     expect(essential).toContain('Depth: ESSENTIAL');
     expect(essential).toMatch(/memory and resource leaks/);
-    expect(essential).toMatch(/critical or major for those/);
+    expect(essential).toMatch(/drops false positives and findings without a serious impact/);
     // main-path logic errors are serious too, and the verifier (not the reviewer) drops low-impact findings
     expect(essential).toMatch(/logic errors that break a feature on its normal path/);
     expect(essential).not.toMatch(/perfectly good outcome/);

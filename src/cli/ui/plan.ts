@@ -28,7 +28,7 @@ function cont(value: string): string {
   return `${' '.repeat(LABEL_WIDTH)} ${value}`;
 }
 
-/** `essential — serious production issues only (critical, major) · --full for everything` */
+/** `essential — serious production issues only (≥ minor) · --full for everything` */
 export function depthText(plan: Pick<ReviewPlan, 'depth' | 'minSeverity'>, theme: Theme): string {
   const { c } = theme;
   if (plan.depth === 'essential') {

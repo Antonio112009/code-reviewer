@@ -96,7 +96,7 @@ export type MockProviderConfig = z.infer<typeof MockProviderSchema>;
  * How deep a review goes:
  * - `essential` — only defects that can seriously hurt production (security, data loss, crashes, leaks/OOM,
  *   overload, costly performance); essential-tier skills, a smaller skill budget, fewer tool steps, less
- *   related context, critical/major findings only — fewer tokens;
+ *   related context, no info findings, and the critic also drops real but low-impact findings — fewer tokens;
  * - `full` — every real defect, including minor edge cases, accessibility and best practices with a
  *   concrete consequence; all skills. The default: on real pull requests it costs half as much again as
  *   `essential` and finds almost four times as many of the defects human reviewers noted (AACR-Bench ctx30).
@@ -615,7 +615,9 @@ export const DEPTH_PRESETS: Record<ReviewDepth, { review: Partial<ReviewSettings
   // Each preset names every depth-dependent setting, so switching depth never keeps the other's values.
   essential: {
     review: {
-      minSeverity: 'major',
+      // The critic's impact rule is the gate: the model often rates a serious defect minor (Martian: 7 of
+      // 24 serious findings), so a major floor would drop what the critic kept. Info stays out.
+      minSeverity: 'minor',
       skillTokenBudget: 3_500,
       maxSteps: 15,
       contextShare: 0.1,

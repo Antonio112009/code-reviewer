@@ -409,7 +409,7 @@ export function stagesLabel(run: Pick<RunRecord, 'options'>): string | undefined
   ].join(' · ');
 }
 
-/** `essential (critical/major only)` / `full` — how deep the run went (older runs: full). */
+/** `essential (critical/major/minor only)` / `full` — how deep the run went (older runs: full). */
 export function depthLabel(run: Pick<RunRecord, 'options'>): string {
   const depth = run.options.depth ?? 'full';
   const floor = run.options.minSeverity;

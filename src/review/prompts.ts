@@ -79,7 +79,7 @@ const ESSENTIAL_SCOPE =
 
 function depthRules(depth: ReviewDepth): string {
   return depth === 'essential'
-    ? `- Depth: ESSENTIAL. Only ${ESSENTIAL_SCOPE} are reported. The severity says which: critical or major for those; minor for a real defect with limited impact (edge cases, accessibility, best practices without such an impact), which is not reported. Give each defect the severity of its worst realistic failure; do not leave one out because you are unsure how serious it is.
+    ? `- Depth: ESSENTIAL. Report ${ESSENTIAL_SCOPE}. Skip everything else: minor edge cases, accessibility, style, maintainability, and best practices without such an impact. Give each defect the severity of its worst realistic failure, and do not leave one out because you are unsure how serious it is.
 - Every finding needs a concrete fix in "suggestion" (the corrected code or the exact change).
 - Be exhaustive: go through every changed hunk of every file under review and check it against the checklists below before you submit. Do not stop after the first findings: report each defect as its own finding. If you find nothing, submit an empty list.
 - Optimise for recall. An independent verifier re-checks every finding against the code and drops false positives and findings without a serious impact, so report each plausible serious defect you notice — also those you could only partly confirm, with a lower confidence (0.3–0.6) and what is left to check in the description.`

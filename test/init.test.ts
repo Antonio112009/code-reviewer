@@ -602,7 +602,7 @@ describe('init wizard', () => {
     expect(config.roles.review).toMatchObject({ model: 'opus', reasoning: 'medium' });
     expect(config.review).toMatchObject({ depth: 'essential', selfCritique: false, minConfidence: 0.8 });
     // the essential preset applies unless a value is set explicitly
-    expect(config.review).toMatchObject({ minSeverity: 'major', skillTokenBudget: 3_500 });
+    expect(config.review).toMatchObject({ minSeverity: 'minor', skillTokenBudget: 3_500 });
     expect(config.analyzers).toMatchObject({ builtin: true, external: 'off' });
     expect(readFileSync(path.join(r.root, '.gitignore'), 'utf8')).toContain('.code-reviewer/runs/');
   });
