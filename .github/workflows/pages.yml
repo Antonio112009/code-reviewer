@@ -34,7 +34,7 @@ jobs:
         with:
           node-version: 26
           cache: npm
-      - run: npm ci --ignore-scripts
+      - run: npm ci --omit=dev --ignore-scripts   # the generator needs only the runtime `yaml` dependency
       - run: node scripts/build-website-data.mjs   # website/data/skills.json from skills/**
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

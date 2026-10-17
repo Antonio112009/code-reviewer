@@ -440,7 +440,7 @@ function command() {
       if (!list.length) continue;
       flag = `--format ${list.join(',')} --out reports`;
     }
-    if (o.control === 'money') flag = `--max-cost ${Number(state.cap) || 0}`;
+    if (o.control === 'money') flag = `--max-cost ${Number(state.cap) > 0 ? Number(state.cap) : 5}`;
     parts.push(flag);
     why.push([flag, o.hint]);
     if (o.id === 'sweep') mult *= 0.7;

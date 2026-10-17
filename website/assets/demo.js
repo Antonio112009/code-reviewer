@@ -117,6 +117,7 @@ function main() {
   let running = false;
   let fast = false;
   let next = () => {};
+  let pending;
 
   const duration = (li, text) => {
     const d = li.querySelector('[data-duration]');
@@ -210,6 +211,7 @@ function main() {
       if (i >= SCRIPT.length) return;
       const [delay, html, action] = SCRIPT[i++];
       const go = () => {
+        pending = undefined;
         out.querySelector('.cursor')?.remove();
         out.insertAdjacentHTML('beforeend', `${html}${i < SCRIPT.length ? '\n' : ''}`);
         if (action === 'prompt') out.insertAdjacentHTML('beforeend', '<span class="cursor"></span>');
@@ -217,6 +219,7 @@ function main() {
         out.scrollTop = out.scrollHeight;
         next();
       };
+      pending = go;
       if (reduced || fast) go();
       else timer = setTimeout(go, Math.round(delay * 0.8));
     };
@@ -228,7 +231,7 @@ function main() {
     if (!running) return;
     fast = true;
     clearTimeout(timer);
-    next();
+    pending?.(); // the line whose timer was pending, then the rest at once
   });
   const io = new IntersectionObserver((entries) => {
     if (!entries.some((e) => e.isIntersecting) || running) return;

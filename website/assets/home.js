@@ -29,8 +29,7 @@ function replay() {
     if (auto) {
       void progress.offsetWidth; // restart the progress animation
       progress.classList.add('run');
-      clearTimeout(timer);
-      timer = setTimeout(() => select((current + 1) % tabs.length), STEP_MS);
+      arm(STEP_MS);
     }
   };
   const stop = () => {
@@ -51,14 +50,25 @@ function replay() {
     stop();
     select((current + step + tabs.length) % tabs.length, true);
   });
+  // hovering pauses the step; leaving resumes it with the time that was left
+  let stepStarted = 0;
+  let remaining = STEP_MS;
+  const arm = (ms) => {
+    clearTimeout(timer);
+    stepStarted = performance.now();
+    remaining = ms;
+    timer = setTimeout(() => select((current + 1) % tabs.length), ms);
+  };
   root.addEventListener('pointerenter', () => {
-    if (auto) clearTimeout(timer);
-    progress.style.animationPlayState = 'paused';
+    if (!auto) return;
+    clearTimeout(timer);
+    remaining = Math.max(0, remaining - (performance.now() - stepStarted));
     progress.querySelector('i').style.animationPlayState = 'paused';
   });
   root.addEventListener('pointerleave', () => {
+    if (!auto) return;
     progress.querySelector('i').style.animationPlayState = '';
-    if (auto) select(current);
+    arm(remaining);
   });
 
   // start once the card is on screen

@@ -181,12 +181,17 @@ function bindHover(host, describe) {
   }
 }
 
+/** Redraws once per animation frame while the host is being resized. */
 function observe(host, draw) {
   let w = host.clientWidth;
+  let frame = 0;
   new ResizeObserver(() => {
-    if (Math.abs(host.clientWidth - w) < 8) return;
-    w = host.clientWidth;
-    draw();
+    if (frame || Math.abs(host.clientWidth - w) < 8) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      w = host.clientWidth;
+      draw();
+    });
   }).observe(host);
 }
 
