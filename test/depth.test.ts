@@ -136,7 +136,10 @@ describe('depth prompts', () => {
     const essential = reviewInstructions({ mode: 'diff', depth: 'essential', skills: [] });
     expect(essential).toContain('Depth: ESSENTIAL');
     expect(essential).toMatch(/memory and resource leaks/);
-    expect(essential).toMatch(/only the severities critical and major/);
+    expect(essential).toMatch(/critical or major for those/);
+    // main-path logic errors are serious too, and the verifier (not the reviewer) drops low-impact findings
+    expect(essential).toMatch(/logic errors that break a feature on its normal path/);
+    expect(essential).not.toMatch(/perfectly good outcome/);
     const full = reviewInstructions({ mode: 'diff', depth: 'full', skills: [] });
     expect(full).toContain('Depth: FULL');
     expect(full).toMatch(/accessibility failures/);
@@ -149,6 +152,7 @@ describe('depth prompts', () => {
     expect(notesInstructions('diff')).toMatch(/"\+" in the excerpts marks the changed lines/);
     expect(notesInstructions('files')).not.toMatch(/did not touch/);
     expect(critiqueInstructions('diff', 'essential')).toMatch(/ESSENTIAL-depth review: also reject/);
+    expect(critiqueInstructions('diff', 'essential')).toMatch(/a feature broken on its normal path/);
     expect(critiqueInstructions('diff', 'full')).not.toMatch(/ESSENTIAL/);
   });
 
