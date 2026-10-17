@@ -94,7 +94,9 @@ verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/marti
   at precision −18. For changes where a missed defect is expensive, that is the trade.
 - **`--essential` is a filter, not a smaller review**: 86.7% of its few findings (0.3 per pull request) are
   known bugs, but it finds 8% of them, 1 of the 12 critical ones. It is a cheap CI gate on top of a full review,
-  not a substitute for one.
+  not a substitute for one. Unreleased: with main-path logic errors in its scope and the critic (not a major
+  floor) as its gate, it finds 19% at 94% precision, 3 of 12 critical
+  ([2026-10-18](evals/martian/judgings/2026-10-18/README.md)).
 - **Within two F1 points of the leaderboard's best (0.7.0 through Claude Code).** Code Reviewer's full report, main findings and
   "worth a look", scores 58.7 against 60.5 for Qodo Extended and 60.6 for Augment, the leaderboard's first
   and third tools. The paired difference to Qodo Extended, −1.8 points, is within the noise (95% interval
@@ -534,6 +536,8 @@ Martian, 50 pull requests, all judged by `claude-opus-4-5-20251101` without exte
 | 10-17 | r12-1, r12-2 | `v0.12.0` | same runs, judged `--tier main` | 1.4 | 78.0% | 34.8% | 48.1% (45.8, 50.4) | $0.36 ‡ |
 | 10-17 | r12-deep | `v0.12.0` | `--full --deepen --provider anthropic`, judged `--tier all` | 5.8 | 41.3% | 72.2% | 52.5% | $0.48 ‡ |
 | 10-17 | r12-deep | `v0.12.0` | same run, judged `--tier main` | 2.3 | 59.6% | 43.0% | 50.0% | $0.48 ‡ |
+| 10-18 | ess-v3 | `a5584fa` | `--essential --provider anthropic`: main-path logic errors in scope, recall-oriented reviewer, floor `minor` ([why](evals/martian/judgings/2026-10-18/README.md)) | 0.5 | 93.8% | 19.0% | 31.6% | $0.18 |
+| 10-18 | ess-v1, ess-v2 | `1d52c65`, `2e79d77` | the first two steps of that change | 0.4, 0.4 | 85.7%, 91.7% | 11.4%, 13.9% | 20.1%, 24.2% | $0.17 |
 | 10-17 | r12-ess | `v0.12.0` | `--essential --provider anthropic` (both tiers are the same: essential lists no "worth a look") | 0.3 | 86.7% | 8.2% | 15.0% | $0.17 ‡ |
 | 10-17 | baseline-augment, baseline-qodo-extended-v2 | published comments | `judge.py --baseline … --backend api` from an empty cache (calibration) | 3.6, 3.0 | 57.1%, 62.7% | 63.3%, 60.8% | 60.1%, 61.7% | — |
 | 10-16 | ma-smart | `0704330` (0.11.1 + `--chunking auto`) | `--full --provider anthropic --chunking smart`, judged `--tier all` | 2.8 | 64.3% | 57.0% | 60.4% | $0.36 |
@@ -636,6 +640,11 @@ Both benchmarks ask to be cited when used to evaluate a product.
 ```
 
 ## History
+
+- **2026-10-18** — why `--essential` found 8% of Martian's bugs: the model rates many serious bugs minor and
+  leaves them out, and the major floor dropped those the critic kept. A recall-oriented essential reviewer, main-path
+  logic errors in scope and the floor at minor: recall 8.2 → 19.0%, precision 86.7 → 93.8%, F1 15.0 → 31.6
+  (paired +16.6, 95% +5.9..+27.6), same cost.
 
 - **2026-10-17** — 0.12.0 measured on Martian through the Anthropic API: the full report scores F1 59.1, within
   1.5 points of Qodo Extended and Augment; the posted main report is the most precise row (78.0%); `--deepen`

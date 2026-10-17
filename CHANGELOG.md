@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Quality
+
+- **`--essential` finds more than twice as many real bugs.** On Martian's 50 PRs it found 8% of the known bugs
+  (1 of 12 critical): the model rates many serious bugs minor and left them out, and the `major` floor dropped
+  those the critic had kept as serious. Its scope now names logic errors that break a feature on its normal
+  path, the reviewer reports every plausible serious defect for the critic to check (as at full depth), and
+  essential's `minSeverity` is `minor` (info stays out; the critic still rejects real but low-impact findings).
+  Martian, Opus 4.5 judge: recall 8.2 → 19.0%, precision 86.7 → 93.8%, F1 15.0 → 31.6, 3 of 12 critical, at the
+  same cost ([2026-10-18](evals/martian/judgings/2026-10-18/README.md)).
+
 ## 0.12.0 — 2026-10-16
 
 ### Cost

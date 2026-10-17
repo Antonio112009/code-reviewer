@@ -94,7 +94,7 @@ export type MockProviderConfig = z.infer<typeof MockProviderSchema>;
 
 /**
  * How deep a review goes:
- * - `essential` — only defects that can seriously hurt production (security, data loss, crashes, leaks/OOM,
+ * - `essential` — only defects that can seriously hurt production (security, broken main-path logic, data loss, crashes, leaks/OOM,
  *   overload, costly performance); essential-tier skills, a smaller skill budget, fewer tool steps, less
  *   related context, no info findings, and the critic also drops real but low-impact findings — fewer tokens;
  * - `full` — every real defect, including minor edge cases, accessibility and best practices with a
