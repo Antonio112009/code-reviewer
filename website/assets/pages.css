@@ -3958,3 +3958,11 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* the install line in the closing band must shrink with the screen, not widen the page */
+.cta-inner > * {
+  min-width: 0;
+}
+.cta-actions {
+  grid-template-columns: minmax(0, 1fr);
+}
