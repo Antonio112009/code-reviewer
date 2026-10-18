@@ -1,0 +1,157 @@
+{
+ "categories": [
+  [
+   "bug",
+   "Logic bugs"
+  ],
+  [
+   "concurrency",
+   "Concurrency"
+  ],
+  [
+   "api",
+   "API contracts"
+  ],
+  [
+   "security",
+   "Security"
+  ],
+  [
+   "doc_defect",
+   "Docs that lie"
+  ],
+  [
+   "data",
+   "Data integrity"
+  ],
+  [
+   "perf",
+   "Performance"
+  ],
+  [
+   "test_gap",
+   "Test gaps"
+  ]
+ ],
+ "severities": [
+  "Critical",
+  "High",
+  "Medium",
+  "Low"
+ ],
+ "reviewers": [
+  {
+   "label": "ess",
+   "runs": 1,
+   "precision": 93.8,
+   "recall": 19.0,
+   "f1": 31.6,
+   "f1_runs": [
+    31.6
+   ],
+   "findings_per_pr": 0.5,
+   "cost_per_pr": null,
+   "category": {
+    "bug": {
+     "found": 21.0,
+     "of": 94,
+     "recall": 0.22340425531914893
+    },
+    "concurrency": {
+     "found": 1.0,
+     "of": 14,
+     "recall": 0.07142857142857142
+    },
+    "api": {
+     "found": 5.0,
+     "of": 13,
+     "recall": 0.38461538461538464
+    },
+    "security": {
+     "found": 0.0,
+     "of": 11,
+     "recall": 0.0
+    },
+    "doc_defect": {
+     "found": 1.0,
+     "of": 9,
+     "recall": 0.1111111111111111
+    },
+    "data": {
+     "found": 1.0,
+     "of": 7,
+     "recall": 0.14285714285714285
+    },
+    "perf": {
+     "found": 1.0,
+     "of": 6,
+     "recall": 0.16666666666666666
+    },
+    "test_gap": {
+     "found": 0.0,
+     "of": 4,
+     "recall": 0.0
+    }
+   },
+   "severity": {
+    "Critical": {
+     "found": 3.0,
+     "of": 12,
+     "recall": 0.25
+    },
+    "High": {
+     "found": 15.0,
+     "of": 54,
+     "recall": 0.2777777777777778
+    },
+    "Medium": {
+     "found": 11.0,
+     "of": 59,
+     "recall": 0.1864406779661017
+    },
+    "Low": {
+     "found": 1.0,
+     "of": 33,
+     "recall": 0.030303030303030304
+    }
+   },
+   "repository": {
+    "cal.com": {
+     "found": 8.0,
+     "of": 37,
+     "recall": 0.21621621621621623
+    },
+    "discourse-graphite": {
+     "found": 6.0,
+     "of": 38,
+     "recall": 0.15789473684210525
+    },
+    "grafana": {
+     "found": 7.0,
+     "of": 25,
+     "recall": 0.28
+    },
+    "keycloak": {
+     "found": 5.0,
+     "of": 24,
+     "recall": 0.20833333333333334
+    },
+    "keycloak-greptile": {
+     "found": 1.0,
+     "of": 1,
+     "recall": 1.0
+    },
+    "sentry": {
+     "found": 0.0,
+     "of": 16,
+     "recall": 0.0
+    },
+    "sentry-greptile": {
+     "found": 3.0,
+     "of": 17,
+     "recall": 0.17647058823529413
+    }
+   }
+  }
+ ]
+}
