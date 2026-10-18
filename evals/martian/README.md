@@ -34,6 +34,10 @@ evals/martian/breakdown.py "mine=m-1:claude-opus-4-5-20251101-nothink:all,m-2:â€
 reviewer's runs (`--json` writes the table). `MARTIAN_JUDGE_CACHE=<dir>` points `judge.py` at another verdict
 cache, for a calibration from scratch: the cache key holds the judge model and settings, not the backend.
 
+`npx tsx evals/martian/recritique.mts <run> <out.json> --votes 2` runs only the critic again, through the
+Anthropic API, on a finished run's findings below confidence 0.75: independent votes on the same findings, about
+$4.6 a run for two votes (`--shard k/n` runs several processes side by side, `--max-cost` caps the spend).
+
 - `$MARTIAN_DIR` (default `~/.cache/code-reviewer-martian`) holds the benchmark's `offline/` directory at a
   pinned commit, the clones, the results and the judge cache.
 - `prs.json` freezes the 50 pull requests: golden URL, where to fetch from (35 are real upstream PRs, 15 live in

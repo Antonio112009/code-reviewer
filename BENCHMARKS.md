@@ -532,6 +532,10 @@ Martian, 50 pull requests, all judged by `claude-opus-4-5-20251101` without exte
 
 | Date | Runs | Build | Command | Findings / PR | P | R | F1 (core) | Cost / PR |
 |---|---|---|---|---|---|---|---|---|
+| 10-18 | r12-1, r12-2 | `v0.12.0` | re-gated: the main report as posted, scored from the `--tier all` verdicts (the baseline of the rows below) | 1.4 | 74.8% | 34.8% | 47.5% (45.4, 49.6) | — |
+| 10-18 | r12-1, r12-2 | `v0.12.0` + critic votes | re-gated, not shipped: posted when the median of three independent critic verdicts is ≥ 0.55 ([votes](evals/martian/judgings/2026-10-18/critic-votes/)) | 1.6 | 72.6% | 38.6% | 50.4% (50.6, 50.2) | +$0.09 |
+| 10-18 | r12-1, r12-2 | `v0.12.0` | re-gated, not shipped: "worth a look" findings the reviewer rated major or critical posted from critic confidence 0.35 | 1.6 | 74.4% | 39.6% | 51.6% (50.2, 53.1) | — |
+| 10-18 | r12-deep | `v0.12.0` | re-gated, not shipped: posted when both passes report it (≥ 0.3), else from 0.65 and not from the sweep; the main report as posted scores 52.0% / 40.5% / 45.6% the same way | 2.1 | 59.6% | 41.1% | 48.7% | — |
 | 10-17 | r12-1, r12-2 | `v0.12.0` | `--full --provider anthropic` (the defaults), judged `--tier all` through the API | 2.9 | 61.4% | 57.0% | 59.1% (58.2, 60.0) | $0.36 ‡ |
 | 10-17 | r12-1, r12-2 | `v0.12.0` | same runs, judged `--tier main` | 1.4 | 78.0% | 34.8% | 48.1% (45.8, 50.4) | $0.36 ‡ |
 | 10-17 | r12-deep | `v0.12.0` | `--full --deepen --provider anthropic`, judged `--tier all` | 5.8 | 41.3% | 72.2% | 52.5% | $0.48 ‡ |
@@ -563,6 +567,33 @@ Martian, 50 pull requests, all judged by `claude-opus-4-5-20251101` without exte
 | 10-01 | baseline-qodo-extended-v2 | published comments | `evals/martian/judge.py --baseline qodo-extended-v2` | 3.0 | 61.4% | 59.5% | 60.5% | — |
 | 10-01 | baseline-augment | published comments | `evals/martian/judge.py --baseline augment` | 3.6 | 58.1% | 63.3% | 60.6% | — |
 | 10-01 | baseline-claude-code | published comments | `evals/martian/judge.py --baseline claude-code` | 3.5 | 41.8% | 41.8% | 41.8% | — |
+
+**A posting gate that raises precision and recall together (2026-10-18), a negative result.** The aim was a rule
+for which findings are posted (the main report) that raises posted precision and recall at once, rather than
+trading one for the other with the threshold. Each rule was fitted on r12-1 and checked on r12-2 and on AACR-Bench
+ctx30. The bar: both numbers rise on held-out data, or one stays within a point while the other gains five. No
+rule met it, and nothing was changed. Re-gating is exact: the critic's confidences are fixed, so a rule only
+picks among findings the judge has already scored.
+
+- **Independent critic votes.** The critic was re-run twice more on every finding of r12-1 and r12-2 below
+  confidence 0.75 (`evals/martian/recritique.mts`, $9.2 on the API). The mean, median, minimum, maximum or number
+  of confirmations of the three verdicts sorts real bugs no better than the critic's single confidence. Every
+  vote gate is a threshold slide: on r12-2, recall +2..+9 for precision −2..−13. The critic's rejections are
+  stable: 54 of 68 were rejected again by both votes.
+- **The reviewer's own severity is the one signal that carries.** "Worth a look" findings that the reviewer rated
+  major or critical and the critic lowered hit a known bug 70% of the time (14 of 20, both runs), against 48% for
+  the rest of "worth a look". Posting them from critic confidence 0.35 raises recall by 5.1 and 4.4 points, but
+  moves precision by +0.8 and −1.6. That is short of the bar on the held-out run. On AACR-Bench the benchmark's
+  precision falls; a blind audit of the 11 findings it adds there found 8 real (73%). The main report runs at
+  about 96%.
+- **`--deepen`'s agreement between passes is a benchmark artifact.** A gate that keeps what both passes reported
+  and asks more of the rest (row above) raises the benchmark's precision on Martian (+7.6) and on AACR-Bench's
+  `deep2-1`/`deep2-2` (+6.4, +7.2) at the same recall. In a blind audit (three Sonnet auditors who did not see the
+  tier or the gate), 18 of the 19 posted findings it drops that match no known bug were real defects, as were
+  14 of 14 a control sample kept. The gain comes from hiding real findings the benchmark does not list.
+
+Findings that match no known bug are mostly real (see [Blind audits](#blind-audits)), so every gate that drops
+findings needs an audit before a precision gain counts.
 
 The judge's verdicts for every row above: [evals/martian/judgings/2026-10-01](evals/martian/judgings/2026-10-01/README.md). Earlier judgings of the same runs, kept for
 the record: with Sonnet and an earlier system message, the main
@@ -640,6 +671,11 @@ Both benchmarks ask to be cited when used to evaluate a product.
 ```
 
 ## History
+
+- **2026-10-18** — no posting gate found that raises posted precision and recall together on held-out data
+  (measurement log). Three independent critic votes are no better than one critic's confidence. `--deepen`'s
+  agreement between passes gains precision only by hiding real findings the benchmark does not list. The
+  reviewer's own severity helps recall (+4..+5) at a precision cost of up to 1.6 points.
 
 - **2026-10-18** — why `--essential` found 8% of Martian's bugs: the model rates many serious bugs minor and
   leaves them out, and the major floor dropped those the critic kept. A recall-oriented essential reviewer, main-path
