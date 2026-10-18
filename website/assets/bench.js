@@ -40,6 +40,7 @@ function scatter() {
     'Qodo Extended': 'above',
     'Code Reviewer': 'left',
     '--deepen': 'above',
+    '--essential': 'right',
     'Qodo v2': 'below',
     'One call': 'below',
     'Claude Code CLI': 'right',
@@ -57,8 +58,8 @@ function scatter() {
     always: m.short === 'Augment' || m.short === 'Qodo Extended',
   }));
   scatterChart(host, points, {
-    x: [30, 80],
-    y: [35, 85],
+    x: [10, 80],
+    y: [35, 95],
     title: 'Precision against recall on Martian Code Review Bench',
   });
 }

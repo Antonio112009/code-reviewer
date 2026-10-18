@@ -1,6 +1,7 @@
 // Benchmark numbers shown on the site. Source: BENCHMARKS.md. Martian rows are judged by Claude Opus 4.5 for every
-// reviewer ("Like for like"); Code Reviewer's rows are 0.12.0 on the Anthropic API (2026-10-17). The breakdown comes
-// from evals/martian/judgings/2026-10-17/breakdown.json. Update both together.
+// reviewer ("Like for like"); Code Reviewer's rows are 0.12.0 on the Anthropic API (2026-10-17), --essential 0.13.0
+// (2026-10-18). The breakdown comes from evals/martian/judgings/2026-10-17/breakdown.json and, for --essential,
+// evals/martian/judgings/2026-10-18/breakdown.json. Update both together.
 
 export const COLORS = {
   ours: '#2a78d6',
@@ -56,6 +57,17 @@ export const martian = [
     perPr: 5.8,
     cost: 0.48,
     note: 'an independent second pass; the most bugs found of any reviewer',
+  },
+  {
+    label: 'Code Reviewer 0.13 --essential',
+    short: '--essential',
+    kind: 'ours',
+    p: 93.8,
+    r: 19.0,
+    f1: 31.6,
+    perPr: 0.5,
+    cost: 0.18,
+    note: 'a strict filter for a CI gate: the most precise reviewer measured',
   },
   {
     label: 'Claude Sonnet, whole diff in one call',
@@ -191,6 +203,26 @@ export const breakdown = {
         High: 89,
         Medium: 69,
         Low: 45,
+      },
+    },
+    {
+      label: 'Code Reviewer, essential',
+      kind: 'ours',
+      category: {
+        bug: 22,
+        concurrency: 7,
+        api: 38,
+        security: 0,
+        doc_defect: 11,
+        data: 14,
+        perf: 17,
+        test_gap: 0,
+      },
+      severity: {
+        Critical: 25,
+        High: 28,
+        Medium: 19,
+        Low: 3,
       },
     },
     {

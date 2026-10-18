@@ -84,13 +84,14 @@
             so these numbers are lower than the published ones for everybody, and they should be compared only with each
             other.</p>
           <p>Code Reviewer’s rows are release <b>0.12.0</b> with its defaults, reviewing through the Anthropic API with Claude
-            Sonnet 5.5, measured on 2026-10-17.</p>
+            Sonnet 5.5, measured on 2026-10-17; <code>--essential</code> is release <b>0.13.0</b>, measured on 2026-10-18.</p>
         </div>
         <div class="bench-grid">
           <figure class="card card-pad chart-card wide">
             <figcaption>
               <h3>F1, one judge for every row</h3>
-              <p class="muted">Higher is better. Code Reviewer and the single-call baseline are averages of two runs.</p>
+              <p class="muted">Higher is better. Code Reviewer and the single-call baseline are averages of two runs; <code>--deepen</code>
+                and <code>--essential</code> are single runs.</p>
             </figcaption>
             <div class="chart" data-chart="f1"></div>
           </figure>
@@ -110,8 +111,9 @@
           </div>
           <div class="card card-pad">
             <h3>The most precise comments</h3>
-            <p class="muted">What Code Reviewer posts on a pull request is its main report: 78% of it matches a known bug, the
-              highest precision in this comparison. Less certain findings go to a “worth a look” list in the report.</p>
+            <p class="muted">What Code Reviewer posts on a pull request is its main report: 78% of it matches a known bug, more than
+              any other tool here. Less certain findings go to a “worth a look” list in the report. <code>--essential</code>, a
+              strict filter for a CI gate, is 94% precise and finds a fifth of the bugs.</p>
           </div>
           <div class="card card-pad">
             <h3>Checked twice</h3>

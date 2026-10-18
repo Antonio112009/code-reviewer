@@ -75,8 +75,8 @@ verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/marti
 | **code-reviewer 0.12.0**, API, main report + "worth a look" (defaults) | 2.9 | 61.4% | 57.0% | 59.1% | $0.36 ‡ | [run 1](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-run1-all.json), [run 2](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-run2-all.json) |
 | **code-reviewer 0.12.0 `--deepen`**, API, main report + "worth a look" | 5.8 | 41.3% | **72.2%** | 52.5% | $0.48 ‡ | [run](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-deepen-all.json) |
 | **code-reviewer 0.12.0 `--deepen`**, API, main report | 2.3 | 59.6% | 43.0% | 50.0% | $0.48 ‡ | [run](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-deepen-main.json) |
-| **code-reviewer 0.12.0**, API, main report (what it posts) | 1.4 | **78.0%** | 34.8% | 48.1% | $0.36 ‡ | [run 1](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-run1-main.json), [run 2](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-run2-main.json) |
-| **code-reviewer 0.12.0 `--essential`**, API | 0.3 | 86.7% | 8.2% | 15.0% | $0.17 ‡ | [run](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-essential-all.json) |
+| **code-reviewer 0.12.0**, API, main report (what it posts) | 1.4 | 78.0% | 34.8% | 48.1% | $0.36 ‡ | [run 1](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-run1-main.json), [run 2](evals/martian/judgings/2026-10-17/code-reviewer-0.12.0-api-run2-main.json) |
+| **code-reviewer 0.13.0 `--essential`**, API | 0.5 | **93.8%** | 19.0% | 31.6% | $0.18 | [run](evals/martian/judgings/2026-10-18/code-reviewer-ess-v3-essential-all.json) |
 | Qodo Extended (#1), re-judged | 3.0 | 61.4% | 59.5% | 60.5% | — | [json](evals/martian/judgings/2026-10-01/qodo-extended.json) |
 | **code-reviewer 0.8.0 + `--sweep`** (opt-in), main report + "worth a look" | 3.4 | 57.4% | 63.9% | 60.5% | $0.61 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-sweep-run1-all.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-sweep-run2-all.json) |
 | **code-reviewer 0.7.0**, main report + "worth a look" | 2.6 | 64.0% | 54.1% | 58.7% | $0.40 | [run 1](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run1-all.json), [run 2](evals/martian/judgings/2026-10-01/code-reviewer-0.7.0-run2-all.json) |
@@ -87,15 +87,15 @@ verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/marti
 
 - **0.12.0 on the Anthropic API: within 1.5 F1 points of the two best tools.** Its full report scores 59.1
   (58.2 and 60.0 in its two runs) against 60.5 for Qodo Extended and 60.6 for Augment, less than the 3.7 points two
-  runs of the same configuration can differ by. Its main report, what it posts on a pull request, is the most
-  precise row in the comparison: 78.0% of it matches a known bug (34.8% of the bugs).
+  runs of the same configuration can differ by. Its main report, what it posts on a pull request, is more precise
+  than any other tool's: 78.0% of it matches a known bug (34.8% of the bugs).
 - **`--deepen` finds the most bugs of any reviewer measured**: 72.2% of them, 10 of 12 critical and 48 of 54
   high, for 41% precision. The posted part alone scores F1 50.0 against 48.1 for the defaults: recall +8 points
   at precision −18. For changes where a missed defect is expensive, that is the trade.
-- **`--essential` is a filter, not a smaller review**: 86.7% of its few findings (0.3 per pull request) are
-  known bugs, but it finds 8% of them, 1 of the 12 critical ones. It is a cheap CI gate on top of a full review,
-  not a substitute for one. Unreleased: with main-path logic errors in its scope and the critic (not a major
-  floor) as its gate, it finds 19% at 94% precision, 3 of 12 critical
+- **`--essential` is a filter, not a smaller review**: 0.13.0 is the most precise row in the comparison, 93.8% of
+  its findings (0.5 per pull request) are known bugs, but it finds 19% of them, 3 of the 12 critical ones. It is a
+  cheap CI gate on top of a full review, not a substitute for one. 0.12.0 found 8% at 86.7%: the model rates many
+  serious bugs minor and left them out, and a major floor dropped those the critic kept
   ([2026-10-18](evals/martian/judgings/2026-10-18/README.md)).
 - **Within two F1 points of the leaderboard's best (0.7.0 through Claude Code).** Code Reviewer's full report, main findings and
   "worth a look", scores 58.7 against 60.5 for Qodo Extended and 60.6 for Augment, the leaderboard's first
@@ -113,10 +113,10 @@ verdicts behind every row are in [evals/martian/judgings/2026-10-01](evals/marti
 ‡ Cost per pull request at the Anthropic API's prices. The two default runs ran at the same time on the same
 pull requests and shared the API's prompt cache: whichever sent a prompt first paid for the cache write, the other
 read it at a tenth of the price ($0.18 and $0.36 per pull request). $0.36, the run that paid the writes, is what
-a review run on its own costs; `--deepen` and `--essential` overlapped with them too and are understated the same
-way. Through Claude Code the same pipeline cost $0.61 (0.8.0, its own accounting).
+a review run on its own costs; `--deepen` overlapped with them too and is understated the same way (0.13.0
+`--essential` ran on its own). Through Claude Code the same pipeline cost $0.61 (0.8.0, its own accounting).
 
-Rows for Code Reviewer and the plain model are averages of two runs, the 0.12.0 `--deepen` and `--essential`
+Rows for Code Reviewer and the plain model are averages of two runs, the 0.12.0 `--deepen` and 0.13.0 `--essential`
 rows are single runs. The published tools were re-judged from
 the review comments they posted, as the benchmark checked them in; why, and their published scores, are
 under [Judge calibration](#judge-calibration).
