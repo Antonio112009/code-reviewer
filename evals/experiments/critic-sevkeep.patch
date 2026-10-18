@@ -1,0 +1,25 @@
+diff --git a/src/review/prompts.ts b/src/review/prompts.ts
+index 6bb6bd8..4e94b59 100644
+--- a/src/review/prompts.ts
++++ b/src/review/prompts.ts
+@@ -312,10 +312,18 @@ export function critiqueInstructions(
+   dependencies?: readonly DependencyRoot[],
+ ): string {
+   const preExisting = mode === 'diff' ? ', or a pre-existing problem this change does not touch' : '';
++  // EXPERIMENT ONLY (never merged, CR_EXP=sevkeep): the critic keeps the reviewer's severity, and the confidence of a
++  // reviewer-major finding, unless code shows a smaller failure.
++  const sevkeep = depth === 'full' && (process.env.CR_EXP ?? '').split(',').includes('sevkeep');
+   // Essential depth drops low-impact findings on purpose; full depth keeps every real defect, so there a
+   // finding is rejected only when its claim is wrong, and low impact lowers the severity instead.
+-  const rejected =
+-    depth === 'essential'
++  const rejected = sevkeep
++    ? `- "rejected": what the finding says about the code is wrong — it misreads what the code does, or the failure it claims is handled elsewhere (name where) — or it is a pure style/naming/documentation remark, something a compiler or linter catches${preExisting}. Name the code that refutes it.
++- This is a FULL-depth review: it reports every real defect and lists weaker observations separately. A correct claim with an unlikely but possible trigger is a defect: confirm it instead of rejecting it; the same gap in similar code elsewhere does not excuse it.
++- When what the finding says about the code is true but you found no realistic way for it to fail — the state cannot occur today, the check is merely redundant or in the wrong place, the behaviour is formally undefined but works on every platform the code targets, or it is hardening advice — do not reject it either: confirm it with severity "info" and a confidence of at most 0.5, and say what keeps it from failing. It is then listed as "worth a look" rather than reported as a defect. For a finding reported as major or critical, do this only when code you read shows the failure cannot happen, and name that code.
++- Severity is a separate judgement from whether the claim is real. Keep the reported severity unless code you read shows the failure is smaller than the finding says: a guard, a fallback or the callers limit the input or the damage (name that code in the reason). That the trigger seems uncommon, or that you are unsure how much harm it does, is not such evidence. Raise the severity when the code shows a worse failure.
++- Confidence is how likely the claim is a real defect, never how severe it is. A smaller impact lowers the severity, not the confidence: a finding reported as major or critical whose failure path you traced keeps a confidence of 0.7 or more, also when you lower its severity.`
++    : depth === 'essential'
+       ? `- "rejected": the claim is wrong, speculative, already handled elsewhere, a style/naming/documentation remark, something a compiler or linter catches${preExisting}.
+ - This is an ESSENTIAL-depth review: also reject real findings without a serious production impact (security, a feature broken on its normal path, data loss, crashes/outages, leaks/OOM, overload, races/deadlocks, costly performance) — e.g. minor edge cases, accessibility or best-practice remarks.`
+       : `- "rejected": what the finding says about the code is wrong — it misreads what the code does, or the failure it claims is handled elsewhere (name where) — or it is a pure style/naming/documentation remark, something a compiler or linter catches${preExisting}. Name the code that refutes it.

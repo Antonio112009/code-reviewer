@@ -535,6 +535,7 @@ Martian, 50 pull requests, all judged by `claude-opus-4-5-20251101` without exte
 | 10-18 | r12-1, r12-2 | `v0.12.0` | re-gated: the main report as posted, scored from the `--tier all` verdicts (the baseline of the rows below) | 1.4 | 74.8% | 34.8% | 47.5% (45.4, 49.6) | — |
 | 10-18 | r12-1, r12-2 | `v0.12.0` + critic votes | re-gated, not shipped: posted when the median of three independent critic verdicts is ≥ 0.55 ([votes](evals/martian/judgings/2026-10-18/critic-votes/)) | 1.6 | 72.6% | 38.6% | 50.4% (50.6, 50.2) | +$0.09 |
 | 10-18 | r12-1, r12-2 | `v0.12.0` | re-gated, not shipped: "worth a look" findings the reviewer rated major or critical posted from critic confidence 0.35 | 1.6 | 74.4% | 39.6% | 51.6% (50.2, 53.1) | — |
+| 10-18 | r12-1, r12-2 | `v0.12.0` + critic patch | critic re-run, not shipped: told to keep the reviewer's severity, and a confidence of at least 0.7 for a traced finding the reviewer rated major or critical, unless code shows a smaller failure ([votes](evals/martian/judgings/2026-10-18/critic-votes/), [patch](evals/experiments/critic-sevkeep.patch)) | 1.3 | 75.2% | 33.5% | 46.4% (46.3, 46.5) | — |
 | 10-18 | r12-deep | `v0.12.0` | re-gated, not shipped: posted when both passes report it (≥ 0.3), else from 0.65 and not from the sweep; the main report as posted scores 52.0% / 40.5% / 45.6% the same way | 2.1 | 59.6% | 41.1% | 48.7% | — |
 | 10-17 | r12-1, r12-2 | `v0.12.0` | `--full --provider anthropic` (the defaults), judged `--tier all` through the API | 2.9 | 61.4% | 57.0% | 59.1% (58.2, 60.0) | $0.36 ‡ |
 | 10-17 | r12-1, r12-2 | `v0.12.0` | same runs, judged `--tier main` | 1.4 | 78.0% | 34.8% | 48.1% (45.8, 50.4) | $0.36 ‡ |
@@ -591,6 +592,30 @@ picks among findings the judge has already scored.
   `deep2-1`/`deep2-2` (+6.4, +7.2) at the same recall. In a blind audit (three Sonnet auditors who did not see the
   tier or the gate), 18 of the 19 posted findings it drops that match no known bug were real defects, as were
   14 of 14 a control sample kept. The gain comes from hiding real findings the benchmark does not list.
+
+**A critic that keeps the reviewer's severity (2026-10-18), a negative result.** The posting-gate search left
+one lead: "worth a look" findings the reviewer rated major or critical, which the critic lowered, hit known bugs
+70% of the time. Their critic verdicts are all "confirmed", but at confidence 0.3–0.55, with reasons such as
+"mostly pre-existing" or "browsers normally send lowercase hosts": a severity judgement turned into a doubt. The
+critic prompt was changed to keep the reported severity unless code shows a smaller failure, and to keep a
+confidence of at least 0.7 for a traced finding rated major or critical
+([patch](evals/experiments/critic-sevkeep.patch)). Only the critic was re-run, once per run, on the same findings
+as the critic votes above ($5.6 on the API), and scored the same way.
+
+- Posted precision / recall: r12-1 73.2 / 32.9 → 74.6 / 33.5, r12-2 76.3 / 36.7 → 75.7 / 33.5. Recall did not
+  rise on either run, so the change was not kept.
+- The critic did not follow the rule. Of the reviewer-major findings it saw, it still lowered 15 of 25 (r12-1)
+  and 15 of 30 (r12-2), against 15 and 19 in an unchanged re-run. It still gave confirmed ones 0.5–0.55. It
+  rejected fewer (3 and 2, against 6 and 4 there), but those went to "worth a look", not to the report.
+- A rule in code instead of the prompt (post a finding the critic confirmed, the reviewer rated major or critical
+  and the critic did not lower to info, from confidence 0.4 or 0.5) is the same trade as the severity gate above.
+  Across the original verdicts and the three re-runs it gives recall +1.3..+5.0 and precision −3.7..+1.8. One
+  re-run of r12-1 meets the bar; on r12-2 precision falls 2.5–3.1 points with the original verdicts.
+- The critic's own noise is as large as the effect sought. The two unchanged re-runs move posted precision by
+  −3.9..+3.2 points and recall by −2.5..+1.9 against the original run. One vote on two runs cannot resolve a
+  change smaller than about three points.
+
+No blind audit was needed: the change raised no precision that would have to be checked.
 
 Findings that match no known bug are mostly real (see [Blind audits](#blind-audits)), so every gate that drops
 findings needs an audit before a precision gain counts.
@@ -671,6 +696,11 @@ Both benchmarks ask to be cited when used to evaluate a product.
 ```
 
 ## History
+
+- **2026-10-18** — telling the critic to keep the reviewer's severity, and the confidence of serious findings it
+  traced, changed neither its behaviour nor the posted report (recall 32.9 → 33.5 and 36.7 → 33.5). The critic
+  still turns "smaller impact" into a lower confidence. Its run-to-run noise (about ±3 points) is as large as the
+  effect sought.
 
 - **2026-10-18** — no posting gate found that raises posted precision and recall together on held-out data
   (measurement log). Three independent critic votes are no better than one critic's confidence. `--deepen`'s
