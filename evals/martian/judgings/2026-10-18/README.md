@@ -45,3 +45,13 @@ extra volume is minor ones, and that is where the serious golden bugs are: of th
 matched them, the reviewer rated 27 minor and the full-depth critic lowered 22 from major to minor. At essential
 the model leaves out what it rates minor, and the major floor dropped what the essential critic had already
 kept as serious.
+
+## Critic votes (`critic-votes/`)
+
+`votes-r12-1.json` and `votes-r12-2.json` are two more independent runs of the critic (claude-sonnet-5-5, high
+reasoning, no second opinion, no verdict cache) over every finding of `r12-1` / `r12-2` that its critic kept
+below confidence 0.75, put in "worth a look" or rejected. Each finding was first restored to the reviewer's
+confidence, severity and title. They were made with `evals/martian/recritique.mts r12-N votes-r12-N.json --votes 2`
+for $9.23. Each row holds `pr`, the finding `id`, `vote` (1 or 2), `verdict`, `confidence`, `severity` and the
+critic's `reason`. The original run's verdict is the third vote. For what they showed, see the posting-gate note
+in BENCHMARKS.md's measurement log: the votes are no better than the single confidence.
