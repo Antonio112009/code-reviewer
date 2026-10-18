@@ -55,3 +55,43 @@ confidence, severity and title. They were made with `evals/martian/recritique.mt
 for $9.23. Each row holds `pr`, the finding `id`, `vote` (1 or 2), `verdict`, `confidence`, `severity` and the
 critic's `reason`. The original run's verdict is the third vote. For what they showed, see the posting-gate note
 in BENCHMARKS.md's measurement log: the votes are no better than the single confidence.
+
+## Security sweep (`security-sweep/`), a negative result
+
+The full report found 41% of Martian's security bugs (11 golden comments) and 36% of its data-integrity bugs (7),
+against 73% and 79% for the same model given the whole diff in one call. Independent extra passes are what moved
+recall before (`--sweep`, `--deepen`), so this tried one more whole-change call asked only for security holes and
+broken data, its findings through the same critic: `--security-sweep`, build `005b1fa` = `8c81c55` +
+[`evals/experiments/security-sweep.patch`](../../../experiments/security-sweep.patch), one run (`ss-1`,
+`--full --security-sweep --provider anthropic`). A security-sweep finding is dropped only at the spot of an
+equally or more severe finding, since the chunk review often sees the hole and rates it minor.
+
+**Where the default runs lose these bugs** (`secdata-r12-deep-plain.json`, made with `secdata-classify.py`: every
+missed golden comment judged against the run's rejected findings). Of the 18, r12-1 and r12-2 never reported 8 and
+10, put 4 and 3 only in "worth a look", lost 1 to the critic and 0–2 below the threshold. The plain model never
+reported 4–5. One pull request (discourse-4, the embedding feature) holds 5 of the 11 security comments.
+
+| Core profile (158), full report | Findings / PR | Precision | Recall | F1 | Security | Data | Cost / PR |
+|---|---|---|---|---|---|---|---|
+| r12-1, r12-2 (v0.12.0, the baseline) | 2.9 | 61.4% | 57.0% | 59.1% | 41% | 36% | $0.36 (r12-2, cold cache) |
+| `ss-1` without the 9 findings only the security sweep reported | 3.0 | 58.4% | 57.0% | 57.7% | 36% | 14% | — |
+| `ss-1` | 3.2 | 56.4% | 58.2% | 57.3% | 36% | 29% | $0.49 |
+
+- The security sweep reported 133 findings in 50 pull requests: 91 at a spot the chunk reviews or the sweep had
+  already reported as severely, 42 new. The critic rejected 21 of those, 8 fell below the threshold, and 9 reached
+  the full report (5 minor and 4 info, one of them in the main report). They matched 3 golden comments (one data,
+  one API, one concurrency) of which 2 no other finding matched, and 7 matched none: recall +1.3, precision −2.0,
+  F1 −0.4 within the run. The main report gained one unmatched finding (precision 78.8 → 77.6%).
+- **No security bug was gained.** The pass did report three of the missed security comments (`secdata-ss-1.json`):
+  the referer in inline JavaScript and X-Frame-Options ALLOWALL on discourse-4, which the critic rejected (ERB
+  HTML-escapes the referer, so a quote cannot close the JavaScript string; ALLOWALL is the embedding's intent),
+  and sentry-67876's static OAuth state, which the critic kept at confidence 0.25, below the 0.3 floor. The first
+  rejection is arguably right.
+- The call costs $0.11 a pull request, a third more than a run with a cold prompt cache (r12-2: $0.36; r12-1's
+  $0.18 was served from a warm one).
+
+Recommendation: dropped, not merged. Asking for these categories by name does not close the plain model's lead:
+the focused call reported 3 of the security comments the run otherwise missed, and the critic dropped all three,
+twice with a refutation from the code. The data row moves by one golden comment either way (14% → 29% within the
+run, 36% in the baseline): run-to-run noise at 7 comments. `strip-sec.py` makes the
+"without" row from `ss-1`'s reports; its verdicts are all from `ss-1`'s cache.
