@@ -286,8 +286,8 @@ Refs  base from flag
             <table class="data-table compare-table">
               <thead><tr><th scope="col"></th><th scope="col"><code>--essential</code></th><th scope="col"><code>full</code> (default)</th></tr></thead>
               <tbody>
-                <tr><td>Looks for</td><td>Security, data loss, crashes and hangs, leaks and OOM, overload, races, costly performance</td><td>Every real defect, including edge cases, accessibility and best practices with a concrete consequence</td></tr>
-                <tr><td>Severities</td><td>Critical and major</td><td>All</td></tr>
+                <tr><td>Looks for</td><td>Security, features broken on their normal path, data loss, crashes and hangs, leaks and OOM, overload, races, costly performance</td><td>Every real defect, including edge cases, accessibility and best practices with a concrete consequence</td></tr>
+                <tr><td>Severities</td><td>Critical, major and minor (no info)</td><td>All</td></tr>
                 <tr><td>Skills per chunk</td><td>Essential ones, 3,500 tokens</td><td>All, 6,000 tokens</td></tr>
                 <tr><td>Critic</td><td>Also drops real but low-impact findings; keeps confidence ≥ 0.7</td><td>Drops claims that are wrong about the code; keeps confidence ≥ 0.3</td></tr>
                 <tr><td>Second opinion</td><td>Off</td><td>On for findings the critic was unsure about</td></tr>
