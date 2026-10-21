@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Dependencies
+
+- All direct dependencies updated to their latest releases (ACP SDK 1.9.0, `ai` 7.0.145 with its providers, AWS
+  credential providers 3.1153.0, execa 10.2.0, gpt-tokenizer 4.1.0, es-module-lexer 3.0.4; ast-grep 0.51.0),
+  still pinned to exact versions; vitest 5.0.5 and the CodeQL action 4.39.0 too. With execa 10.2.0 a git command
+  that exceeds its output limit is killed instead of being left running.
+
 ## 0.13.0 — 2026-10-18
 
 ### Quality
