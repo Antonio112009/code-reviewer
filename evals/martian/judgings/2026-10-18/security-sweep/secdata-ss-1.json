@@ -1,0 +1,258 @@
+[
+ {
+  "run": "ss-1",
+  "url": "https://github.com/calcom/cal.com/pull/7232",
+  "golden": "When immediateDelete is true, the deleteScheduledEmailReminder function cancels the SendGrid email but fails to delete the corresponding WorkflowReminder record from the database. This creates orphaned database entries and is inconsistent with the immediateDelete: false path, which marks the record as cancelled. The SendGrid DELETE API call is also omitted in this path.",
+  "category": "data",
+  "severity": "High",
+  "status": "lost:critique",
+  "finding": {
+   "title": "Email reminders with referenceId are marked cancelled but cron only handles those within 1 hour",
+   "severity": "minor",
+   "confidence": 0.7,
+   "category": "bug",
+   "origin": "llm",
+   "critique": {
+    "verdict": "rejected",
+    "confidence": 0.7,
+    "reason": "This is the intended design: the cron cancels reminders due within the next hour, so it needs to run at least hourly. Deleting past rows first is correct, since those emails have already been sent. Rows left by immediateDelete are removed by that same first deleteMany once scheduledDate passes. No concrete failure is shown.",
+    "originalConfidence": 0.5
+   },
+   "sweep": true
+  }
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/calcom/cal.com/pull/7232",
+  "golden": "The 'cancelled' field is nullable, which can lead to existing records having null values instead of a default of false. This can cause incorrect behavior in the application when checking the cancellation status of reminders.",
+  "category": "data",
+  "severity": "Medium",
+  "status": "never-reported",
+  "finding": null
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/calcom/cal.com/pull/11059",
+  "golden": "parseRefreshTokenResponse returns a Zod safeParse result ({ success, data, error }), not the credential key object. Persisting that as key stores the wrapper instead of the token payload; we should store the parsed data or use schema parse.",
+  "category": "data",
+  "severity": "High",
+  "status": "found:findings",
+  "finding": {
+   "title": "Parsed result object saved as credential key",
+   "severity": "major",
+   "confidence": 0.85,
+   "category": "bug",
+   "verdict": "confirmed",
+   "sweep": false
+  }
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/calcom/cal.com/pull/14740",
+  "golden": "The addGuests.handler.ts blacklist check uses blacklistedGuestEmails.includes(guest) after lowercasing the blacklist but not the input guest emails, allowing attackers to bypass BLACKLISTED_GUEST_EMAILS restrictions by submitting emails with uppercase characters.",
+  "category": "security",
+  "severity": "High",
+  "status": "found:findings",
+  "finding": {
+   "title": "Duplicate/blacklist check is case-sensitive and ignores duplicates within input",
+   "severity": "minor",
+   "confidence": 0.6,
+   "category": "bug",
+   "verdict": "confirmed",
+   "sweep": false
+  }
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/1",
+  "golden": "Passing 80% as the dimensions can fail for animated GIFs when allow_animated_thumbnails is true, since the animated path uses gifsicle --resize-fit which expects WxH geometry, not a percentage; downsizing would then silently fail.",
+  "category": "data",
+  "severity": "Medium",
+  "status": "never-reported",
+  "finding": null
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/3",
+  "golden": "The case-sensitive email lookup in `BlockedEmail.should_block?` creates a bypass risk, allowing 'User@Example.com' to bypass a block on 'user@example.com'. This can lead to unauthorized access to blocked users.",
+  "category": "security",
+  "severity": "Critical",
+  "status": "found:findings",
+  "finding": {
+   "title": "should_block? mutates statistics during validation and is case-sensitive",
+   "severity": "minor",
+   "confidence": 0.65,
+   "category": "bug",
+   "verdict": "confirmed",
+   "sweep": false
+  }
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/4",
+  "golden": "The current origin validation using indexOf is insufficient and can be bypassed. An attacker could use a malicious domain like evil-discourseUrl.com to pass this check.",
+  "category": "security",
+  "severity": "Medium",
+  "status": "found:advisory",
+  "finding": {
+   "title": "Weak origin check with indexOf",
+   "severity": "minor",
+   "confidence": 0.4,
+   "category": "bug",
+   "verdict": "confirmed",
+   "sweep": false
+  }
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/4",
+  "golden": "The PollFeed job calls open(SiteSetting.feed_polling_url) without validating the URL, allowing an attacker who controls the feed_polling_url site setting to make the server fetch arbitrary internal or external URLs.",
+  "category": "security",
+  "severity": "Critical",
+  "status": "never-reported",
+  "finding": null
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/4",
+  "golden": "postMessage targetOrigin should be the origin (scheme+host+port), not the full referrer URL; using the full URL will cause the message to be dropped and prevent resizing.",
+  "category": "security",
+  "severity": "Medium",
+  "status": "never-reported",
+  "finding": null
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/4",
+  "golden": "The code sets X-Frame-Options: ALLOWALL which completely disables clickjacking protection. The referer validation can be bypassed (referer headers are easily spoofed), and the fallback to empty string for nil referer masks validation failures.",
+  "category": "security",
+  "severity": "Medium",
+  "status": "lost:critique",
+  "finding": {
+   "title": "Referer-based check and ALLOWALL framing",
+   "severity": "minor",
+   "confidence": 0.65,
+   "category": "security",
+   "origin": "llm",
+   "critique": {
+    "verdict": "rejected",
+    "confidence": 0.65,
+    "reason": "The claimed script injection through the referer is refuted for the same reason as f-4b139c92: ERB escapes the quote. The Referer check plus ALLOWALL is the intended design for an embeddable iframe, and the check is not meant as strong authentication.",
+    "originalConfidence": 0.4
+   },
+   "sweep": false
+  }
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/4",
+  "golden": "An unescaped request header (request.referer) is interpolated into JavaScript without proper escaping, which can lead to XSS vulnerabilities if the referer contains malicious content. This issue can allow attackers to execute arbitrary scripts in the context of the application.",
+  "category": "security",
+  "severity": "Critical",
+  "status": "lost:critique",
+  "finding": {
+   "title": "Unescaped Referer injected into inline JavaScript",
+   "severity": "major",
+   "confidence": 0.7,
+   "category": "security",
+   "origin": "llm",
+   "critique": {
+    "verdict": "rejected",
+    "confidence": 0.7,
+    "reason": "<%= request.referer %> is HTML-escaped by ERB, which turns ' and \" into entities and < and > into &lt; and &gt;. A quote cannot close the JS string and </script> cannot be injected. Header values cannot contain newlines. A trailing backslash only causes a syntax error, not code execution.",
+    "originalConfidence": 0.5
+   },
+   "sweep": false
+  }
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/10",
+  "golden": "The SQL query in the `app/controllers/admin/embeddable_hosts_controller.rb` file uses string interpolation (`'#{h}'`) to insert values, which is vulnerable to SQL injection. It should use parameter binding or proper quoting to prevent this security vulnerability.",
+  "category": "security",
+  "severity": "Critical",
+  "status": "found:advisory",
+  "finding": {
+   "title": "Unescaped values interpolated into INSERT SQL",
+   "severity": "minor",
+   "confidence": 0.5,
+   "category": "security",
+   "verdict": "confirmed",
+   "sweep": false
+  }
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/ai-code-review-evaluation/discourse-graphite/pull/10",
+  "golden": "Because this migration inserts embeddable_hosts rows with raw SQL, any existing embeddable_hosts values that include http:// or /https:// or path segments won\u2019t go through the EmbeddableHost model\u2019s normalization, so the new host lookup (which compares only the bare host) may fail for migrated data. Consider ensuring that migrated hosts are normalized to the same format as newly created EmbeddableHost records so existing embedding configurations keep working.",
+  "category": "data",
+  "severity": "High",
+  "status": "never-reported",
+  "finding": null
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/grafana/grafana/pull/103633",
+  "golden": "The cache key construction in `userPermDenialCacheKey` uses simple string concatenation with underscores, which can lead to ambiguous keys and collision risks when any component contains underscores or is empty. This could result in incorrect denial cache hits, affecting user permissions.",
+  "category": "data",
+  "severity": "Medium",
+  "status": "found:advisory",
+  "finding": {
+   "title": "Denial cache key collides with permission cache key and is ambiguous",
+   "severity": "minor",
+   "confidence": 0.4,
+   "category": "security",
+   "verdict": "confirmed",
+   "sweep": false
+  }
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/grafana/grafana/pull/103633",
+  "golden": "The Check operation exhibits asymmetric cache trust logic: cached permission grants are trusted and returned immediately, but cached denials from the same permission cache are ignored, leading to a fresh database lookup. This allows stale cached grants to provide access to revoked resources, posing a security risk. ",
+  "category": "security",
+  "severity": "High",
+  "status": "never-reported",
+  "finding": null
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/keycloak/keycloak/pull/37429",
+  "golden": "The anchor sanitization logic has a potential issue where it consumes English matcher groups without proper validation. If the translated text has more anchor tags than the English text, this could lead to incorrect validation results.",
+  "category": "security",
+  "severity": "Low",
+  "status": "never-reported",
+  "finding": null
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/ai-code-review-evaluation/sentry-greptile/pull/3",
+  "golden": "Using Python\u2019s built-in hash() to build cache keys is non-deterministic across processes (hash randomization), so keys won\u2019t match across workers and invalidate_upsampling_cache may fail to delete them. Use a deterministic serialization of project_ids for the cache key.",
+  "category": "data",
+  "severity": "Low",
+  "status": "never-reported",
+  "finding": null
+ },
+ {
+  "run": "ss-1",
+  "url": "https://github.com/getsentry/sentry/pull/67876",
+  "golden": "OAuth state uses pipeline.signature (static) instead of a per-request random value",
+  "category": "security",
+  "severity": "Medium",
+  "status": "lost:below-threshold",
+  "finding": {
+   "title": "OAuth state is static pipeline signature, not validated as per-request secret; redirect URL built unencoded",
+   "severity": "major",
+   "confidence": 0.25,
+   "category": "security",
+   "origin": "llm",
+   "critique": {
+    "verdict": "uncertain",
+    "confidence": 0.25,
+    "reason": "The state is the deterministic pipeline.signature, which the tests also hard-code as a fixed value. That is weaker than a random per-request nonce, so a login-CSRF-style attack is conceivable. The installation_id override is not an exploit: the later check compares the authenticated GitHub user with the sender of that same installation. Timing and URL-encoding points are noise. I could not establish a concrete exploit.",
+    "originalConfidence": 0.35
+   },
+   "sweep": false
+  }
+ }
+]

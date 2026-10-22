@@ -397,6 +397,7 @@ identical).
 | `main-b8c86e1` | [`b8c86e1`](https://github.com/Antonio112009/code-reviewer/commit/b8c86e1) | 0.8.0 | main after #78 |
 | `walk-e0fa3b5` | `b8c86e1` + [`evals/experiments/checklist-walk.patch`](evals/experiments/checklist-walk.patch) | 0.8.0 | experiment, never merged: an item-by-item checklist pass at the end of the review task |
 | `v0.12.0` | [`f7a6586`](https://github.com/Antonio112009/code-reviewer/commit/f7a6586) = `v0.12.0` | 0.12.0 | **0.12.0**: sweep on at full depth, maintainability notes, second opinion; `--batch` and `--chunking auto` opt-in |
+| `secsweep-005b1fa` | `8c81c55` + [`evals/experiments/security-sweep.patch`](evals/experiments/security-sweep.patch) | 0.13.0 | experiment, never merged: `--security-sweep`, one more whole-change call for security and data-integrity defects (full depth is unchanged since 0.12.0) |
 
 The version string lags behind: a commit between releases prints the previous release's version. Name builds
 by commit; [`evals/pin-build.sh <commit>`](evals/pin-build.sh) builds one into its own directory and records it.
@@ -537,6 +538,9 @@ Martian, 50 pull requests, all judged by `claude-opus-4-5-20251101` without exte
 | 10-18 | r12-1, r12-2 | `v0.12.0` | re-gated, not shipped: "worth a look" findings the reviewer rated major or critical posted from critic confidence 0.35 | 1.6 | 74.4% | 39.6% | 51.6% (50.2, 53.1) | — |
 | 10-18 | r12-1, r12-2 | `v0.12.0` + critic patch | critic re-run, not shipped: told to keep the reviewer's severity, and a confidence of at least 0.7 for a traced finding the reviewer rated major or critical, unless code shows a smaller failure ([votes](evals/martian/judgings/2026-10-18/critic-votes/), [patch](evals/experiments/critic-sevkeep.patch)) | 1.3 | 75.2% | 33.5% | 46.4% (46.3, 46.5) | — |
 | 10-18 | r12-deep | `v0.12.0` | re-gated, not shipped: posted when both passes report it (≥ 0.3), else from 0.65 and not from the sweep; the main report as posted scores 52.0% / 40.5% / 45.6% the same way | 2.1 | 59.6% | 41.1% | 48.7% | — |
+| 10-18 | ss-1 | `secsweep-005b1fa` | `--full --security-sweep --provider anthropic`, judged `--tier all`: security 36%, data integrity 29% ([why](evals/martian/judgings/2026-10-18/README.md#security-sweep-security-sweep-a-negative-result)) | 3.2 | 56.4% | 58.2% | 57.3% | $0.49 |
+| 10-18 | ss-1 | same | same run without the 9 findings only the security sweep reported (security 36%, data 14%) | 3.0 | 58.4% | 57.0% | 57.7% | — |
+| 10-18 | ss-1 | same | same run, judged `--tier main` (without those findings: 78.8% / 32.9% / 46.4%) | 1.2 | 77.6% | 32.9% | 46.2% | $0.49 |
 | 10-17 | r12-1, r12-2 | `v0.12.0` | `--full --provider anthropic` (the defaults), judged `--tier all` through the API | 2.9 | 61.4% | 57.0% | 59.1% (58.2, 60.0) | $0.36 ‡ |
 | 10-17 | r12-1, r12-2 | `v0.12.0` | same runs, judged `--tier main` | 1.4 | 78.0% | 34.8% | 48.1% (45.8, 50.4) | $0.36 ‡ |
 | 10-17 | r12-deep | `v0.12.0` | `--full --deepen --provider anthropic`, judged `--tier all` | 5.8 | 41.3% | 72.2% | 52.5% | $0.48 ‡ |
@@ -617,6 +621,16 @@ as the critic votes above ($5.6 on the API), and scored the same way.
 
 No blind audit was needed: the change raised no precision that would have to be checked.
 
+**A security sweep (2026-10-18), a negative result.** The full report finds 41% of Martian's security bugs and 36%
+of its data-integrity bugs (11 and 7 golden comments), the plain model 73% and 79%. Most of the missed ones are
+never reported: r12-1 and r12-2 never reported 8 and 10 of the 18, and the critic dropped 1 per run. One more
+whole-change call asked only for security holes and broken data (`--security-sweep`, run `ss-1`) cost $0.11 a
+pull request (a third more) and put 9 findings in the full report, matching 2 golden comments no other finding
+matched and 7 none: recall +1.3, precision −2.0, F1 −0.4 within the run, and no security bug gained. It did report
+three of the missed security comments; the critic rejected two of them with the code (the referer is
+HTML-escaped by ERB; framing is the embedding's intent) and kept the third below the floor. Not merged; the patch
+is kept in `evals/experiments/`.
+
 Findings that match no known bug are mostly real (see [Blind audits](#blind-audits)), so every gate that drops
 findings needs an audit before a precision gain counts.
 
@@ -696,6 +710,10 @@ Both benchmarks ask to be cited when used to evaluate a product.
 ```
 
 ## History
+
+- **2026-10-18** — a security sweep, one more whole-change call asked only for security and data-integrity
+  defects, did not close the gap on those categories (measurement log): security recall 36% with and without it,
+  F1 −0.4 within the run for a third more cost. Not merged.
 
 - **2026-10-18** — telling the critic to keep the reviewer's severity, and the confidence of serious findings it
   traced, changed neither its behaviour nor the posted report (recall 32.9 → 33.5 and 36.7 → 33.5). The critic
