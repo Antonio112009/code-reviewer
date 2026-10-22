@@ -54,6 +54,8 @@ interface Row {
 }
 interface Out {
   run: string;
+  /** Experiment switches the critic ran with (`CR_EXP`). */
+  exp?: string;
   votes: number;
   below: number;
   model: string;
@@ -64,7 +66,7 @@ interface Out {
 
 const out: Out = existsSync(outFile)
   ? JSON.parse(readFileSync(outFile, 'utf8'))
-  : { run: runId, votes, below, model: MODEL, cost: 0, done: [], rows: [] };
+  : { run: runId, exp: process.env.CR_EXP, votes, below, model: MODEL, cost: 0, done: [], rows: [] };
 
 /** New-version lines each file of `base..head` added or modified, marked for the critic as in a review. */
 function changedLines(repo: string, base: string, head: string): Map<string, Set<number>> {

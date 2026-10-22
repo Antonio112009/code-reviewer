@@ -56,6 +56,13 @@ for $9.23. Each row holds `pr`, the finding `id`, `vote` (1 or 2), `verdict`, `c
 critic's `reason`. The original run's verdict is the third vote. For what they showed, see the posting-gate note
 in BENCHMARKS.md's measurement log: the votes are no better than the single confidence.
 
+`sevkeep-r12-1.json` and `sevkeep-r12-2.json` are one more critic run each over the same findings, with
+`evals/experiments/critic-sevkeep.patch` applied and `CR_EXP=sevkeep`. The patch tells the critic to keep the
+reported severity unless code shows a smaller failure, and to keep a confidence of at least 0.7 for a traced finding
+rated major or critical. They were made with `recritique.mts r12-N sevkeep-r12-N.json --votes 1` for $5.62, in the
+same format; `exp` records the switch. The posted report did not improve; see the critic note in BENCHMARKS.md's
+measurement log.
+
 ## Security sweep (`security-sweep/`), a negative result
 
 The full report found 41% of Martian's security bugs (11 golden comments) and 36% of its data-integrity bugs (7),
