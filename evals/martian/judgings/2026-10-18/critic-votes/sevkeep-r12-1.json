@@ -1,0 +1,1466 @@
+{
+ "run": "r12-1",
+ "exp": "sevkeep",
+ "votes": 1,
+ "below": 0.75,
+ "model": "claude-sonnet-5-5",
+ "cost": 2.9744442999999996,
+ "done": [
+  "cal_dot_com-10600",
+  "cal_dot_com-10967",
+  "cal_dot_com-11059",
+  "cal_dot_com-14740",
+  "cal_dot_com-14943",
+  "cal_dot_com-22345",
+  "cal_dot_com-22532",
+  "cal_dot_com-7232",
+  "cal_dot_com-8087",
+  "cal_dot_com-8330",
+  "discourse-1",
+  "discourse-10",
+  "discourse-2",
+  "discourse-3",
+  "discourse-4",
+  "discourse-5",
+  "discourse-6",
+  "discourse-7",
+  "discourse-8",
+  "discourse-9",
+  "grafana-103633",
+  "grafana-106778",
+  "grafana-107534",
+  "grafana-76186",
+  "grafana-79265",
+  "grafana-80329",
+  "grafana-90045",
+  "grafana-90939",
+  "grafana-94942",
+  "grafana-97529",
+  "keycloak-1",
+  "keycloak-32918",
+  "keycloak-33832",
+  "keycloak-36880",
+  "keycloak-36882",
+  "keycloak-37038",
+  "keycloak-37429",
+  "keycloak-37634",
+  "keycloak-38446",
+  "keycloak-40940",
+  "sentry-1",
+  "sentry-2",
+  "sentry-3",
+  "sentry-5",
+  "sentry-67876",
+  "sentry-77754",
+  "sentry-80168",
+  "sentry-80528",
+  "sentry-93824",
+  "sentry-95633"
+ ],
+ "rows": [
+  {
+   "pr": "cal_dot_com-10600",
+   "id": "f-94301c88",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "Verified in EnableTwoFactorModal.tsx: at the DisplayBackupCodes step only the Close button (lines 266-270) calls resetState() and onEnable(). The Dialog's onOpenChange (Esc or overlay) goes to the parent in two-factor-auth.tsx, which only toggles enableModalOpen. So viewer.me is not invalidated and the step, password and backup codes stay in state. The page's switch and badge stay stale until a re"
+  },
+  {
+   "pr": "cal_dot_com-10600",
+   "id": "f-8ce29224",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "disable.ts line 61 calls req.body.backupCode.replaceAll after only a truthiness check at line 48. A non-string truthy value such as a number or object throws a TypeError, which gives a 500 instead of a 400. Only an authenticated user can trigger it, and the effect is limited to a poor error response."
+  },
+  {
+   "pr": "cal_dot_com-10600",
+   "id": "f-9aae2389",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "next-auth-options.ts lines 139-156 decrypt the list, null one entry and write the whole list back with no lock or conditional update. Two parallel logins with the same backup code can both pass the check, so the single-use code works twice. Concurrent updates can also overwrite each other. Exploiting it needs the password and a valid backup code, which limits the impact."
+  },
+  {
+   "pr": "cal_dot_com-10600",
+   "id": "f-bc5db3ea",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "It is true that resetState (lines 71-75) does not clear backupCodes, the blob URL or the form's totpCode. handleSetup rewrites the codes and revokes the old URL on the next setup, so the leftover is only in-memory state. The claimed auto-submit retrigger does not happen: the effect (157-161) depends on totpCode and only re-runs when it changes. Low impact."
+  },
+  {
+   "pr": "cal_dot_com-10967",
+   "id": "f-c97dfb08",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "In updateEvent, the fallback runs only when externalCalendarId is falsy, then looks for a destination calendar whose externalId === externalCalendarId. That can't match a real calendar, so the destination calendar is never used as a fallback and calendarId is undefined. The code is a tautology, though the impact is limited to references without a stored externalCalendarId."
+  },
+  {
+   "pr": "cal_dot_com-10967",
+   "id": "f-00589a67",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.65,
+   "severity": "minor",
+   "reason": "Insert uses `selectedCalendar || \"primary\"` (line 154), but the patch at line 168 passes the raw selectedCalendar, which is undefined when no destination calendar matches the credentialId. The patch has no callback and no catch, so the call fails (a rejected promise, likely unhandled) and the hangout-link description is never updated."
+  },
+  {
+   "pr": "cal_dot_com-10967",
+   "id": "f-0867ab85",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "destinationCalendar is set to null when neither the event type nor the organizer has one (lines 1063-1067). `evt.destinationCalendar?.push(...)` at line 1078 is then skipped, so collective team members' destination calendars (collected at line 993) are dropped. This is an edge case but a real one."
+  },
+  {
+   "pr": "cal_dot_com-10967",
+   "id": "f-a7f042b5",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "If the credential is in neither calendarCredentials nor the DB, or the DB row has no app slug, `credential` is undefined (it was reassigned by the filter at line 512). updateEvent is still called. getCalendar handles null, but CalendarManager.updateEvent then reads `credential.appName` and throws. The async function rejects inside the result array, and `return Promise.all(result)` is not awaited i"
+  },
+  {
+   "pr": "cal_dot_com-10967",
+   "id": "f-f2a560f4",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.7,
+   "severity": "minor",
+   "reason": "The console.log at line 398 is not a changed line. Blame attributes it to the old commit e5af99f572 (booking logic move), so it is pre-existing and not introduced by this change."
+  },
+  {
+   "pr": "cal_dot_com-11059",
+   "id": "f-e05b4e40",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "major",
+   "reason": "The added fetch in getClient (salesforce/CalendarService.ts 75-100) runs on every service construction with no expiry check. It bypasses refreshOAuthTokens, so credential sync is ignored. It persists the new token to the DB, but the Connection is built from the stale credentialKey.access_token. jsforce's refreshToken may mask the staleness, but I did not read jsforce. The extra network call per in"
+  },
+  {
+   "pr": "cal_dot_com-11059",
+   "id": "f-2beee129",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.65,
+   "severity": "major",
+   "reason": "In the sync branch refreshOAuthTokens returns the raw fetch Response, with no ok check and no .json(). Callers expect parsed shapes. Google reads res?.data (googlecalendar 94-96), so token is undefined and token.access_token throws. Hubspot (177-192) reads expiresIn and accessToken from the object. Zoom and Office365 pass the Response to their own handlers. The sync path is broken for most callers"
+  },
+  {
+   "pr": "cal_dot_com-11059",
+   "id": "f-a77b37cb",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.7,
+   "severity": "major",
+   "reason": "The keys [z.string().toString()] and [z.string().optional().toString()] both evaluate to \"[object Object]\", so the second overwrites the first. The schema is therefore access_token plus an optional unknown junk key. The claim that every response fails validation is wrong, because the junk key is optional. But z.object strips unknown keys, so expires_in, refresh_token and other fields are dropped f"
+  },
+  {
+   "pr": "cal_dot_com-11059",
+   "id": "f-b04c3bb1",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.35,
+   "severity": "minor",
+   "reason": "The !== secret comparison is not constant-time. zod .parse, JSON.parse and symmetricDecrypt throw uncaught, giving 500s instead of 400s, and the HTTP method is not restricted. There is no undefined-secret bypass, because APP_CREDENTIAL_SHARING_ENABLED (constants.ts 103) requires CALCOM_WEBHOOK_SECRET to be set. The practical risk is low."
+  },
+  {
+   "pr": "cal_dot_com-11059",
+   "id": "f-f0419781",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "parseRefreshTokenResponse writes the literal \"refresh_token\" into data when none is present. Office365's schema makes refresh_token optional, and its call site spreads tokenResponse.data over the stored credential and saves it. If Microsoft omits refresh_token, or in sync mode where the schema strips it, the real refresh token is overwritten by the placeholder. Salesforce overrides it afterwards, "
+  },
+  {
+   "pr": "cal_dot_com-11059",
+   "id": "f-171dc8be",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "parseRefreshTokenResponse throws on failure, so tokenResponse.success is always true at office365 line 264 and the `&&` check is dead code. The throw is arguably better than silently reusing the old expired credentials. Previously the code kept the old credentials on a failed parse; now it throws. The effect is a cosmetic redundancy plus a behaviour change that is not harmful."
+  },
+  {
+   "pr": "cal_dot_com-14740",
+   "id": "f-b8edd0e0",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "addGuests.handler.ts:168 passes `guests`, not `uniqueGuests` (line 74). An existing attendee who is re-submitted is in `guests`, so email-manager.ts:541 sends them the 'scheduled' email instead of the add-guests one. The claim that genuinely new guests may be misclassified does not hold, because new guests are always in `guests`. The catch at line 169 does drop the error object. The unguarded upda"
+  },
+  {
+   "pr": "cal_dot_com-14740",
+   "id": "f-0f5b1542",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "sendAddGuestsEmails (email-manager.ts:525-550) has no eventTypeMetadata parameter and never calls eventTypeDisableHostEmail or eventTypeDisableAttendeeEmail. sendLocationChangeEmails (lines 503 and 515) checks both. Events with standard emails disabled will therefore still get these emails."
+  },
+  {
+   "pr": "cal_dot_com-14740",
+   "id": "f-095cf866",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "info",
+   "reason": "MultiEmail.tsx:46 hardcodes the English string 'Remove email' even though `t` from useLocale is already available. Line 21 sets htmlFor=\"emails\", which matches no element id. This is a minor i18n and accessibility issue. The index-key part is covered separately in f-3a2c4658."
+  },
+  {
+   "pr": "cal_dot_com-14740",
+   "id": "f-3a2c4658",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.7,
+   "severity": "minor",
+   "reason": "The inputs are controlled: `value={field}` comes from the parent array, and removal calls setValue with the spliced array. Index keys therefore do not mix up input values. At worst, focus could be affected after a removal. That is not a meaningful defect."
+  },
+  {
+   "pr": "cal_dot_com-14943",
+   "id": "f-5452c190",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "The catch block at lines 190-197 awaits prisma.workflowReminder.update with no inner try/catch. If that update throws (DB error, or the row deleted concurrently), the exception leaves the for loop. The remaining reminders are skipped and the handler rejects. The trigger is uncommon but possible, and the unguarded update is new in this change."
+  },
+  {
+   "pr": "cal_dot_com-14943",
+   "id": "f-e7721806",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "info",
+   "reason": "The second OR branch (retryCount > 1) in deleteMany has no method filter, so this SMS cron could delete reminders of any method. Nothing else in the repo writes retryCount (grep found only this file), so email and WhatsApp reminders stay at the default 0 and are not hit today. It is latent and would only matter if another method starts using retryCount. The fix is a one-line method filter."
+  },
+  {
+   "pr": "cal_dot_com-22345",
+   "id": "f-4fd93b7a",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.15,
+   "severity": "info",
+   "reason": "The columns are unqualified, but nothing calls this service outside its tests, and no consumer query joins another table. The fragments are meant for a single denormalized view. Every composition in this file wraps each fragment in parentheses, so the OR on line 106 is also safe here. The ambiguity would only appear if a future consumer joined a table with the same column names. That is hypothetic"
+  },
+  {
+   "pr": "cal_dot_com-22532",
+   "id": "f-6f0b9af9",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "Line 68 uses `sed -i ''`, which is BSD/macOS syntax. On GNU sed the empty string is parsed as the script and the real expression as a filename, so the update fails. The script then echoes success on the next line. This only affects an existing GOOGLE_WEBHOOK_URL entry. It is a dev-only script, so impact is small."
+  },
+  {
+   "pr": "cal_dot_com-22532",
+   "id": "f-8c8b6ff9",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "The handler throws a plain Error when the credential is missing or not owned by the user. tRPC maps that to INTERNAL_SERVER_ERROR instead of NOT_FOUND or FORBIDDEN. The findFirst has no select, so the whole row is loaded, including the key. The ownership check itself is correct, so this is a minor error-handling issue."
+  },
+  {
+   "pr": "cal_dot_com-22532",
+   "id": "f-3603b2c2",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.85,
+   "severity": "minor",
+   "reason": "The body only passes where, select and orderBy through. Typing comes from the FindManyArgs parameter type. The header comment says the types are kept deliberately simple to avoid a TS crash. Removing `satisfies` is not a defect."
+  },
+  {
+   "pr": "cal_dot_com-22532",
+   "id": "f-d6814180",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "The component's only consumer is SelectedCalendarsSettingsWebWrapper. It passes onChanged as onSuccess, and CalendarListContainer's onChanged (lines 79-88) invalidates viewer.calendars.connectedCalendars. So the query is refreshed after a successful cache delete."
+  },
+  {
+   "pr": "cal_dot_com-7232",
+   "id": "f-af6ed91f",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "minor",
+   "reason": "The calls in handleNewBooking.ts:966-972 are not awaited, so the try/catch is dead code. deleteScheduledEmailReminder and deleteScheduledSMSReminder both catch errors internally and only console.log, so nothing would reach it anyway. The un-awaited work can be dropped in serverless, and cancellation runs before eventManager.reschedule. The impact is small."
+  },
+  {
+   "pr": "cal_dot_com-7232",
+   "id": "f-9cac44a3",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "In scheduleEmailReminders.ts:53-77 the whole loop is in one try. A client.request failure, for example for an invalid or already-sent batch, skips the remaining reminders. prisma.delete promises are lazy and only run when awaited, so Promise.all is never reached and nothing is deleted. Rows stay cancelled=true and are retried on the next run, but a reminder due within the hour can still be sent."
+  },
+  {
+   "pr": "cal_dot_com-7232",
+   "id": "f-684a8095",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.45,
+   "severity": "minor",
+   "reason": "In emailReminderManager.ts:213-223 the immediateDelete branch cancels the SendGrid batch and returns without deleting or updating the DB row. The row stays until the cron's deleteMany at scheduledDate (scheduleEmailReminders.ts:34). The leftover row is stale but harmless and is purged later, so the impact is low."
+  },
+  {
+   "pr": "cal_dot_com-8087",
+   "id": "f-ae4e7df5",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "The callback at vital/lib/reschedule.ts:125 is async, and forEach does not await it. The deletions run detached and the try/catch only wraps the synchronous forEach call. The previous non-async callback also returned un-awaited promises, so the missing await is largely pre-existing. The change adds `await getCalendar` inside the callback, so any getCalendar error is now also unhandled. The real im"
+  },
+  {
+   "pr": "cal_dot_com-8087",
+   "id": "f-cc99e264",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "Same code as the vital copy, at wipemycalother/lib/reschedule.ts:125-139. The async forEach callback is not awaited, so the try/catch is ineffective. The un-awaited deletion was already there before the change; this change adds an `await getCalendar` that is also unhandled."
+  },
+  {
+   "pr": "cal_dot_com-8087",
+   "id": "f-b6568f8c",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "minor",
+   "reason": "In handleCancelBooking.ts:460 the forEach callback is async and un-awaited. `apiDeletes.push` runs after awaits, so it can happen after the handler has already awaited apiDeletes (I did not read the later code that awaits it). Deletions can therefore be detached or lost. This was already true before the change, because the push came after `await deleteEvent`. The new `await getCalendar` only widen"
+  },
+  {
+   "pr": "cal_dot_com-8087",
+   "id": "f-285f8fa0",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "At bookings.tsx:553 the forEach callback is async and nothing awaits it, so the mutation can return before the deletes finish and rejections are unhandled. The previous callback also returned un-awaited promises, so this is mostly pre-existing. The change adds an `await getCalendar` that is likewise unhandled."
+  },
+  {
+   "pr": "cal_dot_com-8087",
+   "id": "f-357f1a49",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.25,
+   "severity": "info",
+   "reason": "The claim that the imports are eager is true: the dynamic imports start at module load. The consumers I found (getCalendar.ts:15, videoClient.ts:26, handleCancelBooking.ts:589) all `await appStore[...]`, so none of them treats a promise as a value. A failed import is only a hypothetical build or runtime fault. This looks like a deliberate design, and the old static imports were also eager, so noth"
+  },
+  {
+   "pr": "cal_dot_com-8087",
+   "id": "f-bacb9cb4",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.85,
+   "severity": "minor",
+   "reason": "getCalendarCredentials has three callers: viewer.tsx lines 340 and 415, and api/availability/calendar.ts line 83. All pass the result straight to getConnectedCalendars. That function does `await item.calendar` (CalendarManager.ts:48) and handles a null calendar. No consumer uses `calendar` as a non-Promise."
+  },
+  {
+   "pr": "cal_dot_com-8330",
+   "id": "f-a964ddd1",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "Line 114 compares two fresh dayjs objects with ===, which is always false, so that early return is dead code. The fallthrough checks at lines 117-125 still block almost every slot for a zero-length override (the UI stores unavailable days as start==end). The one gap is a slot starting exactly at the override start, so the impact is small."
+  },
+  {
+   "pr": "cal_dot_com-8330",
+   "id": "f-68db5df7",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "The only producer of these overrides is getSchedule (slots.ts:410-416), which always sets timeZone from availability.timeZone (a defined value from getUserAvailability). No other caller passes dateOverrides to getSlots. The midnight-wrap and toString parsing worries are speculative, and no concrete failing input is shown."
+  },
+  {
+   "pr": "discourse-1",
+   "id": "f-f20a3f98",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "The client check at utilities.js:182 and the 413 handler at line 246 now use a fixed 10MB limit, and `max_attachment_size_kb` and `max_image_size_kb` are no longer read there. The 10MB limit for images looks deliberate, because the server now shrinks large images. For attachments, the client no longer enforces the configured limit. A file bigger than `max_attachment_size_kb` but under 10MB is uplo"
+  },
+  {
+   "pr": "discourse-1",
+   "id": "f-672c809d",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.85,
+   "severity": "major",
+   "reason": "The claim that the upload proceeds oversized with no error is wrong. After the loop, `Upload.create_for` is still called with `tempfile.size`, and `Validators::UploadValidator#maximum_file_size` (lib/validators/upload_validator.rb:80-88) adds an error when the size exceeds `max_image_size_kb` or `max_attachment_size_kb`. Attachments are therefore limited by the server. If `convert` fails, the file"
+  },
+  {
+   "pr": "discourse-10",
+   "id": "f-a190a12a",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "controller uses where(id:).first; nil for an unknown id so host.destroy / save_host(nil) raises NoMethodError (500 instead of 404). Staff-only endpoint, low impact."
+  },
+  {
+   "pr": "discourse-10",
+   "id": "f-467421e1",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "before_validation calls self.host.sub! with no nil guard; the controller assigns params[:embeddable_host][:host], which is nil if omitted, so validation raises NoMethodError. Only reachable with a malformed admin request, and the in-place mutation is mostly harmless here, so the severity is lower."
+  },
+  {
+   "pr": "discourse-10",
+   "id": "f-18d817ef",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "record_for_host compares lower(host) with uri.host without downcasing it. URI does not lowercase the host on parse, so a mixed-case host would not match. Browsers normally send lowercase hosts in referers, so impact is small."
+  },
+  {
+   "pr": "discourse-10",
+   "id": "f-27bef389",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "saveChanges is not referenced in any template (embedding.hbs has no such action), so it is dead code. It is harmless and cannot fail in practice."
+  },
+  {
+   "pr": "discourse-10",
+   "id": "f-fa629f78",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.25,
+   "severity": "info",
+   "reason": "String replace only changes the first underscore, which is true. The current ADMIN_MODELS entries have at most one underscore, so nothing fails today."
+  },
+  {
+   "pr": "discourse-10",
+   "id": "f-2b98925a",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "The fabricator definitions sit in the wrong files (embeddable_host in category_fabricator.rb and the reverse). Fabrication loads every file by definition name, so nothing breaks. This is only a naming/organisation issue."
+  },
+  {
+   "pr": "discourse-10",
+   "id": "f-d8689ba5",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.7,
+   "severity": "minor",
+   "reason": "Falling back to the default category when no host matches is intended: eh.try(:category_id) yields nil and PostCreator then uses its default. No defect."
+  },
+  {
+   "pr": "discourse-2",
+   "id": "f-7f5e9711",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.2,
+   "severity": "info",
+   "reason": "The triple-stash is real. But `fancyTitle` comes from the server's `fancy_title` (models/topic.js.es6:10-12), which is already-escaped HTML, and `topic-link.js.es6` uses it the same way. The interpolated string is built in `topic-unsubscribe.js.es6` from I18n plus that title. No unsanitized user input reaches it, so I found no realistic XSS."
+  },
+  {
+   "pr": "discourse-2",
+   "id": "f-f3d79a14",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.15,
+   "severity": "info",
+   "reason": "The title is pushed in raw, but I found no caller that sets it from user data. `notifications-button` and `pinned-button` set `title` to '' or build it with I18n.t, and `badge-button` aliases `badge.displayDescription`, which doesn't appear to be a dropdown-button. Other fields in this file, such as `row.title` and `text`, are also pushed unescaped by existing code, and so are the I18n-derived val"
+  },
+  {
+   "pr": "discourse-3",
+   "id": "f-43bf83b6",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "UsersController#create calls user.valid? and then user.save, each running EmailValidator -> BlockedEmail.should_block?, which does a read-modify-write of match_count and saves. For a blocked signup the count is bumped twice. It's also non-atomic and fires on any validation where email_changed?."
+  },
+  {
+   "pr": "discourse-3",
+   "id": "f-b844bd04",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.45,
+   "severity": "minor",
+   "reason": "Same issue as the model-level finding: the validator calls the stat-writing should_block?, and create validates twice (valid? then save). Duplicate of f-43bf83b6."
+  },
+  {
+   "pr": "discourse-3",
+   "id": "f-d0526e53",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "minor",
+   "reason": "Lookup is an exact where(email: email) with no normalization on save or lookup. I found no downcasing of the email in User, so a different case can bypass a block."
+  },
+  {
+   "pr": "discourse-3",
+   "id": "f-d451f727",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "Em.A([]) in extend() is shared across instances, which is a real antipattern. The Ember controller is a singleton in practice, so the impact is negligible."
+  },
+  {
+   "pr": "discourse-3",
+   "id": "f-aedbf0de",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.7,
+   "severity": "minor",
+   "reason": "Returning values is needed so the client can read result.values.email (line 275). Marking any rejected email as invalid is deliberate: it stops resubmission of the same bad email. The claim of a real defect rests only on a minor UX concern about the generic message."
+  },
+  {
+   "pr": "discourse-4",
+   "id": "f-cc44360a",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.45,
+   "severity": "minor",
+   "reason": "Post#cook returns raw unchanged for raw_html, and TopicEmbed.import passes feed content (only unescaped/absolutized) with that cook method. Feed content is not sanitized (only import_remote goes through Readability's tag whitelist). The feed URL is admin-configured, so the trust boundary is the feed, but HTML from it ends up in cooked unfiltered."
+  },
+  {
+   "pr": "discourse-4",
+   "id": "f-744bf2ab",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.45,
+   "severity": "minor",
+   "reason": "The scrub claim is wrong: lib/freedom_patches/scrub.rb defines String#scrub when it is missing. But poll_feed.rb:35 calls i.content.scrub with no nil guard, and a feed item with no content element returns nil. That raises NoMethodError and stops the loop, so the remaining items are not imported."
+  },
+  {
+   "pr": "discourse-4",
+   "id": "f-054782a3",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.35,
+   "severity": "minor",
+   "reason": "PostCreator#create returns @post even when it has errors and was not saved. post.present? is then true, and TopicEmbed.create! only validates embed_url and content_sha1. It would store an embed row with nil topic_id and post_id. Later imports would find that embed and call PostRevisor on a nil post. With skip_validations the trigger is rare."
+  },
+  {
+   "pr": "discourse-4",
+   "id": "f-c94d29e0",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "minor",
+   "reason": "discourseUrl.indexOf(e.origin) is a substring test. An empty origin or a prefix origin such as 'http://forum.example.co' would pass against 'http://forum.example.com/'. The only effect is setting the iframe height, so the impact is small."
+  },
+  {
+   "pr": "discourse-4",
+   "id": "f-35fa93d4",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "minor",
+   "reason": "contents << mutates the argument in place. Current callers pass fresh strings (CGI.unescapeHTML result, Readability's doc.content), so it fails in practice only for frozen or reused strings. The url is interpolated into the href attribute without escaping. The only check is /^https?:\\/\\//, which does not exclude quotes. The content is raw HTML anyway, so the added risk is small."
+  },
+  {
+   "pr": "discourse-4",
+   "id": "f-e11ca3b3",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.35,
+   "severity": "minor",
+   "reason": "Command execution is not reachable. TopicRetriever#invalid_host? calls URI(@embed_url).host, and URI raises InvalidURIError for a string starting with '|', which is treated as an invalid host. The other caller, disqus.thor, is admin-run. What remains is open-uri following redirects from the embeddable host to internal targets. That needs the admin-configured host to redirect, so it is a hardening "
+  },
+  {
+   "pr": "discourse-4",
+   "id": "f-0cf31b3e",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.2,
+   "severity": "info",
+   "reason": "The Referer header can be spoofed by non-browser clients. The check is meant to restrict framing and retrieval to the embeddable host, and the content it guards is public topic content. X-Frame-Options ALLOWALL is deliberate, because embedding is the feature. This is a design limitation, not a defect."
+  },
+  {
+   "pr": "discourse-4",
+   "id": "f-a09ad977",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "In tests SiteSetting.queue_jobs is false, so Jobs.enqueue runs inline (app/jobs/base.rb:79,162). RetrieveTopic#execute then calls TopicRetriever.new(...).retrieve, which is what the spec expects. Throttling happens in TopicRetriever#retrieved_recently?, which is intentional. There is no spec mismatch."
+  },
+  {
+   "pr": "discourse-4",
+   "id": "f-ec0e642e",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "The save result is ignored, but the main caller handles failure. posts_controller.rb lines 88-91 check `post.errors.present?` after `revise!` and render the error. The change only added the `validate:` option to an existing save call. The only other caller, topic_embed.rb, passes skip_validations."
+  },
+  {
+   "pr": "discourse-5",
+   "id": "f-87c75842",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "The mixin does pass the modern keyword to the legacy -webkit-box-align and -ms-flex-align properties, and -ms-align-items is not a real property. All three callers (header.scss, topic-post.scss, badges.css.scss) pass only center or baseline. Both values are valid in the legacy syntaxes, and browsers ignore unknown declarations. Nothing fails today. It would only matter if someone later passed flex"
+  },
+  {
+   "pr": "discourse-6",
+   "id": "f-3375938b",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "`\".\" << website_host` mutates a fresh non-frozen literal, not website_host, so it's safe. `discourse_host.ends_with?(\".example.com\")` correctly matches forum.example.com. The same-length branch deliberately treats www.example.com and forum.example.com as the same site. Discourse.current_hostname is a string, so the nil-host claim doesn't hold. The finding is muddled and describes no real defect."
+  },
+  {
+   "pr": "discourse-6",
+   "id": "f-0ec0e952",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "The first `URI(website.to_s)` is rescued. The later calls parse the same string, which already parsed successfully, so they can't raise. Appending the path without a query string is intended, and a trailing slash in the result is cosmetic. No concrete failure."
+  },
+  {
+   "pr": "discourse-7",
+   "id": "f-196aba8f",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.65,
+   "severity": "minor",
+   "reason": "Mobile .topic-map h3 now uses 50/50, while the finding says the original light colour was scale-color($primary, 20%). The desktop h3 at desktop/topic-post.scss:321 uses 20/80, and mobile h3 now matches h4 (50/50), which is probably unintended. The light theme gets lighter and the heading hierarchy flattens. I could not read the commit diff, so the original value rests on the finding and on the des"
+  },
+  {
+   "pr": "discourse-7",
+   "id": "f-a502390e",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.65,
+   "severity": "minor",
+   "reason": "Mobile .custom-message-length now uses 30/70. The equivalent desktop rule (desktop/modal.scss:94) uses 70/30, and the finding says the original was 70%. The light theme text becomes much darker than before and the mobile and desktop rules no longer match. I could not read the commit diff, so the original value rests on the finding and on the desktop counterpart."
+  },
+  {
+   "pr": "discourse-8",
+   "id": "f-58387954",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "limit/offset come from params via to_i with no clamping (groups_controller.rb 22-26). A negative value gives a negative LIMIT/OFFSET, which PostgreSQL rejects, so the request returns a 500. A very large limit returns the whole group."
+  },
+  {
+   "pr": "discourse-8",
+   "id": "f-a98aed27",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "minor",
+   "reason": "The controller never clears `usernames` after addMembers, and the code itself has a TODO saying it should. The controller is a singleton, so the value persists, including across groups. The impact is small UX."
+  },
+  {
+   "pr": "discourse-8",
+   "id": "f-fc303191",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "The route is `delete \"members\" => \"groups#remove_member\"` (routes.rb:49), but the spec uses `xhr :put`. Controller specs don't enforce the verb, so the test still passes. The mismatch is cosmetic."
+  },
+  {
+   "pr": "discourse-8",
+   "id": "f-e640e1fb",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "The repo is on Rails 4.1.8 (Gemfile.lock). In that version CollectionAssociation#delete converts Integer or String arguments into records with find, so `group.users.delete(user_id)` works. The spec at line 125 also checks that the user is removed."
+  },
+  {
+   "pr": "discourse-9",
+   "id": "f-938d8512",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "ensure_loaded! on the fallback list is only called from ApplicationController#set_locale (config/initializers/i18n.rb). Other places set the locale without it: app/jobs/base.rb:151, post_alerter.rb:138 (with_locale), and post_destroyer.rb:102. `translate` only loads config.locale. With a non-en locale, a key missing there falls back to an :en that was never loaded, so you get 'translation missing'"
+  },
+  {
+   "pr": "discourse-9",
+   "id": "f-040244fc",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "minor",
+   "reason": "The cache key in `translate` is key+locale+backend id. It ignores the fallback chain, SiteSetting.default_locale, and which locales are loaded. `translate` loads only config.locale. In a process where fallbacks were not yet loaded, a fallback lookup can return and cache 'translation missing' (frozen). That value stays cached after the fallback loads later, until reload!. Fallbacks are only loaded "
+  },
+  {
+   "pr": "grafana-103633",
+   "id": "f-b4ccd925",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "The denial key uses only namespace, UserUID, action, name and parent. validateSubject returns the raw ID from ParseTypeID and drops the identity type. Subjects like anonymous:0 and render:0 therefore both give UID \"0\". Check reads the denial cache before any identity-type logic. A denial cached for anonymous is served to the renderer for the TTL. The key also begins with the same \".perm_<uid>_<act"
+  },
+  {
+   "pr": "grafana-103633",
+   "id": "f-0c5b25d0",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "A denial can be served for up to 30s after a grant, but this is a deliberate TTL tradeoff. The denial is only cached after a fresh getIdentityPermissions and checkPermission. It is no staler than permCache, which uses the same shortCacheTTL. It is not a defect in itself."
+  },
+  {
+   "pr": "grafana-103633",
+   "id": "f-1bdd50e3",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.25,
+   "severity": "info",
+   "reason": "If checkPermission errors on cached perms, Check returns the error with no DB fallback. A fallback would call the same checkPermission and the same folder-store lookup, so it would likely fail the same way. The fallback only matters for permission staleness, and that is already handled by falling through when the result is not allowed. The metric ordering is cosmetic: a cached deny deliberately fa"
+  },
+  {
+   "pr": "grafana-106778",
+   "id": "f-32e03e8e",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "AlertRuleMenu now computes canPause from grafanaPauseAbility (prom rule), but the item still requires rulerRuleType.grafana.rule(rulerRule). RuleActionsButtons.V2 passes rulerRule={rule}, and the list view has no ruler rule, so Pause is never rendered there. The prom-based pause ability is dead in that view. showDivider also counts canPause, so a divider can appear with no Pause item."
+  },
+  {
+   "pr": "grafana-106778",
+   "id": "f-b7f02494",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "The ruler version gates Pause, Restore, Export and DeletePermanently on rulerRuleType.grafana.rule(rule), which covers alerting and recording rules. The new prom version uses prometheusRuleType.grafana.alertingRule(rule) (isGrafanaPromAlertingRule), so Grafana recording rules lose those abilities. Silence is the only action that should be alerting-only. prometheusRuleType.grafana.rule exists and c"
+  },
+  {
+   "pr": "grafana-106778",
+   "id": "f-85dc4722",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.45,
+   "severity": "minor",
+   "reason": "With rule undefined (skipToken), useIsGrafanaPromRuleEditable returns loading:false, so MaybeSupported is AlwaysSupported. Duplicate then gets [true, grafana create permission] and View is always supported, neither gated on a rule being present. AlertRuleMenu ORs these with the ruler abilities, so a cloud rule can show Duplicate when the user has Grafana create permission but the ruler or datasour"
+  },
+  {
+   "pr": "grafana-106778",
+   "id": "f-be4713a8",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "Removing the ruler query from the list view is the intent of this change, as the AlertRuleMenu docs say. The !promResponse branch is the error state after the loading check. An empty group rendering nothing is reasonable, and no concrete defect is shown."
+  },
+  {
+   "pr": "grafana-107534",
+   "id": "f-a3387c08",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.2,
+   "severity": "info",
+   "reason": "The order is as described: the filter on `query.expr` runs before `applyTemplateVariables` (querySplitting.ts:296-299). A variable-only expr that interpolates to an empty string would not be dropped. The effect is small. The query would be sent with an empty expr, and the old flow had the same property. The finding itself calls the order intended. It is hardening at most."
+  },
+  {
+   "pr": "grafana-107534",
+   "id": "f-8be10a56",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.9,
+   "severity": "minor",
+   "reason": "The real `LokiDatasource.applyTemplateVariables` (datasource.ts:1110-1141) returns a new object via `{...target, expr, step, legendFormat}`, so the request targets are not mutated. Only the test mock mutates. The sharding and splitting code never applies ad hoc filters itself (grep found no `filters` use in those files). The extra interpolation in `DataSourceWithBackend.query` goes through `runQue"
+  },
+  {
+   "pr": "grafana-76186",
+   "id": "f-4307a855",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "info",
+   "reason": "The fake's FromContext returns a fresh NewTestLogger(), so Info calls made through it are lost. No test reads plugin TestLogger.InfoLogs (grep shows only the fake itself), so nothing fails today. It would only matter if a future test asserts on LoggerMiddleware logging. It matches the fake's existing New() behaviour."
+  },
+  {
+   "pr": "grafana-76186",
+   "id": "f-b351211f",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.35,
+   "severity": "info",
+   "reason": "QueryData, CallResource, CheckHealth and CollectMetrics in the new middleware read req.PluginContext with no nil check. Nearly every other middleware in this package guards `req == nil`, and so does LoggerMiddleware. A nil request would panic here. Callers do not normally pass nil, so this is a convention gap and unlikely to be hit."
+  },
+  {
+   "pr": "grafana-79265",
+   "id": "f-3e8690ce",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "info",
+   "reason": "CreateOrUpdateDevice (database.go 108-118) calls CountDevices and then inserts with no transaction or lock. Concurrent new devices can overshoot the limit by a few. Tagging is cached per device (impl.go tagDeviceUI), so the extra COUNT only runs for uncached devices. This is a soft limit and the overshoot is bounded."
+  },
+  {
+   "pr": "grafana-79265",
+   "id": "f-fde72407",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "Authenticate now calls TagDevice synchronously, which is needed so ErrDeviceLimitReached can reject the request. Only uncached devices reach the DB, because tagDeviceUI checks localCache first. Other errors are logged and ignored. The loss of panic recovery is covered by the HTTP recovery middleware (not checked here). This is a design trade-off, not a defect."
+  },
+  {
+   "pr": "grafana-79265",
+   "id": "f-445dbd71",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "updateDevice returns ErrDeviceLimitReached whenever zero rows match, including a missing row or one older than 30 days. updateDevice is only called once the limit is reached, so rejecting devices that cannot be updated is the intended behaviour. Only the error name is imprecise."
+  },
+  {
+   "pr": "grafana-79265",
+   "id": "f-1673e03b",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.75,
+   "severity": "minor",
+   "reason": "The provider and bind sit inside the wireBasicSet NewSet. Wire only reports unused providers for items passed directly to wire.Build, not for items inside a nested set. It also only resolves inputs of providers that are actually needed. Nothing needs AnonStore through wire, because impl.go builds the store itself with anonstore.ProvideAnonDBStore(sqlStore, cfg.AnonymousDeviceLimit). The entries ar"
+  },
+  {
+   "pr": "grafana-80329",
+   "id": "f-c9506e85",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.9,
+   "severity": "minor",
+   "reason": "All callers of CleanAnnotations pass non-empty constants (cleanup.go:23-25: alertAnnotationType, dashboardAnnotationType, apiAnnotationType). Empty annotationType cannot occur. The finding itself says the behaviour is unchanged."
+  },
+  {
+   "pr": "grafana-90045",
+   "id": "f-7c77ce7e",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.7,
+   "severity": "major",
+   "reason": "In dualwriter_mode3.go (lines 50, 108, 134, 161) each goroutine derives its timeout context from the request `ctx`, which was only wrapped with klog.NewContext. Nothing detaches it from cancellation, and there is no WithoutCancel anywhere in pkg/apiserver/rest. net/http cancels the request context when the handler returns. The Create, Update, Delete and DeleteCollection handlers return right after"
+  },
+  {
+   "pr": "grafana-90939",
+   "id": "f-174b6c3e",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.35,
+   "severity": "info",
+   "reason": "The code does store nil in the cache on a failed read (lines 69-70). Production impact is small. A nil cache just forces a retry on the next call, and non-Dev mode only caches once it succeeds. Dev mode re-reads on every call anyway. All three callers (index.go, frontendsettings.go, recovery.go) either check err or nil-check the result, so no nil dereference is evident. The overwrite behaviour is "
+  },
+  {
+   "pr": "grafana-90939",
+   "id": "f-c8378f44",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "info",
+   "reason": "There is no re-check of the cache after taking the write lock (lines 48-49). Concurrent cold-start callers each re-read the manifest one after another. This is only redundant file I/O and does not cause incorrect results. In Dev mode the exclusive lock serializes requests, but Dev mode is meant to re-read the manifest on every call. This is a minor inefficiency, not a correctness defect."
+  },
+  {
+   "pr": "grafana-94942",
+   "id": "f-9caefc64",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "info",
+   "reason": "The function does always return false (the `!` and both branches are dead logic), so ReadQuery at reader.go:129-131 always returns 'sqlExpressions is not implemented'. The commit is titled 'disable sql expressions', so this looks like an intentional kill switch written in an obfuscated way. It is not an accidental bug, and the feature flag has no effect."
+  },
+  {
+   "pr": "grafana-94942",
+   "id": "f-16250875",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "The stubs always error. parser.go TablesList calls RunCommands, so it always fails, and NewSQLCommand fails with it. This is consistent with the 'disable sql expressions' commit and the gate in reader.go keeps production from reaching it. The real consequence is that existing tests (parser_test.go and sql_command_test.go call TablesList and NewSQLCommand and expect success) will fail unless they w"
+  },
+  {
+   "pr": "grafana-97529",
+   "id": "f-f2587fa3",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "BuildIndex only locks cacheMu around the map write (bleve.go 137-139); getOrCreateIndex (search.go 292-305) does GetIndex then build with no per-key serialization (it even has a TODO). Concurrent Search or handleEvent calls for the same unindexed key can both build. A file-backed build then fails in bleve.New on the same dir. A memory-backed build overwrites the cache entry and leaks the first ind"
+  },
+  {
+   "pr": "grafana-97529",
+   "id": "f-5752bfb2",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "info",
+   "reason": "In NewResourceServer, the new `s.Init(ctx)` error path returns nil, err without calling cancel(). The earlier newSearchSupport error return has the same gap. Init does log the error itself (server.go 313-315), so the log is duplicated. The leak only matters on startup failure, which is usually fatal, so impact is small."
+  },
+  {
+   "pr": "grafana-97529",
+   "id": "f-4e8260b7",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "In search.go 187-192, the errgroup goroutines run concurrently, up to initWorkers of them. Each one increments the shared totalBatchesIndexed and assigns to the outer `err` with no synchronization. That is a real data race, and `go test -race` would flag it. It only affects a metric and the error value, but the error could be lost or misattributed."
+  },
+  {
+   "pr": "grafana-97529",
+   "id": "f-140c3815",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.85,
+   "severity": "minor",
+   "reason": "Init now runs eagerly inside NewResourceServer, before the server is returned. No Watch subscriber can exist during the index build, so none can miss events. The broadcaster is created in initWatcher (server.go 752-771) and starts from the point of subscription. Search init has its own separate WatchWriteEvents consumer, so the reordering loses nothing."
+  },
+  {
+   "pr": "keycloak-1",
+   "id": "f-b2812ddd",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.15,
+   "severity": "info",
+   "reason": "The code does what the finding describes. `WebAuthnConditionalUIAuthenticator.shouldShowWebAuthnAuthenticators` returns false and `fillContextForm` only sets ENABLE_WEBAUTHN_CONDITIONAL_UI, so a known user gets conditional UI whether or not they have a passkey. This looks intended: conditional UI is discoverable-credential autofill, and the browser offers nothing when no passkey exists. `authentic"
+  },
+  {
+   "pr": "keycloak-32918",
+   "id": "f-31df2e46",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "The test creates \"idp-alias-20\" but registers cleanup for identityProviders().get(\"alias\"), which doesn't exist. The created IDP is never cleaned up, and the cleanup may fail on the missing alias. This is a test-only hygiene bug, but it is a real typo."
+  },
+  {
+   "pr": "keycloak-32918",
+   "id": "f-239368e9",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.35,
+   "severity": "info",
+   "reason": "The lookup at line 100 is new and runs unconditionally. Before, it ran only in the isInvalid branch. It adds a DB or cache lookup on each remove, even though the cached branch already has the IDP. It is needed for registerIDPLoginInvalidation, and getLoginPredicate is null-safe via Objects::nonNull. The NPE in registerIDPInvalidation(null) in the isInvalid branch existed before this change. The on"
+  },
+  {
+   "pr": "keycloak-32918",
+   "id": "f-d8254dc7",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.85,
+   "severity": "minor",
+   "reason": "The claim that the predicate doesn't check enabled is wrong. LoginFilter.getLoginPredicate() (IdentityProviderStorageProvider.java:252) ANDs all LoginFilter filters, including ENABLED, LINK_ONLY and HIDE_ON_LOGIN. On update, registerIDPLoginInvalidationOnUpdate compares the original and updated models, so an enabled flip changes the predicate result and invalidates the login caches. The create pat"
+  },
+  {
+   "pr": "keycloak-32918",
+   "id": "f-b6bc9abf",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "The cache entry is not keyed by mode only. IdentityProviderListQuery holds a searchKeys map per organizationId, and the 6-argument constructor copies the previous entries (IdentityProviderListQuery.java:39-45). A new org is therefore added alongside the existing ones, so results don't mix. The pattern is the same as the existing getByOrganization. Any churn is speculative."
+  },
+  {
+   "pr": "keycloak-33832",
+   "id": "f-732a284e",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "minor",
+   "reason": "The 'multiple providers' error was removed. DefaultCryptoProvider returns 200, and the finding says Elytron and FIPS do too. Equal-order providers are therefore resolved by ServiceLoader order, and only a debug log records which one won. The authz-client provider (100) is the case that motivated the change, and it is still handled correctly. A classpath that mixes FIPS and default providers is a m"
+  },
+  {
+   "pr": "keycloak-33832",
+   "id": "f-e8f28bb4",
+   "vote": 1,
+   "verdict": "uncertain",
+   "confidence": 0.2,
+   "severity": "info",
+   "reason": "readLength does return -1 for the indefinite form, so the loop is skipped and an empty list comes back. Indefinite length is not valid DER, and the caller would fail on the empty list, so the behaviour is poor but not unsafe. The loop ends because readNext always consumes at least 2 bytes, and a malformed length makes read() throw an IOException. What is left is a robustness gap with a confusing e"
+  },
+  {
+   "pr": "keycloak-33832",
+   "id": "f-d5c7e416",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.85,
+   "severity": "minor",
+   "reason": "`limit` is the length of the buffer this decoder was built from. Any element's content length is strictly smaller than that buffer, because the tag and length bytes are part of it. Nested decoders are created with ASN1Decoder.create(subarray), so their limit is the sub-array length, and the content is still smaller than that. A valid encoding is therefore never rejected by `length >= limit`."
+  },
+  {
+   "pr": "keycloak-36880",
+   "id": "f-a704057f",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "registerListener now gates all cleanup on ADMIN_FINE_GRAINED_AUTHZ (V1). Profile lets V1 and V2 be enabled together, and V2 only requires AUTHORIZATION. With both enabled, management() returns MgmtPermissionsV2. Its clients() is ClientPermissionsV2, whose setPermissionsEnabled throws UnsupportedOperationException. Client deletion then throws inside the event listener, and the provider event publis"
+  },
+  {
+   "pr": "keycloak-36880",
+   "id": "f-de18b65f",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.35,
+   "severity": "minor",
+   "reason": "The V2 stubs do throw UnsupportedOperationException. ClientResource.getManagementPermissions and setManagementPermissionsEnabled call isPermissionsEnabled and setPermissionsEnabled behind ProfileHelper.requireFeature(ADMIN_FINE_GRAINED_AUTHZ), so with V1 and V2 both enabled they return a 500. The client-removal listener hits the same stub. This looks like an intentional 'not supported in V2' place"
+  },
+  {
+   "pr": "keycloak-36880",
+   "id": "f-85612367",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "getResourceTypeResource can return null, for example when the schema is unsupported or the type resource is missing. findByResource then calls resource.getId() and throws an NPE, in both the infinispan and JPA stores. The type resources are created with the admin permissions resource server (AdminPermissionsSchema around line 247), so this is hard to reach. It only fails if the 'Clients' type reso"
+  },
+  {
+   "pr": "keycloak-36880",
+   "id": "f-3faa49c1",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.85,
+   "severity": "minor",
+   "reason": "org.junit.Assert is already used by other tests in tests/base, for example FlowTest, so JUnit 4 is on the classpath and the import compiles. Mixing it with Jupiter is only a style issue."
+  },
+  {
+   "pr": "keycloak-36882",
+   "id": "f-3b9caf74",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.85,
+   "severity": "minor",
+   "reason": "The macro is only used in update-compatibility.adoc with parameters \"metadata --file=...\" and \"check --file=...\". Neither includes --features, so nothing is duplicated. Appending the feature flag is deliberate, because the command needs the preview feature."
+  },
+  {
+   "pr": "keycloak-36882",
+   "id": "f-ca592562",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "The operator main code never calls update-compatibility. UpgradeLogicFactory returns RecreateOnImageChangeUpgradeLogic when no strategy is set, and that logic picks ROLLING or RECREATE by itself. grep for rolling-updates in operator/src/main finds no use. The null case therefore has no dependency on the feature, and the early return cannot produce the claimed failure."
+  },
+  {
+   "pr": "keycloak-37429",
+   "id": "f-04943c81",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "I traced the path. The server returns the key (UserResource.validateUserProfile builds ErrorRepresentation from the key and params). The UI then calls t(key, {0:..,1:..,2:..}) in ui-shared utils.ts setUserProfileServerError. The bundle comes from ThemeResource.getLocalizationTexts, which does no {0} to {{0}} conversion; AccountConsole's param_ conversion is a separate legacy path. i18n.ts uses def"
+  },
+  {
+   "pr": "keycloak-37429",
+   "id": "f-c94714f9",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "Same path as the account UI. The admin UI uses default i18next with HttpBackend against ThemeResource.getLocalizationTexts, which does no conversion. The server sends the key from UserResource.validateUserProfile and the UI translates it with setUserProfileServerError. The es and pl admin-ui translations of this key use {{0}}. The English line with {0} and {2,choice,...} would be displayed uninter"
+  },
+  {
+   "pr": "keycloak-37429",
+   "id": "f-0b27d726",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.25,
+   "severity": "info",
+   "reason": "The English path is built by regex and opened with no existence check, so a missing file throws RuntimeException. MessagePropertiesFilter only selects messages_*.properties, and the character class [a-zA-Z-_] excludes '/', so the regex only rewrites the file-name suffix. Normal theme layouts have an English counterpart. The failure is a clear build-time error with the path in the message, not a si"
+  },
+  {
+   "pr": "keycloak-37634",
+   "id": "f-3153bb03",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.2,
+   "severity": "info",
+   "reason": "encodeTokenId does throw IllegalStateException for an unknown session type, token type or grant type. But I found no realistic path to that. The GRANT_TYPE attribute is only set to registered grant ids (OAuth2GrantTypeBase uses context.getGrantType(); the other call sites use REFRESH_TOKEN, TOKEN_EXCHANGE and the pre-authorized-code id), and every grant factory defines getShortcut(). A missing att"
+  },
+  {
+   "pr": "keycloak-38446",
+   "id": "f-c841a9bb",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.35,
+   "severity": "info",
+   "reason": "The claim is true. getMyUser returns users.get(...), which can be null. isConfiguredFor and getDisableableCredentialTypesStream check for null, but getCredentials dereferences myUser.recoveryCodes and myUser.otp without a check. The IOException is also logged without the cause. This is a test-only provider, and the other mutators (updateCredential, disableCredentialType) dereference the same map l"
+  },
+  {
+   "pr": "keycloak-40940",
+   "id": "f-ed11c337",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "The reader thread is never joined, and deletedAll.set(true) is skipped if a delete throws. In that case the thread keeps looping until the JVM exits. A read still in flight when the assertion runs could also throw an exception the test misses. This is test hygiene only, and it makes the test pass wrongly only in a narrow race. A failed delete already fails the test."
+  },
+  {
+   "pr": "keycloak-40940",
+   "id": "f-4730f6d4",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "The null return is intentional and is the fix for a concurrent-delete NPE. The only caller is GroupUtils.populateSubGroupCount, which passes the value to GroupRepresentation.setSubGroupCount(Long). That setter takes a boxed Long, so null is stored with no unboxing and no NPE. A null count for a group that is gone is acceptable."
+  },
+  {
+   "pr": "sentry-1",
+   "id": "f-b5e42dfc",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "major",
+   "reason": "The audit-log endpoint adds an undocumented `optimized_pagination=true` switch for superusers and global-access members. It routes to OptimizedCursorPaginator, which slices the queryset with a user-controlled negative offset (`cursor.offset < 0` in paginator.py:877-882). Cursor.from_string accepts negative offsets, and Django querysets reject negative slicing with an AssertionError, so this opt-in"
+  },
+  {
+   "pr": "sentry-1",
+   "id": "f-62c1cda6",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "minor",
+   "reason": "For is_prev cursors `start_offset = offset` is left unclamped (paginator.py:182). A cursor like `123:-1:1` is accepted by Cursor.from_string and reaches `queryset[-1:...]`, which raises AssertionError and returns a 500. The original code had the same unguarded slice, so this is not new. The change clamps only the non-prev case and adds comments that wrongly claim negative offsets are safe, so it i"
+  },
+  {
+   "pr": "sentry-1",
+   "id": "f-d8604b01",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "The comparison `len(results) == offset + limit + extra` uses the raw offset. This only differs from `start_offset` when the offset is negative. In that case the queryset slice on line 882 or 886 raises an AssertionError first, so the trim line is never reached with a negative offset. The inconsistency is real but cannot produce an extra row in practice."
+  },
+  {
+   "pr": "sentry-2",
+   "id": "f-f66ca31d",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "major",
+   "reason": "Endpoint imports and uses OptimizedCursorPaginator with a user-controlled `optimized_pagination` flag. It enables negative offsets, and the cursor parser (Cursor.from_string) accepts negative offsets. Django querysets reject negative slicing with an AssertionError, so the feature gives a 500 rather than a working path. `enable_advanced` is evaluated on every request and dereferences `organization_"
+  },
+  {
+   "pr": "sentry-2",
+   "id": "f-f7fb7b2d",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.25,
+   "severity": "info",
+   "reason": "The loop bound is 1000 in add-buffer.lua. Redirect chains are bounded by the segment size, which the script also caps at 1000 spans. A chain over 1000 deep is not realistic, so this is only a minor behaviour change."
+  },
+  {
+   "pr": "sentry-2",
+   "id": "f-fad6043d",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "The script trims with `zpopmin` once a segment exceeds 1000 spans. That drops the lowest-scored members, which are the earliest-ending spans, and it does so silently. The hardcoded 1000 does not match Python `max_segment_spans=1001`, which nothing uses any more. This looks like deliberate capping and only triggers on very large segments."
+  },
+  {
+   "pr": "sentry-2",
+   "id": "f-df495341",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "The `SpansBuffer.__init__` order is (assigned_shards, timeout, root_timeout, segment_page_size, max_segment_bytes, max_segment_spans, redis_ttl). `__reduce__` passes `redis_ttl` as the 4th positional argument, so it lands in `segment_page_size`. After unpickling, `redis_ttl` is reset to the default 3600 and `segment_page_size` becomes the original TTL. This is a real misalignment, but the impact i"
+  },
+  {
+   "pr": "sentry-2",
+   "id": "f-704a9474",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.7,
+   "severity": "minor",
+   "reason": "The old code also sliced `queryset[offset:stop]` with the raw cursor offset, so a negative prev-cursor offset already crashed before this change. The new line only adds a clamp for non-prev cursors, which makes it slightly safer. It introduces no new failure; the misleading comment is cosmetic."
+  },
+  {
+   "pr": "sentry-3",
+   "id": "f-347670a2",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "_get_event_stats receives scoped_dataset (discover/errors/transactions in split paths, lines 372-450) but calls is_errors_query_for_error_upsampled_projects with the outer `dataset`. The upsampling decision therefore depends on the outer dataset and the request's raw query string, not on the dataset actually queried. Real mismatch, but it needs an unusual combination (e.g. a user query containing "
+  },
+  {
+   "pr": "sentry-3",
+   "id": "f-dfea126b",
+   "vote": 1,
+   "verdict": "uncertain",
+   "confidence": 0.35,
+   "severity": "minor",
+   "reason": "The flagged lines (allowlist check) are fine. The related concern is real in the code: upsampled_count in discover.py:1046 is toInt64(sum(sample_weight)) with no ifNull(…, 1) default, and the comments only assume the column is populated. Whether sample_weight is NULL for events stored without a sample rate depends on the Snuba schema, which I could not check here."
+  },
+  {
+   "pr": "sentry-3",
+   "id": "f-b10e54f2",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "info",
+   "reason": "_should_apply_sample_weight_transform returns False for any dataset other than errors/discover, including spans_rpc and ourlogs. The RPC upsampling branches are therefore unreachable and harmless today. If they were ever reached, 'upsampled_count() as count' would not resolve in the RPC resolvers."
+  },
+  {
+   "pr": "sentry-3",
+   "id": "f-4204b9b1",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "major",
+   "reason": "hash() of a tuple of ints is deterministic and a collision is negligible, so the wrong-eligibility scenario is not realistic. The cached value is only allowlist membership, and the dataset/query check runs after the cache lookup, so leaving them out of the key is correct. The 60s staleness is documented and intentional."
+  },
+  {
+   "pr": "sentry-3",
+   "id": "f-4eb0e4ff",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "This is a test-only helper. The broad try/except only guards against malformed test data, and normalized_data comes from manager.get_data(), so manager.save sees the change. It is test hygiene and does not make a test pass wrongly."
+  },
+  {
+   "pr": "sentry-3",
+   "id": "f-ab7d88b4",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "info",
+   "reason": "Cosmetic wording change in an error message. Grep of tests/ finds no assertion on either string, so nothing breaks. Not a defect."
+  },
+  {
+   "pr": "sentry-5",
+   "id": "f-8ebbf486",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "The diff adds analytics.record before the features.has check (lines 81-91), so orgs without the flag get a 404 but the event is still recorded. This inflates the metric. The impact is small."
+  },
+  {
+   "pr": "sentry-5",
+   "id": "f-ffbf0e7b",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.35,
+   "severity": "info",
+   "reason": "The queryKey is built only from queryOptions, and the fetch URL uses organization.slug (useGetTraceItemAttributeKeys). Because the key has no slug, a cache entry could be shared across orgs. The default staleTime of 0 limits the harm to briefly showing stale data. The refetchOnWindowFocus claim is wrong: DEFAULT_QUERY_CLIENT_CONFIG already sets it to false. Only the default retry behaviour and the"
+  },
+  {
+   "pr": "sentry-5",
+   "id": "f-1d7a4ea2",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.5,
+   "severity": "minor",
+   "reason": "The truthiness check `self.initial_data.get(\"age\")` is false when age is 0, and the same applies to timestamp 0. A report with age=0 and a positive timestamp, or timestamp=0 and a non-zero age, passes the mutual-exclusion check. age=0 is a plausible value. The effect is lax validation only."
+  },
+  {
+   "pr": "sentry-5",
+   "id": "f-8befd98e",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.9,
+   "severity": "minor",
+   "reason": "ActorField.to_internal_value calls parse_and_validate_actor(data, self.context[\"organization\"].id), so it already scopes the actor to the organization."
+  },
+  {
+   "pr": "sentry-5",
+   "id": "f-005a0fa9",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.88,
+   "severity": "minor",
+   "reason": "ActorField validates the actor against the organization id via parse_and_validate_actor. The `validated_data.pop(\"condition_group\")` KeyError risk is pre-existing and not part of this change."
+  },
+  {
+   "pr": "sentry-5",
+   "id": "f-822098b0",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "The claims are speculative. fetch_error_details wraps its work in try/except and returns [], and the `if response else []` guard covers an empty response. Sorting error_events in place is idempotent, and the list is built once per request. Running the Snuba query on every request is the intended design."
+  },
+  {
+   "pr": "sentry-5",
+   "id": "f-45e59908",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.85,
+   "severity": "info",
+   "reason": "The null guard is correct. Video and recording blobs are both keyed per segment, so a replay with no segments has none to delete. The finding itself concedes the change is correct."
+  },
+  {
+   "pr": "sentry-67876",
+   "id": "f-c498d678",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.55,
+   "severity": "minor",
+   "reason": "In OAuthLoginView, safe_urlopen (line 423) is outside the try, so connection errors, timeouts or SSL errors propagate as a 500. The existing OAuth2CallbackView.exchange_token (oauth2.py:286-308) puts safe_urlopen inside its try and handles SSLError and ConnectionError. The impact is limited to an error page not being shown, so it is minor."
+  },
+  {
+   "pr": "sentry-67876",
+   "id": "f-41359c0b",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "major",
+   "reason": "integration.metadata[\"sender\"][\"login\"] is indexed directly. build_integration (line 376) only sets sender when the state has one. The sender is only supplied by the installation webhook (webhook.py:204), so integrations created through the normal flow or before this change can lack it. Reinstalling such an integration on another org reaches line 503 and raises KeyError, giving a 500. installation"
+  },
+  {
+   "pr": "sentry-67876",
+   "id": "f-fba75e9f",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "The state is pipeline.signature, which is an md5 of the pipeline and view identifiers (pipeline/base.py:133). It is deterministic and not a per-session random nonce, and the redirect URL parameters are not URL-encoded. The risk is limited because the pipeline state itself is session-bound and the later check compares the GitHub login with the installation sender. This is a hardening gap, not an ea"
+  },
+  {
+   "pr": "sentry-67876",
+   "id": "f-e71d1d0f",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "The eager default of request.GET.get is harmless because it is just a state lookup. A GET value always overrides the stored one, so a stale state value is only used when the request has no installation_id, which is the intended fallback after the OAuth redirect. An empty string passes the None check, but the later Integration lookup fails and returns error(). No concrete defect."
+  },
+  {
+   "pr": "sentry-77754",
+   "id": "f-21473466",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.9,
+   "severity": "minor",
+   "reason": "Every sync_assignee_outbound implementation (example, jira, jira_server, vsts) takes **kwargs, so the assignment_source= keyword argument can't raise TypeError. sync_status_outbound isn't passed assignment_source by its task, and its implementations accept **kwargs anyway (the example one doesn't, but it isn't called with the new keyword). where_should_sync only checks inbound keys, where no sourc"
+  },
+  {
+   "pr": "sentry-80168",
+   "id": "f-7ab0a29f",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.85,
+   "severity": "minor",
+   "reason": "The old duplicate-key check was only needed when evaluate returned a list. In StatefulDetectorHandler.evaluate, `group_values` comes from get_group_key_values, which returns a dict keyed by group_key, so each key is unique. Each result is built with `group_key=group_key` and stored as `results[result.group_key]`, so the dict key and the result's group_key always match. Overwriting cannot happen in"
+  },
+  {
+   "pr": "sentry-80528",
+   "id": "f-6310a5db",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.9,
+   "severity": "info",
+   "reason": "The module doesn't import gettext, and `_` is used only once, on line 62. Unpacking into `_` is an idiomatic way to discard a value. Nothing is shadowed, and the claim about a sibling module is not a defect in this code."
+  },
+  {
+   "pr": "sentry-93824",
+   "id": "f-745c27b4",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "Line 199 uses tag key \"shards\" while the other timers and metrics in `main` (lines 185 and 195) use \"shard\" with the same value. The wait_produce timer therefore gets a different dimension name, which splits dashboards and queries. It only affects metrics, so it is minor."
+  },
+  {
+   "pr": "sentry-93824",
+   "id": "f-c4451944",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.4,
+   "severity": "minor",
+   "reason": "In `join`, the `break` when the deadline expires skips `process.terminate()` for the remaining processes. Only processes reached before the deadline are terminated. The processes are daemon and `stopped` is already set, so they should exit on their own or when the parent exits. The impact is small, and the shutdown is incomplete at worst."
+  },
+  {
+   "pr": "sentry-93824",
+   "id": "f-f193d1e4",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.8,
+   "severity": "minor",
+   "reason": "Creating a per-process `SpansBuffer(shards)` is the intended design. Each child gets its own pickled buffer for its shards, and the parent keeps a copy in `self.buffers[process_index]` for `record_stored_segments` and `get_memory_info`. The durable state is in Redis. `any_shard_at_limit` is recomputed by the child on each flush. The backpressure state is kept across restarts in the shared `process"
+  },
+  {
+   "pr": "sentry-95633",
+   "id": "f-4fba2d46",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.6,
+   "severity": "minor",
+   "reason": "The worker's finally always calls complete_offset, so offsets 100/101 are contiguous and committable. The commit loop waits 1s (shutdown_event.wait(1.0)) before its first commit, but the test checks after about 0.2–0.3s. So `not in committed_offsets` passes only by timing. It is vacuous, and flaky if the machine is slow. It contradicts the docstring."
+  },
+  {
+   "pr": "sentry-95633",
+   "id": "f-51eb99fb",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "The Python 3.13 claim is false: .python-version is 3.13.1, so queue.ShutDown and Queue.shutdown exist. What remains is that `while not self.shutdown` plus the flag set in FixedQueuePool.shutdown lets busy workers exit without draining queued items. Those offsets stay outstanding and uncommitted, so they are redelivered (at-least-once) rather than lost. Shutdown-time only, with low impact."
+  },
+  {
+   "pr": "sentry-95633",
+   "id": "f-b8d68410",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.3,
+   "severity": "info",
+   "reason": "Marking decode or submit failures complete matches the other modes, where failures are dropped and committed, so it looks intentional. The queues really are unbounded (queue.Queue() with no maxsize), so the 'backpressure' wording in the docstring is inaccurate. That is a docs and memory-growth concern, not a concrete failure. The rebalance-state concern is covered by the pool-reuse problem in f-11"
+  },
+  {
+   "pr": "sentry-95633",
+   "id": "f-11604389",
+   "vote": 1,
+   "verdict": "confirmed",
+   "confidence": 0.8,
+   "severity": "major",
+   "reason": "The factory creates a single queue_pool in __init__. create_thread_queue_parallel_worker hands that same pool to every SimpleQueueProcessingStrategy. SimpleQueueProcessingStrategy.close() and terminate() call queue_pool.shutdown(), which stops the workers and shuts down the queues. Arroyo closes the strategy on a rebalance and calls create_with_partitions again, so the new strategy gets the dead p"
+  },
+  {
+   "pr": "sentry-95633",
+   "id": "f-237451e3",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.85,
+   "severity": "minor",
+   "reason": "hash(str) is salted per process but stable within one process. Per-group ordering only needs the same mapping within the process that owns the queues, and the queues are in-process. Nothing needs cross-process or cross-restart consistency."
+  },
+  {
+   "pr": "sentry-95633",
+   "id": "f-52cf9641",
+   "vote": 1,
+   "verdict": "rejected",
+   "confidence": 0.75,
+   "severity": "minor",
+   "reason": "Lock creation uses dict.setdefault, which is atomic under the GIL. The defaultdict entries are only created under the per-partition lock, and list(keys()) is atomic in CPython. The gap-stalls-commit behaviour is deliberate and tested (test_thread_queue_parallel_offset_gaps). The uptime topic is not compacted, so there is no realistic trigger."
+  }
+ ]
+}
