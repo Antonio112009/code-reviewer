@@ -3,7 +3,7 @@ import type {
   PermissionOption,
   RequestPermissionRequest,
   RequestPermissionResponse,
-} from '@agentclientprotocol/sdk';
+} from '@agentclientprotocol/sdk/unstable';
 import { TOOL_NAMES } from '../../tools/definitions';
 import { resolveDependencyPath } from '../../tools/dependencies';
 import { MCP_SERVER_NAME } from '../../tools/mcp-server';

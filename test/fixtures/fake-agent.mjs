@@ -5,7 +5,7 @@
 // works online. cached-only works only when started offline (npm_config_offline=true); offline-broken fails
 // offline with an error of its own.
 import { Readable, Writable } from 'node:stream';
-import * as acp from '@agentclientprotocol/sdk';
+import * as acp from '@agentclientprotocol/sdk/unstable';
 
 const mode = process.argv[2] ?? 'ok';
 const offline = process.env.npm_config_offline === 'true';

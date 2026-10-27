@@ -205,7 +205,7 @@ function setupCopy() {
     const pre = btn.closest('.code-block')?.querySelector('pre');
     // from a <pre> of shell lines: the commands only, without prompts, comments and blank lines
     const fromPre = () => {
-      const raw = pre?.innerText ?? '';
+      const raw = pre?.textContent ?? '';
       if (!pre?.querySelector('.tok-p')) return raw;
       return raw
         .split('\n')

@@ -8,6 +8,9 @@
       "!coverage",
       "!website/data",
       "!.code-reviewer",
+      "!.claude",
+      "!**/*.md",
+      "!**/*.{yaml,yml}",
       "!evals/martian/judgings",
       "!evals/martian/audits"
     ]

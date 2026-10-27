@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import * as acp from '@agentclientprotocol/sdk';
+import * as acp from '@agentclientprotocol/sdk/unstable';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { claudeAuthSettings, type LaunchSpec, PRESETS } from '../src/providers/acp/presets';
 import { AcpProvider } from '../src/providers/acp/provider';

@@ -3,7 +3,8 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { Readable, Writable } from 'node:stream';
-import * as acp from '@agentclientprotocol/sdk';
+// The unstable entry: the turn's token usage (`PromptResponse.usage`) is not in the stable ACP schema.
+import * as acp from '@agentclientprotocol/sdk/unstable';
 import type { AcpProviderConfig } from '../../config/schema';
 import { resolveDependencyPath } from '../../tools/dependencies';
 import { MCP_SERVER_NAME } from '../../tools/mcp-server';
