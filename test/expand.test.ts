@@ -500,7 +500,7 @@ describe('callsIn', () => {
       callsIn([
         'if (ok) { inner.ServeHTTP(w, r); return fn(a) }',
         'for (const x of load(items)) go(x)',
-        'x'.repeat(500) + ' big(',
+        `${'x'.repeat(500)} big(`,
       ]),
     ).toEqual(['ServeHTTP', 'load']);
   });

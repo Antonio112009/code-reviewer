@@ -4,10 +4,12 @@
 
 ### Dependencies
 
-- All direct dependencies updated to their latest releases (ACP SDK 1.9.0, `ai` 7.0.145 with its providers, AWS
-  credential providers 3.1153.0, execa 10.2.0, gpt-tokenizer 4.1.0, es-module-lexer 3.0.4; ast-grep 0.51.0),
-  still pinned to exact versions; vitest 5.0.5 and the CodeQL action 4.39.0 too. With execa 10.2.0 a git command
-  that exceeds its output limit is killed instead of being left running.
+- All direct dependencies updated to their latest releases (ACP SDK 2.0.2, `ai` 7.0.154 with its providers, AWS
+  credential providers 3.1157.0, MCP SDK 2.4.0, secretlint 13.1.0, execa 10.2.1, gpt-tokenizer 4.1.0,
+  es-module-lexer 3.0.4; ast-grep 0.51.0), still pinned to exact versions; vitest 5.0.5, Biome 2.6.3 and the
+  CodeQL action 4.39.1 too. With execa 10.2.0 a git command that exceeds its output limit is killed instead of
+  being left running. ACP SDK 2.0 moved the turn's token usage out of the stable schema, so the ACP provider
+  imports its unstable entry. tsdown stays on 0.23.1: 0.23.2 builds declarations only with TypeScript 7.1 beta.
 
 ## 0.13.0 — 2026-10-18
 

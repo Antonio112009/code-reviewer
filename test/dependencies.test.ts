@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import type { RequestPermissionRequest } from '@agentclientprotocol/sdk';
+import type { RequestPermissionRequest } from '@agentclientprotocol/sdk/unstable';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { decidePermission } from '../src/providers/acp/permissions';
 import { reviewInstructions } from '../src/review/prompts';
