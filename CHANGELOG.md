@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.13.1 — 2026-11-11
+
+### Packaging
+
+- The npm page links to the project website (`homepage` in `package.json`).
 
 ### Dependencies
 
